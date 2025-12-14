@@ -1,0 +1,405 @@
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { Department } from '@prisma/client';
+import DepartmentLayout from '@/components/admin/shared/DepartmentLayout';
+import { requireDepartmentAuth } from '@/lib/departmentAuth';
+import Link from 'next/link';
+import styles from './Disputes.module.css';
+
+interface DisputeDetail {
+  id: string;
+  customerName: string;
+  customerEmail: string;
+  amount: number;
+  reason: string;
+  status: string;
+  createdAt: string;
+  dueDate?: string;
+  chargeId: string;
+  notes?: string;
+  stripeDisputeId?: string;
+  statusHistory: Array<{
+    status: string;
+    changedAt: string;
+    changedBy: string;
+    notes?: string;
+  }>;
+}
+
+export default function DisputeDetailPage() {
+  const router = useRouter();
+  const { id } = router.query;
+  const [dispute, setDispute] = useState<DisputeDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showNotesModal, setShowNotesModal] = useState(false);
+
+  useEffect(() => {
+    if (id) {
+      fetchDispute();
+    }
+  }, [id]);
+
+  const fetchDispute = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/customer-service/disputes/${id}`);
+      const data = await res.json();
+      setDispute(data.dispute);
+    } catch (error) {
+      console.error('Failed to fetch dispute:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { class: string; label: string }> = {
+      warning_needs_response: { class: styles.statusWarning, label: 'Needs Response' },
+      needs_response: { class: styles.statusDanger, label: 'Needs Response' },
+      under_review: { class: styles.statusInfo, label: 'Under Review' },
+      pending: { class: styles.statusWarning, label: 'Pending' },
+      resolved: { class: styles.statusSuccess, label: 'Resolved' },
+      won: { class: styles.statusSuccess, label: 'Won' },
+      lost: { class: styles.statusDanger, label: 'Lost' },
+    };
+
+    const config = statusConfig[status.toLowerCase()] || { class: styles.statusNeutral, label: status };
+
+    return (
+      <span className={`${styles.statusBadge} ${config.class}`}>
+        {config.label}
+      </span>
+    );
+  };
+
+  if (loading) {
+    return (
+      <DepartmentLayout
+        currentDepartment={Department.CUSTOMER_SERVICE}
+        pageTitle="Dispute Details"
+        description="Loading..."
+      >
+        <div className={styles.loading}>Loading dispute details...</div>
+      </DepartmentLayout>
+    );
+  }
+
+  if (!dispute) {
+    return (
+      <DepartmentLayout
+        currentDepartment={Department.CUSTOMER_SERVICE}
+        pageTitle="Dispute Not Found"
+        description="Error"
+      >
+        <div className={styles.empty}>Dispute not found</div>
+      </DepartmentLayout>
+    );
+  }
+
+  return (
+    <DepartmentLayout
+      currentDepartment={Department.CUSTOMER_SERVICE}
+      pageTitle={`Dispute #${dispute.id.slice(-8)}`}
+      description="Dispute details and history"
+    >
+      <div className={styles.detailContainer}>
+        <div className={styles.backLink}>
+          <Link href="/admin/customer-service/disputes"> Back to Disputes</Link>
+        </div>
+
+        {/* Dispute Info Card */}
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <h2>Dispute Information</h2>
+            {getStatusBadge(dispute.status)}
+          </div>
+          <div className={styles.cardBody}>
+            <div className={styles.infoGrid}>
+              <div className={styles.infoItem}>
+                <label>Customer</label>
+                <div className={styles.infoValue}>
+                  <div>{dispute.customerName}</div>
+                  <div className={styles.infoSubtext}>{dispute.customerEmail}</div>
+                </div>
+              </div>
+              <div className={styles.infoItem}>
+                <label>Amount</label>
+                <div className={styles.infoValue}>${dispute.amount.toFixed(2)}</div>
+              </div>
+              <div className={styles.infoItem}>
+                <label>Reason</label>
+                <div className={styles.infoValue}>{dispute.reason}</div>
+              </div>
+              <div className={styles.infoItem}>
+                <label>Charge ID</label>
+                <div className={styles.infoValue}>{dispute.chargeId}</div>
+              </div>
+              <div className={styles.infoItem}>
+                <label>Created</label>
+                <div className={styles.infoValue}>
+                  {new Date(dispute.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+              {dispute.dueDate && (
+                <div className={styles.infoItem}>
+                  <label>Response Due</label>
+                  <div className={styles.infoValue}>
+                    {new Date(dispute.dueDate).toLocaleDateString()}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <h2>Actions</h2>
+          </div>
+          <div className={styles.cardBody}>
+            <div className={styles.actionButtons}>
+              <button
+                onClick={() => setShowStatusModal(true)}
+                className={styles.primaryButton}
+              >
+                Update Status
+              </button>
+              <button
+                onClick={() => setShowNotesModal(true)}
+                className={styles.secondaryButton}
+              >
+                Add Notes
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Notes */}
+        {dispute.notes && (
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <h2>Internal Notes</h2>
+            </div>
+            <div className={styles.cardBody}>
+              <div className={styles.notes}>{dispute.notes}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Status History */}
+        {dispute.statusHistory && dispute.statusHistory.length > 0 && (
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <h2>Status History</h2>
+            </div>
+            <div className={styles.cardBody}>
+              <div className={styles.timeline}>
+                {dispute.statusHistory.map((history, index) => (
+                  <div key={index} className={styles.timelineItem}>
+                    <div className={styles.timelineDot}></div>
+                    <div className={styles.timelineContent}>
+                      <div className={styles.timelineStatus}>
+                        {getStatusBadge(history.status)}
+                      </div>
+                      <div className={styles.timelineMeta}>
+                        {history.changedBy} " {new Date(history.changedAt).toLocaleString()}
+                      </div>
+                      {history.notes && (
+                        <div className={styles.timelineNotes}>{history.notes}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Update Status Modal */}
+        {showStatusModal && (
+          <UpdateStatusModal
+            disputeId={dispute.id}
+            currentStatus={dispute.status}
+            onClose={() => setShowStatusModal(false)}
+            onSuccess={() => {
+              setShowStatusModal(false);
+              fetchDispute();
+            }}
+          />
+        )}
+
+        {/* Add Notes Modal */}
+        {showNotesModal && (
+          <AddNotesModal
+            disputeId={dispute.id}
+            onClose={() => setShowNotesModal(false)}
+            onSuccess={() => {
+              setShowNotesModal(false);
+              fetchDispute();
+            }}
+          />
+        )}
+      </div>
+    </DepartmentLayout>
+  );
+}
+
+function UpdateStatusModal({
+  disputeId,
+  currentStatus,
+  onClose,
+  onSuccess,
+}: {
+  disputeId: string;
+  currentStatus: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [status, setStatus] = useState(currentStatus);
+  const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      const res = await fetch(`/api/admin/customer-service/disputes/${disputeId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, notes }),
+      });
+
+      if (res.ok) {
+        onSuccess();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to update status');
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Failed to update status');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h2>Update Dispute Status</h2>
+          <button onClick={onClose} className={styles.closeButton}></button>
+        </div>
+
+        <form onSubmit={handleSubmit} className={styles.modalForm}>
+          <div className={styles.formGroup}>
+            <label>New Status *</label>
+            <select value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="pending">Pending</option>
+              <option value="needs_response">Needs Response</option>
+              <option value="under_review">Under Review</option>
+              <option value="resolved">Resolved</option>
+              <option value="won">Won</option>
+              <option value="lost">Lost</option>
+            </select>
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Notes</label>
+            <textarea
+              rows={4}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add notes about this status change..."
+            />
+          </div>
+
+          <div className={styles.modalActions}>
+            <button type="button" onClick={onClose} className={styles.cancelButton}>
+              Cancel
+            </button>
+            <button type="submit" disabled={submitting} className={styles.submitButton}>
+              {submitting ? 'Updating...' : 'Update Status'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function AddNotesModal({
+  disputeId,
+  onClose,
+  onSuccess,
+}: {
+  disputeId: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      const res = await fetch(`/api/admin/customer-service/disputes/${disputeId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes }),
+      });
+
+      if (res.ok) {
+        onSuccess();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to add notes');
+      }
+    } catch (error) {
+      console.error('Error adding notes:', error);
+      alert('Failed to add notes');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h2>Add Notes</h2>
+          <button onClick={onClose} className={styles.closeButton}></button>
+        </div>
+
+        <form onSubmit={handleSubmit} className={styles.modalForm}>
+          <div className={styles.formGroup}>
+            <label>Notes *</label>
+            <textarea
+              rows={6}
+              required
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add internal notes about this dispute..."
+            />
+          </div>
+
+          <div className={styles.modalActions}>
+            <button type="button" onClick={onClose} className={styles.cancelButton}>
+              Cancel
+            </button>
+            <button type="submit" disabled={submitting} className={styles.submitButton}>
+              {submitting ? 'Saving...' : 'Save Notes'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export const getServerSideProps = requireDepartmentAuth(Department.CUSTOMER_SERVICE);

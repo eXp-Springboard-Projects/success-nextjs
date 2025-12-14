@@ -12,11 +12,8 @@ export default function CacheManagement() {
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/admin/login');
-    } else if (status === 'authenticated' && session?.user?.role !== 'ADMIN') {
-      router.push('/dashboard');
-    }
+    // Auth is handled by requireAdminAuth in getServerSideProps
+    // No client-side redirects needed
   }, [status, session, router]);
 
   const handlePurgeCache = async (type: string) => {

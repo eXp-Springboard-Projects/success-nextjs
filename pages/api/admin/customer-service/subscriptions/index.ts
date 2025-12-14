@@ -51,14 +51,15 @@ export default async function handler(
       where.status = status;
     }
 
-    // Fetch subscriptions with user details
+    // Fetch subscriptions with member details
     const [subscriptions, total] = await Promise.all([
       prisma.subscriptions.findMany({
         where,
         include: {
-          users: {
+          member: {
             select: {
-              name: true,
+              firstName: true,
+              lastName: true,
               email: true,
             },
           },
@@ -75,14 +76,14 @@ export default async function handler(
     const response = {
       subscriptions: subscriptions.map(sub => ({
         id: sub.id,
-        userId: sub.userId,
-        userName: sub.users?.name || 'Unknown',
-        userEmail: sub.users?.email || 'Unknown',
-        planName: sub.planType || 'Unknown Plan',
+        userId: sub.memberId,
+        userName: sub.member ? `${sub.member.firstName} ${sub.member.lastName}` : 'Unknown',
+        userEmail: sub.member?.email || 'Unknown',
+        planName: sub.tier || 'Unknown Plan',
         status: sub.status || 'unknown',
         nextBillingDate: sub.currentPeriodEnd?.toISOString(),
-        amount: sub.amount || 0,
-        interval: sub.interval || 'month',
+        amount: 0, // TODO: Add amount field to subscriptions model
+        interval: sub.billingCycle || 'month',
         stripeSubscriptionId: sub.stripeSubscriptionId,
       })),
       pagination: {

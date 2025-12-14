@@ -3,9 +3,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
 import { PrismaClient } from '@prisma/client';
 import { uploadAndOptimizeImage, validateImageFile } from '../../../lib/media';
+import { saveFileLocally, shouldUseLocalStorage } from '../../../lib/mediaLocal';
 import formidable from 'formidable';
 import fs from 'fs';
 import { randomUUID } from 'crypto';
+import sizeOf from 'image-size';
 
 const prisma = new PrismaClient();
 
@@ -23,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const session = await getServerSession(req, res, authOptions);
 
-  if (!session || !['ADMIN', 'EDITOR', 'AUTHOR'].includes(session.user.role)) {
+  if (!session || !['ADMIN', 'SUPER_ADMIN', 'EDITOR', 'AUTHOR'].includes(session.user.role)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
@@ -67,27 +69,60 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Read file buffer
     const fileBuffer = fs.readFileSync(uploadedFile.filepath);
 
-    // Upload and optimize
-    const optimized = await uploadAndOptimizeImage(
-      fileBuffer,
-      uploadedFile.originalFilename || 'upload.jpg',
-      {
-        generateVariants: true,
-        maxWidth: 2000,
-        quality: 80,
+    let mediaUrl: string;
+    let width = 0;
+    let height = 0;
+    let variants: any[] = [];
+
+    // Use local storage for development, Vercel Blob for production
+    if (shouldUseLocalStorage()) {
+      console.log('📁 Using local file storage (development mode)');
+
+      const localResult = await saveFileLocally(
+        fileBuffer,
+        uploadedFile.originalFilename || 'upload.jpg',
+        uploadedFile.mimetype || 'image/jpeg'
+      );
+
+      mediaUrl = localResult.url;
+
+      // Get image dimensions
+      try {
+        const dimensions = sizeOf(fileBuffer);
+        width = dimensions.width || 0;
+        height = dimensions.height || 0;
+      } catch (e) {
+        console.warn('Could not get image dimensions');
       }
-    );
+    } else {
+      console.log('☁️ Using Vercel Blob storage (production mode)');
+
+      const optimized = await uploadAndOptimizeImage(
+        fileBuffer,
+        uploadedFile.originalFilename || 'upload.jpg',
+        {
+          generateVariants: true,
+          maxWidth: 2000,
+          quality: 80,
+        }
+      );
+
+      mediaUrl = optimized.original;
+      width = optimized.variants[0]?.width || 0;
+      height = optimized.variants[0]?.height || 0;
+      variants = optimized.variants;
+    }
 
     // Save to database
     const media = await prisma.media.create({
       data: {
         id: randomUUID(),
         filename: uploadedFile.originalFilename || 'upload.jpg',
-        url: optimized.original,
+        url: mediaUrl,
         mimeType: uploadedFile.mimetype || 'image/jpeg',
         size: uploadedFile.size,
-        width: optimized.variants[0]?.width || 0,
-        height: optimized.variants[0]?.height || 0,
+        width,
+        height,
         alt: (Array.isArray(fields.alt) ? fields.alt[0] : fields.alt) || '',
         caption: (Array.isArray(fields.caption) ? fields.caption[0] : fields.caption) || null,
         uploadedBy: session.user.id,
@@ -105,7 +140,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         details: JSON.stringify({
           filename: media.filename,
           size: media.size,
-          variants: optimized.variants.length,
+          variants: variants.length,
         }),
       },
     });
@@ -114,15 +149,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     fs.unlinkSync(uploadedFile.filepath);
 
     return res.status(201).json({
-      success: true,
-      media: {
-        id: media.id,
-        url: media.url,
-        filename: media.filename,
-        variants: optimized.variants,
-        width: media.width,
-        height: media.height,
-      },
+      id: media.id,
+      url: media.url,
+      filename: media.filename,
+      mimeType: media.mimeType,
+      size: media.size,
+      width: media.width,
+      height: media.height,
+      alt: media.alt,
+      createdAt: media.createdAt.toISOString(),
+      variants,
     });
   } catch (error) {
     console.error('Error uploading media:', error);

@@ -110,6 +110,35 @@
   margin: 0;
 }
 
+/* Disabled Action Cards */
+.actionCardDisabled {
+  position: relative;
+  padding: 1.5rem;
+  border: 2px dashed #d1d5db;
+  border-radius: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  cursor: not-allowed;
+  opacity: 0.65;
+  background: #f9fafb;
+}
+
+.comingSoonBadge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 9999px;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+}
+
 /* Two Column Layout */
 .twoColumn {
   display: grid;

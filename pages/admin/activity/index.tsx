@@ -31,6 +31,10 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     return result;
   }
 
+  if ('notFound' in result) {
+    return result;
+  }
+
   // Extract user's department from session
   const userDepartment = (result.props as any).session?.user?.primaryDepartment || Department.CUSTOMER_SERVICE;
 

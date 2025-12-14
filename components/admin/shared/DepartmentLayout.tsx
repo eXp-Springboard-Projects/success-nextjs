@@ -1,4 +1,4 @@
-﻿import { useSession } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { ReactNode, useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -59,33 +59,8 @@ export default function DepartmentLayout({
   const { user } = session;
   const accessibleDepartments = getAccessibleDepartments(user.role, user.primaryDepartment);
 
-  // Shared features available in all departments
-  const sharedFeatures = [
-    {
-      icon: 'ðŸ“‹',
-      label: 'Kanban Board',
-      href: `/admin/${currentDepartment.toLowerCase().replace('_', '-')}/kanban`,
-    },
-    {
-      icon: 'ðŸ“°',
-      label: 'Activity Feed',
-      href: `/admin/${currentDepartment.toLowerCase().replace('_', '-')}/activity`,
-    },
-    {
-      icon: 'ðŸ””',
-      label: 'Notifications',
-      href: `/admin/${currentDepartment.toLowerCase().replace('_', '-')}/notifications`,
-      badge: notificationCount,
-    },
-    {
-      icon: 'ðŸ“¢',
-      label: 'Announcements',
-      href: `/admin/${currentDepartment.toLowerCase().replace('_', '-')}/announcements`,
-    },
-  ];
-
-  // Department-specific navigation (will be passed as prop or defined per department)
-  const departmentNav = getDepartmentNavigation(currentDepartment);
+  // Navigation sections organized by category
+  const navigationSections = getNavigationSections(user.role, user.primaryDepartment);
 
   return (
     <div className={styles.container}>
@@ -94,73 +69,23 @@ export default function DepartmentLayout({
         <div className={styles.sidebarHeader}>
           <Link href="/admin">
             <div className={styles.logo}>
-              <span className={styles.logoIcon}>âœ¨</span>
               <span className={styles.logoText} style={{ color: "white" }}>SUCCESS</span>
             </div>
           </Link>
         </div>
 
-        {/* Department Indicator */}
-        <div className={styles.departmentBadge}>
-          <span className={styles.departmentIcon}>{getDepartmentIcon(currentDepartment)}</span>
-          <span className={styles.departmentName}>{getDepartmentName(currentDepartment)}</span>
+        {/* Navigation Sections */}
+        <div className={styles.navContainer}>
+          {navigationSections.map((section) => (
+            <CollapsibleSection
+              key={section.title}
+              title={section.title}
+              items={section.items}
+              router={router}
+              notificationCount={section.title === 'OVERVIEW' ? notificationCount : 0}
+            />
+          ))}
         </div>
-
-        {/* Shared Features */}
-        <div className={styles.navSection}>
-          <div className={styles.navSectionTitle}>Shared</div>
-          <nav className={styles.nav}>
-            {sharedFeatures.map((feature) => (
-              <Link
-                key={feature.href}
-                href={feature.href}
-                className={`${styles.navItem} ${router.pathname === feature.href ? styles.navItemActive : ''}`}
-              >
-                <span className={styles.navIcon}>{feature.icon}</span>
-                <span className={styles.navLabel}>{feature.label}</span>
-                {feature.badge && feature.badge > 0 && (
-                  <span className={styles.navBadge}>{feature.badge}</span>
-                )}
-              </Link>
-            ))}
-          </nav>
-        </div>
-
-        {/* Department-Specific Features */}
-        <div className={styles.navSection}>
-          <div className={styles.navSectionTitle}>Department Tools</div>
-          <nav className={styles.nav}>
-            {departmentNav.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`${styles.navItem} ${router.pathname === item.href ? styles.navItemActive : ''}`}
-              >
-                <span className={styles.navIcon}>{item.icon}</span>
-                <span className={styles.navLabel}>{item.label}</span>
-              </Link>
-            ))}
-          </nav>
-        </div>
-
-        {/* Department Switcher (for Super Admin and Admin) */}
-        {accessibleDepartments.length > 1 && (
-          <div className={styles.navSection}>
-            <div className={styles.navSectionTitle}>Switch Department</div>
-            <nav className={styles.nav}>
-              {accessibleDepartments.map((dept) => (
-                <Link
-                  key={dept}
-                  href={getDepartmentPath(dept)}
-                  className={`${styles.navItem} ${dept === currentDepartment ? styles.navItemActive : ''}`}
-                >
-                  <span className={styles.navIcon}>{getDepartmentIcon(dept)}</span>
-                  <span className={styles.navLabel}>{getDepartmentName(dept)}</span>
-                </Link>
-              ))}
-            </nav>
-          </div>
-        )}
 
         {/* User Profile */}
         <div className={styles.sidebarFooter}>
@@ -178,7 +103,6 @@ export default function DepartmentLayout({
             </div>
           </div>
           <Link href="/api/auth/signout" className={styles.signOutButton}>
-            <span>ðŸšª</span>
             <span>Sign Out</span>
           </Link>
         </div>
@@ -193,7 +117,7 @@ export default function DepartmentLayout({
             className={styles.sidebarToggle}
             aria-label="Toggle sidebar"
           >
-            â˜°
+            ☰
           </button>
           <div className={styles.headerContent}>
             <div>
@@ -210,77 +134,176 @@ export default function DepartmentLayout({
   );
 }
 
-// Department navigation configurations
-function getDepartmentNavigation(department: Department) {
-  const navConfigs: Record<Department, Array<{ icon: string; label: string; href: string }>> = {
-    SUPER_ADMIN: [
-      { icon: 'ðŸ‘¥', label: 'User & Role Management', href: '/admin/super/users' },
-      { icon: 'ðŸ”', label: 'Permissions', href: '/admin/super/permissions' },
-      { icon: 'âš™ï¸', label: 'System Configuration', href: '/admin/super/config' },
-      { icon: 'ðŸ“Š', label: 'Audit Logs', href: '/admin/super/audit-logs' },
-      { icon: 'ðŸŽ¯', label: 'Cross-Dashboard Access', href: '/admin/super/access' },
-    ],
-    CUSTOMER_SERVICE: [
-      { icon: 'ðŸ’³', label: 'Subscriptions', href: '/admin/customer-service/subscriptions' },
-      { icon: 'ðŸ›’', label: 'Orders & Billing', href: '/admin/customer-service/orders' },
-      { icon: 'ðŸ’°', label: 'Refunds & Disputes', href: '/admin/customer-service/refunds' },
-      { icon: 'âš–ï¸', label: 'Disputes', href: '/admin/customer-service/disputes' },
-      { icon: 'ðŸ‘¤', label: 'User Accounts', href: '/admin/customer-service/users' },
-      { icon: 'ðŸ’¬', label: 'Support Tools', href: '/admin/customer-service/support' },
-      { icon: 'âš ï¸', label: 'Error Resolution', href: '/admin/customer-service/errors' },
-    ],
-    EDITORIAL: [
-      { icon: 'ðŸ“', label: 'Articles', href: '/admin/editorial/articles' },
-      { icon: 'âœï¸', label: 'Authors', href: '/admin/editorial/authors' },
-      { icon: 'ðŸ·ï¸', label: 'Categories & Tags', href: '/admin/editorial/taxonomy' },
-      { icon: 'ðŸ“', label: 'Media Library', href: '/admin/editorial/media' },
-      { icon: 'ðŸ”', label: 'SEO Controls', href: '/admin/editorial/seo' },
-      { icon: 'ðŸ“…', label: 'Publishing Queue', href: '/admin/editorial/queue' },
-    ],
-    SUCCESS_PLUS: [
-      { icon: 'ðŸ’Ž', label: 'Product Management', href: '/admin/success-plus/products' },
-      { icon: 'ðŸ‘¥', label: 'Members', href: '/admin/success-plus/members' },
-      { icon: 'ðŸ”’', label: 'Content Access', href: '/admin/success-plus/access' },
-      { icon: 'ðŸ“§', label: 'Communications', href: '/admin/success-plus/communications' },
-      { icon: 'ðŸ“ˆ', label: 'Analytics', href: '/admin/success-plus/analytics' },
-    ],
-    DEV: [
-      { icon: 'ðŸ› ï¸', label: 'Dev Board', href: '/admin/dev/board' },
-      { icon: 'ðŸ“Š', label: 'System Monitoring', href: '/admin/dev/monitoring' },
-      { icon: 'ðŸš€', label: 'Deployments', href: '/admin/dev/deployments' },
-      { icon: 'ðŸ”§', label: 'Technical Tools', href: '/admin/dev/tools' },
-      { icon: 'ðŸ“š', label: 'Documentation', href: '/admin/dev/docs' },
-    ],
-    MARKETING: [
-      { icon: 'ðŸ“¢', label: 'Campaigns', href: '/admin/marketing/campaigns' },
-      { icon: 'ðŸŽ¨', label: 'Landing Pages', href: '/admin/marketing/landing-pages' },
-      { icon: 'âœ‰ï¸', label: 'Email Marketing', href: '/admin/marketing/email' },
-      { icon: 'ðŸ“Š', label: 'Analytics', href: '/admin/marketing/analytics' },
-      { icon: 'ðŸŽ', label: 'Promotions', href: '/admin/marketing/promotions' },
-    ],
-    COACHING: [
-      { icon: 'ðŸŽ“', label: 'Programs', href: '/admin/coaching/programs' },
-      { icon: 'ðŸ‘¨â€ðŸ«', label: 'Coaches', href: '/admin/coaching/coaches' },
-      { icon: 'ðŸ‘¤', label: 'Clients', href: '/admin/coaching/clients' },
-      { icon: 'ðŸ“…', label: 'Session Scheduling', href: '/admin/coaching/scheduling' },
-      { icon: 'ðŸ“š', label: 'Content Management', href: '/admin/coaching/content' },
-      { icon: 'ðŸ’¬', label: 'Communications', href: '/admin/coaching/communications' },
-    ],
-  };
+// Collapsible section component
+function CollapsibleSection({
+  title,
+  items,
+  router,
+  notificationCount
+}: {
+  title: string;
+  items: Array<{ label: string; href: string; badge?: number }>;
+  router: any;
+  notificationCount?: number;
+}) {
+  const [isOpen, setIsOpen] = useState(true);
 
-  return navConfigs[department] || [];
+  return (
+    <div className={styles.navSection}>
+      <button
+        className={styles.navSectionTitle}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span>{title}</span>
+        <span className={styles.sectionToggle}>{isOpen ? '−' : '+'}</span>
+      </button>
+      {isOpen && (
+        <nav className={styles.nav}>
+          {items.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`${styles.navItem} ${router.pathname === item.href ? styles.navItemActive : ''}`}
+            >
+              <span className={styles.navLabel}>{item.label}</span>
+              {item.badge && item.badge > 0 && (
+                <span className={styles.navBadge}>{item.badge}</span>
+              )}
+            </Link>
+          ))}
+        </nav>
+      )}
+    </div>
+  );
 }
 
-// Department icons
-function getDepartmentIcon(department: Department): string {
-  const icons: Record<Department, string> = {
-    SUPER_ADMIN: 'âš¡',
-    CUSTOMER_SERVICE: 'ðŸŽ§',
-    EDITORIAL: 'âœï¸',
-    SUCCESS_PLUS: 'ðŸ’Ž',
-    DEV: 'âš™ï¸',
-    MARKETING: 'ðŸ“ˆ',
-    COACHING: 'ðŸŽ“',
-  };
-  return icons[department];
+// Navigation sections based on user role
+function getNavigationSections(role: UserRole, primaryDepartment?: Department | null) {
+  const sections = [];
+
+  // OVERVIEW section - always visible
+  sections.push({
+    title: 'OVERVIEW',
+    items: [
+      { label: 'Dashboard', href: '/admin' },
+      { label: 'Activity Feed', href: '/admin/activity' },
+      { label: 'Announcements', href: '/admin/announcements' },
+    ]
+  });
+
+  // SALES & CUSTOMER SERVICE section
+  if (role === 'SUPER_ADMIN' || role === 'ADMIN' || primaryDepartment === Department.CUSTOMER_SERVICE) {
+    sections.push({
+      title: 'SALES & CUSTOMER SERVICE',
+      items: [
+        { label: 'CS Dashboard', href: '/admin/customer-service' },
+        { label: 'Subscriptions', href: '/admin/customer-service/subscriptions' },
+        { label: 'Orders', href: '/admin/orders' },
+        { label: 'Refunds', href: '/admin/customer-service/refunds' },
+        { label: 'Disputes', href: '/admin/customer-service/disputes' },
+        { label: 'Members', href: '/admin/members' },
+        { label: 'Sales', href: '/admin/sales' },
+        { label: 'Revenue Analytics', href: '/admin/revenue-analytics' },
+      ]
+    });
+  }
+
+  // SUCCESS.COM section (Editorial)
+  if (role === 'SUPER_ADMIN' || role === 'ADMIN' || primaryDepartment === Department.EDITORIAL) {
+    sections.push({
+      title: 'SUCCESS.COM',
+      items: [
+        { label: 'Editorial Dashboard', href: '/admin/editorial' },
+        { label: 'Posts', href: '/admin/posts' },
+        { label: 'Pages', href: '/admin/pages' },
+        { label: 'Videos', href: '/admin/videos' },
+        { label: 'Podcasts', href: '/admin/podcasts' },
+        { label: 'Categories', href: '/admin/categories' },
+        { label: 'Tags', href: '/admin/tags' },
+        { label: 'Media Library', href: '/admin/media' },
+        { label: 'Content Viewer', href: '/admin/content-viewer' },
+        { label: 'Editorial Calendar', href: '/admin/editorial-calendar' },
+        { label: 'Magazine Manager', href: '/admin/magazine-manager' },
+        { label: 'SEO', href: '/admin/seo' },
+        { label: 'Comments', href: '/admin/comments' },
+      ]
+    });
+  }
+
+  // SUCCESS+ section
+  if (role === 'SUPER_ADMIN' || role === 'ADMIN' || primaryDepartment === Department.SUCCESS_PLUS) {
+    sections.push({
+      title: 'SUCCESS+',
+      items: [
+        { label: 'SUCCESS+ Dashboard', href: '/admin/success-plus' },
+        { label: 'Premium Articles', href: '/admin/success-plus/articles' },
+        { label: 'Dashboard Content', href: '/admin/dashboard-content' },
+        { label: 'Events', href: '/admin/dashboard-content/events' },
+        { label: 'Courses', href: '/admin/dashboard-content/courses' },
+        { label: 'Resources', href: '/admin/dashboard-content/resources' },
+        { label: 'Labs', href: '/admin/dashboard-content/labs' },
+      ]
+    });
+  }
+
+  // CRM & EMAIL section (Marketing only)
+  if (role === 'SUPER_ADMIN' || role === 'ADMIN' || primaryDepartment === Department.MARKETING) {
+    sections.push({
+      title: 'CRM & EMAIL',
+      items: [
+        { label: 'Marketing Dashboard', href: '/admin/marketing' },
+        { label: 'Campaigns', href: '/admin/crm/campaigns' },
+        { label: 'Contacts', href: '/admin/crm/contacts' },
+        { label: 'Email Templates', href: '/admin/crm/templates' },
+        { label: 'Email Manager', href: '/admin/email-manager' },
+        { label: 'Subscribers', href: '/admin/subscribers' },
+      ]
+    });
+  }
+
+  // MANAGEMENT section (Super Admin only)
+  if (role === 'SUPER_ADMIN') {
+    sections.push({
+      title: 'MANAGEMENT',
+      items: [
+        { label: 'Super Admin Dashboard', href: '/admin/super' },
+        { label: 'Staff', href: '/admin/staff' },
+        { label: 'Users', href: '/admin/users' },
+        { label: 'Permissions', href: '/admin/permissions' },
+        { label: 'Activity Log', href: '/admin/activity-log' },
+      ]
+    });
+  }
+
+  // CONFIGURATION section (Super Admin only)
+  if (role === 'SUPER_ADMIN') {
+    sections.push({
+      title: 'CONFIGURATION',
+      items: [
+        { label: 'Settings', href: '/admin/settings' },
+        { label: 'Plugins', href: '/admin/plugins' },
+        { label: 'Analytics', href: '/admin/analytics' },
+        { label: 'Realtime Analytics', href: '/admin/analytics/realtime' },
+        { label: 'Site Monitor', href: '/admin/site-monitor' },
+        { label: 'Paylinks', href: '/admin/paylinks' },
+      ]
+    });
+  }
+
+  // DEVOPS & DEVELOPER section
+  if (role === 'SUPER_ADMIN' || role === 'ADMIN' || primaryDepartment === Department.DEV) {
+    sections.push({
+      title: 'DEVOPS & DEVELOPER',
+      items: [
+        { label: 'Dev Dashboard', href: '/admin/dev' },
+        { label: 'System Health', href: '/admin/devops/system-health' },
+        { label: 'Cache Management', href: '/admin/devops/cache' },
+        { label: 'Error Logs', href: '/admin/devops/error-logs' },
+        { label: 'Safe Tools', href: '/admin/devops/safe-tools' },
+        { label: 'Projects', href: '/admin/projects' },
+      ]
+    });
+  }
+
+  return sections;
 }

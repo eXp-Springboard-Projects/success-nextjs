@@ -14,12 +14,8 @@ export default function AdminDashboard() {
   const [recentActivity, setRecentActivity] = useState([]);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/admin/login');
-    } else if (status === 'authenticated' && session?.user?.role !== 'ADMIN') {
-      // Redirect non-admin users to member dashboard
-      router.push('/dashboard');
-    }
+    // Auth is handled by requireAdminAuth in getServerSideProps
+    // No client-side redirects needed
   }, [status, session, router]);
 
   useEffect(() => {

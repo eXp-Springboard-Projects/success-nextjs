@@ -1,0 +1,197 @@
+import { useEffect, useState } from 'react';
+import { Department } from '@prisma/client';
+import DepartmentLayout from '@/components/admin/shared/DepartmentLayout';
+import { requireDepartmentAuth } from '@/lib/departmentAuth';
+import Link from 'next/link';
+import styles from './Coaching.module.css';
+
+interface DashboardStats {
+  activeClients: number;
+  sessionsThisWeek: number;
+  programsRunning: number;
+  coachUtilization: number;
+  todaysSessions: Array<{
+    id: string;
+    time: string;
+    clientName: string;
+    coachName: string;
+    status: string;
+  }>;
+}
+
+export default function CoachingDashboard() {
+  const [stats, setStats] = useState<DashboardStats>({
+    activeClients: 0,
+    sessionsThisWeek: 0,
+    programsRunning: 0,
+    coachUtilization: 0,
+    todaysSessions: [],
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/admin/coaching/dashboard-stats')
+      .then((res) => res.json())
+      .then((data) => {
+        setStats(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Failed to fetch dashboard stats:', error);
+        setLoading(false);
+      });
+  }, []);
+
+  return (
+    <DepartmentLayout
+      currentDepartment={Department.COACHING}
+      pageTitle="Coaching Dashboard"
+      description="Programs, sessions, and client management"
+    >
+      <div className={styles.dashboard}>
+        {/* Quick Stats */}
+        <div className={styles.statsGrid}>
+          <div className={styles.statCard}>
+            <div className={styles.statIcon}>=e</div>
+            <div className={styles.statContent}>
+              <div className={styles.statLabel}>Active Clients</div>
+              <div className={styles.statValue}>
+                {loading ? '...' : stats.activeClients}
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.statCard}>
+            <div className={styles.statIcon}>=</div>
+            <div className={styles.statContent}>
+              <div className={styles.statLabel}>Sessions This Week</div>
+              <div className={styles.statValue}>
+                {loading ? '...' : stats.sessionsThisWeek}
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.statCard}>
+            <div className={styles.statIcon}><</div>
+            <div className={styles.statContent}>
+              <div className={styles.statLabel}>Programs Running</div>
+              <div className={styles.statValue}>
+                {loading ? '...' : stats.programsRunning}
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.statCard}>
+            <div className={styles.statIcon}>=</div>
+            <div className={styles.statContent}>
+              <div className={styles.statLabel}>Coach Utilization</div>
+              <div className={styles.statValue}>
+                {loading ? '...' : `${stats.coachUtilization.toFixed(0)}%`}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Quick Actions</h2>
+          <div className={styles.actionsGrid}>
+            <Link href="/admin/coaching/sessions/new" className={styles.actionCard}>
+              <div className={styles.actionIcon}></div>
+              <div className={styles.actionTitle}>Schedule Session</div>
+              <div className={styles.actionDescription}>
+                Book a new coaching session
+              </div>
+            </Link>
+
+            <Link href="/admin/coaching/clients/new" className={styles.actionCard}>
+              <div className={styles.actionIcon}>=d</div>
+              <div className={styles.actionTitle}>Add New Client</div>
+              <div className={styles.actionDescription}>
+                Onboard a new coaching client
+              </div>
+            </Link>
+
+            <Link href="/admin/coaching/programs" className={styles.actionCard}>
+              <div className={styles.actionIcon}><</div>
+              <div className={styles.actionTitle}>Manage Programs</div>
+              <div className={styles.actionDescription}>
+                View and edit coaching programs
+              </div>
+            </Link>
+
+            <Link href="/admin/coaching/coaches" className={styles.actionCard}>
+              <div className={styles.actionIcon}>><</div>
+              <div className={styles.actionTitle}>Manage Coaches</div>
+              <div className={styles.actionDescription}>
+                Coach profiles and availability
+              </div>
+            </Link>
+
+            <Link href="/admin/coaching/sessions" className={styles.actionCard}>
+              <div className={styles.actionIcon}>=</div>
+              <div className={styles.actionTitle}>View Calendar</div>
+              <div className={styles.actionDescription}>
+                All sessions and scheduling
+              </div>
+            </Link>
+
+            <Link href="/admin/coaching/content" className={styles.actionCard}>
+              <div className={styles.actionIcon}>=</div>
+              <div className={styles.actionTitle}>Resource Library</div>
+              <div className={styles.actionDescription}>
+                Worksheets and client materials
+              </div>
+            </Link>
+          </div>
+        </div>
+
+        {/* Today's Sessions */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Today's Sessions</h2>
+          <div className={styles.sessionsList}>
+            {loading ? (
+              <div className={styles.emptyState}>Loading...</div>
+            ) : stats.todaysSessions.length === 0 ? (
+              <div className={styles.emptyState}>
+                <div className={styles.emptyIcon}>=</div>
+                <div>No sessions scheduled for today</div>
+              </div>
+            ) : (
+              stats.todaysSessions.map((session) => {
+                const getStatusColor = (status: string) => {
+                  switch (status) {
+                    case 'Scheduled': return '#3b82f6';
+                    case 'Completed': return '#10b981';
+                    case 'Cancelled': return '#ef4444';
+                    case 'No-Show': return '#f59e0b';
+                    default: return '#6b7280';
+                  }
+                };
+
+                return (
+                  <div key={session.id} className={styles.sessionItem}>
+                    <div className={styles.sessionTime}>{session.time}</div>
+                    <div className={styles.sessionContent}>
+                      <div className={styles.sessionClient}>{session.clientName}</div>
+                      <div className={styles.sessionCoach}>with {session.coachName}</div>
+                    </div>
+                    <div
+                      className={styles.sessionStatus}
+                      style={{ background: getStatusColor(session.status) }}
+                    >
+                      {session.status}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+    </DepartmentLayout>
+  );
+}
+
+// Server-side authentication check
+export const getServerSideProps = requireDepartmentAuth(Department.COACHING);

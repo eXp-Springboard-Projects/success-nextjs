@@ -52,7 +52,7 @@ export default function CoachingDashboard() {
         {/* Quick Stats */}
         <div className={styles.statsGrid}>
           <div className={styles.statCard}>
-            <div className={styles.statIcon}>=e</div>
+            <div className={styles.statIcon}>ğŸ‘¥</div>
             <div className={styles.statContent}>
               <div className={styles.statLabel}>Active Clients</div>
               <div className={styles.statValue}>
@@ -62,7 +62,7 @@ export default function CoachingDashboard() {
           </div>
 
           <div className={styles.statCard}>
-            <div className={styles.statIcon}>=Å</div>
+            <div className={styles.statIcon}>ğŸ“…</div>
             <div className={styles.statContent}>
               <div className={styles.statLabel}>Sessions This Week</div>
               <div className={styles.statValue}>
@@ -72,7 +72,7 @@ export default function CoachingDashboard() {
           </div>
 
           <div className={styles.statCard}>
-            <div className={styles.statIcon}><¯</div>
+            <div className={styles.statIcon}>ğŸ¯</div>
             <div className={styles.statContent}>
               <div className={styles.statLabel}>Programs Running</div>
               <div className={styles.statValue}>
@@ -82,7 +82,7 @@ export default function CoachingDashboard() {
           </div>
 
           <div className={styles.statCard}>
-            <div className={styles.statIcon}>=Ê</div>
+            <div className={styles.statIcon}>ğŸ“Š</div>
             <div className={styles.statContent}>
               <div className={styles.statLabel}>Coach Utilization</div>
               <div className={styles.statValue}>
@@ -96,53 +96,83 @@ export default function CoachingDashboard() {
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Quick Actions</h2>
           <div className={styles.actionsGrid}>
-            <Link href="/admin/coaching/sessions/new" className={styles.actionCard}>
-              <div className={styles.actionIcon}>•</div>
-              <div className={styles.actionTitle}>Schedule Session</div>
+            <a
+              href="https://coaching.success.com/auth"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.actionCard}
+            >
+              <div className={styles.actionIcon}>ğŸš€</div>
+              <div className={styles.actionTitle}>Launch Coaching Portal</div>
               <div className={styles.actionDescription}>
-                Book a new coaching session
+                Access the SUCCESS Coaching platform
               </div>
-            </Link>
+            </a>
 
-            <Link href="/admin/coaching/clients/new" className={styles.actionCard}>
-              <div className={styles.actionIcon}>=d</div>
-              <div className={styles.actionTitle}>Add New Client</div>
+            <a
+              href="https://coaching.success.com/auth"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.actionCard}
+            >
+              <div className={styles.actionIcon}>ğŸ‘¥</div>
+              <div className={styles.actionTitle}>Manage Clients</div>
               <div className={styles.actionDescription}>
-                Onboard a new coaching client
+                View and manage coaching clients
               </div>
-            </Link>
+            </a>
 
-            <Link href="/admin/coaching/programs" className={styles.actionCard}>
-              <div className={styles.actionIcon}><¯</div>
-              <div className={styles.actionTitle}>Manage Programs</div>
+            <a
+              href="https://coaching.success.com/auth"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.actionCard}
+            >
+              <div className={styles.actionIcon}>ğŸ“…</div>
+              <div className={styles.actionTitle}>Schedule & Sessions</div>
               <div className={styles.actionDescription}>
-                View and edit coaching programs
+                Book and manage coaching sessions
               </div>
-            </Link>
+            </a>
 
-            <Link href="/admin/coaching/coaches" className={styles.actionCard}>
-              <div className={styles.actionIcon}>>Ñ<ë</div>
-              <div className={styles.actionTitle}>Manage Coaches</div>
+            <a
+              href="https://coaching.success.com/auth"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.actionCard}
+            >
+              <div className={styles.actionIcon}>ğŸ‘¨â€ğŸ«</div>
+              <div className={styles.actionTitle}>Coach Directory</div>
               <div className={styles.actionDescription}>
-                Coach profiles and availability
+                View coach profiles and availability
               </div>
-            </Link>
+            </a>
 
-            <Link href="/admin/coaching/sessions" className={styles.actionCard}>
-              <div className={styles.actionIcon}>=Æ</div>
-              <div className={styles.actionTitle}>View Calendar</div>
+            <a
+              href="https://coaching.success.com/auth"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.actionCard}
+            >
+              <div className={styles.actionIcon}>ğŸ¯</div>
+              <div className={styles.actionTitle}>Programs & Curriculum</div>
               <div className={styles.actionDescription}>
-                All sessions and scheduling
+                Manage coaching programs and content
               </div>
-            </Link>
+            </a>
 
-            <Link href="/admin/coaching/content" className={styles.actionCard}>
-              <div className={styles.actionIcon}>=Ú</div>
-              <div className={styles.actionTitle}>Resource Library</div>
+            <a
+              href="https://coaching.success.com/auth"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.actionCard}
+            >
+              <div className={styles.actionIcon}>ğŸ“Š</div>
+              <div className={styles.actionTitle}>Analytics & Reports</div>
               <div className={styles.actionDescription}>
-                Worksheets and client materials
+                View coaching performance metrics
               </div>
-            </Link>
+            </a>
           </div>
         </div>
 
@@ -154,7 +184,7 @@ export default function CoachingDashboard() {
               <div className={styles.emptyState}>Loading...</div>
             ) : stats.todaysSessions.length === 0 ? (
               <div className={styles.emptyState}>
-                <div className={styles.emptyIcon}>=Å</div>
+                <div className={styles.emptyIcon}>ğŸ“…</div>
                 <div>No sessions scheduled for today</div>
               </div>
             ) : (

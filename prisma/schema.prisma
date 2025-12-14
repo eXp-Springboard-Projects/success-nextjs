@@ -110,10 +110,7 @@ model categories {
   color       String?
   icon        String?
   order       Int          @default(0)
-  parentId    String?
   posts       posts[]      @relation("PostCategories")
-  parent      categories?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children    categories[] @relation("CategoryHierarchy")
 
   @@index([slug])
   @@index([wordpressId])
@@ -669,14 +666,18 @@ model subscriptions {
 }
 
 model tags {
-  id        String   @id
-  name      String
-  slug      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime
-  posts     posts[]  @relation("PostTags")
+  id          String   @id
+  name        String
+  slug        String   @unique
+  wordpressId Int?     @unique
+  description String?
+  postCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  posts       posts[]  @relation("PostTags")
 
   @@index([slug])
+  @@index([wordpressId])
 }
 
 model url_redirects {

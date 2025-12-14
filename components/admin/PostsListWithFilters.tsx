@@ -68,7 +68,7 @@ export default function PostsListWithFilters() {
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/posts?per_page=100&_embed=true&status=all');
+      const res = await fetch('/api/admin/posts?per_page=500&status=all');
       if (res.ok) {
         const data = await res.json();
         setPosts(data);

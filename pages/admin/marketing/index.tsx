@@ -52,7 +52,7 @@ export default function MarketingDashboard() {
         {/* Quick Stats */}
         <div className={styles.statsGrid}>
           <div className={styles.statCard}>
-            <div className={styles.statIcon}>=È</div>
+            <div className={styles.statIcon}>ğŸ“Š</div>
             <div className={styles.statContent}>
               <div className={styles.statLabel}>Site Traffic Today</div>
               <div className={styles.statValue}>
@@ -62,7 +62,7 @@ export default function MarketingDashboard() {
           </div>
 
           <div className={styles.statCard}>
-            <div className={styles.statIcon}>=ç</div>
+            <div className={styles.statIcon}>ğŸ“§</div>
             <div className={styles.statContent}>
               <div className={styles.statLabel}>Email Open Rate</div>
               <div className={styles.statValue}>
@@ -72,7 +72,7 @@ export default function MarketingDashboard() {
           </div>
 
           <div className={styles.statCard}>
-            <div className={styles.statIcon}>=€</div>
+            <div className={styles.statIcon}>ğŸ¯</div>
             <div className={styles.statContent}>
               <div className={styles.statLabel}>Active Campaigns</div>
               <div className={styles.statValue}>
@@ -82,7 +82,7 @@ export default function MarketingDashboard() {
           </div>
 
           <div className={styles.statCard}>
-            <div className={styles.statIcon}><¯</div>
+            <div className={styles.statIcon}>ğŸ’°</div>
             <div className={styles.statContent}>
               <div className={styles.statLabel}>Conversion Rate</div>
               <div className={styles.statValue}>
@@ -96,53 +96,59 @@ export default function MarketingDashboard() {
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Quick Actions</h2>
           <div className={styles.actionsGrid}>
-            <Link href="/admin/marketing/campaigns/new" className={styles.actionCard}>
-              <div className={styles.actionIcon}>=€</div>
+            <div className={styles.actionCardDisabled}>
+              <div className={styles.comingSoonBadge}>Coming Soon</div>
+              <div className={styles.actionIcon}>ğŸš€</div>
               <div className={styles.actionTitle}>Create Campaign</div>
               <div className={styles.actionDescription}>
                 Launch a new marketing campaign
               </div>
-            </Link>
+            </div>
 
-            <Link href="/admin/marketing/email/campaigns/new" className={styles.actionCard}>
-              <div className={styles.actionIcon}>=ç</div>
+            <div className={styles.actionCardDisabled}>
+              <div className={styles.comingSoonBadge}>Coming Soon</div>
+              <div className={styles.actionIcon}>âœ‰ï¸</div>
               <div className={styles.actionTitle}>Send Newsletter</div>
               <div className={styles.actionDescription}>
                 Compose and send email campaign
               </div>
-            </Link>
+            </div>
 
-            <Link href="/admin/marketing/analytics" className={styles.actionCard}>
-              <div className={styles.actionIcon}>=Ê</div>
+            <div className={styles.actionCardDisabled}>
+              <div className={styles.comingSoonBadge}>Coming Soon</div>
+              <div className={styles.actionIcon}>ğŸ“ˆ</div>
               <div className={styles.actionTitle}>View Analytics</div>
               <div className={styles.actionDescription}>
                 Traffic and conversion metrics
               </div>
-            </Link>
+            </div>
 
-            <Link href="/admin/marketing/landing-pages" className={styles.actionCard}>
-              <div className={styles.actionIcon}><¨</div>
+            <div className={styles.actionCardDisabled}>
+              <div className={styles.comingSoonBadge}>Coming Soon</div>
+              <div className={styles.actionIcon}>ğŸ“„</div>
               <div className={styles.actionTitle}>Landing Pages</div>
               <div className={styles.actionDescription}>
                 Create and manage landing pages
               </div>
-            </Link>
+            </div>
 
-            <Link href="/admin/marketing/promotions" className={styles.actionCard}>
-              <div className={styles.actionIcon}><</div>
+            <div className={styles.actionCardDisabled}>
+              <div className={styles.comingSoonBadge}>Coming Soon</div>
+              <div className={styles.actionIcon}>ğŸ</div>
               <div className={styles.actionTitle}>Promotions</div>
               <div className={styles.actionDescription}>
                 Manage coupon codes and offers
               </div>
-            </Link>
+            </div>
 
-            <Link href="/admin/marketing/campaigns" className={styles.actionCard}>
-              <div className={styles.actionIcon}>=Ë</div>
+            <div className={styles.actionCardDisabled}>
+              <div className={styles.comingSoonBadge}>Coming Soon</div>
+              <div className={styles.actionIcon}>ğŸ“‹</div>
               <div className={styles.actionTitle}>All Campaigns</div>
               <div className={styles.actionDescription}>
                 View campaign performance
               </div>
-            </Link>
+            </div>
           </div>
         </div>
 
@@ -154,7 +160,7 @@ export default function MarketingDashboard() {
               <div className={styles.emptyState}>Loading...</div>
             ) : stats.topCampaigns.length === 0 ? (
               <div className={styles.emptyState}>
-                <div className={styles.emptyIcon}>=Ê</div>
+                <div className={styles.emptyIcon}>ğŸ“Š</div>
                 <div>No campaign data available</div>
               </div>
             ) : (

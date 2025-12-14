@@ -4,15 +4,31 @@ import { useSession } from 'next-auth/react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
-import Image from '@tiptap/extension-image';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
+import { EnhancedImage } from './editor-extensions/EnhancedImage';
+import { EnhancedTextStyle } from './editor-extensions/EnhancedTextStyle';
+import { FullWidthImage } from './editor-extensions/FullWidthImage';
+import { TwoColumnText } from './editor-extensions/TwoColumnText';
+import { ImageTextLayout } from './editor-extensions/ImageTextLayout';
+import { PullQuote } from './editor-extensions/PullQuote';
+import { CalloutBox } from './editor-extensions/CalloutBox';
+import { ImageGallery } from './editor-extensions/ImageGallery';
+import { VideoEmbed } from './editor-extensions/VideoEmbed';
+import { AuthorBio } from './editor-extensions/AuthorBio';
+import { RelatedArticles } from './editor-extensions/RelatedArticles';
+import { Divider } from './editor-extensions/Divider';
+import { ButtonBlock } from './editor-extensions/ButtonBlock';
 import MediaLibraryPicker from './MediaLibraryPicker';
 import RevisionHistory from './RevisionHistory';
+import ImageEditor from './ImageEditor';
+import TextStylePanel from './TextStylePanel';
+import BlockControls from './BlockControls';
 import styles from './EnhancedPostEditor.module.css';
+import blockStyles from './BlockEditor.module.css';
 
 interface Category {
   id: string;
@@ -45,9 +61,18 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
   const [showFeaturedImagePicker, setShowFeaturedImagePicker] = useState(false);
   const [showRevisionHistory, setShowRevisionHistory] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showBlockMenu, setShowBlockMenu] = useState(false);
+  const [blockImageMode, setBlockImageMode] = useState<'fullwidth' | 'imageleft' | 'imageright' | null>(null);
+  const [showImageEditor, setShowImageEditor] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<{ src: string; alt?: string } | null>(null);
+  const [showTextStylePanel, setShowTextStylePanel] = useState(false);
+  const [showBlockControls, setShowBlockControls] = useState(false);
+  const [blockControlsPosition, setBlockControlsPosition] = useState({ top: 0, left: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const blockMenuRef = useRef<HTMLDivElement>(null);
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         heading: {
@@ -60,25 +85,33 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
           class: 'editor-link',
         },
       }),
-      Image.configure({
-        HTMLAttributes: {
-          class: 'editor-image',
-        },
-      }),
+      EnhancedImage,
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
       Underline,
       TextStyle,
+      EnhancedTextStyle,
       Color,
       Highlight.configure({
         multicolor: true,
       }),
+      FullWidthImage,
+      TwoColumnText,
+      ImageTextLayout,
+      PullQuote,
+      CalloutBox,
+      ImageGallery,
+      VideoEmbed,
+      AuthorBio,
+      RelatedArticles,
+      Divider,
+      ButtonBlock,
     ],
     content: '',
     editorProps: {
       attributes: {
-        class: styles.editorContent,
+        class: `${styles.editorContent} ${blockStyles.editorContent}`,
       },
     },
   });
@@ -104,7 +137,7 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
     if (!postId) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/posts/${postId}?_embed=true`);
+      const res = await fetch(`/api/admin/posts/${postId}`);
       const post = await res.json();
 
       setTitle(post.title.rendered || post.title);
@@ -165,11 +198,44 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
   };
 
   const handleMediaSelect = (media: any) => {
-    if (editor) {
-      editor.chain().focus().setImage({
-        src: media.url,
-        alt: media.alt || media.filename
-      }).run();
+    if (blockImageMode === 'fullwidth') {
+      // Insert full width image block
+      if (editor) {
+        (editor.chain().focus() as any).setFullWidthImage({
+          src: media.url,
+          alt: media.alt || media.filename,
+          caption: ''
+        }).run();
+      }
+      setBlockImageMode(null);
+    } else if (blockImageMode === 'imageleft') {
+      // Insert image left + text block
+      if (editor) {
+        (editor.chain().focus() as any).setImageTextLayout({
+          imagePosition: 'left',
+          src: media.url,
+          alt: media.alt || media.filename
+        }).run();
+      }
+      setBlockImageMode(null);
+    } else if (blockImageMode === 'imageright') {
+      // Insert image right + text block
+      if (editor) {
+        (editor.chain().focus() as any).setImageTextLayout({
+          imagePosition: 'right',
+          src: media.url,
+          alt: media.alt || media.filename
+        }).run();
+      }
+      setBlockImageMode(null);
+    } else {
+      // Regular inline image
+      if (editor) {
+        editor.chain().focus().setImage({
+          src: media.url,
+          alt: media.alt || media.filename
+        }).run();
+      }
     }
   };
 
@@ -271,6 +337,103 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
     }
   };
 
+  // Block insertion functions
+  const insertFullWidthImage = () => {
+    setBlockImageMode('fullwidth');
+    setShowBlockMenu(false);
+    setShowMediaPicker(true);
+  };
+
+  const insertTwoColumnText = () => {
+    if (editor) {
+      (editor.chain().focus() as any).setTwoColumnText().run();
+      setShowBlockMenu(false);
+    }
+  };
+
+  const insertImageTextLayout = (position: 'left' | 'right') => {
+    setBlockImageMode(position === 'left' ? 'imageleft' : 'imageright');
+    setShowBlockMenu(false);
+    setShowMediaPicker(true);
+  };
+
+  const insertPullQuote = () => {
+    if (editor) {
+      (editor.chain().focus() as any).setPullQuote().run();
+      setShowBlockMenu(false);
+    }
+  };
+
+  const insertCalloutBox = (variant: 'info' | 'warning' | 'success' | 'error') => {
+    if (editor) {
+      (editor.chain().focus() as any).setCalloutBox({ variant }).run();
+      setShowBlockMenu(false);
+    }
+  };
+
+  const insertImageGallery = () => {
+    if (editor) {
+      (editor.chain().focus() as any).setImageGallery({
+        images: [
+          { src: 'https://via.placeholder.com/400x300', alt: 'Image 1' },
+          { src: 'https://via.placeholder.com/400x300', alt: 'Image 2' },
+          { src: 'https://via.placeholder.com/400x300', alt: 'Image 3' },
+        ],
+        columns: 3
+      }).run();
+      setShowBlockMenu(false);
+    }
+  };
+
+  const insertVideoEmbed = () => {
+    const url = prompt('Enter YouTube or Vimeo URL:');
+    if (url && editor) {
+      const provider = url.includes('youtube') || url.includes('youtu.be') ? 'youtube' : 'vimeo';
+      (editor.chain().focus() as any).setVideoEmbed({ src: url, provider }).run();
+      setShowBlockMenu(false);
+    }
+  };
+
+  const insertAuthorBio = () => {
+    if (editor && session?.user) {
+      (editor.chain().focus() as any).setAuthorBio({
+        name: session.user.name || 'Author Name',
+        title: 'Author',
+        bio: 'Author biography goes here...'
+      }).run();
+      setShowBlockMenu(false);
+    }
+  };
+
+  const insertRelatedArticles = () => {
+    if (editor) {
+      (editor.chain().focus() as any).setRelatedArticles({
+        title: 'Read More',
+        articles: [
+          { url: '#', title: 'Related Article 1', excerpt: 'Short description...' },
+          { url: '#', title: 'Related Article 2', excerpt: 'Short description...' },
+        ]
+      }).run();
+      setShowBlockMenu(false);
+    }
+  };
+
+  const insertDivider = (style?: 'solid' | 'dashed' | 'dotted' | 'double' | 'stars') => {
+    if (editor) {
+      (editor.chain().focus() as any).setDivider({ style: style || 'solid' }).run();
+      setShowBlockMenu(false);
+    }
+  };
+
+  const insertButton = () => {
+    const text = prompt('Enter button text:', 'Click Here');
+    const url = prompt('Enter button URL:', '#');
+    if (text && url && editor) {
+      (editor.chain().focus() as any).setButtonBlock({ text, url, variant: 'primary' }).run();
+      setShowBlockMenu(false);
+    }
+  };
+
   const handleSave = async (publishStatus: string) => {
     if (!title || !editor?.getHTML()) {
       alert('Title and content are required');
@@ -300,7 +463,7 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
       };
 
       const method = postId ? 'PUT' : 'POST';
-      const url = postId ? `/api/posts/${postId}` : '/api/posts';
+      const url = postId ? `/api/admin/posts/${postId}` : '/api/admin/posts';
 
       const res = await fetch(url, {
         method,
@@ -513,6 +676,29 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
 
                 <div className={styles.toolbarGroup}>
                   <button
+                    onClick={() => setShowTextStylePanel(!showTextStylePanel)}
+                    className={showTextStylePanel ? styles.toolbarButtonActive : styles.toolbarButton}
+                    title="Text Styling"
+                  >
+                    🎨 Styles
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setBlockControlsPosition({ top: rect.bottom + 8, left: rect.left });
+                      setShowBlockControls(!showBlockControls);
+                    }}
+                    className={showBlockControls ? styles.toolbarButtonActive : styles.toolbarButton}
+                    title="Block Controls"
+                  >
+                    ⚙️ Block
+                  </button>
+                </div>
+
+                <div className={styles.toolbarDivider}></div>
+
+                <div className={styles.toolbarGroup}>
+                  <button
                     onClick={() => editor.chain().focus().setTextAlign('left').run()}
                     className={editor.isActive({ textAlign: 'left' }) ? styles.toolbarButtonActive : styles.toolbarButton}
                     title="Align Left"
@@ -533,6 +719,84 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
                   >
                     ➡
                   </button>
+                </div>
+
+                <div className={styles.toolbarDivider}></div>
+
+                {/* Block Menu */}
+                <div className={styles.toolbarGroup} style={{ position: 'relative' }}>
+                  <button
+                    onClick={() => setShowBlockMenu(!showBlockMenu)}
+                    className={styles.addBlockButton}
+                    title="Add Content Block"
+                  >
+                    ＋ Add Block
+                  </button>
+
+                  {showBlockMenu && (
+                    <div ref={blockMenuRef} className={styles.blockMenu}>
+                      <div className={styles.blockMenuSection}>
+                        <h4 className={styles.blockMenuTitle}>Layout Blocks</h4>
+                        <button onClick={insertFullWidthImage} className={styles.blockMenuItem}>
+                          🖼️ Full Width Image
+                        </button>
+                        <button onClick={insertTwoColumnText} className={styles.blockMenuItem}>
+                          ⚌ Two Column Text
+                        </button>
+                        <button onClick={() => insertImageTextLayout('left')} className={styles.blockMenuItem}>
+                          ⬅️🖼️ Image Left + Text
+                        </button>
+                        <button onClick={() => insertImageTextLayout('right')} className={styles.blockMenuItem}>
+                          🖼️➡️ Image Right + Text
+                        </button>
+                      </div>
+
+                      <div className={styles.blockMenuSection}>
+                        <h4 className={styles.blockMenuTitle}>Content Blocks</h4>
+                        <button onClick={insertPullQuote} className={styles.blockMenuItem}>
+                          💬 Pull Quote
+                        </button>
+                        <button onClick={() => insertCalloutBox('info')} className={styles.blockMenuItem}>
+                          ℹ️ Callout Box (Info)
+                        </button>
+                        <button onClick={() => insertCalloutBox('warning')} className={styles.blockMenuItem}>
+                          ⚠️ Callout Box (Warning)
+                        </button>
+                        <button onClick={() => insertCalloutBox('success')} className={styles.blockMenuItem}>
+                          ✅ Callout Box (Success)
+                        </button>
+                      </div>
+
+                      <div className={styles.blockMenuSection}>
+                        <h4 className={styles.blockMenuTitle}>Media Blocks</h4>
+                        <button onClick={insertImageGallery} className={styles.blockMenuItem}>
+                          🖼️🖼️🖼️ Image Gallery
+                        </button>
+                        <button onClick={insertVideoEmbed} className={styles.blockMenuItem}>
+                          🎥 Video Embed (YouTube/Vimeo)
+                        </button>
+                      </div>
+
+                      <div className={styles.blockMenuSection}>
+                        <h4 className={styles.blockMenuTitle}>Special Blocks</h4>
+                        <button onClick={insertAuthorBio} className={styles.blockMenuItem}>
+                          👤 Author Bio
+                        </button>
+                        <button onClick={insertRelatedArticles} className={styles.blockMenuItem}>
+                          📰 Related Articles
+                        </button>
+                        <button onClick={() => insertDivider('solid')} className={styles.blockMenuItem}>
+                          ─ Divider (Solid)
+                        </button>
+                        <button onClick={() => insertDivider('stars')} className={styles.blockMenuItem}>
+                          ⋆⋆⋆ Divider (Stars)
+                        </button>
+                        <button onClick={insertButton} className={styles.blockMenuItem}>
+                          🔘 CTA Button
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -740,6 +1004,37 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
           onClose={() => setShowRevisionHistory(false)}
           postId={postId}
           onRestore={handleRestoreRevision}
+        />
+      )}
+
+      {/* Image Editor Modal */}
+      {showImageEditor && selectedImage && (
+        <ImageEditor
+          src={selectedImage.src}
+          alt={selectedImage.alt}
+          onSave={(updates) => {
+            if (editor) {
+              (editor.chain().focus() as any).updateImage(updates).run();
+            }
+            setShowImageEditor(false);
+          }}
+          onClose={() => setShowImageEditor(false)}
+        />
+      )}
+
+      {/* Text Style Panel */}
+      {showTextStylePanel && editor && (
+        <div style={{ position: 'fixed', top: '80px', right: '20px', zIndex: 1000 }}>
+          <TextStylePanel editor={editor} />
+        </div>
+      )}
+
+      {/* Block Controls */}
+      {showBlockControls && editor && (
+        <BlockControls
+          editor={editor}
+          position={blockControlsPosition}
+          onClose={() => setShowBlockControls(false)}
         />
       )}
     </div>

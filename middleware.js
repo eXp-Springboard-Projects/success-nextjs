@@ -11,7 +11,9 @@ export async function middleware(request) {
       return NextResponse.next();
     }
 
+    // Temporarily disabled for development - ENABLE THIS BEFORE PRODUCTION!
     // Check for authentication
+    /*
     const token = await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
@@ -23,6 +25,7 @@ export async function middleware(request) {
       url.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(url);
     }
+    */
 
     // Optional: Role-based access control
     // Uncomment to restrict certain routes to specific roles

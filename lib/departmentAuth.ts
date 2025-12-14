@@ -93,7 +93,6 @@ export function requireDepartmentAuth(
       ...session,
       user: {
         ...session.user,
-        image: session.user.image || null,
       },
     };
 

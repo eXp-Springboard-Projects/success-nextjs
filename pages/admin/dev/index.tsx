@@ -65,10 +65,10 @@ export default function DevDashboard() {
 
   const getHealthIcon = (health: string) => {
     switch (health) {
-      case 'healthy': return '';
-      case 'warning': return ' ';
-      case 'critical': return 'L';
-      default: return 'S';
+      case 'healthy': return 'âœ“';
+      case 'warning': return 'âš ';
+      case 'critical': return 'âœ•';
+      default: return '?';
     }
   };
 
@@ -93,7 +93,7 @@ export default function DevDashboard() {
         {/* Quick Stats */}
         <div className={styles.statsGrid}>
           <div className={`${styles.statCard} ${stats.errorRate24h > 5 ? styles.statCardWarning : ''}`}>
-            <div className={styles.statIcon}>=%</div>
+            <div className={styles.statIcon}>âš ï¸</div>
             <div className={styles.statContent}>
               <div className={styles.statLabel}>Error Rate (24h)</div>
               <div className={styles.statValue}>
@@ -103,7 +103,7 @@ export default function DevDashboard() {
           </div>
 
           <div className={styles.statCard}>
-            <div className={styles.statIcon}>=€</div>
+            <div className={styles.statIcon}>ğŸš€</div>
             <div className={styles.statContent}>
               <div className={styles.statLabel}>Recent Deployments</div>
               <div className={styles.statValue}>
@@ -113,7 +113,7 @@ export default function DevDashboard() {
           </div>
 
           <div className={styles.statCard}>
-            <div className={styles.statIcon}><›</div>
+            <div className={styles.statIcon}>ğŸš©</div>
             <div className={styles.statContent}>
               <div className={styles.statLabel}>Active Feature Flags</div>
               <div className={styles.statValue}>
@@ -123,7 +123,7 @@ export default function DevDashboard() {
           </div>
 
           <div className={`${styles.statCard} ${stats.webhookFailures24h > 0 ? styles.statCardWarning : ''}`}>
-            <div className={styles.statIcon}> </div>
+            <div className={styles.statIcon}>ğŸ”Œ</div>
             <div className={styles.statContent}>
               <div className={styles.statLabel}>Webhook Failures (24h)</div>
               <div className={styles.statValue}>
@@ -138,7 +138,7 @@ export default function DevDashboard() {
           <h2 className={styles.sectionTitle}>Quick Actions</h2>
           <div className={styles.actionsGrid}>
             <Link href="/admin/site-monitor" className={styles.actionCard}>
-              <div className={styles.actionIcon}>=Ê</div>
+              <div className={styles.actionIcon}>ğŸ“Š</div>
               <div className={styles.actionTitle}>System Status</div>
               <div className={styles.actionDescription}>
                 View detailed system health metrics
@@ -146,44 +146,47 @@ export default function DevDashboard() {
             </Link>
 
             <Link href="/admin/devops/error-logs" className={styles.actionCard}>
-              <div className={styles.actionIcon}>=</div>
+              <div className={styles.actionIcon}>ğŸ“‹</div>
               <div className={styles.actionTitle}>Error Logs</div>
               <div className={styles.actionDescription}>
                 Review and resolve system errors
               </div>
             </Link>
 
-            <Link href="/admin/dev/features" className={styles.actionCard}>
-              <div className={styles.actionIcon}><›</div>
+            <div className={styles.actionCardDisabled}>
+              <div className={styles.comingSoonBadge}>Coming Soon</div>
+              <div className={styles.actionIcon}>ğŸš©</div>
               <div className={styles.actionTitle}>Feature Flags</div>
               <div className={styles.actionDescription}>
                 Toggle features on/off
               </div>
-            </Link>
+            </div>
 
             <Link href="/admin/devops/cache" className={styles.actionCard}>
-              <div className={styles.actionIcon}>=Ä</div>
+              <div className={styles.actionIcon}>ğŸ’¾</div>
               <div className={styles.actionTitle}>Cache Management</div>
               <div className={styles.actionDescription}>
                 Clear caches and view cache stats
               </div>
             </Link>
 
-            <Link href="/admin/dev/webhooks" className={styles.actionCard}>
-              <div className={styles.actionIcon}>=</div>
+            <div className={styles.actionCardDisabled}>
+              <div className={styles.comingSoonBadge}>Coming Soon</div>
+              <div className={styles.actionIcon}>ğŸ”Œ</div>
               <div className={styles.actionTitle}>Webhooks</div>
               <div className={styles.actionDescription}>
                 Monitor webhook events and retries
               </div>
-            </Link>
+            </div>
 
-            <Link href="/admin/dev/deployments" className={styles.actionCard}>
-              <div className={styles.actionIcon}>=€</div>
+            <div className={styles.actionCardDisabled}>
+              <div className={styles.comingSoonBadge}>Coming Soon</div>
+              <div className={styles.actionIcon}>ğŸš€</div>
               <div className={styles.actionTitle}>Deployments</div>
               <div className={styles.actionDescription}>
                 View deployment history
               </div>
-            </Link>
+            </div>
           </div>
         </div>
 
@@ -196,19 +199,19 @@ export default function DevDashboard() {
                 <div className={styles.emptyState}>Loading...</div>
               ) : stats.recentDeployments.length === 0 ? (
                 <div className={styles.emptyState}>
-                  <div className={styles.emptyIcon}>=€</div>
+                  <div className={styles.emptyIcon}>ğŸš€</div>
                   <div>No recent deployments</div>
                 </div>
               ) : (
                 stats.recentDeployments.map((deployment) => (
                   <div key={deployment.id} className={styles.deploymentItem}>
                     <div className={`${styles.deploymentStatus} ${styles[`status${deployment.status}`]}`}>
-                      {deployment.status === 'SUCCESS' ? '' : deployment.status === 'FAILED' ? 'L' : '='}
+                      {deployment.status === 'SUCCESS' ? 'âœ“' : deployment.status === 'FAILED' ? 'âœ•' : 'â³'}
                     </div>
                     <div className={styles.deploymentContent}>
                       <div className={styles.deploymentVersion}>{deployment.version}</div>
                       <div className={styles.deploymentMeta}>
-                        {deployment.deployedBy} " {new Date(deployment.deployedAt).toLocaleString()}
+                        {deployment.deployedBy} Â· {new Date(deployment.deployedAt).toLocaleString()}
                       </div>
                     </div>
                   </div>
@@ -225,7 +228,7 @@ export default function DevDashboard() {
                 <div className={styles.emptyState}>Loading...</div>
               ) : stats.errorLogs.length === 0 ? (
                 <div className={styles.emptyState}>
-                  <div className={styles.emptyIcon}></div>
+                  <div className={styles.emptyIcon}>âœ“</div>
                   <div>No recent errors</div>
                 </div>
               ) : (
@@ -251,7 +254,7 @@ export default function DevDashboard() {
           <h2 className={styles.sectionTitle}>System Services</h2>
           <div className={styles.servicesGrid}>
             <div className={styles.serviceCard}>
-              <div className={styles.serviceIcon}>=Ä</div>
+              <div className={styles.serviceIcon}>ğŸ’¾</div>
               <div className={styles.serviceName}>Database</div>
               <div className={styles.serviceStatus}>
                 <span className={styles.statusDot} style={{ background: '#10b981' }}></span>
@@ -259,7 +262,7 @@ export default function DevDashboard() {
               </div>
             </div>
             <div className={styles.serviceCard}>
-              <div className={styles.serviceIcon}>¡</div>
+              <div className={styles.serviceIcon}>âš¡</div>
               <div className={styles.serviceName}>API Server</div>
               <div className={styles.serviceStatus}>
                 <span className={styles.statusDot} style={{ background: '#10b981' }}></span>
@@ -267,7 +270,7 @@ export default function DevDashboard() {
               </div>
             </div>
             <div className={styles.serviceCard}>
-              <div className={styles.serviceIcon}>=³</div>
+              <div className={styles.serviceIcon}>ğŸ’³</div>
               <div className={styles.serviceName}>Stripe</div>
               <div className={styles.serviceStatus}>
                 <span className={styles.statusDot} style={{ background: '#10b981' }}></span>
@@ -275,7 +278,7 @@ export default function DevDashboard() {
               </div>
             </div>
             <div className={styles.serviceCard}>
-              <div className={styles.serviceIcon}>=æ</div>
+              <div className={styles.serviceIcon}>ğŸ—„ï¸</div>
               <div className={styles.serviceName}>Cache</div>
               <div className={styles.serviceStatus}>
                 <span className={styles.statusDot} style={{ background: '#10b981' }}></span>
