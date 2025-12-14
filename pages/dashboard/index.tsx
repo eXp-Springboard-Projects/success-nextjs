@@ -2,7 +2,9 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Head from 'next/head';
+import SubscriptionStatusWidget from '../../components/dashboard/SubscriptionStatusWidget';
 import styles from './dashboard.module.css';
+import premiumStyles from './dashboard-premium.module.css';
 
 export default function MemberDashboard() {
   const { data: session, status } = useSession();
@@ -46,6 +48,13 @@ export default function MemberDashboard() {
               <button className={router.pathname === '/dashboard' ? styles.active : ''}>
                 <span className={styles.icon}>📊</span>
                 Dashboard
+              </button>
+            </Link>
+
+            <Link href="/dashboard/premium">
+              <button className={router.pathname === '/dashboard/premium' ? styles.active : ''}>
+                <span className={styles.icon}>⭐</span>
+                Premium Content
               </button>
             </Link>
 
@@ -132,6 +141,9 @@ export default function MemberDashboard() {
             )}
           </div>
 
+          {/* Subscription Status Widget */}
+          <SubscriptionStatusWidget />
+
           {/* Quick Stats */}
           <div className={styles.statsGrid}>
             <div className={styles.statCard}>
@@ -167,23 +179,26 @@ export default function MemberDashboard() {
             </div>
           </div>
 
-          {/* Premium Upgrade CTA for non-premium users */}
-          {!hasPremiumAccess && (
-            <div className={styles.upgradeSection}>
-              <div className={styles.upgradeCard}>
-                <div className={styles.upgradeIcon}>⭐</div>
-                <div className={styles.upgradeContent}>
-                  <h3>Unlock Full Access with SUCCESS+</h3>
-                  <p>Get unlimited courses, exclusive resources, live events, and more!</p>
-                  <button
-                    className={styles.upgradeBtn}
-                    onClick={() => router.push('/offer/success-plus')}
-                  >
-                    Upgrade to SUCCESS+ Now
-                  </button>
+          {/* Premium Content Highlights for members */}
+          {hasPremiumAccess && (
+            <section className={styles.section}>
+              <div className={premiumStyles.sectionHeader}>
+                <h2>Premium Content</h2>
+                <Link href="/dashboard/premium" className={premiumStyles.viewAllLink}>
+                  View All →
+                </Link>
+              </div>
+              <div className={premiumStyles.premiumHighlight}>
+                <div className={premiumStyles.highlightCard}>
+                  <span className={premiumStyles.highlightIcon}>⭐</span>
+                  <h3>Exclusive Articles</h3>
+                  <p>Access member-only insights and expert interviews</p>
+                  <Link href="/dashboard/premium" className={premiumStyles.highlightBtn}>
+                    Browse Premium Content
+                  </Link>
                 </div>
               </div>
-            </div>
+            </section>
           )}
 
           {/* Continue Learning */}

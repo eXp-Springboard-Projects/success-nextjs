@@ -113,6 +113,9 @@ export default function CoursesPage() {
             <Link href="/dashboard">
               <button><span className={styles.icon}>📊</span> Dashboard</button>
             </Link>
+            <Link href="/dashboard/premium">
+              <button><span className={styles.icon}>⭐</span> Premium Content</button>
+            </Link>
             <Link href="/dashboard/courses">
               <button className={styles.active}><span className={styles.icon}>🎓</span> Courses</button>
             </Link>
