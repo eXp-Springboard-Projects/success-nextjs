@@ -1,4 +1,4 @@
-import { Node, mergeAttributes } from '@tiptap/core';
+import { Node, mergeAttributes, RawCommands } from '@tiptap/core';
 
 export const FullWidthImage = Node.create({
   name: 'fullWidthImage',
@@ -50,12 +50,12 @@ export const FullWidthImage = Node.create({
     return {
       setFullWidthImage:
         (options: { src: string; alt?: string; caption?: string }) =>
-        ({ commands }) => {
+        ({ commands }: any) => {
           return commands.insertContent({
             type: this.name,
             attrs: options,
           });
         },
-    };
+    } as Partial<RawCommands>;
   },
 });

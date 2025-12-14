@@ -1,4 +1,4 @@
-import { Node, mergeAttributes } from '@tiptap/core';
+import { Node, mergeAttributes, RawCommands } from '@tiptap/core';
 
 export const CalloutBox = Node.create({
   name: 'calloutBox',
@@ -56,7 +56,7 @@ export const CalloutBox = Node.create({
     return {
       setCalloutBox:
         (options?: { variant?: 'info' | 'warning' | 'success' | 'error'; title?: string }) =>
-        ({ commands }) => {
+        ({ commands }: any) => {
           return commands.insertContent({
             type: this.name,
             attrs: options,
@@ -68,6 +68,6 @@ export const CalloutBox = Node.create({
             ],
           });
         },
-    };
+    } as Partial<RawCommands>;
   },
 });

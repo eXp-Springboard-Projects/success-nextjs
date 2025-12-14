@@ -75,7 +75,8 @@
       "Read(//c/Users/RachelNead/**)",
       "Bash(git -C success-next worktree add -b success-plus-dashboard success-plus-work main)",
       "Bash(git -C success-next worktree add -b admin-fixes success-admin-fixes main)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(do cp \"C:/Users/RachelNead/success-next/pages/admin/$file##*/admin/\" \"$file\")"
     ],
     "deny": [],
     "ask": []

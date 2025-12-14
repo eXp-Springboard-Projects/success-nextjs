@@ -1,4 +1,4 @@
-import { Node, mergeAttributes } from '@tiptap/core';
+import { Node, mergeAttributes, RawCommands } from '@tiptap/core';
 
 export const ImageTextLayout = Node.create({
   name: 'imageTextLayout',
@@ -57,7 +57,7 @@ export const ImageTextLayout = Node.create({
     return {
       setImageTextLayout:
         (options: { imagePosition: 'left' | 'right'; src: string; alt?: string }) =>
-        ({ commands }) => {
+        ({ commands }: any) => {
           return commands.insertContent({
             type: this.name,
             attrs: options,
@@ -69,6 +69,6 @@ export const ImageTextLayout = Node.create({
             ],
           });
         },
-    };
+    } as Partial<RawCommands>;
   },
 });

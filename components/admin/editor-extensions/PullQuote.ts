@@ -1,4 +1,4 @@
-import { Node, mergeAttributes } from '@tiptap/core';
+import { Node, mergeAttributes, RawCommands } from '@tiptap/core';
 
 export const PullQuote = Node.create({
   name: 'pullQuote',
@@ -40,7 +40,7 @@ export const PullQuote = Node.create({
     return {
       setPullQuote:
         (options?: { author?: string }) =>
-        ({ commands }) => {
+        ({ commands }: any) => {
           return commands.insertContent({
             type: this.name,
             attrs: options,
@@ -52,6 +52,6 @@ export const PullQuote = Node.create({
             ],
           });
         },
-    };
+    } as Partial<RawCommands>;
   },
 });

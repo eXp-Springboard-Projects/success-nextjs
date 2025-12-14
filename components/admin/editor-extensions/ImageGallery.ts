@@ -1,4 +1,4 @@
-import { Node, mergeAttributes } from '@tiptap/core';
+import { Node, mergeAttributes, RawCommands } from '@tiptap/core';
 
 export const ImageGallery = Node.create({
   name: 'imageGallery',
@@ -61,12 +61,12 @@ export const ImageGallery = Node.create({
     return {
       setImageGallery:
         (options: { images: Array<{ src: string; alt?: string; caption?: string }>; columns?: number }) =>
-        ({ commands }) => {
+        ({ commands }: any) => {
           return commands.insertContent({
             type: this.name,
             attrs: options,
           });
         },
-    };
+    } as Partial<RawCommands>;
   },
 });

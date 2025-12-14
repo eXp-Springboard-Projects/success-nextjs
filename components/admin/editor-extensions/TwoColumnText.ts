@@ -1,4 +1,4 @@
-import { Node, mergeAttributes } from '@tiptap/core';
+import { Node, mergeAttributes, RawCommands } from '@tiptap/core';
 
 export const TwoColumnText = Node.create({
   name: 'twoColumnText',
@@ -46,7 +46,7 @@ export const TwoColumnText = Node.create({
     return {
       setTwoColumnText:
         () =>
-        ({ commands }) => {
+        ({ commands }: any) => {
           return commands.insertContent({
             type: this.name,
             content: [
@@ -57,6 +57,6 @@ export const TwoColumnText = Node.create({
             ],
           });
         },
-    };
+    } as Partial<RawCommands>;
   },
 });

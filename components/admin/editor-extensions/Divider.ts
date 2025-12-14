@@ -1,4 +1,4 @@
-import { Node, mergeAttributes } from '@tiptap/core';
+import { Node, mergeAttributes, RawCommands } from '@tiptap/core';
 
 export const Divider = Node.create({
   name: 'divider',
@@ -60,12 +60,12 @@ export const Divider = Node.create({
           thickness?: 'thin' | 'medium' | 'thick';
           spacing?: 'tight' | 'normal' | 'loose';
         }) =>
-        ({ commands }) => {
+        ({ commands }: any) => {
           return commands.insertContent({
             type: this.name,
             attrs: options || {},
           });
         },
-    };
+    } as Partial<RawCommands>;
   },
 });

@@ -1,4 +1,4 @@
-import { Node, mergeAttributes } from '@tiptap/core';
+import { Node, mergeAttributes, RawCommands } from '@tiptap/core';
 
 export const RelatedArticles = Node.create({
   name: 'relatedArticles',
@@ -75,12 +75,12 @@ export const RelatedArticles = Node.create({
           title?: string;
           articles: Array<{ url: string; title: string; image?: string; excerpt?: string }>;
         }) =>
-        ({ commands }) => {
+        ({ commands }: any) => {
           return commands.insertContent({
             type: this.name,
             attrs: options,
           });
         },
-    };
+    } as Partial<RawCommands>;
   },
 });
