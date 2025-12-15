@@ -131,6 +131,14 @@ export default function MemberLogin() {
             </Link>
           </div>
 
+          {/* Claim Account Link */}
+          <div className={styles.claimSection}>
+            <p>Already a SUCCESS+ subscriber?</p>
+            <Link href="/claim-account" className={styles.claimLink}>
+              Claim Your Account →
+            </Link>
+          </div>
+
           {/* Benefits Reminder */}
           <div className={styles.benefits}>
             <h3>SUCCESS+ Member Benefits</h3>

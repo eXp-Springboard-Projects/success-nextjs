@@ -83,7 +83,9 @@
       "Bash(npx tsc:*)",
       "Bash(git rm:*)",
       "Bash(npm --version)",
-      "Bash(start http://localhost:3000)"
+      "Bash(start http://localhost:3000)",
+      "Bash(start http://localhost:3000/signup/trial)",
+      "Bash(start http://localhost:3000/success-plus/upgrade)"
     ],
     "deny": [],
     "ask": []

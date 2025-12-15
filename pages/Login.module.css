@@ -427,3 +427,31 @@
     font-size: 2.5rem;
   }
 }
+
+/* Claim Account Section */
+.claimSection {
+  text-align: center;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.claimSection p {
+  margin: 0 0 0.75rem 0;
+  color: #4a4a4a;
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.claimLink {
+  display: inline-block;
+  color: #c41e3a;
+  font-weight: 600;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.claimLink:hover {
+  color: #a01830;
+}
