@@ -48,16 +48,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const posts = await prisma.posts.findMany({
         where,
         include: {
-          author: {
-            select: {
-              name: true,
-              email: true,
-            },
-          },
           categories: {
             select: {
               name: true,
               slug: true,
+            },
+          },
+          users: {
+            select: {
+              name: true,
             },
           },
         },
@@ -73,10 +72,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           title: post.title,
           slug: post.slug,
           status: post.status,
-          contentType: post.contentType || 'regular',
-          accessTier: post.accessTier || 'free',
+          contentType: 'premium', // All posts from this API are premium content
+          accessTier: 'success_plus', // Default tier for premium content
           publishedAt: post.publishedAt,
-          author: post.author,
+          author: post.users?.name || post.wordpressAuthor || 'Unknown',
           categories: post.categories,
         })),
       });
