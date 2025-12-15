@@ -82,7 +82,8 @@
       "Read(//c/**)",
       "Bash(npx tsc:*)",
       "Bash(git rm:*)",
-      "Bash(npm --version)"
+      "Bash(npm --version)",
+      "Bash(start http://localhost:3000)"
     ],
     "deny": [],
     "ask": []
