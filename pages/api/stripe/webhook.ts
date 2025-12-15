@@ -123,6 +123,12 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   // Get subscription details from Stripe
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
+  // Extract subscription data
+  const subData: any = subscription;
+  const currentPeriodStart = subData.current_period_start || subData.currentPeriodStart;
+  const currentPeriodEnd = subData.current_period_end || subData.currentPeriodEnd;
+  const cancelAtPeriodEnd = subData.cancel_at_period_end ?? subData.cancelAtPeriodEnd ?? false;
+
   // Create or update subscription record
   await prisma.subscriptions.upsert({
     where: {
@@ -137,17 +143,17 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       provider: 'stripe',
       status: subscription.status.toUpperCase(),
       tier: 'SUCCESS_PLUS',
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      currentPeriodStart: new Date(currentPeriodStart * 1000),
+      currentPeriodEnd: new Date(currentPeriodEnd * 1000),
+      cancelAtPeriodEnd,
       billingCycle: subscription.items.data[0]?.price.recurring?.interval?.toUpperCase() || 'MONTHLY',
       updatedAt: new Date(),
     },
     update: {
       status: subscription.status.toUpperCase(),
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      currentPeriodStart: new Date(currentPeriodStart * 1000),
+      currentPeriodEnd: new Date(currentPeriodEnd * 1000),
+      cancelAtPeriodEnd,
       updatedAt: new Date(),
     },
   });
@@ -215,6 +221,12 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     },
   });
 
+  // Extract subscription data
+  const subData: any = subscription;
+  const currentPeriodStart = subData.current_period_start || subData.currentPeriodStart;
+  const currentPeriodEnd = subData.current_period_end || subData.currentPeriodEnd;
+  const cancelAtPeriodEnd = subData.cancel_at_period_end ?? subData.cancelAtPeriodEnd ?? false;
+
   if (!existingSubscription) {
     // If subscription doesn't exist, it might be a new subscription
     // Find member by customer ID and create subscription
@@ -233,9 +245,9 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
           provider: 'stripe',
           status: subscription.status.toUpperCase(),
           tier: 'SUCCESS_PLUS',
-          currentPeriodStart: new Date(subscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-          cancelAtPeriodEnd: subscription.cancel_at_period_end,
+          currentPeriodStart: new Date(currentPeriodStart * 1000),
+          currentPeriodEnd: new Date(currentPeriodEnd * 1000),
+          cancelAtPeriodEnd,
           billingCycle: subscription.items.data[0]?.price.recurring?.interval?.toUpperCase() || 'MONTHLY',
           updatedAt: new Date(),
         },
@@ -258,9 +270,9 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     where: { stripeSubscriptionId: subscriptionId },
     data: {
       status: subscription.status.toUpperCase(),
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      currentPeriodStart: new Date(currentPeriodStart * 1000),
+      currentPeriodEnd: new Date(currentPeriodEnd * 1000),
+      cancelAtPeriodEnd,
       updatedAt: new Date(),
     },
   });
@@ -345,7 +357,8 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
  * Handle successful invoice payment
  */
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
-  const subscriptionId = invoice.subscription as string;
+  const invoiceData: any = invoice;
+  const subscriptionId = invoiceData.subscription as string;
 
   if (!subscriptionId) {
     return;
@@ -375,7 +388,8 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
  * Handle failed invoice payment
  */
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
-  const subscriptionId = invoice.subscription as string;
+  const invoiceData: any = invoice;
+  const subscriptionId = invoiceData.subscription as string;
 
   if (!subscriptionId) {
     return;
