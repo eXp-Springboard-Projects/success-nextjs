@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Link from 'next/link';
 import Layout from '../components/Layout';
 import SEO from '../components/SEO';
 import styles from './PressReleases.module.css';
@@ -33,6 +34,9 @@ export default function PressReleasesPage({ pressReleases, totalPages }: PressRe
 
       <div className={styles.container}>
         <header className={styles.header}>
+          <Link href="/press" className={styles.backLink}>
+            ← Back to Press
+          </Link>
           <h1 className={styles.title}>Press Releases</h1>
           <p className={styles.subtitle}>Latest news and announcements from SUCCESS</p>
         </header>

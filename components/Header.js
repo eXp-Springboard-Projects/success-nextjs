@@ -13,6 +13,7 @@ const navItems = [
   { label: 'AI & TECHNOLOGY', path: '/category/ai-technology' },
   { label: 'BUSINESS & BRANDING', path: '/category/business-branding' },
   { label: 'STORE', path: '/store' },
+  { label: 'PRESS', path: '/press' },
 ];
 
 export default function Header() {

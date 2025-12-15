@@ -38,7 +38,7 @@ export default function PressPage({ recentReleases }: PressPageProps) {
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>About SUCCESS</h2>
             <p className={styles.paragraph}>
-              SUCCESS is your trusted guide to the future of work. For over 125 years, SUCCESS has been
+              SUCCESS is your trusted guide to the future of work. For over 130 years, SUCCESS has been
               the leading source of inspiration, motivation, and practical advice for entrepreneurs,
               business leaders, and professionals seeking personal and professional growth.
             </p>
