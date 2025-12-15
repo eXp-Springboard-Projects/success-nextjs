@@ -142,6 +142,12 @@ export default function SuccessPlusWelcome() {
             </div>
 
             <div className={styles.resource}>
+              <h4>🧪 SUCCESS Labs</h4>
+              <p>Get AI-powered coaching and join our exclusive community of high achievers.</p>
+              <a href="https://labs.success.com/" target="_blank" rel="noopener noreferrer">Visit SUCCESS Labs →</a>
+            </div>
+
+            <div className={styles.resource}>
               <h4>📖 This Month's Magazine</h4>
               <p>Read the latest issue featuring exclusive interviews and insights.</p>
               <a href="/magazine">Read Magazine →</a>

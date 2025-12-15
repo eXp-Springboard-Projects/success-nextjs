@@ -223,10 +223,13 @@ export default function AccountPage() {
               </div>
             </div>
             <div className={styles.benefit}>
-              <span className={styles.benefitIcon}>🔬</span>
+              <span className={styles.benefitIcon}>🧪</span>
               <div>
-                <h4>SUCCESS Labs</h4>
-                <p>Interactive courses and practical learning experiences</p>
+                <h4>SUCCESS Labs Access</h4>
+                <p>AI-powered coaching and exclusive community of high achievers</p>
+                <a href="https://labs.success.com/" target="_blank" rel="noopener noreferrer" style={{color: '#c41e3a', textDecoration: 'underline', fontSize: '0.9rem'}}>
+                  Visit SUCCESS Labs →
+                </a>
               </div>
             </div>
           </div>

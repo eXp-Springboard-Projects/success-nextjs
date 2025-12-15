@@ -95,6 +95,14 @@ export default function Footer() {
           </div>
 
           <div className={styles.column}>
+            <h4>Products</h4>
+            <Link href="/success-plus">SUCCESS+</Link>
+            <a href="https://coaching.success.com/" target="_blank" rel="noopener noreferrer">Coaching</a>
+            <a href="https://labs.success.com/" target="_blank" rel="noopener noreferrer">SUCCESS Labs</a>
+            <Link href="/store">Store</Link>
+          </div>
+
+          <div className={styles.column}>
             <h4>Content</h4>
             <Link href="/category/business-branding">Business & Branding</Link>
             <Link href="/category/money">Money</Link>

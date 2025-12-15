@@ -117,11 +117,11 @@ export default function DashboardContent() {
                 <p>Upload and organize downloadable resources</p>
               </Link>
 
-              <Link href="/admin/dashboard-content/labs" className={styles.actionCard}>
+              <a href="https://labs.success.com/" target="_blank" rel="noopener noreferrer" className={styles.actionCard}>
                 <div className={styles.actionIcon}>🔬</div>
-                <h3>Manage Success Labs</h3>
-                <p>Add interactive tools and exercises</p>
-              </Link>
+                <h3>SUCCESS Labs</h3>
+                <p>Access interactive tools and AI-powered resources →</p>
+              </a>
 
               <Link href="/admin/dashboard-content/events" className={styles.actionCard}>
                 <div className={styles.actionIcon}>📅</div>

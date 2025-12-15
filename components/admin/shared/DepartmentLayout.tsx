@@ -175,18 +175,39 @@ function CollapsibleSection({
       </button>
       {isOpen && (
         <nav className={styles.nav}>
-          {items.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`${styles.navItem} ${router.pathname === item.href ? styles.navItemActive : ''}`}
-            >
-              <span className={styles.navLabel}>{item.label}</span>
-              {item.badge && item.badge > 0 && (
-                <span className={styles.navBadge}>{item.badge}</span>
-              )}
-            </Link>
-          ))}
+          {items.map((item) => {
+            const isExternal = item.href.startsWith('http');
+
+            if (isExternal) {
+              return (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.navItem}
+                >
+                  <span className={styles.navLabel}>{item.label}</span>
+                  {item.badge && item.badge > 0 && (
+                    <span className={styles.navBadge}>{item.badge}</span>
+                  )}
+                </a>
+              );
+            }
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`${styles.navItem} ${router.pathname === item.href ? styles.navItemActive : ''}`}
+              >
+                <span className={styles.navLabel}>{item.label}</span>
+                {item.badge && item.badge > 0 && (
+                  <span className={styles.navBadge}>{item.badge}</span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
       )}
     </div>
@@ -258,10 +279,17 @@ function getNavigationSections(role: UserRole, primaryDepartment?: Department | 
         { label: 'Events', href: '/admin/dashboard-content/events' },
         { label: 'Courses', href: '/admin/dashboard-content/courses' },
         { label: 'Resources', href: '/admin/dashboard-content/resources' },
-        { label: 'Labs', href: '/admin/dashboard-content/labs' },
       ]
     });
   }
+
+  // SUCCESS LABS - External link (appears for all)
+  sections.push({
+    title: 'SUCCESS LABS',
+    items: [
+      { label: 'Visit SUCCESS Labs →', href: 'https://labs.success.com/' },
+    ]
+  });
 
   // CRM & EMAIL section (Marketing only)
   if (role === 'SUPER_ADMIN' || role === 'ADMIN' || primaryDepartment === Department.MARKETING) {

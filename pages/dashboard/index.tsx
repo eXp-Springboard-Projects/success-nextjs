@@ -73,12 +73,12 @@ export default function MemberDashboard() {
               </button>
             </Link>
 
-            <Link href="/dashboard/labs">
-              <button className={router.pathname === '/dashboard/labs' ? styles.active : ''}>
+            <a href="https://labs.success.com/" target="_blank" rel="noopener noreferrer">
+              <button>
                 <span className={styles.icon}>🔬</span>
-                Success Labs
+                SUCCESS Labs
               </button>
-            </Link>
+            </a>
 
             <Link href="/dashboard/events">
               <button className={router.pathname === '/dashboard/events' ? styles.active : ''}>
@@ -204,6 +204,26 @@ export default function MemberDashboard() {
               </div>
             </section>
           )}
+
+          {/* SUCCESS Labs - Featured */}
+          <section className={styles.section}>
+            <div className={premiumStyles.sectionHeader}>
+              <h2>SUCCESS Labs</h2>
+              <a href="https://labs.success.com/" target="_blank" rel="noopener noreferrer" className={premiumStyles.viewAllLink}>
+                Visit Labs →
+              </a>
+            </div>
+            <div className={premiumStyles.premiumHighlight}>
+              <div className={premiumStyles.highlightCard}>
+                <span className={premiumStyles.highlightIcon}>🔬</span>
+                <h3>Interactive Tools & Exercises</h3>
+                <p>Access SUCCESS Labs for interactive business tools, AI-powered resources, and hands-on exercises to accelerate your growth.</p>
+                <a href="https://labs.success.com/" target="_blank" rel="noopener noreferrer" className={premiumStyles.highlightBtn}>
+                  Explore SUCCESS Labs
+                </a>
+              </div>
+            </div>
+          </section>
 
           {/* Continue Learning */}
           <section className={styles.section}>
