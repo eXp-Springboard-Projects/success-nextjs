@@ -21,7 +21,7 @@ export default function SuccessPlusPage() {
             <p className={styles.heroDescription}>
               With SUCCESS+™, that tradition continues—uniting print and digital experiences to bring you closer to the ideas, people, and insights shaping success today.
             </p>
-            <Link href="/subscribe?plan=annual" className={styles.heroCTA}>
+            <Link href="/signup/trial" className={styles.heroCTA}>
               Start Your Free Trial
             </Link>
           </div>
@@ -188,7 +188,7 @@ export default function SuccessPlusPage() {
                 <li>✓ Additional member discounts on premium programs</li>
               </ul>
               <Link
-                href={`/subscribe?plan=${billingCycle}`}
+                href="/signup/trial"
                 className={styles.joinButton}
               >
                 Start Your Free Trial Today
