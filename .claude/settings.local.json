@@ -86,7 +86,8 @@
       "Bash(start http://localhost:3000)",
       "Bash(start http://localhost:3000/signup/trial)",
       "Bash(start http://localhost:3000/success-plus/upgrade)",
-      "Bash(start http://localhost:3000/admin/dashboard-content)"
+      "Bash(start http://localhost:3000/admin/dashboard-content)",
+      "Bash(start http://localhost:3000/admin/dashboard-content/courses)"
     ],
     "deny": [],
     "ask": []
