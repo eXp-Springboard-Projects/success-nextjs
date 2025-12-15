@@ -617,3 +617,42 @@
 .blockMenuItem:active {
   background: #e5e7eb;
 }
+.editorStats {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding-left: 1.5rem;
+  border-left: 1px solid #e0e0e0;
+}
+
+.statItem {
+  font-size: 0.875rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.autoSaving {
+  font-size: 0.875rem;
+  color: #f7931e;
+  font-weight: 600;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.lastSaved {
+  font-size: 0.875rem;
+  color: #10b981;
+  font-weight: 500;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.helpText {
+  display: block;
+  margin-top: 0.5rem;
+  color: #666;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}

@@ -68,8 +68,16 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
   const [showTextStylePanel, setShowTextStylePanel] = useState(false);
   const [showBlockControls, setShowBlockControls] = useState(false);
   const [blockControlsPosition, setBlockControlsPosition] = useState({ top: 0, left: 0 });
+  const [wordCount, setWordCount] = useState(0);
+  const [charCount, setCharCount] = useState(0);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [contentType, setContentType] = useState<'regular' | 'premium' | 'insider' | 'magazine' | 'press'>('regular');
+  const [accessTier, setAccessTier] = useState<'free' | 'success_plus' | 'insider'>('free');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const blockMenuRef = useRef<HTMLDivElement>(null);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -123,6 +131,74 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
     }
   }, [postId]);
 
+  // Word count and character count
+  useEffect(() => {
+    if (editor) {
+      const text = editor.getText();
+      setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
+      setCharCount(text.length);
+    }
+  }, [editor?.state.doc]);
+
+  // Auto-save functionality
+  useEffect(() => {
+    if (!editor || !title || !postId) return;
+
+    // Clear existing timer
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    // Set new timer for auto-save after 3 seconds of inactivity
+    autoSaveTimerRef.current = setTimeout(() => {
+      handleAutoSave();
+    }, 3000);
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [title, editor?.state.doc, excerpt, selectedCategories, contentType, accessTier]);
+
+  const handleAutoSave = async () => {
+    if (!title || !editor?.getHTML() || !postId || saving) return;
+
+    setAutoSaving(true);
+    try {
+      const postData = {
+        title,
+        slug,
+        content: editor.getHTML(),
+        excerpt,
+        featuredImage: featuredImage || null,
+        featuredImageAlt: featuredImageAlt || null,
+        status: status === 'publish' ? 'publish' : 'draft', // Maintain publish status
+        authorId: session?.user?.id,
+        categories: selectedCategories,
+        seoTitle: seoTitle || null,
+        seoDescription: seoDescription || null,
+        contentType,
+        accessTier,
+        scheduledDate: scheduledDate || null,
+      };
+
+      const res = await fetch(`/api/admin/posts/${postId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(postData),
+      });
+
+      if (res.ok) {
+        setLastSaved(new Date());
+      }
+    } catch (error) {
+      console.error('Auto-save error:', error);
+    } finally {
+      setAutoSaving(false);
+    }
+  };
+
   const fetchCategories = async () => {
     try {
       const res = await fetch('/api/categories?per_page=100');
@@ -161,6 +237,9 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
 
       setSeoTitle(post.seoTitle || '');
       setSeoDescription(post.seoDescription || '');
+      setContentType(post.contentType || 'regular');
+      setAccessTier(post.accessTier || 'free');
+      setScheduledDate(post.scheduledDate || '');
     } catch (error) {
       console.error('Error fetching post:', error);
       alert('Failed to load post');
@@ -460,6 +539,9 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         categories: selectedCategories,
         seoTitle: seoTitle || null,
         seoDescription: seoDescription || null,
+        contentType,
+        accessTier,
+        scheduledDate: scheduledDate || null,
       };
 
       const method = postId ? 'PUT' : 'POST';
@@ -521,6 +603,24 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
           <button onClick={() => router.push('/admin/posts')} className={styles.backButton}>
             ← Back to Posts
           </button>
+          <div className={styles.editorStats}>
+            <span className={styles.statItem}>
+              📝 {wordCount} words
+            </span>
+            <span className={styles.statItem}>
+              📊 {charCount} characters
+            </span>
+            {autoSaving && (
+              <span className={styles.autoSaving}>
+                💾 Auto-saving...
+              </span>
+            )}
+            {lastSaved && !autoSaving && (
+              <span className={styles.lastSaved}>
+                ✓ Saved {lastSaved.toLocaleTimeString()}
+              </span>
+            )}
+          </div>
         </div>
         <div className={styles.topRight}>
           {postId && (
@@ -528,14 +628,17 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
               📜 History
             </button>
           )}
+          <button onClick={() => setShowPreview(!showPreview)} className={styles.previewButton}>
+            {showPreview ? '✏️ Edit' : '👁 Preview'}
+          </button>
           <button onClick={handlePreview} className={styles.previewButton}>
-            👁 Preview
+            🌐 View Live
           </button>
           <button onClick={() => handleSave('draft')} disabled={saving} className={styles.draftButton}>
             {saving ? 'Saving...' : 'Save Draft'}
           </button>
           <button onClick={() => handleSave('publish')} disabled={saving} className={styles.publishButton}>
-            {saving ? 'Publishing...' : 'Publish'}
+            {saving ? 'Publishing...' : scheduledDate ? 'Schedule' : 'Publish'}
           </button>
         </div>
       </div>
@@ -567,6 +670,27 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
             <>
               {/* Toolbar */}
               <div className={styles.toolbar}>
+                <div className={styles.toolbarGroup}>
+                  <button
+                    onClick={() => editor.chain().focus().undo().run()}
+                    disabled={!editor.can().undo()}
+                    className={styles.toolbarButton}
+                    title="Undo (Ctrl+Z)"
+                  >
+                    ↶
+                  </button>
+                  <button
+                    onClick={() => editor.chain().focus().redo().run()}
+                    disabled={!editor.can().redo()}
+                    className={styles.toolbarButton}
+                    title="Redo (Ctrl+Y)"
+                  >
+                    ↷
+                  </button>
+                </div>
+
+                <div className={styles.toolbarDivider}></div>
+
                 <div className={styles.toolbarGroup}>
                   <button
                     onClick={() => editor.chain().focus().toggleBold().run()}
@@ -852,6 +976,41 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
           {activePanel === 'settings' && (
             <div className={styles.panel}>
               <div className={styles.panelSection}>
+                <h3 className={styles.panelTitle}>Content Type</h3>
+                <select
+                  value={contentType}
+                  onChange={(e) => setContentType(e.target.value as any)}
+                  className={styles.select}
+                >
+                  <option value="regular">Regular Post</option>
+                  <option value="premium">Premium Content (SUCCESS+)</option>
+                  <option value="insider">Insider Content (Exclusive)</option>
+                  <option value="magazine">Magazine Article</option>
+                  <option value="press">Press Release</option>
+                </select>
+              </div>
+
+              {(contentType === 'premium' || contentType === 'insider') && (
+                <div className={styles.panelSection}>
+                  <h3 className={styles.panelTitle}>Access Tier</h3>
+                  <select
+                    value={accessTier}
+                    onChange={(e) => setAccessTier(e.target.value as any)}
+                    className={styles.select}
+                  >
+                    <option value="free">Free Preview (first 2 paragraphs)</option>
+                    <option value="success_plus">SUCCESS+ Required</option>
+                    <option value="insider">Insider Only (Top Tier)</option>
+                  </select>
+                  <small className={styles.helpText}>
+                    {accessTier === 'free' && '✓ Non-members can see a preview'}
+                    {accessTier === 'success_plus' && '🔒 Requires any SUCCESS+ subscription'}
+                    {accessTier === 'insider' && '⭐ Requires highest tier subscription'}
+                  </small>
+                </div>
+              )}
+
+              <div className={styles.panelSection}>
                 <h3 className={styles.panelTitle}>Status</h3>
                 <select value={status} onChange={(e) => setStatus(e.target.value)} className={styles.select}>
                   <option value="draft">Draft</option>
@@ -859,6 +1018,22 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
                   <option value="pending">Pending Review</option>
                   <option value="private">Private</option>
                 </select>
+              </div>
+
+              <div className={styles.panelSection}>
+                <h3 className={styles.panelTitle}>Schedule Publishing</h3>
+                <input
+                  type="datetime-local"
+                  value={scheduledDate}
+                  onChange={(e) => setScheduledDate(e.target.value)}
+                  className={styles.input}
+                />
+                <small className={styles.helpText}>
+                  {scheduledDate
+                    ? `Will publish on ${new Date(scheduledDate).toLocaleString()}`
+                    : 'Leave empty to publish immediately'
+                  }
+                </small>
               </div>
 
               <div className={styles.panelSection}>

@@ -80,7 +80,9 @@
       "Bash(gh run list:*)",
       "WebFetch(domain:github.com)",
       "Read(//c/**)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(git rm:*)",
+      "Bash(npm --version)"
     ],
     "deny": [],
     "ask": []
