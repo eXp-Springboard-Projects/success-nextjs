@@ -1,4 +1,3 @@
-import Head from 'next/head';
 import Link from 'next/link';
 import { Department } from '@prisma/client';
 import DepartmentLayout from '@/components/admin/shared/DepartmentLayout';
@@ -7,16 +6,11 @@ import styles from '../DashboardContent.module.css';
 
 export default function AdminCourses() {
   return (
-    <>
-      <Head>
-        <title>Manage Courses - SUCCESS+ Admin</title>
-      </Head>
-
-      <DepartmentLayout
-        currentDepartment={Department.SUCCESS_PLUS}
-        pageTitle="Manage Courses"
-        description="Create and edit courses, modules, and lessons"
-      >
+    <DepartmentLayout
+      currentDepartment={Department.SUCCESS_PLUS}
+      pageTitle="Manage Courses"
+      description="Create and edit courses, modules, and lessons"
+    >
         <div className={styles.dashboard}>
           <div className={styles.section}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -77,7 +71,6 @@ export default function AdminCourses() {
           </div>
         </div>
       </DepartmentLayout>
-    </>
   );
 }
 

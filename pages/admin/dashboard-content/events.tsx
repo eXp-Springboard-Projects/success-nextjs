@@ -1,4 +1,3 @@
-import Head from 'next/head';
 import Link from 'next/link';
 import { Department } from '@prisma/client';
 import DepartmentLayout from '@/components/admin/shared/DepartmentLayout';
@@ -7,16 +6,11 @@ import styles from '../DashboardContent.module.css';
 
 export default function AdminEvents() {
   return (
-    <>
-      <Head>
-        <title>Manage Events - SUCCESS+ Admin</title>
-      </Head>
-
-      <DepartmentLayout
-        currentDepartment={Department.SUCCESS_PLUS}
-        pageTitle="Manage Events"
-        description="Schedule webinars, workshops, and events"
-      >
+    <DepartmentLayout
+      currentDepartment={Department.SUCCESS_PLUS}
+      pageTitle="Manage Events"
+      description="Schedule webinars, workshops, and events"
+    >
         <div className={styles.dashboard}>
           <div className={styles.section}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -83,7 +77,6 @@ export default function AdminEvents() {
           </div>
         </div>
       </DepartmentLayout>
-    </>
   );
 }
 

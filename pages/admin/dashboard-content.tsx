@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import Head from 'next/head';
 import Link from 'next/link';
 import { Department } from '@prisma/client';
 import DepartmentLayout from '@/components/admin/shared/DepartmentLayout';
@@ -15,16 +14,11 @@ export default function DashboardContent() {
   });
 
   return (
-    <>
-      <Head>
-        <title>SUCCESS+ Dashboard Content - Admin</title>
-      </Head>
-
-      <DepartmentLayout
-        currentDepartment={Department.SUCCESS_PLUS}
-        pageTitle="SUCCESS+ Dashboard Content"
-        description="Manage courses, resources, labs, and events"
-      >
+    <DepartmentLayout
+      currentDepartment={Department.SUCCESS_PLUS}
+      pageTitle="SUCCESS+ Dashboard Content"
+      description="Manage courses, resources, labs, and events"
+    >
         <div className={styles.dashboard}>
 
           <div className={styles.statsGrid}>
@@ -100,7 +94,6 @@ export default function DashboardContent() {
           </div>
         </div>
       </DepartmentLayout>
-    </>
   );
 }
 
