@@ -13,15 +13,15 @@ export default function UpgradePage() {
 
   const plans = {
     monthly: {
-      price: 19.99,
+      price: 7.99,
       period: 'month',
       savings: null,
     },
     annual: {
-      price: 199.99,
+      price: 79.99,
       period: 'year',
       savings: '17%',
-      monthlyEquivalent: 16.67,
+      monthlyEquivalent: 6.67,
     },
   };
 
