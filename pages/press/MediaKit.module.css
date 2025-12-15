@@ -1,0 +1,335 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.header {
+  text-align: center;
+  padding: 2rem 1rem;
+  margin-bottom: 3rem;
+}
+
+.backLink {
+  display: inline-block;
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 600;
+  margin-bottom: 2rem;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
+.title {
+  font-size: 3rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  color: #111;
+}
+
+.subtitle {
+  font-size: 1.125rem;
+  color: #6b7280;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.section {
+  margin-bottom: 4rem;
+}
+
+.sectionTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 2rem 0;
+  color: #111;
+}
+
+/* Brand Guidelines Card */
+.guidelinesCard {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+  border-radius: 1rem;
+  padding: 2.5rem;
+}
+
+.guidelinesContent {
+  max-width: 800px;
+}
+
+.cardTitle {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  color: #92400e;
+}
+
+.cardDescription {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #78350f;
+  margin: 0 0 1.5rem 0;
+}
+
+.guidelinesList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.guidelineItem {
+  color: #78350f;
+  font-weight: 500;
+}
+
+.downloadButton {
+  display: inline-block;
+  padding: 1rem 2rem;
+  background: #000;
+  color: white;
+  text-decoration: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.downloadButton:hover {
+  background: #333;
+  transform: translateY(-2px);
+}
+
+/* Assets Grid */
+.assetsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.assetCard {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.assetCard:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+}
+
+.assetThumbnail {
+  aspect-ratio: 16/9;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.thumbnailPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: #9ca3af;
+}
+
+.placeholderIcon {
+  font-size: 3rem;
+}
+
+.placeholderText {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.assetContent {
+  padding: 1.5rem;
+}
+
+.assetTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  color: #111;
+}
+
+.assetDescription {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0 0 1rem 0;
+  line-height: 1.6;
+}
+
+.assetFormats {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.formatBadge {
+  padding: 0.25rem 0.75rem;
+  background: #f3f4f6;
+  color: #374151;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.assetDownload {
+  display: inline-block;
+  width: 100%;
+  padding: 0.75rem;
+  background: #000;
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.assetDownload:hover {
+  background: #333;
+}
+
+/* Usage Guidelines */
+.usageCard {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 2rem;
+}
+
+.usageTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 2rem 0 1rem 0;
+  color: #111;
+}
+
+.usageTitle:first-child {
+  margin-top: 0;
+}
+
+.usageList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
+}
+
+.usageList li {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+}
+
+.usageList li:last-child {
+  border-bottom: none;
+}
+
+/* Contact Section */
+.contactSection {
+  margin-bottom: 4rem;
+}
+
+.contactCard {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border: 1px solid #3b82f6;
+  border-radius: 1rem;
+  padding: 2.5rem;
+  text-align: center;
+}
+
+.contactTitle {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  color: #1e3a8a;
+}
+
+.contactText {
+  font-size: 1rem;
+  color: #1e40af;
+  margin: 0 0 2rem 0;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.contactButton {
+  display: inline-block;
+  padding: 1rem 2rem;
+  background: #3b82f6;
+  color: white;
+  text-decoration: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.contactButton:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+}
+
+/* Download All Section */
+.downloadAllSection {
+  background: linear-gradient(135deg, #111 0%, #333 100%);
+  color: white;
+  border-radius: 1rem;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.downloadAllTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+}
+
+.downloadAllText {
+  font-size: 1.125rem;
+  color: #d1d5db;
+  margin: 0 0 2rem 0;
+}
+
+.downloadAllButton {
+  display: inline-block;
+  padding: 1.25rem 3rem;
+  background: white;
+  color: #111;
+  text-decoration: none;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  font-size: 1.125rem;
+  transition: all 0.2s;
+}
+
+.downloadAllButton:hover {
+  background: #f3f4f6;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+  .title {
+    font-size: 2rem;
+  }
+
+  .assetsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .guidelinesList {
+    grid-template-columns: 1fr;
+  }
+
+  .downloadAllButton {
+    width: 100%;
+  }
+}
