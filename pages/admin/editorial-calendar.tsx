@@ -9,7 +9,7 @@ interface EditorialItem {
   id: string;
   title: string;
   contentType: 'ARTICLE' | 'VIDEO' | 'PODCAST' | 'MAGAZINE' | 'PAGE' | 'NEWSLETTER';
-  status: 'IDEA' | 'ASSIGNED' | 'IN_PROGRESS' | 'DRAFT' | 'IN_REVIEW' | 'SCHEDULED' | 'PUBLISHED' | 'ARCHIVED';
+  status: 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'SCHEDULED' | 'PUBLISHED';
   assignedTo?: {
     name: string;
     email: string;
@@ -28,12 +28,13 @@ export default function EditorialCalendar() {
   const router = useRouter();
   const [items, setItems] = useState<EditorialItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [draggedItem, setDraggedItem] = useState<EditorialItem | null>(null);
   const [newItem, setNewItem] = useState({
     title: '',
     contentType: 'ARTICLE',
-    status: 'IDEA',
+    status: 'DRAFT',
     priority: 'MEDIUM',
     scheduledDate: '',
     deadline: '',
@@ -41,23 +42,15 @@ export default function EditorialCalendar() {
   });
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/admin/login');
-    } else if (status === 'authenticated' && session?.user?.role !== 'ADMIN') {
-      router.push('/dashboard');
-    }
-  }, [status, session, router]);
-
-  useEffect(() => {
     if (status === 'authenticated' && session?.user?.role === 'ADMIN') {
       fetchEditorialItems();
     }
-  }, [status, session, filter]);
+  }, [status, session, statusFilter]);
 
   const fetchEditorialItems = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/editorial-calendar?status=${filter}`);
+      const res = await fetch(`/api/editorial-calendar?status=${statusFilter}`);
       if (res.ok) {
         const data = await res.json();
         setItems(data);
@@ -82,7 +75,7 @@ export default function EditorialCalendar() {
         setNewItem({
           title: '',
           contentType: 'ARTICLE',
-          status: 'IDEA',
+          status: 'DRAFT',
           priority: 'MEDIUM',
           scheduledDate: '',
           deadline: '',
@@ -95,12 +88,12 @@ export default function EditorialCalendar() {
     }
   };
 
-  const handleUpdateStatus = async (id: string, status: string) => {
+  const handleUpdateStatus = async (id: string, newStatus: string) => {
     try {
       const res = await fetch(`/api/editorial-calendar/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status: newStatus }),
       });
 
       if (res.ok) {
@@ -111,18 +104,42 @@ export default function EditorialCalendar() {
     }
   };
 
+  const handleUpdateDate = async (id: string, scheduledDate: string) => {
+    try {
+      const res = await fetch(`/api/editorial-calendar/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scheduledDate }),
+      });
+
+      if (res.ok) {
+        fetchEditorialItems();
+      }
+    } catch (error) {
+      console.error('Error updating date:', error);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     const colors: { [key: string]: string } = {
-      IDEA: '#9ca3af',
-      ASSIGNED: '#3b82f6',
-      IN_PROGRESS: '#f59e0b',
-      DRAFT: '#8b5cf6',
-      IN_REVIEW: '#ec4899',
-      SCHEDULED: '#10b981',
-      PUBLISHED: '#059669',
-      ARCHIVED: '#6b7280',
+      DRAFT: '#9ca3af',        // Gray
+      IN_REVIEW: '#fbbf24',    // Yellow
+      APPROVED: '#3b82f6',     // Blue
+      SCHEDULED: '#8b5cf6',    // Purple
+      PUBLISHED: '#10b981',    // Green
     };
-    return colors[status] || '#666';
+    return colors[status] || '#9ca3af';
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: { [key: string]: string } = {
+      DRAFT: 'Draft',
+      IN_REVIEW: 'In Review',
+      APPROVED: 'Approved',
+      SCHEDULED: 'Scheduled',
+      PUBLISHED: 'Published',
+    };
+    return labels[status] || status;
   };
 
   const getPriorityColor = (priority: string) => {
@@ -135,6 +152,25 @@ export default function EditorialCalendar() {
     return colors[priority] || '#666';
   };
 
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, item: EditorialItem) => {
+    setDraggedItem(item);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, targetDate: string) => {
+    e.preventDefault();
+    if (draggedItem) {
+      handleUpdateDate(draggedItem.id, targetDate);
+      setDraggedItem(null);
+    }
+  };
+
   if (status === 'loading' || loading) {
     return <AdminLayout><div className={styles.loading}>Loading...</div></AdminLayout>;
   }
@@ -143,7 +179,10 @@ export default function EditorialCalendar() {
     return null;
   }
 
-  const statusFilters = ['all', 'IDEA', 'ASSIGNED', 'IN_PROGRESS', 'DRAFT', 'IN_REVIEW', 'SCHEDULED', 'PUBLISHED'];
+  const statusFilters = ['all', 'DRAFT', 'IN_REVIEW', 'APPROVED', 'SCHEDULED', 'PUBLISHED'];
+  const filteredItems = statusFilter === 'all'
+    ? items
+    : items.filter(item => item.status === statusFilter);
 
   return (
     <AdminLayout>
@@ -158,48 +197,102 @@ export default function EditorialCalendar() {
           </button>
         </div>
 
-        {/* Filter Buttons */}
-        <div className={styles.filters}>
-          {statusFilters.map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={filter === f ? styles.filterActive : styles.filterButton}
-            >
-              {f === 'all' ? 'All' : f.replace('_', ' ')}
-              {f !== 'all' && ` (${items.filter(i => i.status === f).length})`}
-            </button>
-          ))}
+        {/* Status Filter Pills */}
+        <div className={styles.filterContainer}>
+          <div className={styles.filterLabel}>Filter by Status:</div>
+          <div className={styles.filters}>
+            {statusFilters.map((f) => (
+              <button
+                key={f}
+                onClick={() => setStatusFilter(f)}
+                className={statusFilter === f ? styles.filterActive : styles.filterButton}
+                style={{
+                  backgroundColor: statusFilter === f
+                    ? (f === 'all' ? '#111' : getStatusColor(f))
+                    : 'transparent',
+                  borderColor: f === 'all' ? '#111' : getStatusColor(f),
+                  color: statusFilter === f ? 'white' : (f === 'all' ? '#111' : getStatusColor(f))
+                }}
+              >
+                {f === 'all' ? 'All' : getStatusLabel(f)}
+                {f !== 'all' && ` (${items.filter(i => i.status === f).length})`}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Summary Cards */}
         <div className={styles.summaryGrid}>
           <div className={styles.summaryCard}>
-            <h3>Total Items</h3>
-            <p className={styles.summaryValue}>{items.length}</p>
+            <div className={styles.summaryIcon} style={{ backgroundColor: '#f3f4f6' }}>📝</div>
+            <div>
+              <h3>Total Items</h3>
+              <p className={styles.summaryValue}>{items.length}</p>
+            </div>
           </div>
           <div className={styles.summaryCard}>
-            <h3>In Progress</h3>
-            <p className={styles.summaryValue} style={{ color: '#f59e0b' }}>
-              {items.filter(i => i.status === 'IN_PROGRESS').length}
-            </p>
+            <div className={styles.summaryIcon} style={{ backgroundColor: '#fef3c7' }}>🔍</div>
+            <div>
+              <h3>In Review</h3>
+              <p className={styles.summaryValue} style={{ color: '#fbbf24' }}>
+                {items.filter(i => i.status === 'IN_REVIEW').length}
+              </p>
+            </div>
           </div>
           <div className={styles.summaryCard}>
-            <h3>Scheduled</h3>
-            <p className={styles.summaryValue} style={{ color: '#10b981' }}>
-              {items.filter(i => i.status === 'SCHEDULED').length}
-            </p>
+            <div className={styles.summaryIcon} style={{ backgroundColor: '#ede9fe' }}>📅</div>
+            <div>
+              <h3>Scheduled</h3>
+              <p className={styles.summaryValue} style={{ color: '#8b5cf6' }}>
+                {items.filter(i => i.status === 'SCHEDULED').length}
+              </p>
+            </div>
           </div>
           <div className={styles.summaryCard}>
-            <h3>Urgent</h3>
-            <p className={styles.summaryValue} style={{ color: '#ef4444' }}>
-              {items.filter(i => i.priority === 'URGENT').length}
-            </p>
+            <div className={styles.summaryIcon} style={{ backgroundColor: '#d1fae5' }}>✅</div>
+            <div>
+              <h3>Published</h3>
+              <p className={styles.summaryValue} style={{ color: '#10b981' }}>
+                {items.filter(i => i.status === 'PUBLISHED').length}
+              </p>
+            </div>
           </div>
         </div>
 
+        {/* Status Legend */}
+        <div className={styles.legend}>
+          <div className={styles.legendTitle}>Status Colors:</div>
+          <div className={styles.legendItems}>
+            <div className={styles.legendItem}>
+              <div className={styles.legendDot} style={{ backgroundColor: '#9ca3af' }}></div>
+              <span>Draft</span>
+            </div>
+            <div className={styles.legendItem}>
+              <div className={styles.legendDot} style={{ backgroundColor: '#fbbf24' }}></div>
+              <span>In Review</span>
+            </div>
+            <div className={styles.legendItem}>
+              <div className={styles.legendDot} style={{ backgroundColor: '#3b82f6' }}></div>
+              <span>Approved</span>
+            </div>
+            <div className={styles.legendItem}>
+              <div className={styles.legendDot} style={{ backgroundColor: '#8b5cf6' }}></div>
+              <span>Scheduled</span>
+            </div>
+            <div className={styles.legendItem}>
+              <div className={styles.legendDot} style={{ backgroundColor: '#10b981' }}></div>
+              <span>Published</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Drag & Drop Hint */}
+        <div className={styles.dragHint}>
+          💡 Tip: Drag items to different dates to reschedule them
+        </div>
+
         {/* Content Items Table */}
-        {items.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <div className={styles.empty}>
             <p>No editorial items found. Start planning your content!</p>
             <button onClick={() => setShowAddModal(true)} className={styles.addButton}>
@@ -222,11 +315,19 @@ export default function EditorialCalendar() {
                 </tr>
               </thead>
               <tbody>
-                {items.map((item) => (
-                  <tr key={item.id}>
+                {filteredItems.map((item) => (
+                  <tr
+                    key={item.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, item)}
+                    className={styles.draggableRow}
+                  >
                     <td className={styles.titleCell}>
-                      <strong>{item.title}</strong>
-                      {item.notes && <span className={styles.notes}>{item.notes}</span>}
+                      <div className={styles.dragHandle}>⋮⋮</div>
+                      <div>
+                        <strong>{item.title}</strong>
+                        {item.notes && <span className={styles.notes}>{item.notes}</span>}
+                      </div>
                     </td>
                     <td>
                       <span className={styles.badge} style={{ backgroundColor: '#667eea' }}>
@@ -238,16 +339,17 @@ export default function EditorialCalendar() {
                         value={item.status}
                         onChange={(e) => handleUpdateStatus(item.id, e.target.value)}
                         className={styles.statusSelect}
-                        style={{ backgroundColor: getStatusColor(item.status) }}
+                        style={{
+                          backgroundColor: getStatusColor(item.status),
+                          color: 'white',
+                          fontWeight: '600'
+                        }}
                       >
-                        <option value="IDEA">Idea</option>
-                        <option value="ASSIGNED">Assigned</option>
-                        <option value="IN_PROGRESS">In Progress</option>
                         <option value="DRAFT">Draft</option>
                         <option value="IN_REVIEW">In Review</option>
+                        <option value="APPROVED">Approved</option>
                         <option value="SCHEDULED">Scheduled</option>
                         <option value="PUBLISHED">Published</option>
-                        <option value="ARCHIVED">Archived</option>
                       </select>
                     </td>
                     <td>
@@ -265,13 +367,18 @@ export default function EditorialCalendar() {
                         : '-'}
                     </td>
                     <td>
-                      {item.scheduledDate
-                        ? new Date(item.scheduledDate).toLocaleDateString()
-                        : '-'}
+                      <input
+                        type="date"
+                        value={item.scheduledDate ? item.scheduledDate.split('T')[0] : ''}
+                        onChange={(e) => handleUpdateDate(item.id, e.target.value)}
+                        className={styles.dateInput}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, e.currentTarget.value)}
+                      />
                     </td>
                     <td className={styles.actions}>
                       <button className={styles.actionButton}>Edit</button>
-                      <button className={styles.actionButton}>Delete</button>
+                      <button className={styles.actionButtonDanger}>Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -371,8 +478,6 @@ export default function EditorialCalendar() {
     </AdminLayout>
   );
 }
-
-// Force SSR to prevent NextRouter errors during build
 
 // Server-side authentication check
 export const getServerSideProps = requireAdminAuth;

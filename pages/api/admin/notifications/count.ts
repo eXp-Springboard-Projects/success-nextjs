@@ -20,7 +20,7 @@ export default async function handler(
       const count = await prisma.notifications.count({
         where: {
           userId: session.user.id,
-          read: false,
+          isRead: false,
         },
       }).catch(() => 0);
 

@@ -1,0 +1,349 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #000;
+  margin-bottom: 0.5rem;
+}
+
+.header p {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #c41e3a;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Trial Card */
+.trialCard {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  color: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.trialHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.trialIcon {
+  font-size: 2rem;
+}
+
+.trialHeader h2 {
+  font-size: 1.75rem;
+  margin: 0;
+}
+
+.trialInfo {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.trialExpires {
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 1.5rem;
+}
+
+.upgradeButton {
+  display: inline-block;
+  background: white;
+  color: #16a34a;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.upgradeButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Subscription Card */
+.subscriptionCard {
+  background: white;
+  border: 2px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.subscriptionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.subscriptionHeader h2 {
+  font-size: 1.5rem;
+  margin: 0 0 0.5rem 0;
+  color: #000;
+}
+
+.statusBadge {
+  display: inline-block;
+  background: #16a34a;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.subscriptionPrice {
+  text-align: right;
+}
+
+.price {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #c41e3a;
+}
+
+.period {
+  color: #666;
+  font-size: 1rem;
+  margin-left: 0.25rem;
+}
+
+.subscriptionDetails {
+  margin-bottom: 1.5rem;
+}
+
+.detail {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.detailLabel {
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.detailValue {
+  color: #000;
+  font-weight: 600;
+}
+
+.cancelNotice {
+  background: #fff3cd;
+  border: 1px solid #ffecb5;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+  color: #856404;
+  font-size: 0.95rem;
+}
+
+.manageButton {
+  width: 100%;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: white;
+  background: #333;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 0.5rem;
+}
+
+.manageButton:hover:not(:disabled) {
+  background: #000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.manageButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.manageInfo {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #999;
+  margin: 0;
+}
+
+/* No Subscription */
+.noSubscription {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.icon {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.noSubscription h2 {
+  font-size: 1.75rem;
+  color: #000;
+  margin-bottom: 0.5rem;
+}
+
+.noSubscription p {
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+.subscribeButton {
+  display: inline-block;
+  background: #c41e3a;
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.subscribeButton:hover {
+  background: #a01830;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(196, 30, 58, 0.3);
+}
+
+/* Benefits */
+.benefits {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.benefits h3 {
+  font-size: 1.5rem;
+  color: #000;
+  margin-bottom: 1.5rem;
+}
+
+.benefitsList {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.benefit {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.benefitIcon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.benefit h4 {
+  font-size: 1.1rem;
+  color: #000;
+  margin: 0 0 0.25rem 0;
+}
+
+.benefit p {
+  color: #666;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+/* Help */
+.help {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.help h3 {
+  font-size: 1.25rem;
+  color: #000;
+  margin-bottom: 0.5rem;
+}
+
+.help p {
+  color: #666;
+  margin: 0;
+}
+
+.help a {
+  color: #c41e3a;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.help a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 2rem 1rem;
+  }
+
+  .header h1 {
+    font-size: 2rem;
+  }
+
+  .subscriptionHeader {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .subscriptionPrice {
+    text-align: left;
+  }
+
+  .price {
+    font-size: 1.75rem;
+  }
+}

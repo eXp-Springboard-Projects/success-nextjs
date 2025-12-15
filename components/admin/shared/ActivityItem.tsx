@@ -50,15 +50,15 @@ export default function ActivityItem({ activity }: ActivityItemProps) {
   };
 
   const getActionIcon = (action: string) => {
-    if (action.includes('created') || action.includes('added')) return '�';
-    if (action.includes('updated') || action.includes('edited')) return '';
-    if (action.includes('deleted') || action.includes('removed')) return '=�';
-    if (action.includes('published')) return '=�';
-    if (action.includes('cancelled')) return 'L';
-    if (action.includes('completed')) return '';
-    if (action.includes('scheduled')) return '=�';
-    if (action.includes('moved')) return '�';
-    return '=�';
+    if (action.includes('created') || action.includes('added')) return '➕';
+    if (action.includes('updated') || action.includes('edited')) return '✏️';
+    if (action.includes('deleted') || action.includes('removed')) return '🗑️';
+    if (action.includes('published')) return '📤';
+    if (action.includes('cancelled')) return '❌';
+    if (action.includes('completed')) return '✅';
+    if (action.includes('scheduled')) return '📅';
+    if (action.includes('moved')) return '↔️';
+    return '📋';
   };
 
   return (

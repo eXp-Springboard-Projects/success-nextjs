@@ -1,7 +1,44 @@
+import { useState } from 'react';
+import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
 import styles from './Subscribe.module.css';
 
 export default function SubscribePage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubscribe = async (plan: 'monthly' | 'yearly') => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ plan }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create checkout session');
+      }
+
+      // Redirect to Stripe Checkout
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start checkout');
+      setLoading(false);
+    }
+  };
+
   return (
     <Layout>
       <div className={styles.subscribe}>
@@ -16,6 +53,19 @@ export default function SubscribePage() {
 
         <section className={styles.section}>
           <div className={styles.container}>
+            {error && (
+              <div style={{
+                padding: '1rem',
+                marginBottom: '1rem',
+                backgroundColor: '#fee',
+                color: '#c00',
+                borderRadius: '8px',
+                textAlign: 'center'
+              }}>
+                {error}
+              </div>
+            )}
+
             <div className={styles.plansGrid}>
               {/* SUCCESS+ Insider - Monthly Plan */}
               <div className={styles.plan}>
@@ -38,7 +88,13 @@ export default function SubscribePage() {
                   <li>✓ Legacy SUCCESS video training</li>
                   <li>✓ Additional member discounts</li>
                 </ul>
-                <button className={styles.planButton}>Subscribe Monthly</button>
+                <button
+                  className={styles.planButton}
+                  onClick={() => handleSubscribe('monthly')}
+                  disabled={loading}
+                >
+                  {loading ? 'Processing...' : 'Subscribe Monthly'}
+                </button>
               </div>
 
               {/* SUCCESS+ Insider - Annual Plan (Featured) */}
@@ -63,7 +119,13 @@ export default function SubscribePage() {
                   <li>✓ Legacy SUCCESS video training</li>
                   <li>✓ Additional member discounts</li>
                 </ul>
-                <button className={styles.planButtonFeatured}>Subscribe Annually</button>
+                <button
+                  className={styles.planButtonFeatured}
+                  onClick={() => handleSubscribe('yearly')}
+                  disabled={loading}
+                >
+                  {loading ? 'Processing...' : 'Subscribe Annually'}
+                </button>
               </div>
             </div>
 

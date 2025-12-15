@@ -1,0 +1,262 @@
+.widget {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge.active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.badge.inactive {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.badge.warning {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.upgradePrompt {
+  text-align: center;
+  padding: 20px;
+}
+
+.upgradePrompt p {
+  margin-bottom: 16px;
+  color: #666;
+}
+
+.upgradeBtn {
+  display: inline-block;
+  background: linear-gradient(135deg, #f7931e 0%, #e67e22 100%);
+  color: white;
+  padding: 12px 32px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.2s;
+}
+
+.upgradeBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(231, 126, 34, 0.3);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.plan {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #fff9f0 0%, #fff 100%);
+  border-radius: 8px;
+  border: 1px solid #f7931e33;
+}
+
+.planIcon {
+  font-size: 32px;
+}
+
+.planInfo h4 {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  color: #1a1a1a;
+}
+
+.billingCycle {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.renewal {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.renewalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.value {
+  font-size: 14px;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.renewalNotice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #fff9f0;
+  border-radius: 6px;
+  border: 1px solid #f7931e33;
+  font-size: 13px;
+  color: #856404;
+}
+
+.noticeIcon {
+  font-size: 16px;
+}
+
+.cancelNotice {
+  padding: 12px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+}
+
+.cancelNotice p {
+  margin: 0;
+  font-size: 13px;
+  color: #856404;
+  line-height: 1.5;
+}
+
+.paymentInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.benefits {
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.benefits h5 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.benefits ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.benefits li {
+  font-size: 13px;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.manageBtn {
+  flex: 1;
+  text-align: center;
+  background: #1a1a1a;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.manageBtn:hover {
+  background: #333;
+}
+
+.settingsLink {
+  flex: 1;
+  text-align: center;
+  background: white;
+  color: #1a1a1a;
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.settingsLink:hover {
+  background: #f8f9fa;
+  border-color: #999;
+}
+
+@media (max-width: 768px) {
+  .widget {
+    padding: 16px;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .plan {
+    flex-direction: column;
+    text-align: center;
+  }
+}

@@ -122,7 +122,7 @@ export default function DisputesPage() {
             <div className={styles.loading}>Loading disputes...</div>
           ) : disputes.length === 0 ? (
             <div className={styles.empty}>
-              <div className={styles.emptyIcon}>�</div>
+              <div className={styles.emptyIcon}>⚖️</div>
               <div>No disputes found</div>
               <button
                 onClick={() => setShowCreateModal(true)}
@@ -251,7 +251,7 @@ function CreateDisputeModal({ onClose, onSuccess }: { onClose: () => void; onSuc
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2>Create New Dispute</h2>
-          <button onClick={onClose} className={styles.closeButton}></button>
+          <button onClick={onClose} className={styles.closeButton}>×</button>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.modalForm}>

@@ -82,6 +82,9 @@ export default function SuccessLabsPage() {
             <Link href="/dashboard">
               <button><span className={styles.icon}>📊</span> Dashboard</button>
             </Link>
+            <Link href="/dashboard/premium">
+              <button><span className={styles.icon}>⭐</span> Premium Content</button>
+            </Link>
             <Link href="/dashboard/courses">
               <button><span className={styles.icon}>🎓</span> Courses</button>
             </Link>

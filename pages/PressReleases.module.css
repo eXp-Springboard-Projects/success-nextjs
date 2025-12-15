@@ -11,6 +11,20 @@
   border-bottom: 2px solid #e5e5e5;
 }
 
+.backLink {
+  display: inline-block;
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 600;
+  margin-bottom: 2rem;
+  transition: color 0.2s;
+}
+
+.backLink:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
 .title {
   font-size: 48px;
   font-weight: 700;

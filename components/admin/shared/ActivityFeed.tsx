@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Department } from '@prisma/client';
 import ActivityItem from './ActivityItem';
 import styles from './ActivityFeed.module.css';
@@ -106,7 +106,7 @@ export default function ActivityFeed({
         <div className={styles.loading}>Loading activity...</div>
       ) : activities.length === 0 ? (
         <div className={styles.empty}>
-          <div className={styles.emptyIcon}>=�</div>
+          <div className={styles.emptyIcon}>=í</div>
           <div>No activity to display</div>
         </div>
       ) : (

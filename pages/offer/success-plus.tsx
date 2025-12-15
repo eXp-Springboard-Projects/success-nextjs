@@ -47,12 +47,13 @@ export default function SuccessPlusOffer() {
             <p className={styles.heroSubtitle}>
               With SUCCESS+™, that tradition continues—uniting print and digital experiences to bring you closer to the ideas, people, and insights shaping success today.
             </p>
-            <button
+            <a
+              href="/signup/trial"
               className={styles.ctaPrimary}
-              onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+              style={{ display: 'inline-block', textDecoration: 'none' }}
             >
               Start Your Free Trial
-            </button>
+            </a>
           </div>
         </section>
 
@@ -178,12 +179,13 @@ export default function SuccessPlusOffer() {
                 <li>✓ Cancel anytime</li>
               </ul>
 
-              <button
+              <a
+                href="/signup/trial"
                 className={styles.ctaPrimary}
-                onClick={() => handleCheckout('insider', billingCycle)}
+                style={{ display: 'inline-block', textDecoration: 'none' }}
               >
                 Start Your Free Trial
-              </button>
+              </a>
             </div>
           </div>
         </section>

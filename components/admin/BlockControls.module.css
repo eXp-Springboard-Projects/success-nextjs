@@ -1,0 +1,167 @@
+.panel {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  min-width: 280px;
+  z-index: 1000;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.header h4 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: #666;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.closeButton:hover {
+  color: #000;
+}
+
+.section {
+  margin-bottom: 1rem;
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+.section label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.buttonGroup {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.button {
+  padding: 0.5rem;
+  border: 1px solid #d0d0d0;
+  background: white;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.button:hover {
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s;
+  background: white;
+}
+
+.select:focus {
+  border-color: #667eea;
+}
+
+.field {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  border-color: #667eea;
+}
+
+.colorInput {
+  width: 48px;
+  height: 36px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.divider {
+  height: 1px;
+  background: #e0e0e0;
+  margin: 1rem 0;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.actionButton,
+.deleteButton {
+  width: 100%;
+  padding: 0.625rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  text-align: left;
+}
+
+.actionButton {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.actionButton:hover {
+  background: #e0e0e0;
+}
+
+.deleteButton {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.deleteButton:hover {
+  background: #fecaca;
+}

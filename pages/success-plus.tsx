@@ -21,7 +21,7 @@ export default function SuccessPlusPage() {
             <p className={styles.heroDescription}>
               With SUCCESS+™, that tradition continues—uniting print and digital experiences to bring you closer to the ideas, people, and insights shaping success today.
             </p>
-            <Link href="/subscribe?plan=annual" className={styles.heroCTA}>
+            <Link href="/signup/trial" className={styles.heroCTA}>
               Start Your Free Trial
             </Link>
           </div>
@@ -107,6 +107,16 @@ export default function SuccessPlusPage() {
                   </p>
                 </div>
               </div>
+
+              <div className={styles.feature}>
+                <div className={styles.featureIcon}>🧪</div>
+                <div className={styles.featureContent}>
+                  <h3 className={styles.featureTitle}>SUCCESS Labs — AI-Powered Coaching Community</h3>
+                  <p className={styles.featureDescription}>
+                    Get exclusive access to <a href="https://labs.success.com/" target="_blank" rel="noopener noreferrer" style={{color: '#c41e3a', textDecoration: 'underline'}}>SUCCESS Labs</a>, our AI-powered coaching platform and community of high achievers. Connect with like-minded individuals, get personalized guidance, and accelerate your path to success.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -178,7 +188,7 @@ export default function SuccessPlusPage() {
                 <li>✓ Additional member discounts on premium programs</li>
               </ul>
               <Link
-                href={`/subscribe?plan=${billingCycle}`}
+                href="/signup/trial"
                 className={styles.joinButton}
               >
                 Start Your Free Trial Today

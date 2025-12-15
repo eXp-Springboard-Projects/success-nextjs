@@ -64,7 +64,7 @@ export default function AnnouncementsPage({ userDepartment }: AnnouncementsPageP
           <div className={styles.loading}>Loading announcements...</div>
         ) : announcements.length === 0 ? (
           <div className={styles.empty}>
-            <div className={styles.emptyIcon}>=�</div>
+            <div className={styles.emptyIcon}>📢</div>
             <div>No announcements yet</div>
           </div>
         ) : (
@@ -81,11 +81,11 @@ export default function AnnouncementsPage({ userDepartment }: AnnouncementsPageP
                 />
                 <div className={styles.meta}>
                   <span>Posted by {announcement.createdBy}</span>
-                  <span>"</span>
+                  <span>•</span>
                   <span>{new Date(announcement.createdAt).toLocaleDateString()}</span>
                   {announcement.expiresAt && (
                     <>
-                      <span>"</span>
+                      <span>•</span>
                       <span>Expires {new Date(announcement.expiresAt).toLocaleDateString()}</span>
                     </>
                   )}
@@ -103,6 +103,10 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const result = await requireDepartmentAuth(Department.CUSTOMER_SERVICE)(context);
 
   if ('redirect' in result) {
+    return result;
+  }
+
+  if ('notFound' in result) {
     return result;
   }
 

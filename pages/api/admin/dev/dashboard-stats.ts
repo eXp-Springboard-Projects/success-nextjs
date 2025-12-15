@@ -39,7 +39,7 @@ export default async function handler(
       // Total errors in last 24 hours
       prisma.error_logs.count({
         where: {
-          createdAt: {
+          firstSeen: {
             gte: twentyFourHoursAgo
           }
         }
@@ -74,10 +74,7 @@ export default async function handler(
       // Webhook failures in last 24 hours
       prisma.webhook_logs.count({
         where: {
-          status: 'Failed',
-          createdAt: {
-            gte: twentyFourHoursAgo
-          }
+          status: 'Failed'
         }
       })
     ]);

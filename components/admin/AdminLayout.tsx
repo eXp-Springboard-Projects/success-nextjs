@@ -15,13 +15,21 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     // Determine the active department based on the URL path
     const path = router.pathname;
 
-    if (path.includes('/admin/customer-service') || 
-        path.includes('/admin/sales') || 
-        path.includes('/admin/orders') || 
+    if (path.includes('/admin/customer-service') ||
+        path.includes('/admin/sales') ||
+        path.includes('/admin/orders') ||
         path.includes('/admin/refunds') ||
         path.includes('/admin/members')) {
       setCurrentDept(Department.CUSTOMER_SERVICE);
-    } else if (path.includes('/admin/editorial') || path.includes('/admin/posts')) {
+    } else if (path.includes('/admin/editorial') ||
+               path.includes('/admin/posts') ||
+               path.includes('/admin/pages') ||
+               path.includes('/admin/videos') ||
+               path.includes('/admin/podcasts') ||
+               path.includes('/admin/categories') ||
+               path.includes('/admin/tags') ||
+               path.includes('/admin/media') ||
+               path.includes('/admin/comments')) {
       setCurrentDept(Department.EDITORIAL);
     } else if (path.includes('/admin/success-plus')) {
       setCurrentDept(Department.SUCCESS_PLUS);

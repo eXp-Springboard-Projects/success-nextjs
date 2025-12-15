@@ -8,25 +8,22 @@ const nextConfig = {
     return 'build-' + Date.now();
   },
   
-  // Disable static page generation for error pages
-  exportPathMap: async function (defaultPathMap) {
-    // Remove error pages from static generation
-    const { '/_error': removed, ...pathMap } = defaultPathMap;
-    return pathMap;
-  },
-  
-  eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     // Dangerously allow production builds to successfully complete even if
     // your project has type errors.
     ignoreBuildErrors: false,
   },
   images: {
-    domains: ['www.success.com', 'mysuccessplus.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'www.success.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'mysuccessplus.com',
+      },
+    ],
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
@@ -39,20 +36,9 @@ const nextConfig = {
   compress: true,
   // Optimize production build
   productionBrowserSourceMaps: false,
-  // Enable SWC minification for faster builds
-  swcMinify: true,
-  
-  // Webpack config to optimize chunks and prevent Html import issues
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      // Prevent Html component from being bundled in client chunks
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        'next/document': false,
-      };
-    }
-    return config;
-  },
+
+  // Enable Turbopack explicitly
+  turbopack: {},
 };
 
 module.exports = nextConfig;

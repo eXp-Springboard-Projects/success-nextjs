@@ -57,11 +57,8 @@ export default function SEOManager() {
   const [seoIssues, setSeoIssues] = useState<string[]>([]);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/admin/login');
-    } else if (status === 'authenticated' && session?.user?.role !== 'ADMIN') {
-      router.push('/dashboard');
-    }
+    // Auth is handled by requireAdminAuth in getServerSideProps
+    // No client-side redirects needed
   }, [status, session, router]);
 
   useEffect(() => {

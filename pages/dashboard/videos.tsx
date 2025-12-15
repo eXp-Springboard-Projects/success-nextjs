@@ -50,6 +50,9 @@ export default function VideosPage() {
             <Link href="/dashboard">
               <button><span className={styles.icon}>📊</span> Dashboard</button>
             </Link>
+            <Link href="/dashboard/premium">
+              <button><span className={styles.icon}>⭐</span> Premium Content</button>
+            </Link>
             <Link href="/dashboard/courses">
               <button><span className={styles.icon}>🎓</span> Courses</button>
             </Link>
@@ -80,18 +83,18 @@ export default function VideosPage() {
         <main className={styles.mainContent}>
           <div className={styles.header}>
             <h1>Video Library</h1>
-            <p className={styles.subtitle}>Exclusive SUCCESS+ member videos coming soon</p>
+            <p className={styles.subtitle}>Building our exclusive video collection for members</p>
           </div>
 
           <div className={styles.comingSoon}>
-            <h2>Exclusive Video Content</h2>
+            <h2>Member-Exclusive Video Content</h2>
             <p>
-              We're building an extensive library of exclusive video content for SUCCESS+ members,
+              We're curating an extensive library of exclusive video content for SUCCESS+ members,
               including interviews with industry leaders, masterclasses, and behind-the-scenes content.
             </p>
             <p>
-              In the meantime, check out our{' '}
-              <Link href="/dashboard/courses">premium courses</Link> which include video lessons.
+              While we build this collection, explore our{' '}
+              <Link href="/dashboard/courses">premium courses</Link> which include comprehensive video lessons.
             </p>
           </div>
         </main>

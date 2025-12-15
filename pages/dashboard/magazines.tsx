@@ -256,13 +256,24 @@ export default function MagazinesPage() {
                         </p>
                       )}
 
-                      <button
-                        className={magazineStyles.readBtn}
-                        onClick={() => handleOpenMagazine(magazine)}
-                      >
-                        <span className={magazineStyles.icon}>📖</span>
-                        {magazine.currentPage > 1 ? 'Continue Reading' : 'Read Now'}
-                      </button>
+                      <div className={magazineStyles.buttonGroup}>
+                        <button
+                          className={magazineStyles.readBtn}
+                          onClick={() => handleOpenMagazine(magazine)}
+                        >
+                          <span className={magazineStyles.icon}>📖</span>
+                          {magazine.currentPage > 1 ? 'Continue Reading' : 'Read Now'}
+                        </button>
+                        <a
+                          href={magazine.pdfUrl}
+                          download
+                          className={magazineStyles.downloadBtn}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <span className={magazineStyles.icon}>⬇️</span>
+                          Download PDF
+                        </a>
+                      </div>
                     </div>
                   </div>
                 ))}
