@@ -727,6 +727,10 @@ model users {
   resetTokenExpiry          DateTime?
   hasChangedDefaultPassword Boolean              @default(false)
   invitedBy                 String?
+
+  // Trial fields
+  trialEndsAt               DateTime?
+  linkedMemberId            String?
   inviteCode                String?
   isActive                  Boolean              @default(true)
 
@@ -784,6 +788,10 @@ model members {
   // Customer-specific roles (based on purchases/subscriptions)
   membershipTier            MembershipTier      @default(Free)
   membershipStatus          MemberStatus        @default(Active)
+
+  // Trial fields
+  trialEndsAt               DateTime?
+  trialStartedAt            DateTime?
 
   // Platform user link (if they ALSO have admin/staff access)
   platformUser              users?              @relation("UserMemberLink")

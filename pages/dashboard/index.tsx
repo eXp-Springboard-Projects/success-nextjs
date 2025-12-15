@@ -2,6 +2,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Head from 'next/head';
+import TrialStatusBanner from '../../components/dashboard/TrialStatusBanner';
 import SubscriptionStatusWidget from '../../components/dashboard/SubscriptionStatusWidget';
 import styles from './dashboard.module.css';
 import premiumStyles from './dashboard-premium.module.css';
@@ -140,6 +141,9 @@ export default function MemberDashboard() {
               </div>
             )}
           </div>
+
+          {/* Trial Status Banner */}
+          <TrialStatusBanner />
 
           {/* Subscription Status Widget */}
           <SubscriptionStatusWidget />

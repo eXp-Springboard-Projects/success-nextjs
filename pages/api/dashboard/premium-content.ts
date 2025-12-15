@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
 import { PrismaClient } from '@prisma/client';
+import { checkTrialAccess } from '../../../lib/checkTrialAccess';
 
 const prisma = new PrismaClient();
 
@@ -17,28 +18,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // Check if user has active subscription
+    // Check if user has active subscription or trial
+    const accessResult = await checkTrialAccess(session.user.email!);
+
+    if (!accessResult.hasAccess) {
+      if (accessResult.reason === 'trial_expired') {
+        return res.status(403).json({
+          error: 'Your trial has expired',
+          trialExpired: true,
+          upgradeUrl: '/upgrade',
+        });
+      }
+      return res.status(403).json({ error: 'SUCCESS+ subscription required' });
+    }
+
+    // Find the user for bookmarks
     const user = await prisma.users.findUnique({
       where: { email: session.user.email! },
-      include: {
-        member: {
-          include: {
-            subscriptions: {
-              where: { status: 'ACTIVE' },
-            },
-          },
-        },
-      },
     });
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
-    }
-
-    const hasActiveSubscription = user.member?.subscriptions?.some(s => s.status === 'ACTIVE');
-
-    if (!hasActiveSubscription) {
-      return res.status(403).json({ error: 'SUCCESS+ subscription required' });
     }
 
     const { category, limit = '20', offset = '0' } = req.query;
