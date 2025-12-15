@@ -10,6 +10,8 @@ interface DashboardStats {
   newMembersThisMonth: number;
   churnRate: number;
   monthlyRecurringRevenue: number;
+  activeTrials: number;
+  totalTrials: number;
   recentActivity: Array<{
     id: string;
     type: string;
@@ -25,6 +27,8 @@ export default function SuccessPlusDashboard() {
     newMembersThisMonth: 0,
     churnRate: 0,
     monthlyRecurringRevenue: 0,
+    activeTrials: 0,
+    totalTrials: 0,
     recentActivity: [],
   });
   const [loading, setLoading] = useState(true);
@@ -90,12 +94,30 @@ export default function SuccessPlusDashboard() {
               </div>
             </div>
           </div>
+
+          <div className={styles.statCard}>
+            <div className={styles.statIcon}>🎁</div>
+            <div className={styles.statContent}>
+              <div className={styles.statLabel}>Active Trials</div>
+              <div className={styles.statValue}>
+                {loading ? '...' : stats.activeTrials}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Quick Actions */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Quick Actions</h2>
           <div className={styles.actionsGrid}>
+            <Link href="/admin/success-plus/trials" className={styles.actionCard}>
+              <div className={styles.actionIcon}>🎁</div>
+              <div className={styles.actionTitle}>Trial Users</div>
+              <div className={styles.actionDescription}>
+                Track and convert trial users ({stats.activeTrials} active)
+              </div>
+            </Link>
+
             <div className={styles.actionCardDisabled}>
               <div className={styles.comingSoonBadge}>Coming Soon</div>
               <div className={styles.actionIcon}>👥</div>

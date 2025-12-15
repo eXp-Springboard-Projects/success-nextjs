@@ -36,7 +36,9 @@ export default async function handler(
       cancelledLastMonth,
       cancelledTwoMonthsAgo,
       subscriptions,
-      recentActivity
+      recentActivity,
+      activeTrials,
+      totalTrials
     ] = await Promise.all([
       // Active SUCCESS+ members (count members with SUCCESSPlus tier)
       prisma.members.count({
@@ -101,6 +103,25 @@ export default async function handler(
           createdAt: 'desc'
         },
         take: 10
+      }),
+
+      // Active trial users (trials that haven't expired yet)
+      prisma.members.count({
+        where: {
+          trialEndsAt: {
+            not: null,
+            gt: now
+          }
+        }
+      }),
+
+      // Total trial users (all time)
+      prisma.members.count({
+        where: {
+          trialEndsAt: {
+            not: null
+          }
+        }
       })
     ]);
 
@@ -120,6 +141,8 @@ export default async function handler(
       newMembersThisMonth,
       churnRate,
       monthlyRecurringRevenue,
+      activeTrials,
+      totalTrials,
       recentActivity: recentActivity.map(activity => ({
         id: activity.id,
         type: activity.entityType?.toLowerCase() || 'member',

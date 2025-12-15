@@ -54,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         lastName,
         email: email.toLowerCase(),
         phone: null,
-        membershipTier: 'TRIALING',
+        membershipTier: 'Free',
         membershipStatus: 'Active',
         trialEndsAt,
         totalSpent: 0,
@@ -90,6 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         currentPeriodStart: new Date(),
         currentPeriodEnd: trialEndsAt,
         cancelAtPeriodEnd: false,
+        updatedAt: new Date(),
       },
     });
 
@@ -98,7 +99,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: {
         id: nanoid(),
         userId: user.id,
-        activityType: 'TRIAL_STARTED',
+        activityType: 'SUBSCRIPTION_STARTED',
         title: 'Started 7-Day Free Trial',
         description: `Trial account created for ${email}`,
         metadata: JSON.stringify({

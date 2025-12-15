@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const user = await prisma.users.findUnique({
       where: { email: session.user.email! },
       include: {
-        members_users_linkedMemberIdTomembers: {
+        member: {
           select: {
             membershipTier: true,
             membershipStatus: true,
@@ -35,13 +35,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const member = user.members_users_linkedMemberIdTomembers;
+    const member = user.member;
     const trialEndsAt = user.trialEndsAt || member?.trialEndsAt;
-    const membershipTier = member?.membershipTier || 'FREE';
+    const membershipTier = member?.membershipTier || 'Free';
 
     // Calculate if trial is active
     const isTrialActive =
-      membershipTier === 'TRIALING' &&
       trialEndsAt &&
       new Date(trialEndsAt) > new Date();
 

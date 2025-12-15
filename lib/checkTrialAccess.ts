@@ -19,7 +19,7 @@ export async function checkTrialAccess(userEmail: string): Promise<TrialAccessRe
     const user = await prisma.users.findUnique({
       where: { email: userEmail },
       include: {
-        members_users_linkedMemberIdTomembers: {
+        member: {
           select: {
             membershipTier: true,
             membershipStatus: true,
@@ -48,7 +48,7 @@ export async function checkTrialAccess(userEmail: string): Promise<TrialAccessRe
       };
     }
 
-    const member = user.members_users_linkedMemberIdTomembers;
+    const member = user.member;
 
     // Check if user has active paid subscription
     if (member?.subscriptions && member.subscriptions.length > 0) {
@@ -86,8 +86,8 @@ export async function checkTrialAccess(userEmail: string): Promise<TrialAccessRe
       }
     }
 
-    // Check member tier and trial status directly
-    if (member?.membershipTier === 'TRIALING' && member.trialEndsAt) {
+    // Check member trial status directly
+    if (member?.trialEndsAt) {
       const now = new Date();
       const trialEnd = new Date(member.trialEndsAt);
 
@@ -113,10 +113,9 @@ export async function checkTrialAccess(userEmail: string): Promise<TrialAccessRe
 
     // Check for paid membership tiers
     if (
-      member?.membershipTier === 'SUCCESS_PLUS' ||
-      member?.membershipTier === 'INSIDER' ||
-      member?.membershipTier === 'COLLECTIVE' ||
-      member?.membershipTier === 'PREMIUM'
+      member?.membershipTier === 'SUCCESSPlus' ||
+      member?.membershipTier === 'VIP' ||
+      member?.membershipTier === 'Enterprise'
     ) {
       return {
         hasAccess: true,
