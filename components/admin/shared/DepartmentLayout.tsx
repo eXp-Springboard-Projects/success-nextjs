@@ -146,13 +146,29 @@ function CollapsibleSection({
   router: any;
   notificationCount?: number;
 }) {
-  const [isOpen, setIsOpen] = useState(true);
+  // Initialize state from localStorage, default to true (open)
+  const [isOpen, setIsOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`sidebar_section_${title}`);
+      return saved !== null ? saved === 'true' : true;
+    }
+    return true;
+  });
+
+  // Save state to localStorage when it changes
+  const toggleSection = () => {
+    const newState = !isOpen;
+    setIsOpen(newState);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`sidebar_section_${title}`, String(newState));
+    }
+  };
 
   return (
     <div className={styles.navSection}>
       <button
         className={styles.navSectionTitle}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggleSection}
       >
         <span>{title}</span>
         <span className={styles.sectionToggle}>{isOpen ? '−' : '+'}</span>
