@@ -1,39 +1,18 @@
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import { useSession } from 'next-auth/react';
+import { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import styles from './Dashboard.module.css';
-import { requireAdminAuth } from '@/lib/adminAuth';
+import { Department } from '@prisma/client';
+import DepartmentLayout from '@/components/admin/shared/DepartmentLayout';
+import { requireDepartmentAuth } from '@/lib/departmentAuth';
+import styles from './DashboardContent.module.css';
 
 export default function DashboardContent() {
-  const router = useRouter();
-  const { data: session, status } = useSession();
-  const [stats, setStats] = useState({
+  const [stats] = useState({
     totalCourses: 0,
     totalResources: 0,
     totalLabs: 0,
     totalEvents: 0,
   });
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/admin/login');
-    } else if (status === 'authenticated') {
-      // Check if user is admin
-      if (session?.user?.role !== 'ADMIN' && session?.user?.role !== 'SUPER_ADMIN') {
-        router.push('/');
-      }
-    }
-  }, [status, session, router]);
-
-  if (status === 'loading') {
-    return <div className={styles.loading}>Loading...</div>;
-  }
-
-  if (!session || (session.user?.role !== 'ADMIN' && session.user?.role !== 'SUPER_ADMIN')) {
-    return null;
-  }
 
   return (
     <>
@@ -41,35 +20,12 @@ export default function DashboardContent() {
         <title>SUCCESS+ Dashboard Content - Admin</title>
       </Head>
 
-      <div className={styles.adminLayout}>
-        <aside className={styles.sidebar}>
-          <div className={styles.logo}>
-            <h2>SUCCESS Admin</h2>
-          </div>
-          <nav className={styles.nav}>
-            <Link href="/admin">
-              <button>📊 Dashboard</button>
-            </Link>
-            <Link href="/admin/dashboard-content">
-              <button className={styles.active}>🎓 SUCCESS+ Content</button>
-            </Link>
-            <Link href="/admin/posts">
-              <button>📝 Posts</button>
-            </Link>
-            <Link href="/admin/members">
-              <button>👥 Members</button>
-            </Link>
-            <Link href="/dashboard">
-              <button>👁️ View Dashboard</button>
-            </Link>
-          </nav>
-        </aside>
-
-        <main className={styles.mainContent}>
-          <div className={styles.header}>
-            <h1>SUCCESS+ Dashboard Content</h1>
-            <p className={styles.subtitle}>Manage courses, resources, labs, and events</p>
-          </div>
+      <DepartmentLayout
+        currentDepartment={Department.SUCCESS_PLUS}
+        pageTitle="SUCCESS+ Dashboard Content"
+        description="Manage courses, resources, labs, and events"
+      >
+        <div className={styles.dashboard}>
 
           <div className={styles.statsGrid}>
             <div className={styles.statCard}>
@@ -142,11 +98,11 @@ export default function DashboardContent() {
               </Link>
             </div>
           </div>
-        </main>
-      </div>
+        </div>
+      </DepartmentLayout>
     </>
   );
 }
 
 // Server-side authentication check
-export const getServerSideProps = requireAdminAuth;
+export const getServerSideProps = requireDepartmentAuth(Department.SUCCESS_PLUS);
