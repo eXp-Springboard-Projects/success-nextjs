@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
@@ -30,11 +30,16 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/test_db?schema=public' }}
 
       - name: Check TypeScript
-        run: npx tsc --noEmit || echo "TypeScript check completed"
+        run: |
+          echo "Running TypeScript check..."
+          npx tsc --noEmit || echo "TypeScript check found errors but continuing..."
         continue-on-error: true
 
       - name: Build project
-        run: npx next build
+        run: |
+          echo "Building Next.js project..."
+          npx next build
+          echo "Build completed successfully"
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/test_db?schema=public' }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'test-secret-for-ci-builds-only-minimum-32-characters-long' }}
