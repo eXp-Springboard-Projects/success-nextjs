@@ -1,100 +1,88 @@
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import { useSession } from 'next-auth/react';
 import Head from 'next/head';
 import Link from 'next/link';
-import styles from '../Dashboard.module.css';
-import { requireAdminAuth } from '@/lib/adminAuth';
+import { Department } from '@prisma/client';
+import DepartmentLayout from '@/components/admin/shared/DepartmentLayout';
+import { requireDepartmentAuth } from '@/lib/departmentAuth';
+import styles from '../DashboardContent.module.css';
 
 export default function AdminResources() {
-  const router = useRouter();
-  const { data: session, status } = useSession();
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/admin/login');
-    } else if (status === 'authenticated') {
-      if (session?.user?.role !== 'ADMIN' && session?.user?.role !== 'SUPER_ADMIN') {
-        router.push('/');
-      }
-    }
-  }, [status, session, router]);
-
-  if (status === 'loading') {
-    return <div className={styles.loading}>Loading...</div>;
-  }
-
-  if (!session || (session.user?.role !== 'ADMIN' && session.user?.role !== 'SUPER_ADMIN')) {
-    return null;
-  }
-
   return (
     <>
       <Head>
         <title>Manage Resources - SUCCESS+ Admin</title>
       </Head>
 
-      <div className={styles.adminLayout}>
-        <aside className={styles.sidebar}>
-          <div className={styles.logo}>
-            <h2>SUCCESS Admin</h2>
-          </div>
-          <nav className={styles.nav}>
-            <Link href="/admin">
-              <button>📊 Dashboard</button>
-            </Link>
-            <Link href="/admin/dashboard-content">
-              <button>🎓 SUCCESS+ Content</button>
-            </Link>
-          </nav>
-        </aside>
-
-        <main className={styles.mainContent}>
-          <div className={styles.header}>
-            <h1>Manage Resources</h1>
-            <Link href="/admin/dashboard-content" className={styles.backLink}>
-              ← Back to Dashboard Content
-            </Link>
-          </div>
-
+      <DepartmentLayout
+        currentDepartment={Department.SUCCESS_PLUS}
+        pageTitle="Manage Resources"
+        description="Upload and organize downloadable resources"
+      >
+        <div className={styles.dashboard}>
           <div className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <h2>All Resources</h2>
-              <button className={styles.primaryButton}>+ Add New Resource</button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <Link href="/admin/dashboard-content" style={{ color: '#3b82f6', textDecoration: 'none', fontSize: '0.875rem' }}>
+                ← Back to Dashboard Content
+              </Link>
+              <button style={{
+                padding: '0.75rem 1.5rem',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                fontWeight: '600',
+                cursor: 'pointer'
+              }}>
+                + Add New Resource
+              </button>
             </div>
 
-            <div className={styles.notice}>
-              <h3>🚧 Resource Management</h3>
-              <p>
+            <div style={{
+              background: '#fef3c7',
+              border: '1px solid #f59e0b',
+              borderRadius: '0.75rem',
+              padding: '1.5rem',
+              marginBottom: '1.5rem'
+            }}>
+              <h3 style={{ margin: '0 0 1rem 0', color: '#92400e' }}>🚧 Resource Management</h3>
+              <p style={{ margin: '0 0 0.75rem 0', color: '#78350f' }}>
                 Resource management interface is under development. You can add resources
                 manually to the database using the Prisma schema.
               </p>
-              <p>
+              <p style={{ margin: '0 0 0.75rem 0', color: '#78350f' }}>
                 <strong>Database Model:</strong> resources
               </p>
-              <p>
+              <p style={{ margin: '0 0 1rem 0', color: '#78350f' }}>
                 <strong>Categories:</strong> TEMPLATES, GUIDES, WORKSHEETS, EBOOKS, TOOLS, CHECKLISTS
               </p>
-              <Link href="/dashboard/resources" className={styles.previewLink}>
+              <Link href="/dashboard/resources" style={{
+                color: '#3b82f6',
+                textDecoration: 'none',
+                fontWeight: '500'
+              }}>
                 Preview Resources Page →
               </Link>
             </div>
 
-            <div className={styles.infoBox}>
-              <h4>To add a resource manually:</h4>
-              <ol>
-                <li>Upload the file to your storage (e.g., AWS S3, Cloudinary)</li>
-                <li>Use Prisma Studio or database client to insert into the <code>resources</code> table</li>
-                <li>Include: title, description, category, fileUrl, fileType, fileSize</li>
-                <li>Set <code>isPremium</code> to true for SUCCESS+ exclusive content</li>
+            <div style={{
+              background: '#f3f4f6',
+              border: '1px solid #e5e7eb',
+              borderRadius: '0.75rem',
+              padding: '1.5rem'
+            }}>
+              <h4 style={{ margin: '0 0 1rem 0', color: '#111827' }}>To add a resource manually:</h4>
+              <ol style={{ margin: 0, paddingLeft: '1.5rem', color: '#374151' }}>
+                <li style={{ marginBottom: '0.5rem' }}>Upload the file to your storage (e.g., AWS S3, Cloudinary)</li>
+                <li style={{ marginBottom: '0.5rem' }}>Use Prisma Studio or database client to insert into the <code style={{ background: '#e5e7eb', padding: '0.125rem 0.375rem', borderRadius: '0.25rem' }}>resources</code> table</li>
+                <li style={{ marginBottom: '0.5rem' }}>Include: title, description, category, fileUrl, fileType, fileSize</li>
+                <li>Set <code style={{ background: '#e5e7eb', padding: '0.125rem 0.375rem', borderRadius: '0.25rem' }}>isPremium</code> to true for SUCCESS+ exclusive content</li>
               </ol>
             </div>
           </div>
-        </main>
-      </div>
+        </div>
+      </DepartmentLayout>
     </>
   );
 }
 
 // Server-side authentication check
-export const getServerSideProps = requireAdminAuth;
+export const getServerSideProps = requireDepartmentAuth(Department.SUCCESS_PLUS);
