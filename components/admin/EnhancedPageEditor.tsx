@@ -26,6 +26,7 @@ import MediaLibraryPicker from './MediaLibraryPicker';
 import ImageEditor from './ImageEditor';
 import TextStylePanel from './TextStylePanel';
 import BlockControls from './BlockControls';
+import { pageTemplates, getTemplateById } from '@/lib/pageTemplates';
 import styles from './EnhancedPostEditor.module.css';
 import blockStyles from './BlockEditor.module.css';
 
@@ -58,6 +59,7 @@ export default function EnhancedPageEditor({ pageId }: EnhancedPageEditorProps) 
   const [showTextStylePanel, setShowTextStylePanel] = useState(false);
   const [showBlockControls, setShowBlockControls] = useState(false);
   const [blockControlsPosition, setBlockControlsPosition] = useState({ top: 0, left: 0 });
+  const [showTemplateSelector, setShowTemplateSelector] = useState(!pageId); // Show on new pages
   const fileInputRef = useRef<HTMLInputElement>(null);
   const blockMenuRef = useRef<HTMLDivElement>(null);
 
@@ -387,6 +389,22 @@ export default function EnhancedPageEditor({ pageId }: EnhancedPageEditorProps) 
     }
   };
 
+  const loadTemplate = (templateId: string) => {
+    const template = getTemplateById(templateId);
+    if (!template || !editor) return;
+
+    // Load template content
+    editor.commands.setContent(template.content);
+
+    // Pre-fill SEO fields if available
+    if (template.seoTitle) setSeoTitle(template.seoTitle);
+    if (template.seoDescription) setSeoDescription(template.seoDescription);
+    if (template.featuredImage) setFeaturedImage(template.featuredImage);
+
+    // Close template selector
+    setShowTemplateSelector(false);
+  };
+
   const handleSave = async (publishStatus: string) => {
     if (!title || !editor?.getHTML()) {
       alert('Title and content are required');
@@ -458,12 +476,58 @@ export default function EnhancedPageEditor({ pageId }: EnhancedPageEditorProps) 
 
   return (
     <div className={styles.container}>
+      {/* Template Selector Modal */}
+      {showTemplateSelector && (
+        <div className={styles.modalOverlay} onClick={() => setShowTemplateSelector(false)}>
+          <div className={styles.templateSelectorModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>Choose a Template</h2>
+              <p>Start with a pre-built template or create from scratch</p>
+              <button
+                onClick={() => setShowTemplateSelector(false)}
+                className={styles.modalClose}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className={styles.templateGrid}>
+              <div
+                className={styles.templateCard}
+                onClick={() => setShowTemplateSelector(false)}
+              >
+                <div className={styles.templateThumbnail}>📄</div>
+                <h3>Blank Page</h3>
+                <p>Start from scratch with a blank canvas</p>
+              </div>
+
+              {pageTemplates.map((template) => (
+                <div
+                  key={template.id}
+                  className={styles.templateCard}
+                  onClick={() => loadTemplate(template.id)}
+                >
+                  <div className={styles.templateThumbnail}>{template.thumbnail}</div>
+                  <h3>{template.name}</h3>
+                  <p>{template.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Bar */}
       <div className={styles.topBar}>
         <div className={styles.topLeft}>
           <button onClick={() => router.push('/admin/pages')} className={styles.backButton}>
             ← Back to Pages
           </button>
+          {!pageId && (
+            <button onClick={() => setShowTemplateSelector(true)} className={styles.templateButton}>
+              📋 Choose Template
+            </button>
+          )}
         </div>
         <div className={styles.topRight}>
           <button onClick={handlePreview} className={styles.previewButton}>
