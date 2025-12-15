@@ -25,19 +25,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === 'GET') {
       const { contentType, status } = req.query;
 
-      // Build filter for premium content
+      // Build filter for premium content based on categories
       const where: any = {
-        OR: [
-          { contentType: 'premium' },
-          { contentType: 'insider' },
-          { isPremium: true },
-          { isInsiderOnly: true },
-        ],
+        categories: {
+          some: {
+            OR: [
+              { slug: 'success-plus' },
+              { slug: 'insider' },
+              { slug: 'premium' },
+            ],
+          },
+        },
       };
 
-      // Apply content type filter
+      // Apply content type filter (maps to category slugs)
       if (contentType && contentType !== 'all') {
-        where.contentType = contentType;
+        if (contentType === 'premium') {
+          where.categories = {
+            some: { slug: 'success-plus' },
+          };
+        } else if (contentType === 'insider') {
+          where.categories = {
+            some: { slug: 'insider' },
+          };
+        }
       }
 
       // Apply status filter
@@ -57,27 +68,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           users: {
             select: {
               name: true,
+              email: true,
             },
           },
         },
         orderBy: {
-          createdAt: 'desc',
+          publishedAt: 'desc',
         },
         take: 100,
       });
 
       return res.status(200).json({
-        posts: posts.map((post) => ({
-          id: post.id,
-          title: post.title,
-          slug: post.slug,
-          status: post.status,
-          contentType: 'premium', // All posts from this API are premium content
-          accessTier: 'success_plus', // Default tier for premium content
-          publishedAt: post.publishedAt,
-          author: post.users?.name || post.wordpressAuthor || 'Unknown',
-          categories: post.categories,
-        })),
+        posts: posts.map((post) => {
+          // Determine content type and access tier based on categories
+          const categorySlugslower = post.categories.map(c => c.slug.toLowerCase());
+          const isInsider = categorySlugslower.includes('insider');
+          const isPremium = categorySlugslower.includes('success-plus') || categorySlugslower.includes('premium');
+
+          return {
+            id: post.id,
+            title: post.title,
+            slug: post.slug,
+            status: post.status,
+            contentType: isInsider ? 'insider' : 'premium',
+            accessTier: isInsider ? 'insider' : 'success_plus',
+            publishedAt: post.publishedAt,
+            author: {
+              name: post.users?.name || post.wordpressAuthor || 'Unknown',
+              email: post.users?.email || '',
+            },
+            categories: post.categories,
+          };
+        }),
       });
     }
 

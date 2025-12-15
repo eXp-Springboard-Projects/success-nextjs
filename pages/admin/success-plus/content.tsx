@@ -16,9 +16,11 @@ interface PremiumPost {
   publishedAt: string | null;
   author: {
     name: string;
+    email?: string;
   };
   categories: Array<{
     name: string;
+    slug: string;
   }>;
 }
 
@@ -83,8 +85,8 @@ export default function SuccessPlusContent() {
   return (
     <DepartmentLayout
       currentDepartment={Department.SUCCESS_PLUS}
-      pageTitle="Premium Content Management"
-      description="Manage SUCCESS+ exclusive articles and insider content"
+      pageTitle="Premium Content"
+      description="Manage SUCCESS+ exclusive articles, insider content, and premium posts"
     >
       <div className={styles.contentManagement}>
         {/* Header Actions */}
@@ -116,7 +118,7 @@ export default function SuccessPlusContent() {
             </div>
           </div>
           <Link href="/admin/success-plus/content/new" className={styles.createButton}>
-            + Create Premium Content
+            + New Premium Article
           </Link>
         </div>
 
@@ -145,9 +147,9 @@ export default function SuccessPlusContent() {
           <div className={styles.loading}>Loading premium content...</div>
         ) : posts.length === 0 ? (
           <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>📰</div>
+            <div className={styles.emptyIcon}>💎</div>
             <h3>No Premium Content Yet</h3>
-            <p>Start creating exclusive content for SUCCESS+ members</p>
+            <p>Start creating premium articles for SUCCESS+ members</p>
             <Link href="/admin/success-plus/content/new" className={styles.createButton}>
               Create First Premium Article
             </Link>
@@ -185,10 +187,10 @@ export default function SuccessPlusContent() {
                     </td>
                     <td>
                       <span className={styles.contentTypeBadge}>
-                        {post.contentType === 'premium' && '💎 Premium'}
-                        {post.contentType === 'insider' && '⭐ Insider'}
+                        {post.contentType === 'premium' && '💎 Premium Article'}
+                        {post.contentType === 'insider' && '⭐ Insider Article'}
                         {post.contentType === 'magazine' && '📖 Magazine'}
-                        {!post.contentType && 'Standard'}
+                        {!post.contentType && 'Premium Article'}
                       </span>
                     </td>
                     <td>{getAccessTierBadge(post.accessTier)}</td>
