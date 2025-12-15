@@ -83,17 +83,17 @@ export default function PodcastsPage() {
         <main className={styles.mainContent}>
           <div className={styles.header}>
             <h1>Podcast Library</h1>
-            <p className={styles.subtitle}>Exclusive SUCCESS+ member podcast episodes coming soon</p>
+            <p className={styles.subtitle}>Curating exclusive podcast content for members</p>
           </div>
 
           <div className={styles.comingSoon}>
-            <h2>Exclusive Podcast Content</h2>
+            <h2>Member-Exclusive Podcast Content</h2>
             <p>
-              We're building an extensive library of exclusive podcast episodes for SUCCESS+ members,
+              We're curating an extensive library of exclusive podcast episodes for SUCCESS+ members,
               including bonus content, extended interviews, and member-only series.
             </p>
             <p>
-              In the meantime, check out our main{' '}
+              While we build this collection, explore our main{' '}
               <Link href="/podcasts">SUCCESS podcast series</Link>.
             </p>
           </div>

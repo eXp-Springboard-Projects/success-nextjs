@@ -188,8 +188,8 @@ export default function TrialSignup() {
 
             <p className={styles.terms}>
               By signing up, you agree to our{' '}
-              <Link href="/legal/terms">Terms of Service</Link> and{' '}
-              <Link href="/legal/privacy">Privacy Policy</Link>
+              <Link href="/terms">Terms of Service</Link> and{' '}
+              <Link href="/privacy">Privacy Policy</Link>
             </p>
           </form>
 

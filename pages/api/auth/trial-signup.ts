@@ -72,7 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         name: `${firstName} ${lastName}`,
         email: email.toLowerCase(),
         password: hashedPassword,
-        role: 'EDITOR', // Basic role for trial users
+        role: 'MEMBER', // Basic role for trial users
         emailVerified: false,
         trialEndsAt,
         linkedMemberId: member.id,

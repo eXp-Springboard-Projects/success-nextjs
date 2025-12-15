@@ -26,8 +26,8 @@ export default function UpgradePage() {
   };
 
   const handleUpgrade = async () => {
-    // TODO: Integrate with Stripe
-    alert('Payment integration coming soon! This will redirect to Stripe checkout.');
+    // Redirect to the SUCCESS+ upgrade page with Stripe checkout
+    router.push('/success-plus/upgrade');
   };
 
   return (

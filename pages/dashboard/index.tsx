@@ -87,20 +87,6 @@ export default function MemberDashboard() {
               </button>
             </Link>
 
-            <Link href="/dashboard/videos">
-              <button className={router.pathname === '/dashboard/videos' ? styles.active : ''}>
-                <span className={styles.icon}>🎥</span>
-                Videos
-              </button>
-            </Link>
-
-            <Link href="/dashboard/podcasts">
-              <button className={router.pathname === '/dashboard/podcasts' ? styles.active : ''}>
-                <span className={styles.icon}>🎙️</span>
-                Podcasts
-              </button>
-            </Link>
-
             <Link href="/dashboard/magazines">
               <button className={router.pathname === '/dashboard/magazines' ? styles.active : ''}>
                 <span className={styles.icon}>📖</span>
