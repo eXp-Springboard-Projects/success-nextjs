@@ -40,10 +40,20 @@
 }
 
 /* Filters */
+.filterContainer {
+  margin-bottom: 2rem;
+}
+
+.filterLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.75rem;
+}
+
 .filters {
   display: flex;
   gap: 0.75rem;
-  margin-bottom: 2rem;
   flex-wrap: wrap;
 }
 
@@ -84,6 +94,19 @@
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.summaryIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
 }
 
 .summaryCard h3 {
@@ -100,6 +123,61 @@
   font-size: 2.5rem;
   font-weight: 700;
   color: #1a1a1a;
+}
+
+/* Legend */
+.legend {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.legendTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.legendItems {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.legendDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+/* Drag Hint */
+.dragHint {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #92400e;
+  font-weight: 500;
 }
 
 /* Table */
@@ -139,6 +217,14 @@
   background: #f9fafb;
 }
 
+.draggableRow {
+  cursor: move;
+}
+
+.draggableRow:active {
+  opacity: 0.5;
+}
+
 .table td {
   padding: 1rem;
   font-size: 0.875rem;
@@ -147,6 +233,21 @@
 .titleCell {
   font-weight: 600;
   color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dragHandle {
+  color: #9ca3af;
+  cursor: grab;
+  font-size: 1rem;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
 }
 
 .titleCell strong {
@@ -196,6 +297,23 @@
   letter-spacing: 0.5px;
 }
 
+.dateInput {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+.dateInput:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
 .actions {
   display: flex;
   gap: 0.5rem;
@@ -216,6 +334,24 @@
 .actionButton:hover {
   background: #f9fafb;
   border-color: #9ca3af;
+}
+
+.actionButtonDanger {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ef4444;
+  background: white;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #ef4444;
+}
+
+.actionButtonDanger:hover {
+  background: #fef2f2;
+  border-color: #dc2626;
+  color: #dc2626;
 }
 
 /* Empty State */
