@@ -154,6 +154,7 @@ model contacts {
   campaign_contacts campaign_contacts[]
   email_logs        email_logs[]
   email_events      email_events[]
+  list_members      list_members[]
 
   @@index([email])
   @@index([status])
@@ -260,6 +261,39 @@ model email_templates {
   createdAt DateTime    @default(now())
   updatedAt DateTime
   campaigns campaigns[]
+}
+
+model contact_lists {
+  id           String        @id
+  name         String
+  description  String?
+  type         ListType      @default(STATIC)
+  filters      Json?
+  memberCount  Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime
+  list_members list_members[]
+
+  @@index([type])
+  @@index([createdAt])
+}
+
+model list_members {
+  id         String         @id
+  listId     String
+  contactId  String
+  addedAt    DateTime       @default(now())
+  list       contact_lists  @relation(fields: [listId], references: [id], onDelete: Cascade)
+  contact    contacts       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, contactId])
+  @@index([listId])
+  @@index([contactId])
+}
+
+enum ListType {
+  STATIC
+  DYNAMIC
 }
 
 model magazine_subscriptions {
