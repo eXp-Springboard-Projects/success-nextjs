@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Department } from '@prisma/client';
 import DepartmentLayout from '@/components/admin/shared/DepartmentLayout';
 import { requireDepartmentAuth } from '@/lib/departmentAuth';
+import styles from './Courses.module.css';
 
 export default function AdminCourses() {
   return (
@@ -10,60 +11,37 @@ export default function AdminCourses() {
       pageTitle="Manage Courses"
       description="Create and edit courses, modules, and lessons"
     >
-      <div style={{ padding: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <Link href="/admin/dashboard-content" style={{ color: '#3b82f6', textDecoration: 'none', fontSize: '0.875rem' }}>
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <Link href="/admin/dashboard-content" className={styles.backLink}>
             ← Back to Dashboard Content
           </Link>
-          <button style={{
-            padding: '0.75rem 1.5rem',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '0.5rem',
-            fontWeight: '600',
-            cursor: 'pointer'
-          }}>
+          <button className={styles.addButton}>
             + Add New Course
           </button>
         </div>
 
-        <div style={{
-          background: '#fef3c7',
-          border: '1px solid #f59e0b',
-          borderRadius: '0.75rem',
-          padding: '1.5rem',
-          marginBottom: '1.5rem'
-        }}>
-          <h3 style={{ margin: '0 0 1rem 0', color: '#92400e' }}>🚧 Course Management</h3>
-          <p style={{ margin: '0 0 0.75rem 0', color: '#78350f' }}>
+        <div className={styles.warningBox}>
+          <h3 className={styles.warningTitle}>🚧 Course Management</h3>
+          <p className={styles.warningText}>
             Course management interface is under development. You can add courses
             manually to the database using the Prisma schema.
           </p>
-          <p style={{ margin: '0 0 1rem 0', color: '#78350f' }}>
+          <p className={styles.warningText}>
             <strong>Database Models:</strong> courses, course_modules, course_lessons, course_enrollments
           </p>
-          <Link href="/dashboard/courses" style={{
-            color: '#3b82f6',
-            textDecoration: 'none',
-            fontWeight: '500'
-          }}>
+          <Link href="/dashboard/courses" className={styles.previewLink}>
             Preview Courses Page →
           </Link>
         </div>
 
-        <div style={{
-          background: '#f3f4f6',
-          border: '1px solid #e5e7eb',
-          borderRadius: '0.75rem',
-          padding: '1.5rem'
-        }}>
-          <h4 style={{ margin: '0 0 1rem 0', color: '#111827' }}>To add a course manually:</h4>
-          <ol style={{ margin: 0, paddingLeft: '1.5rem', color: '#374151' }}>
-            <li style={{ marginBottom: '0.5rem' }}>Use Prisma Studio or database client to insert into the <code style={{ background: '#e5e7eb', padding: '0.125rem 0.375rem', borderRadius: '0.25rem' }}>courses</code> table</li>
-            <li style={{ marginBottom: '0.5rem' }}>Add course modules to the <code style={{ background: '#e5e7eb', padding: '0.125rem 0.375rem', borderRadius: '0.25rem' }}>course_modules</code> table</li>
-            <li style={{ marginBottom: '0.5rem' }}>Add lessons to each module in the <code style={{ background: '#e5e7eb', padding: '0.125rem 0.375rem', borderRadius: '0.25rem' }}>course_lessons</code> table</li>
-            <li>Set <code style={{ background: '#e5e7eb', padding: '0.125rem 0.375rem', borderRadius: '0.25rem' }}>isPublished</code> to true when ready</li>
+        <div className={styles.infoBox}>
+          <h4 className={styles.infoTitle}>To add a course manually:</h4>
+          <ol className={styles.infoList}>
+            <li>Use Prisma Studio or database client to insert into the <code className={styles.codeTag}>courses</code> table</li>
+            <li>Add course modules to the <code className={styles.codeTag}>course_modules</code> table</li>
+            <li>Add lessons to each module in the <code className={styles.codeTag}>course_lessons</code> table</li>
+            <li>Set <code className={styles.codeTag}>isPublished</code> to true when ready</li>
           </ol>
         </div>
       </div>
