@@ -10,8 +10,8 @@ export default function AdminResources() {
       pageTitle="Manage Resources"
       description="Upload and organize downloadable resources"
     >
-      <div style={{ padding: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Link href="/admin/dashboard-content" style={{ color: '#3b82f6', textDecoration: 'none', fontSize: '0.875rem' }}>
             ← Back to Dashboard Content
           </Link>
@@ -32,8 +32,7 @@ export default function AdminResources() {
           background: '#fef3c7',
           border: '1px solid #f59e0b',
           borderRadius: '0.75rem',
-          padding: '1.5rem',
-          marginBottom: '1.5rem'
+          padding: '1.5rem'
         }}>
           <h3 style={{ margin: '0 0 1rem 0', color: '#92400e' }}>🚧 Resource Management</h3>
           <p style={{ margin: '0 0 0.75rem 0', color: '#78350f' }}>
