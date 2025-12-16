@@ -155,6 +155,7 @@ model contacts {
   email_logs        email_logs[]
   email_events      email_events[]
   list_members      list_members[]
+  email_preferences email_preferences?
 
   @@index([email])
   @@index([status])
@@ -261,6 +262,26 @@ model email_templates {
   createdAt DateTime    @default(now())
   updatedAt DateTime
   campaigns campaigns[]
+}
+
+model email_preferences {
+  id                  String    @id
+  email               String    @unique
+  contactId           String?   @unique
+  unsubscribed        Boolean   @default(false)
+  optInMarketing      Boolean   @default(true)
+  optInTransactional  Boolean   @default(true)
+  optInNewsletter     Boolean   @default(true)
+  unsubscribeToken    String?   @unique
+  unsubscribeReason   String?
+  unsubscribedAt      DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  contact             contacts? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([unsubscribeToken])
+  @@index([unsubscribed])
 }
 
 model contact_lists {
