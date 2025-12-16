@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../../auth/[...nextauth]';
+import { authOptions } from '../../../../../auth/[...nextauth]';
 import { PrismaClient } from '@prisma/client';
 import { nanoid } from 'nanoid';
 
@@ -13,43 +13,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  if (req.method !== 'POST') {
+  if (req.method !== 'DELETE') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { id } = req.query;
-  const { tagId } = req.body;
+  const { id, tagId } = req.query;
 
-  if (!id || typeof id !== 'string') {
-    return res.status(400).json({ error: 'Invalid contact ID' });
-  }
-
-  if (!tagId) {
-    return res.status(400).json({ error: 'Tag ID is required' });
+  if (!id || typeof id !== 'string' || !tagId || typeof tagId !== 'string') {
+    return res.status(400).json({ error: 'Invalid contact ID or tag ID' });
   }
 
   try {
     await prisma.$executeRaw`
-      INSERT INTO contact_tag_assignments (contact_id, tag_id)
-      VALUES (${id}, ${tagId})
-      ON CONFLICT DO NOTHING
+      DELETE FROM contact_tag_assignments
+      WHERE contact_id = ${id} AND tag_id = ${tagId}
     `;
 
     await prisma.$executeRaw`
       INSERT INTO contact_activities (id, contact_id, type, description, metadata)
       VALUES (
-        ${nanoid()}, ${id}, 'tag_added', 'Tag added to contact',
+        ${nanoid()}, ${id}, 'tag_removed', 'Tag removed from contact',
         ${JSON.stringify({ tagId })}::jsonb
       )
     `;
 
-    const tag = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM contact_tags WHERE id = ${tagId}
-    `;
-
-    return res.status(201).json(tag[0]);
+    return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Error adding tag:', error);
-    return res.status(500).json({ error: 'Failed to add tag' });
+    console.error('Error removing tag:', error);
+    return res.status(500).json({ error: 'Failed to remove tag' });
   }
 }

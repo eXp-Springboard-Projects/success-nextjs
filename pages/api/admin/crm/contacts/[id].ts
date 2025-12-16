@@ -32,15 +32,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getContact(id: string, res: NextApiResponse) {
   try {
-    // Get contact with tags, lists, and recent activities
     const contact = await prisma.$queryRaw<Array<any>>`
       SELECT
         c.*,
-        COALESCE(json_agg(DISTINCT ct.tag) FILTER (WHERE ct.tag IS NOT NULL), '[]') as tags,
-        COALESCE(json_agg(DISTINCT cl.list_name) FILTER (WHERE cl.list_name IS NOT NULL), '[]') as lists
-      FROM crm_contacts c
-      LEFT JOIN crm_contact_tags ct ON c.id = ct.contact_id
-      LEFT JOIN crm_contact_lists cl ON c.id = cl.contact_id
+        COALESCE(
+          json_agg(DISTINCT jsonb_build_object('id', ct.id, 'name', ct.name, 'color', ct.color))
+          FILTER (WHERE ct.id IS NOT NULL),
+          '[]'
+        ) as tags,
+        COALESCE(
+          json_agg(DISTINCT jsonb_build_object('id', cl.id, 'name', cl.name))
+          FILTER (WHERE cl.id IS NOT NULL),
+          '[]'
+        ) as lists
+      FROM contacts c
+      LEFT JOIN contact_tag_assignments cta ON c.id = cta.contact_id
+      LEFT JOIN contact_tags ct ON cta.tag_id = ct.id
+      LEFT JOIN contact_list_members clm ON c.id = clm.contact_id
+      LEFT JOIN contact_lists cl ON clm.list_id = cl.id
       WHERE c.id = ${id}
       GROUP BY c.id
     `;
@@ -49,23 +58,20 @@ async function getContact(id: string, res: NextApiResponse) {
       return res.status(404).json({ error: 'Contact not found' });
     }
 
-    // Get activities
     const activities = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM crm_contact_activities
+      SELECT * FROM contact_activities
       WHERE contact_id = ${id}
       ORDER BY created_at DESC
       LIMIT 50
     `;
 
-    // Get notes
     const notes = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM crm_contact_notes
+      SELECT * FROM contact_notes
       WHERE contact_id = ${id}
       ORDER BY created_at DESC
       LIMIT 50
     `;
 
-    // Get email sends
     const emailSends = await prisma.$queryRaw<Array<any>>`
       SELECT * FROM email_sends
       WHERE contact_id = ${id}
@@ -93,13 +99,10 @@ async function updateContact(id: string, req: NextApiRequest, res: NextApiRespon
       lastName,
       phone,
       company,
-      status,
+      emailStatus,
       customFields,
-      tags,
-      lists,
     } = req.body;
 
-    // Update contact fields
     const updates: string[] = [];
     const params: any[] = [id];
     let paramIndex = 2;
@@ -109,31 +112,37 @@ async function updateContact(id: string, req: NextApiRequest, res: NextApiRespon
       params.push(email);
       paramIndex++;
     }
+
     if (firstName !== undefined) {
       updates.push(`first_name = $${paramIndex}`);
       params.push(firstName);
       paramIndex++;
     }
+
     if (lastName !== undefined) {
       updates.push(`last_name = $${paramIndex}`);
       params.push(lastName);
       paramIndex++;
     }
+
     if (phone !== undefined) {
       updates.push(`phone = $${paramIndex}`);
       params.push(phone);
       paramIndex++;
     }
+
     if (company !== undefined) {
       updates.push(`company = $${paramIndex}`);
       params.push(company);
       paramIndex++;
     }
-    if (status !== undefined) {
-      updates.push(`status = $${paramIndex}`);
-      params.push(status);
+
+    if (emailStatus !== undefined) {
+      updates.push(`email_status = $${paramIndex}`);
+      params.push(emailStatus);
       paramIndex++;
     }
+
     if (customFields !== undefined) {
       updates.push(`custom_fields = $${paramIndex}::jsonb`);
       params.push(JSON.stringify(customFields));
@@ -143,56 +152,29 @@ async function updateContact(id: string, req: NextApiRequest, res: NextApiRespon
     if (updates.length > 0) {
       updates.push(`updated_at = CURRENT_TIMESTAMP`);
       await prisma.$queryRawUnsafe(
-        `UPDATE crm_contacts SET ${updates.join(', ')} WHERE id = $1`,
+        `UPDATE contacts SET ${updates.join(', ')} WHERE id = $1`,
         ...params
       );
     }
 
-    // Update tags if provided
-    if (tags !== undefined) {
-      // Remove all existing tags
-      await prisma.$executeRaw`DELETE FROM crm_contact_tags WHERE contact_id = ${id}`;
-
-      // Add new tags
-      for (const tag of tags) {
-        await prisma.$executeRaw`
-          INSERT INTO crm_contact_tags (id, contact_id, tag)
-          VALUES (${nanoid()}, ${id}, ${tag})
-          ON CONFLICT (contact_id, tag) DO NOTHING
-        `;
-      }
-    }
-
-    // Update lists if provided
-    if (lists !== undefined) {
-      // Remove all existing lists
-      await prisma.$executeRaw`DELETE FROM crm_contact_lists WHERE contact_id = ${id}`;
-
-      // Add new lists
-      for (const listName of lists) {
-        await prisma.$executeRaw`
-          INSERT INTO crm_contact_lists (id, contact_id, list_name)
-          VALUES (${nanoid()}, ${id}, ${listName})
-          ON CONFLICT (contact_id, list_name) DO NOTHING
-        `;
-      }
-    }
-
-    // Add activity
-    await prisma.$executeRaw`
-      INSERT INTO crm_contact_activities (id, contact_id, type, description)
-      VALUES (${nanoid()}, ${id}, 'contact_updated', 'Contact information updated')
-    `;
-
-    // Fetch updated contact
     const contact = await prisma.$queryRaw<Array<any>>`
       SELECT
         c.*,
-        COALESCE(json_agg(DISTINCT ct.tag) FILTER (WHERE ct.tag IS NOT NULL), '[]') as tags,
-        COALESCE(json_agg(DISTINCT cl.list_name) FILTER (WHERE cl.list_name IS NOT NULL), '[]') as lists
-      FROM crm_contacts c
-      LEFT JOIN crm_contact_tags ct ON c.id = ct.contact_id
-      LEFT JOIN crm_contact_lists cl ON c.id = cl.contact_id
+        COALESCE(
+          json_agg(DISTINCT jsonb_build_object('id', ct.id, 'name', ct.name, 'color', ct.color))
+          FILTER (WHERE ct.id IS NOT NULL),
+          '[]'
+        ) as tags,
+        COALESCE(
+          json_agg(DISTINCT jsonb_build_object('id', cl.id, 'name', cl.name))
+          FILTER (WHERE cl.id IS NOT NULL),
+          '[]'
+        ) as lists
+      FROM contacts c
+      LEFT JOIN contact_tag_assignments cta ON c.id = cta.contact_id
+      LEFT JOIN contact_tags ct ON cta.tag_id = ct.id
+      LEFT JOIN contact_list_members clm ON c.id = clm.contact_id
+      LEFT JOIN contact_lists cl ON clm.list_id = cl.id
       WHERE c.id = ${id}
       GROUP BY c.id
     `;
@@ -206,8 +188,9 @@ async function updateContact(id: string, req: NextApiRequest, res: NextApiRespon
 
 async function deleteContact(id: string, res: NextApiResponse) {
   try {
-    // Delete contact (cascade will handle tags, lists, activities, notes)
-    await prisma.$executeRaw`DELETE FROM crm_contacts WHERE id = ${id}`;
+    await prisma.$executeRaw`
+      DELETE FROM contacts WHERE id = ${id}
+    `;
 
     return res.status(200).json({ success: true });
   } catch (error) {

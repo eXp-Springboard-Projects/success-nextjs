@@ -26,9 +26,10 @@ async function getContacts(req: NextApiRequest, res: NextApiResponse) {
   try {
     const {
       search = '',
-      status = '',
-      tag = '',
-      list = '',
+      emailStatus = '',
+      tagId = '',
+      listId = '',
+      source = '',
       page = '1',
       limit = '50',
       sortBy = 'created_at',
@@ -37,7 +38,6 @@ async function getContacts(req: NextApiRequest, res: NextApiResponse) {
 
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
-    // Build WHERE clause
     let whereClause = '';
     const params: any[] = [];
     let paramIndex = 1;
@@ -53,62 +53,70 @@ async function getContacts(req: NextApiRequest, res: NextApiResponse) {
       paramIndex++;
     }
 
-    if (status) {
-      whereClause += ` AND c.status = $${paramIndex}`;
-      params.push(status);
+    if (emailStatus) {
+      whereClause += ` AND c.email_status = $${paramIndex}`;
+      params.push(emailStatus);
       paramIndex++;
     }
 
-    if (tag) {
+    if (tagId) {
       whereClause += ` AND EXISTS (
-        SELECT 1 FROM crm_contact_tags ct
-        WHERE ct.contact_id = c.id AND ct.tag = $${paramIndex}
+        SELECT 1 FROM contact_tag_assignments cta
+        WHERE cta.contact_id = c.id AND cta.tag_id = $${paramIndex}
       )`;
-      params.push(tag);
+      params.push(tagId);
       paramIndex++;
     }
 
-    if (list) {
+    if (listId) {
       whereClause += ` AND EXISTS (
-        SELECT 1 FROM crm_contact_lists cl
-        WHERE cl.contact_id = c.id AND cl.list_name = $${paramIndex}
+        SELECT 1 FROM contact_list_members clm
+        WHERE clm.contact_id = c.id AND clm.list_id = $${paramIndex}
       )`;
-      params.push(list);
+      params.push(listId);
       paramIndex++;
     }
 
-    // Get contacts with tags and lists
+    if (source) {
+      whereClause += ` AND c.source = $${paramIndex}`;
+      params.push(source);
+      paramIndex++;
+    }
+
     const contacts = await prisma.$queryRawUnsafe(`
       SELECT
         c.*,
         COALESCE(
-          json_agg(DISTINCT ct.tag) FILTER (WHERE ct.tag IS NOT NULL),
+          json_agg(DISTINCT jsonb_build_object('id', ct.id, 'name', ct.name, 'color', ct.color))
+          FILTER (WHERE ct.id IS NOT NULL),
           '[]'
         ) as tags,
         COALESCE(
-          json_agg(DISTINCT cl.list_name) FILTER (WHERE cl.list_name IS NOT NULL),
+          json_agg(DISTINCT jsonb_build_object('id', cl.id, 'name', cl.name))
+          FILTER (WHERE cl.id IS NOT NULL),
           '[]'
         ) as lists,
         (
           SELECT MAX(created_at)
-          FROM crm_contact_activities
+          FROM contact_activities
           WHERE contact_id = c.id
         ) as last_activity
-      FROM crm_contacts c
-      LEFT JOIN crm_contact_tags ct ON c.id = ct.contact_id
-      LEFT JOIN crm_contact_lists cl ON c.id = cl.contact_id
+      FROM contacts c
+      LEFT JOIN contact_tag_assignments cta ON c.id = cta.contact_id
+      LEFT JOIN contact_tags ct ON cta.tag_id = ct.id
+      LEFT JOIN contact_list_members clm ON c.id = clm.contact_id
+      LEFT JOIN contact_lists cl ON clm.list_id = cl.id
       WHERE 1=1 ${whereClause}
       GROUP BY c.id
       ORDER BY c.${sortBy === 'last_activity' ? 'updated_at' : sortBy} ${sortOrder.toUpperCase()}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `, ...params, parseInt(limit as string), offset);
 
-    // Get total count
     const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
       `SELECT COUNT(DISTINCT c.id) as count
-       FROM crm_contacts c
-       LEFT JOIN crm_contact_tags ct ON c.id = ct.contact_id
-       LEFT JOIN crm_contact_lists cl ON c.id = cl.contact_id
+       FROM contacts c
+       ${tagId ? 'LEFT JOIN contact_tag_assignments cta ON c.id = cta.contact_id' : ''}
+       ${listId ? 'LEFT JOIN contact_list_members clm ON c.id = clm.contact_id' : ''}
        WHERE 1=1 ${whereClause}`,
       ...params
     );
@@ -139,8 +147,8 @@ async function createContact(req: NextApiRequest, res: NextApiResponse) {
       phone,
       company,
       source = 'manual',
-      tags = [],
-      lists = [],
+      tagIds = [],
+      listIds = [],
       customFields = {},
     } = req.body;
 
@@ -148,9 +156,8 @@ async function createContact(req: NextApiRequest, res: NextApiResponse) {
       return res.status(400).json({ error: 'Email is required' });
     }
 
-    // Check if contact already exists
     const existing = await prisma.$queryRaw<Array<{ id: string }>>`
-      SELECT id FROM crm_contacts WHERE email = ${email}
+      SELECT id FROM contacts WHERE email = ${email}
     `;
 
     if (existing.length > 0) {
@@ -159,50 +166,54 @@ async function createContact(req: NextApiRequest, res: NextApiResponse) {
 
     const contactId = nanoid();
 
-    // Create contact
     await prisma.$executeRaw`
-      INSERT INTO crm_contacts (
-        id, email, first_name, last_name, phone, company, source, custom_fields, status
+      INSERT INTO contacts (
+        id, email, first_name, last_name, phone, company, source, custom_fields
       ) VALUES (
         ${contactId}, ${email}, ${firstName || null}, ${lastName || null},
-        ${phone || null}, ${company || null}, ${source}, ${JSON.stringify(customFields)}::jsonb,
-        'active'
+        ${phone || null}, ${company || null}, ${source}, ${JSON.stringify(customFields)}::jsonb
       )
     `;
 
-    // Add tags
-    for (const tag of tags) {
+    for (const tagId of tagIds) {
       await prisma.$executeRaw`
-        INSERT INTO crm_contact_tags (id, contact_id, tag)
-        VALUES (${nanoid()}, ${contactId}, ${tag})
-        ON CONFLICT (contact_id, tag) DO NOTHING
+        INSERT INTO contact_tag_assignments (contact_id, tag_id)
+        VALUES (${contactId}, ${tagId})
+        ON CONFLICT DO NOTHING
       `;
     }
 
-    // Add to lists
-    for (const listName of lists) {
+    for (const listId of listIds) {
       await prisma.$executeRaw`
-        INSERT INTO crm_contact_lists (id, contact_id, list_name)
-        VALUES (${nanoid()}, ${contactId}, ${listName})
-        ON CONFLICT (contact_id, list_name) DO NOTHING
+        INSERT INTO contact_list_members (contact_id, list_id)
+        VALUES (${contactId}, ${listId})
+        ON CONFLICT DO NOTHING
       `;
     }
 
-    // Add activity
     await prisma.$executeRaw`
-      INSERT INTO crm_contact_activities (id, contact_id, type, description)
+      INSERT INTO contact_activities (id, contact_id, type, description)
       VALUES (${nanoid()}, ${contactId}, 'contact_created', 'Contact created')
     `;
 
-    // Fetch the created contact with tags and lists
     const contact = await prisma.$queryRaw`
       SELECT
         c.*,
-        COALESCE(json_agg(DISTINCT ct.tag) FILTER (WHERE ct.tag IS NOT NULL), '[]') as tags,
-        COALESCE(json_agg(DISTINCT cl.list_name) FILTER (WHERE cl.list_name IS NOT NULL), '[]') as lists
-      FROM crm_contacts c
-      LEFT JOIN crm_contact_tags ct ON c.id = ct.contact_id
-      LEFT JOIN crm_contact_lists cl ON c.id = cl.contact_id
+        COALESCE(
+          json_agg(DISTINCT jsonb_build_object('id', ct.id, 'name', ct.name, 'color', ct.color))
+          FILTER (WHERE ct.id IS NOT NULL),
+          '[]'
+        ) as tags,
+        COALESCE(
+          json_agg(DISTINCT jsonb_build_object('id', cl.id, 'name', cl.name))
+          FILTER (WHERE cl.id IS NOT NULL),
+          '[]'
+        ) as lists
+      FROM contacts c
+      LEFT JOIN contact_tag_assignments cta ON c.id = cta.contact_id
+      LEFT JOIN contact_tags ct ON cta.tag_id = ct.id
+      LEFT JOIN contact_list_members clm ON c.id = clm.contact_id
+      LEFT JOIN contact_lists cl ON clm.list_id = cl.id
       WHERE c.id = ${contactId}
       GROUP BY c.id
     `;

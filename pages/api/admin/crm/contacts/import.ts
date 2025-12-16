@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Check if contact exists
         const existing = await prisma.$queryRaw<Array<{ id: string }>>`
-          SELECT id FROM crm_contacts WHERE email = ${email}
+          SELECT id FROM contacts WHERE email = ${email}
         `;
 
         if (existing.length > 0) {
@@ -55,30 +55,62 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Create contact
         await prisma.$executeRaw`
-          INSERT INTO crm_contacts (
-            id, email, first_name, last_name, phone, company, source, status
+          INSERT INTO contacts (
+            id, email, first_name, last_name, phone, company, source
           ) VALUES (
             ${contactId}, ${email}, ${firstName || null}, ${lastName || null},
-            ${phone || null}, ${company || null}, 'import', 'active'
+            ${phone || null}, ${company || null}, 'import'
           )
         `;
 
-        // Add tags
-        for (const tag of tags) {
-          await prisma.$executeRaw`
-            INSERT INTO crm_contact_tags (id, contact_id, tag)
-            VALUES (${nanoid()}, ${contactId}, ${tag})
-            ON CONFLICT (contact_id, tag) DO NOTHING
-          `;
+        // Add tags (create tag if doesn't exist, then assign)
+        for (const tagName of tags) {
+          if (tagName && tagName.trim()) {
+            // Create tag if it doesn't exist
+            await prisma.$executeRaw`
+              INSERT INTO contact_tags (id, name)
+              VALUES (${nanoid()}, ${tagName.trim()})
+              ON CONFLICT (name) DO NOTHING
+            `;
+
+            // Get tag ID
+            const tagResult = await prisma.$queryRaw<Array<{ id: string }>>`
+              SELECT id FROM contact_tags WHERE name = ${tagName.trim()}
+            `;
+
+            if (tagResult.length > 0) {
+              await prisma.$executeRaw`
+                INSERT INTO contact_tag_assignments (contact_id, tag_id)
+                VALUES (${contactId}, ${tagResult[0].id})
+                ON CONFLICT DO NOTHING
+              `;
+            }
+          }
         }
 
-        // Add to lists
+        // Add to lists (create list if doesn't exist, then assign)
         for (const listName of lists) {
-          await prisma.$executeRaw`
-            INSERT INTO crm_contact_lists (id, contact_id, list_name)
-            VALUES (${nanoid()}, ${contactId}, ${listName})
-            ON CONFLICT (contact_id, list_name) DO NOTHING
-          `;
+          if (listName && listName.trim()) {
+            // Create list if it doesn't exist
+            await prisma.$executeRaw`
+              INSERT INTO contact_lists (id, name, type)
+              VALUES (${nanoid()}, ${listName.trim()}, 'static')
+              ON CONFLICT (name) DO NOTHING
+            `;
+
+            // Get list ID
+            const listResult = await prisma.$queryRaw<Array<{ id: string }>>`
+              SELECT id FROM contact_lists WHERE name = ${listName.trim()}
+            `;
+
+            if (listResult.length > 0) {
+              await prisma.$executeRaw`
+                INSERT INTO contact_list_members (contact_id, list_id)
+                VALUES (${contactId}, ${listResult[0].id})
+                ON CONFLICT DO NOTHING
+              `;
+            }
+          }
         }
 
         results.imported++;

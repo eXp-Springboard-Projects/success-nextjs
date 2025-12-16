@@ -17,30 +17,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const { id } = req.query;
+  const { note } = req.body;
+
+  if (!id || typeof id !== 'string') {
+    return res.status(400).json({ error: 'Invalid contact ID' });
+  }
+
+  if (!note) {
+    return res.status(400).json({ error: 'Note is required' });
+  }
+
   try {
-    const { id } = req.query;
-    const { note } = req.body;
-
-    if (!id || typeof id !== 'string') {
-      return res.status(400).json({ error: 'Invalid contact ID' });
-    }
-
-    if (!note) {
-      return res.status(400).json({ error: 'Note is required' });
-    }
-
     const noteId = nanoid();
 
     await prisma.$executeRaw`
-      INSERT INTO crm_contact_notes (id, contact_id, staff_id, staff_name, note)
+      INSERT INTO contact_notes (id, contact_id, staff_id, staff_name, note)
       VALUES (
         ${noteId}, ${id}, ${session.user.id},
         ${session.user.name || session.user.email}, ${note}
       )
     `;
 
+    await prisma.$executeRaw`
+      INSERT INTO contact_activities (id, contact_id, type, description)
+      VALUES (${nanoid()}, ${id}, 'note_added', 'Staff note added')
+    `;
+
     const createdNote = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM crm_contact_notes WHERE id = ${noteId}
+      SELECT * FROM contact_notes WHERE id = ${noteId}
     `;
 
     return res.status(201).json(createdNote[0]);
