@@ -115,6 +115,9 @@ export default function ContactsListPage() {
             <p className={styles.pageDescription}>Manage your contact database</p>
           </div>
           <div className={styles.headerRight}>
+            <Link href="/admin/crm/contacts/import" className={styles.secondaryButton}>
+              Import Contacts
+            </Link>
             <Link href="/admin/crm/contacts/new" className={styles.primaryButton}>
               + Add Contact
             </Link>
