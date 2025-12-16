@@ -151,6 +151,7 @@ model contacts {
   createdAt            DateTime            @default(now())
   updatedAt            DateTime
   emailEngagementScore Int                 @default(0)
+  leadScore            Int                 @default(0)
   campaign_contacts    campaign_contacts[]
   email_events         email_events[]
   email_logs           email_logs[]
@@ -160,6 +161,7 @@ model contacts {
 
   @@index([email])
   @@index([status])
+  @@index([leadScore])
 }
 
 model content_analytics {
@@ -350,6 +352,20 @@ model form_submissions {
   @@index([formId])
   @@index([contactId])
   @@index([createdAt])
+}
+
+model lead_scoring_rules {
+  id        String   @id
+  name      String
+  eventType String
+  condition Json?
+  points    Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+
+  @@index([eventType])
+  @@index([isActive])
 }
 
 model magazine_subscriptions {

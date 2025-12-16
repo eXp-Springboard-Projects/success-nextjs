@@ -45,6 +45,14 @@ interface TicketPriority {
   count: number;
 }
 
+interface HotLead {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  leadScore: number;
+}
+
 export default function CRMDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -53,9 +61,11 @@ export default function CRMDashboard() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [pipeline, setPipeline] = useState<PipelineStage[]>([]);
   const [tickets, setTickets] = useState<TicketPriority[]>([]);
+  const [hotLeads, setHotLeads] = useState<HotLead[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
+    fetchHotLeads();
   }, []);
 
   const fetchDashboardData = async () => {
@@ -72,6 +82,16 @@ export default function CRMDashboard() {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchHotLeads = async () => {
+    try {
+      const res = await fetch('/api/admin/crm/lead-scoring/top-leads?limit=10');
+      const data = await res.json();
+      setHotLeads(data.leads || []);
+    } catch (error) {
+      console.error('Error fetching hot leads:', error);
     }
   };
 
@@ -122,6 +142,40 @@ export default function CRMDashboard() {
 
   const getMaxPipelineValue = () => {
     return Math.max(...pipeline.map(p => p.total_value), 1);
+  };
+
+  const getScoreBadge = (score: number) => {
+    let color = '#6c757d';
+    let label = 'None';
+
+    if (score >= 100) {
+      color = '#dc3545';
+      label = 'Hot';
+    } else if (score >= 50) {
+      color = '#fd7e14';
+      label = 'Warm';
+    } else if (score >= 20) {
+      color = '#ffc107';
+      label = 'Medium';
+    } else if (score > 0) {
+      color = '#17a2b8';
+      label = 'Cold';
+    }
+
+    return (
+      <span style={{
+        background: color,
+        color: '#fff',
+        padding: '0.25rem 0.5rem',
+        borderRadius: '12px',
+        fontSize: '0.75rem',
+        fontWeight: 600,
+        whiteSpace: 'nowrap',
+        display: 'inline-block',
+      }}>
+        {score} {label}
+      </span>
+    );
   };
 
   if (loading) {
@@ -309,6 +363,51 @@ export default function CRMDashboard() {
                     ))
                 ) : (
                   <div className={styles.empty}>No deals in pipeline</div>
+                )}
+              </div>
+            </div>
+
+            {/* Hot Leads */}
+            <div className={styles.section}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>🔥 Hot Leads</h2>
+                <a href="/admin/crm/settings/lead-scoring" className={styles.viewAllLink}>
+                  Settings
+                </a>
+              </div>
+              <div className={styles.hotLeadsList}>
+                {hotLeads.length > 0 ? (
+                  hotLeads.map((lead, index) => (
+                    <a
+                      key={lead.id}
+                      href={`/admin/crm/contacts/${lead.id}`}
+                      className={styles.hotLeadItem}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '0.75rem',
+                        borderBottom: index < hotLeads.length - 1 ? '1px solid #f0f0f0' : 'none',
+                        textDecoration: 'none',
+                        color: 'inherit',
+                        transition: 'background 0.2s',
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#f8f9fa'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.25rem' }}>
+                          #{index + 1} {lead.firstName || lead.lastName ? `${lead.firstName || ''} ${lead.lastName || ''}`.trim() : lead.email}
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                          {lead.email}
+                        </div>
+                      </div>
+                      {getScoreBadge(lead.leadScore)}
+                    </a>
+                  ))
+                ) : (
+                  <div className={styles.empty}>No scored leads yet</div>
                 )}
               </div>
             </div>

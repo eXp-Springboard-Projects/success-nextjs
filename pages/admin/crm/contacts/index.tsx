@@ -22,6 +22,7 @@ interface Contact {
   total_emails_sent: number;
   total_opens: number;
   total_clicks: number;
+  leadScore?: number;
 }
 
 export default function ContactsListPage() {
@@ -34,6 +35,39 @@ export default function ContactsListPage() {
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  const getScoreBadge = (score: number = 0) => {
+    let color = '#6c757d';
+    let label = 'None';
+
+    if (score >= 100) {
+      color = '#dc3545';
+      label = 'Hot';
+    } else if (score >= 50) {
+      color = '#fd7e14';
+      label = 'Warm';
+    } else if (score >= 20) {
+      color = '#ffc107';
+      label = 'Medium';
+    } else if (score > 0) {
+      color = '#17a2b8';
+      label = 'Cold';
+    }
+
+    return (
+      <span style={{
+        background: color,
+        color: '#fff',
+        padding: '0.25rem 0.5rem',
+        borderRadius: '12px',
+        fontSize: '0.75rem',
+        fontWeight: 600,
+        whiteSpace: 'nowrap',
+      }}>
+        {score} {label}
+      </span>
+    );
+  };
 
   useEffect(() => {
     fetchContacts();
@@ -200,6 +234,7 @@ export default function ContactsListPage() {
                     <th>Name</th>
                     <th>Email</th>
                     <th>Company</th>
+                    <th>Lead Score</th>
                     <th>Tags</th>
                     <th>Lists</th>
                     <th>Status</th>
@@ -227,6 +262,7 @@ export default function ContactsListPage() {
                       </td>
                       <td>{contact.email}</td>
                       <td>{contact.company || '-'}</td>
+                      <td>{getScoreBadge(contact.leadScore || 0)}</td>
                       <td>
                         <div className={styles.tags}>
                           {contact.tags && contact.tags.length > 0 ? (
