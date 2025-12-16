@@ -89,7 +89,14 @@
       "Bash(start http://localhost:3000/admin/dashboard-content)",
       "Bash(start http://localhost:3000/admin/dashboard-content/courses)",
       "Bash(start http://localhost:3000/admin/dashboard-content/resources)",
-      "Bash(start http://localhost:3000/admin/dashboard-content/events)"
+      "Bash(start http://localhost:3000/admin/dashboard-content/events)",
+      "Bash(start http://localhost:3000/press)",
+      "Bash(start http://localhost:3000/press/media-kit)",
+      "Bash(start http://localhost:3000/admin/editorial-calendar)",
+      "Bash(start http://localhost:3000/press-releases)",
+      "Bash(gh repo view:*)",
+      "Bash(npx amplify publish:*)",
+      "Bash(aws amplify start-job:*)"
     ],
     "deny": [],
     "ask": []
