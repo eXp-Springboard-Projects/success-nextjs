@@ -52,17 +52,19 @@ async function main() {
   ];
 
   for (const rule of defaultRules) {
-    await prisma.lead_scoring_rules.upsert({
-      where: { id: uuidv4() },
-      update: {},
-      create: {
-        id: uuidv4(),
-        name: rule.name,
-        eventType: rule.eventType,
-        points: rule.points,
-        updatedAt: new Date(),
-      },
-    });
+    await prisma.$executeRaw`
+      INSERT INTO lead_scoring_rules (id, name, "eventType", points, "isActive", "createdAt", "updatedAt")
+      VALUES (
+        ${uuidv4()},
+        ${rule.name},
+        ${rule.eventType},
+        ${rule.points},
+        true,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
+      )
+      ON CONFLICT DO NOTHING
+    `;
   }
 
   console.log('Lead scoring system created successfully!');
