@@ -96,7 +96,8 @@
       "Bash(start http://localhost:3000/press-releases)",
       "Bash(gh repo view:*)",
       "Bash(npx amplify publish:*)",
-      "Bash(aws amplify start-job:*)"
+      "Bash(aws amplify start-job:*)",
+      "Bash(npx next build:*)"
     ],
     "deny": [],
     "ask": []
