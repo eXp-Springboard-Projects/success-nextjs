@@ -302,6 +302,7 @@ function getNavigationSections(role: UserRole, primaryDepartment?: Department | 
         { label: 'Campaigns', href: '/admin/crm/campaigns' },
         { label: 'Email Templates', href: '/admin/crm/templates' },
         { label: 'Automations', href: '/admin/crm/automations' },
+        { label: 'Sequences', href: '/admin/crm/sequences' },
         { label: 'Help Desk', href: '/admin/help-desk' },
         { label: 'Marketing Dashboard', href: '/admin/marketing' },
         { label: 'Email Manager', href: '/admin/email-manager' },

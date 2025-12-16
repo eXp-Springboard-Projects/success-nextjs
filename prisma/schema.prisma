@@ -156,6 +156,7 @@ model contacts {
   email_events      email_events[]
   list_members      list_members[]
   email_preferences email_preferences?
+  form_submissions  form_submissions[]
 
   @@index([email])
   @@index([status])
@@ -294,6 +295,7 @@ model contact_lists {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime
   list_members list_members[]
+  forms        forms[]
 
   @@index([type])
   @@index([createdAt])
@@ -315,6 +317,44 @@ model list_members {
 enum ListType {
   STATIC
   DYNAMIC
+}
+
+model forms {
+  id              String             @id
+  name            String
+  fields          Json               @default("[]")
+  settings        Json               @default("{}")
+  thankYouMessage String?
+  redirectUrl     String?
+  listId          String?
+  tags            String[]
+  notifyEmails    String[]
+  status          String             @default("active")
+  submissions     Int                @default(0)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime
+  list            contact_lists?     @relation(fields: [listId], references: [id], onDelete: SetNull)
+  form_submissions form_submissions[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model form_submissions {
+  id        String    @id
+  formId    String
+  contactId String?
+  data      Json
+  source    String?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime  @default(now())
+  form      forms     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  contact   contacts? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([formId])
+  @@index([contactId])
+  @@index([createdAt])
 }
 
 model magazine_subscriptions {
