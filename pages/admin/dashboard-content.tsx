@@ -20,7 +20,7 @@ export default function DashboardContent() {
       description="Manage courses, resources, labs, and events"
     >
       <div className={styles.dashboard}>
-        <div className={styles.statsGrid}>
+        <div className={styles.statsGrid} style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
           <div className={styles.statCard}>
             <div className={styles.statIcon}>🎓</div>
             <div className={styles.statContent}>
@@ -53,7 +53,7 @@ export default function DashboardContent() {
 
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Quick Actions</h2>
-          <div className={styles.actionsGrid}>
+          <div className={styles.actionsGrid} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
             <Link href="/admin/dashboard-content/courses" className={styles.actionCard}>
               <div className={styles.actionIcon}>🎓</div>
               <div className={styles.actionTitle}>Manage Courses</div>
