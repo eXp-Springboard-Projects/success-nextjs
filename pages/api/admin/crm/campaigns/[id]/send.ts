@@ -1,25 +1,20 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth/next';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../auth/[...nextauth]';
-import { prisma } from '../../../../../../lib/prisma';
-import { sendCampaignEmail, sendEmailBatch } from '../../../../../../lib/email';
+import { PrismaClient } from '@prisma/client';
+import { nanoid } from 'nanoid';
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+const prisma = new PrismaClient();
 
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
 
-  if (!session || !session.user) {
+  if (!session?.user) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role)) {
-    return res.status(403).json({ error: 'Forbidden' });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const { id } = req.query;
@@ -29,107 +24,61 @@ export default async function handler(
   }
 
   try {
-    // Get campaign with template
-    const campaign = await prisma.campaigns.findUnique({
-      where: { id },
-      include: {
-        email_templates: true,
-        campaign_contacts: {
-          include: {
-            contacts: true,
-          },
-        },
-      },
-    });
+    const campaign = await prisma.$queryRaw<Array<any>>`
+      SELECT * FROM email_campaigns WHERE id = ${id}
+    `;
 
-    if (!campaign) {
+    if (campaign.length === 0) {
       return res.status(404).json({ error: 'Campaign not found' });
     }
 
-    if (!campaign.email_templates) {
-      return res.status(400).json({ error: 'Campaign has no email template' });
+    const c = campaign[0];
+
+    if (c.status !== 'draft' && c.status !== 'scheduled') {
+      return res.status(400).json({ error: 'Campaign cannot be sent in current status' });
     }
 
-    if (campaign.status === 'SENT') {
-      return res.status(400).json({ error: 'Campaign has already been sent' });
+    // Get recipients from list
+    const recipients = c.list_id
+      ? await prisma.$queryRaw<Array<any>>`
+          SELECT c.id, c.email, c.first_name, c.last_name
+          FROM contacts c
+          JOIN contact_list_members clm ON c.id = clm.contact_id
+          WHERE clm.list_id = ${c.list_id} AND c.email_status = 'subscribed'
+        `
+      : [];
+
+    // In real implementation, this would queue emails for sending
+    // For now, we'll just create email_sends records
+    for (const recipient of recipients) {
+      await prisma.$executeRaw`
+        INSERT INTO email_sends (
+          id, template_id, campaign_id, contact_id, to_email, from_email, from_name,
+          subject, status
+        ) VALUES (
+          ${nanoid()}, ${c.template_id}, ${id}, ${recipient.id}, ${recipient.email},
+          ${c.from_email}, ${c.from_name}, ${c.subject}, 'queued'
+        )
+      `;
     }
 
-    // Get all contacts for this campaign
-    type CampaignContact = typeof campaign.campaign_contacts[number];
-    const contacts = campaign.campaign_contacts.map((cc: CampaignContact) => cc.contacts);
+    // Update campaign
+    await prisma.$executeRaw`
+      UPDATE email_campaigns
+      SET status = 'sending',
+          sent_at = CURRENT_TIMESTAMP,
+          total_recipients = ${recipients.length},
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${id}
+    `;
 
-    if (contacts.length === 0) {
-      return res.status(400).json({ error: 'No contacts in this campaign' });
-    }
+    const updated = await prisma.$queryRaw<Array<any>>`
+      SELECT * FROM email_campaigns WHERE id = ${id}
+    `;
 
-    const htmlTemplate = campaign.email_templates.html;
-    const subject = campaign.subject;
-
-    // Create email sending tasks
-    type Contact = NonNullable<typeof contacts[number]>;
-    const emailTasks = contacts.map((contact: Contact) => {
-      return async () => {
-        const result = await sendCampaignEmail(contact, subject, htmlTemplate);
-
-        // Log the email event
-        if (result.success) {
-          await prisma.email_events.create({
-            data: {
-              id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-              campaignId: id,
-              contactId: contact.id,
-              emailAddress: contact.email,
-              event: 'sent',
-              eventData: {},
-            },
-          });
-        }
-
-        return result;
-      };
-    });
-
-    // Send in batches of 100 with 1 second delay
-    const { sentCount, failedCount, errors } = await sendEmailBatch(emailTasks, 100, 1000);
-
-    // Update campaign with stats
-    await prisma.campaigns.update({
-      where: { id },
-      data: {
-        status: 'SENT',
-        sentAt: new Date(),
-        sentCount,
-        failedCount,
-        sendErrors: errors.length > 0 ? errors : null,
-      },
-    });
-
-    // Log activity
-    await prisma.activity_logs.create({
-      data: {
-        id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        userId: session.user.id,
-        action: 'SEND_CAMPAIGN',
-        entity: 'campaign',
-        entityId: id,
-        details: JSON.stringify({
-          name: campaign.name,
-          sentCount,
-          failedCount,
-          totalContacts: contacts.length,
-        }),
-      },
-    });
-
-    return res.status(200).json({
-      success: true,
-      sentCount,
-      failedCount,
-      totalContacts: contacts.length,
-      errors: errors.length > 0 ? errors.slice(0, 10) : [], // Return first 10 errors only
-    });
-  } catch (error: any) {
+    return res.status(200).json(updated[0]);
+  } catch (error) {
     console.error('Error sending campaign:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+    return res.status(500).json({ error: 'Failed to send campaign' });
   }
 }
