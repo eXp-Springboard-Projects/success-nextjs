@@ -14,6 +14,28 @@ Based on [Keep a Changelog](https://keepachangelog.com/) • Uses [ISO 8601](htt
 =======================================================
 -->
 
+### [Security] - 2025-12-17T15:00:00 - Critical: Enabled Admin Route Authentication
+
+**Fixed disabled middleware authentication**
+
+- **Why**: Middleware authentication was completely commented out, allowing anyone to access /admin routes without logging in. This was a critical security vulnerability.
+- **What**: Enabled authentication check in middleware.js. All /admin routes (except /admin/login) now require valid JWT token. Added role-based access control for sensitive routes (/admin/users, /admin/settings, /admin/super).
+- **Files**: `middleware.js`
+- **Impact**: Admin dashboard is now properly secured. Staff must be authenticated to access any admin functionality.
+
+---
+
+### [Added] - 2025-12-17T15:00:00 - Priority Action Plan Documentation
+
+**Created comprehensive setup guide**
+
+- **Why**: Needed clear, actionable steps for getting staff working and Stripe payments configured.
+- **What**: Created PRIORITY_ACTION_PLAN.md with step-by-step instructions for: creating admin accounts, staff registration, article creation, Stripe API setup, webhook configuration, and environment variables checklist.
+- **Files**: `PRIORITY_ACTION_PLAN.md`
+- **Impact**: Clear path to getting the platform fully operational with payments.
+
+---
+
 ### [Added] - 2025-12-17T00:00:00 - Bootstrap Protocol Documentation System
 
 **Implemented AI development session documentation protocol**
