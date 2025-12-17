@@ -11,9 +11,7 @@ export async function middleware(request) {
       return NextResponse.next();
     }
 
-    // Temporarily disabled for development - ENABLE THIS BEFORE PRODUCTION!
-    // Check for authentication
-    /*
+    // ✅ SECURITY ENABLED: Check for authentication
     const token = await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
@@ -25,18 +23,14 @@ export async function middleware(request) {
       url.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(url);
     }
-    */
 
-    // Optional: Role-based access control
-    // Uncomment to restrict certain routes to specific roles
-    /*
-    const adminOnlyRoutes = ['/admin/users', '/admin/settings'];
+    // Role-based access control for sensitive routes
+    const adminOnlyRoutes = ['/admin/users', '/admin/settings', '/admin/super'];
     if (adminOnlyRoutes.some(route => pathname.startsWith(route))) {
       if (token.role !== 'SUPER_ADMIN' && token.role !== 'ADMIN') {
         return NextResponse.redirect(new URL('/admin', request.url));
       }
     }
-    */
   }
 
   return NextResponse.next();

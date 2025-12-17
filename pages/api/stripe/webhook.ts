@@ -42,6 +42,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Missing stripe-signature header' });
     }
 
+    // Verify Stripe is configured
+    if (!stripe) {
+      console.error('Stripe is not configured');
+      return res.status(500).json({ error: 'Stripe is not configured' });
+    }
+
     // Verify webhook signature
     let event: Stripe.Event;
     try {
@@ -121,7 +127,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   }
 
   // Get subscription details from Stripe
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const subscription = await stripe!.subscriptions.retrieve(subscriptionId);
 
   // Extract subscription data
   const subData: any = subscription;

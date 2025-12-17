@@ -179,16 +179,10 @@ export default function LandingPage({ page }: LandingPageProps) {
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const pages = await prisma.$queryRaw<Array<{ slug: string }>>`
-    SELECT slug FROM landing_pages WHERE status = 'published'
-  `;
-
-  const paths = pages.map((page) => ({
-    params: { slug: page.slug },
-  }));
-
+  // Return empty paths - landing pages will be generated on-demand
+  // The landing_pages table may not exist yet
   return {
-    paths,
+    paths: [],
     fallback: 'blocking',
   };
 };
@@ -196,23 +190,31 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const slug = params?.slug as string;
 
-  const pages = await prisma.$queryRaw<Array<any>>`
-    SELECT * FROM landing_pages WHERE slug = ${slug} AND status = 'published'
-  `;
+  try {
+    const pages = await prisma.$queryRaw<Array<any>>`
+      SELECT * FROM landing_pages WHERE slug = ${slug} AND status = 'published'
+    `;
 
-  if (pages.length === 0) {
+    if (pages.length === 0) {
+      return { notFound: true };
+    }
+
+    // Track view
+    await prisma.$executeRaw`
+      UPDATE landing_pages SET views = views + 1 WHERE slug = ${slug}
+    `.catch(() => {
+      // Ignore tracking errors
+    });
+
+    return {
+      props: {
+        page: pages[0],
+      },
+      revalidate: 600,
+    };
+  } catch (error) {
+    // Table doesn't exist or other error
+    console.error('Landing page error:', error);
     return { notFound: true };
   }
-
-  // Track view
-  await prisma.$executeRaw`
-    UPDATE landing_pages SET views = views + 1 WHERE slug = ${slug}
-  `;
-
-  return {
-    props: {
-      page: pages[0],
-    },
-    revalidate: 600,
-  };
 };
