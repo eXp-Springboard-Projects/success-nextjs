@@ -240,6 +240,11 @@ export default function CRMDashboard() {
               <div className={styles.actionLabel}>Add Contact</div>
             </a>
 
+            <a href="/admin/crm/emails/new" className={styles.actionCard}>
+              <div className={styles.actionIcon} style={{ color: '#ec4899' }}>✉️</div>
+              <div className={styles.actionLabel}>Send Email</div>
+            </a>
+
             <a href="/admin/crm/campaigns/new" className={styles.actionCard}>
               <div className={styles.actionIcon} style={{ color: '#8b5cf6' }}>📧</div>
               <div className={styles.actionLabel}>Create Campaign</div>
