@@ -1,0 +1,173 @@
+.container {
+  min-height: 80vh;
+  background: #f8f9fa;
+}
+
+.hero {
+  background: linear-gradient(135deg, #000000 0%, #333333 100%);
+  color: #ffffff;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.title {
+  font-size: 3rem;
+  font-weight: 800;
+  margin: 0 0 1rem 0;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 1rem;
+}
+
+.webinarSection {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  margin-bottom: 3rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.sectionTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+  color: #000000;
+}
+
+.webinarText {
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: #333333;
+  margin: 0 0 2rem 0;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.registerButton {
+  display: inline-block;
+  background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+  color: #ffffff;
+  padding: 1.25rem 3rem;
+  border-radius: 6px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(211, 47, 47, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.registerButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(211, 47, 47, 0.4);
+  background: linear-gradient(135deg, #e53935 0%, #c62828 100%);
+}
+
+.ctaSection {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.ctaTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  color: #000000;
+}
+
+.ctaText {
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: #333333;
+  margin: 0 0 2rem 0;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.learnMoreButton {
+  display: inline-block;
+  background: #000000;
+  color: #ffffff;
+  padding: 1rem 2.5rem;
+  border-radius: 6px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.learnMoreButton:hover {
+  background: #333333;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 3rem 1.5rem;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .subtitle {
+    font-size: 1.125rem;
+  }
+
+  .content {
+    padding: 2rem 1rem;
+  }
+
+  .webinarSection,
+  .ctaSection {
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .sectionTitle {
+    font-size: 1.5rem;
+  }
+
+  .ctaTitle {
+    font-size: 1.5rem;
+  }
+
+  .ctaText {
+    font-size: 1rem;
+  }
+
+  .webinarText {
+    font-size: 1rem;
+  }
+
+  .registerButton {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+  }
+
+  .learnMoreButton {
+    padding: 0.875rem 2rem;
+    font-size: 1rem;
+  }
+}

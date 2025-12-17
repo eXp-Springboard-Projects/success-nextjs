@@ -123,7 +123,9 @@
       "Bash(if [ -f \"$file\" ])",
       "Bash(then)",
       "Bash(DATABASE_URL=\"postgres://e731f8c351f1974c788b739203b00113561ca6e26a0a8c0d7d5efcea8cf9b656:sk_LYHdgk8RomZonUpgI9S97@db.prisma.io:5432/postgres?sslmode=require\" npx tsx scripts/add-pending-role.ts)",
-      "Bash(DATABASE_URL=\"postgres://e731f8c351f1974c788b739203b00113561ca6e26a0a8c0d7d5efcea8cf9b656:sk_LYHdgk8RomZonUpgI9S97@db.prisma.io:5432/postgres?sslmode=require\" npx tsx scripts/check-user-role.ts)"
+      "Bash(DATABASE_URL=\"postgres://e731f8c351f1974c788b739203b00113561ca6e26a0a8c0d7d5efcea8cf9b656:sk_LYHdgk8RomZonUpgI9S97@db.prisma.io:5432/postgres?sslmode=require\" npx tsx scripts/check-user-role.ts)",
+      "Bash(start http://localhost:3000/signup/staff)",
+      "Bash(start http://localhost:3000/coaching)"
     ],
     "deny": [],
     "ask": []

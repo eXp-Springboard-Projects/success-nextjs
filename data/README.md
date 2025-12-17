@@ -2,6 +2,21 @@
 
 Place your WordPress export files in this directory for import.
 
+## WordPress User Filter
+
+Before importing WordPress users, use the filter script to reduce the dataset:
+
+```bash
+npx tsx scripts/filter-wp-users.ts data/wordpress-users.csv
+```
+
+This creates a filtered CSV containing only:
+- Staff members (@success.com emails)
+- Active subscribers (paid members)
+- Users with login activity in the last 12 months
+
+Output: `data/wordpress-users-filtered.csv`
+
 ## File Structure
 
 ```

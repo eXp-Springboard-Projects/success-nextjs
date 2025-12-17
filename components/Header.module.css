@@ -205,6 +205,64 @@
   color: #ccc;
 }
 
+.dropdownToggle {
+  font-family: var(--font-sans);
+  text-decoration: none;
+  color: var(--color-white);
+  font-weight: var(--font-bold);
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  transition: color 0.2s;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.dropdownToggle:hover {
+  color: #ccc;
+}
+
+/* Dropdown Menu */
+.hasDropdown {
+  position: relative;
+}
+
+.arrow {
+  font-size: 0.65rem;
+  margin-left: 0.35rem;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #000;
+  min-width: 200px;
+  list-style: none;
+  margin: 0.5rem 0 0 0;
+  padding: 0.5rem 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  z-index: 1001;
+}
+
+.dropdown li {
+  border-bottom: none;
+  width: 100%;
+}
+
+.dropdown a {
+  display: block;
+  padding: 0.75rem 1.5rem;
+  white-space: nowrap;
+  font-size: 0.875rem;
+}
+
+.dropdown a:hover {
+  background-color: #333;
+}
+
 /* Hamburger Menu Button */
 .hamburger {
   display: none;
@@ -244,6 +302,7 @@
     padding: 5rem 0 2rem 0;
     transition: left 0.3s ease;
     z-index: 1000;
+    overflow-y: auto;
   }
 
   .navOpen {
@@ -261,10 +320,28 @@
     border-bottom: 1px solid #333;
   }
 
-  .nav a {
+  .nav a,
+  .dropdownToggle {
     display: block;
     padding: 1rem 1.5rem;
     font-size: 1rem;
+  }
+
+  .dropdown {
+    position: static;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    background-color: #111;
+  }
+
+  .dropdown li {
+    border-bottom: 1px solid #333;
+  }
+
+  .dropdown a {
+    padding-left: 2.5rem;
+    font-size: 0.9rem;
   }
 
   .hamburger {
