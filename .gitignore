@@ -31,7 +31,6 @@ next-env.d.ts
 nul
 check-admin.mjs
 *.log
-pnpm-lock.yaml
 
 # Git worktrees
 /success-admin-fixes/
