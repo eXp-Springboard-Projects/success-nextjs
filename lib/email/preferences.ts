@@ -45,11 +45,11 @@ export async function checkEmailAllowed(
 
   switch (type) {
     case 'marketing':
-      return preferences.optInMarketing;
+      return preferences.optInMarketing ?? false;
     case 'transactional':
-      return preferences.optInTransactional;
+      return preferences.optInTransactional ?? false;
     case 'newsletter':
-      return preferences.optInNewsletter;
+      return preferences.optInNewsletter ?? false;
     default:
       return false;
   }

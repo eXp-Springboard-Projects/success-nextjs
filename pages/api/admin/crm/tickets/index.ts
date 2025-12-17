@@ -24,16 +24,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getTickets(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const {
-      status = '',
-      priority = '',
-      category = '',
-      assignedTo = '',
-      page = '1',
-      limit = '50',
-      sortBy = 'created_at',
-      sortOrder = 'desc',
-    } = req.query;
+    const query = req.query;
+    const status = (query.status as string) || '';
+    const priority = (query.priority as string) || '';
+    const category = (query.category as string) || '';
+    const assignedTo = (query.assignedTo as string) || '';
+    const page = (query.page as string) || '1';
+    const limit = (query.limit as string) || '50';
+    const sortBy = (query.sortBy as string) || 'created_at';
+    const sortOrder = (query.sortOrder as string) || 'desc';
 
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 

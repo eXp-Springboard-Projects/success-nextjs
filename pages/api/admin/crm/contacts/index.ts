@@ -24,17 +24,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getContacts(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const {
-      search = '',
-      emailStatus = '',
-      tagId = '',
-      listId = '',
-      source = '',
-      page = '1',
-      limit = '50',
-      sortBy = 'created_at',
-      sortOrder = 'desc',
-    } = req.query;
+    const query = req.query;
+    const search = (query.search as string) || '';
+    const emailStatus = (query.emailStatus as string) || '';
+    const tagId = (query.tagId as string) || '';
+    const listId = (query.listId as string) || '';
+    const source = (query.source as string) || '';
+    const page = (query.page as string) || '1';
+    const limit = (query.limit as string) || '50';
+    const sortBy = (query.sortBy as string) || 'created_at';
+    const sortOrder = (query.sortOrder as string) || 'desc';
 
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
@@ -196,7 +195,7 @@ async function createContact(req: NextApiRequest, res: NextApiResponse) {
       VALUES (${nanoid()}, ${contactId}, 'contact_created', 'Contact created')
     `;
 
-    const contact = await prisma.$queryRaw`
+    const contact = await prisma.$queryRaw<Array<any>>`
       SELECT
         c.*,
         COALESCE(

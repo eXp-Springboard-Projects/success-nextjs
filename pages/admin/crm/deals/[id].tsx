@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import DepartmentLayout from '../../../../components/admin/DepartmentLayout';
-import { Department } from '../../../../lib/departments';
+import DepartmentLayout from '../../../../components/admin/shared/DepartmentLayout';
+import { Department } from '@prisma/client';
 import styles from './Deals.module.css';
 
 interface Stage {
@@ -184,7 +184,7 @@ export default function DealDetailPage() {
 
   if (loading) {
     return (
-      <DepartmentLayout department={Department.CUSTOMER_SERVICE}>
+      <DepartmentLayout currentDepartment={Department.CUSTOMER_SERVICE} pageTitle="Deal Details">
         <div style={{ padding: '2rem', textAlign: 'center' }}>Loading deal...</div>
       </DepartmentLayout>
     );
@@ -192,14 +192,14 @@ export default function DealDetailPage() {
 
   if (!deal) {
     return (
-      <DepartmentLayout department={Department.CUSTOMER_SERVICE}>
+      <DepartmentLayout currentDepartment={Department.CUSTOMER_SERVICE} pageTitle="Deal Not Found">
         <div style={{ padding: '2rem', textAlign: 'center' }}>Deal not found</div>
       </DepartmentLayout>
     );
   }
 
   return (
-    <DepartmentLayout department={Department.CUSTOMER_SERVICE}>
+    <DepartmentLayout currentDepartment={Department.CUSTOMER_SERVICE} pageTitle="Deal Details">
       <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
         <div style={{ marginBottom: '2rem' }}>
           <a

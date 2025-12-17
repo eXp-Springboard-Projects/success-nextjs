@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import DepartmentLayout from '../../../../components/admin/DepartmentLayout';
-import { Department } from '../../../../lib/departments';
+import DepartmentLayout from '../../../../components/admin/shared/DepartmentLayout';
+import { Department } from '@prisma/client';
 import styles from './Sequences.module.css';
 
 interface Sequence {
@@ -95,14 +95,14 @@ export default function SequencesPage() {
 
   if (loading) {
     return (
-      <DepartmentLayout department={Department.CUSTOMER_SERVICE}>
+      <DepartmentLayout currentDepartment={Department.CUSTOMER_SERVICE} pageTitle="Sales Sequences">
         <div className={styles.loading}>Loading sequences...</div>
       </DepartmentLayout>
     );
   }
 
   return (
-    <DepartmentLayout department={Department.CUSTOMER_SERVICE}>
+    <DepartmentLayout currentDepartment={Department.CUSTOMER_SERVICE} pageTitle="Sales Sequences">
       <div className={styles.container}>
         <div className={styles.header}>
           <h1 className={styles.title}>Sales Sequences</h1>

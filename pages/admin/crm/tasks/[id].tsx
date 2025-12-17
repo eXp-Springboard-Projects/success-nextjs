@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import DepartmentLayout from '../../../../components/admin/DepartmentLayout';
-import { Department } from '../../../../lib/departments';
+import DepartmentLayout from '../../../../components/admin/shared/DepartmentLayout';
+import { Department } from '@prisma/client';
 import styles from './Tasks.module.css';
 
 interface Contact {
@@ -150,14 +150,14 @@ export default function TaskDetailPage() {
 
   if (loading) {
     return (
-      <DepartmentLayout department={Department.CUSTOMER_SERVICE}>
+      <DepartmentLayout currentDepartment={Department.CUSTOMER_SERVICE} pageTitle="Task Details">
         <div className={styles.loading}>Loading task...</div>
       </DepartmentLayout>
     );
   }
 
   return (
-    <DepartmentLayout department={Department.CUSTOMER_SERVICE}>
+    <DepartmentLayout currentDepartment={Department.CUSTOMER_SERVICE} pageTitle={isNew ? "New Task" : "Edit Task"}>
       <div className={styles.detailContainer}>
         <a href="/admin/crm/tasks" className={styles.backLink}>
           ← Back to Tasks

@@ -314,7 +314,7 @@ export default function UnsubscribesIndex() {
                               style={{
                                 padding: '0.25rem 0.5rem',
                                 background: '#e0e7ff',
-                                color: #1e40af',
+                                color: '#1e40af',
                                 borderRadius: '0.25rem',
                                 fontSize: '0.75rem',
                               }}

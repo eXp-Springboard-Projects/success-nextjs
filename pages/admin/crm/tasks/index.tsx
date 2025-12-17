@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import DepartmentLayout from '../../../../components/admin/DepartmentLayout';
-import { Department } from '../../../../lib/departments';
+import DepartmentLayout from '../../../../components/admin/shared/DepartmentLayout';
+import { Department } from '@prisma/client';
 import styles from './Tasks.module.css';
 
 interface Task {
@@ -106,14 +106,14 @@ export default function TasksPage() {
 
   if (loading) {
     return (
-      <DepartmentLayout department={Department.CUSTOMER_SERVICE}>
+      <DepartmentLayout currentDepartment={Department.CUSTOMER_SERVICE} pageTitle="Tasks">
         <div className={styles.loading}>Loading tasks...</div>
       </DepartmentLayout>
     );
   }
 
   return (
-    <DepartmentLayout department={Department.CUSTOMER_SERVICE}>
+    <DepartmentLayout currentDepartment={Department.CUSTOMER_SERVICE} pageTitle="Tasks">
       <div className={styles.container}>
         <div className={styles.header}>
           <h1 className={styles.title}>Tasks</h1>

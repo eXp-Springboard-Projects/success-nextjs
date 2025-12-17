@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import DepartmentLayout from '../../../components/admin/DepartmentLayout';
-import { Department } from '../../../lib/departments';
+import DepartmentLayout from '../../../components/admin/shared/DepartmentLayout';
+import { Department } from '@prisma/client';
 import styles from './CRM.module.css';
 
 interface DashboardStats {
@@ -180,14 +180,14 @@ export default function CRMDashboard() {
 
   if (loading) {
     return (
-      <DepartmentLayout department={Department.CUSTOMER_SERVICE}>
+      <DepartmentLayout currentDepartment={Department.CUSTOMER_SERVICE} pageTitle="CRM Dashboard">
         <div className={styles.loading}>Loading dashboard...</div>
       </DepartmentLayout>
     );
   }
 
   return (
-    <DepartmentLayout department={Department.CUSTOMER_SERVICE}>
+    <DepartmentLayout currentDepartment={Department.CUSTOMER_SERVICE} pageTitle="CRM Dashboard">
       <div className={styles.dashboard} style={{ padding: '2rem' }}>
         <h1 className={styles.title}>CRM Dashboard</h1>
 

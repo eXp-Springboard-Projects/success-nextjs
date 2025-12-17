@@ -121,7 +121,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ]);
 
       // Deal Analytics (if deals table exists)
-      let dealStats = {
+      let dealStats: {
+        totalValue: number;
+        winRate: number;
+        avgDealSize: number;
+        dealsByStage: Array<{ stage: string; count: number; value: number }>;
+        dealsTimeseries: Array<{ date: string; count: number; value: number }>;
+      } = {
         totalValue: 0,
         winRate: 0,
         avgDealSize: 0,
@@ -201,7 +207,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             value: Number(d.total_value || 0),
           })),
           dealsTimeseries: dealsTimeseries.map((d) => ({
-            date: d.date,
+            date: d.date.toISOString().split('T')[0],
             count: Number(d.count),
             value: Number(d.total_value || 0),
           })),
@@ -212,7 +218,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Ticket Analytics (if tickets table exists)
-      let ticketStats = {
+      let ticketStats: {
+        totalTickets: number;
+        avgResolutionTime: number;
+        ticketsByCategory: Array<{ category: string; count: number }>;
+        ticketsByPriority: Array<{ priority: string; count: number }>;
+        ticketsTimeseries: Array<{ date: string; count: number }>;
+      } = {
         totalTickets: 0,
         avgResolutionTime: 0,
         ticketsByCategory: [],
@@ -294,7 +306,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             count: Number(t.count),
           })),
           ticketsTimeseries: ticketsTimeseries.map((t) => ({
-            date: t.date,
+            date: t.date.toISOString().split('T')[0],
             count: Number(t.count),
           })),
         };
