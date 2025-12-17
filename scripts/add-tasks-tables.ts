@@ -22,6 +22,7 @@ async function main() {
       assigned_to_name TEXT,
       completed_at TIMESTAMP,
       completed_by TEXT,
+      reminder_at TIMESTAMP,
       created_by TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

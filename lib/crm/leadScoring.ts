@@ -6,6 +6,7 @@ export type ScoringEvent =
   | 'email_opened'
   | 'email_clicked'
   | 'form_submitted'
+  | 'purchase'
   | 'page_visited'
   | 'deal_created'
   | 'ticket_created'

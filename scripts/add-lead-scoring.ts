@@ -45,6 +45,7 @@ async function main() {
     { name: 'Email Opened', eventType: 'email_opened', points: 5 },
     { name: 'Email Clicked', eventType: 'email_clicked', points: 10 },
     { name: 'Form Submitted', eventType: 'form_submitted', points: 20 },
+    { name: 'Purchase', eventType: 'purchase', points: 50 },
     { name: 'Page Visited', eventType: 'page_visited', points: 3 },
     { name: 'Deal Created', eventType: 'deal_created', points: 30 },
     { name: 'Ticket Created', eventType: 'ticket_created', points: -5 },

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import AdminLayout from '@/components/admin/AdminLayout';
-import styles from '../../editorial/Editorial.module.css';
+import { Department } from '@prisma/client';
+import DepartmentLayout from '@/components/admin/shared/DepartmentLayout';
+import { requireDepartmentAuth } from '@/lib/departmentAuth';
+import styles from '../../forms/Forms.module.css';
 
 interface ScoringRule {
   id: string;
@@ -35,7 +37,7 @@ export default function LeadScoringSettings() {
 
   useEffect(() => {
     fetchRules();
-    // fetchTopLeads();
+    fetchTopLeads();
   }, []);
 
   const fetchRules = async () => {
@@ -50,7 +52,7 @@ export default function LeadScoringSettings() {
     }
   };
 
-  const fetchTopLeads = async () {
+  const fetchTopLeads = async () => {
     try {
       const res = await fetch('/api/admin/crm/lead-scoring/top-leads?limit=10');
       const data = await res.json();
@@ -182,16 +184,20 @@ export default function LeadScoringSettings() {
   };
 
   return (
-    <AdminLayout>
+    <DepartmentLayout
+      currentDepartment={Department.MARKETING}
+      pageTitle="Lead Scoring"
+      description="Configure scoring rules to automatically rank leads"
+    >
       <div className={styles.container}>
         <div className={styles.header}>
           <div>
-            <h1>Lead Scoring</h1>
-            <p>Configure scoring rules to automatically rank leads</p>
+            <h1>Lead Scoring Rules</h1>
+            <p>Automatically score and rank your leads based on their engagement</p>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <button
-              className={styles.secondaryButton}
+              className={styles.buttonSecondary}
               onClick={recalculateScores}
               disabled={recalculating}
             >
@@ -213,7 +219,7 @@ export default function LeadScoringSettings() {
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
           {/* Scoring Rules */}
           <div>
-            <h2 style={{ marginBottom: '1rem' }}>Scoring Rules</h2>
+            <h2 style={{ marginBottom: '1rem', fontSize: '1.25rem', fontWeight: 600 }}>Scoring Rules</h2>
 
             {loading ? (
               <div className={styles.loading}>Loading...</div>
@@ -253,7 +259,7 @@ export default function LeadScoringSettings() {
                           </label>
                         </td>
                         <td>
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <div className={styles.actions}>
                             <button
                               className={styles.actionButton}
                               onClick={() => {
@@ -289,76 +295,59 @@ export default function LeadScoringSettings() {
                 marginTop: '2rem',
                 padding: '1.5rem',
                 border: '1px solid #e0e0e0',
-                borderRadius: '8px',
+                borderRadius: '12px',
                 background: '#fff',
               }}>
-                <h3>{editingRule ? 'Edit Rule' : 'Add Rule'}</h3>
+                <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 600 }}>
+                  {editingRule ? 'Edit Rule' : 'Add New Rule'}
+                </h3>
                 <div style={{ display: 'grid', gap: '1rem', marginTop: '1rem' }}>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-                      Rule Name
-                    </label>
+                  <div className={styles.formGroup}>
+                    <label>Rule Name</label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        border: '1px solid #ddd',
-                        borderRadius: '6px',
-                      }}
+                      placeholder="e.g., Email Opened"
                     />
                   </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-                      Event Type
-                    </label>
+                  <div className={styles.formGroup}>
+                    <label>Event Type</label>
                     <select
                       value={formData.eventType}
                       onChange={(e) => setFormData({ ...formData, eventType: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        border: '1px solid #ddd',
-                        borderRadius: '6px',
-                      }}
                     >
                       <option value="email_opened">Email Opened</option>
                       <option value="email_clicked">Email Clicked</option>
                       <option value="form_submitted">Form Submitted</option>
                       <option value="page_visited">Page Visited</option>
+                      <option value="purchase">Purchase</option>
                       <option value="deal_created">Deal Created</option>
                       <option value="ticket_created">Ticket Created</option>
                       <option value="unsubscribed">Unsubscribed</option>
                     </select>
                   </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-                      Points
-                    </label>
+                  <div className={styles.formGroup}>
+                    <label>Points</label>
                     <input
                       type="number"
                       value={formData.points}
                       onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) || 0 })}
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        border: '1px solid #ddd',
-                        borderRadius: '6px',
-                      }}
+                      placeholder="0"
                     />
-                    <small style={{ color: '#666' }}>Use negative numbers to deduct points</small>
+                    <small style={{ color: '#666', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>
+                      Use negative numbers to deduct points (e.g., -50 for unsubscribe)
+                    </small>
                   </div>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div className={styles.buttonGroup}>
                     <button
-                      className={styles.primaryButton}
+                      className={`${styles.button} ${styles.buttonPrimary}`}
                       onClick={saveRule}
                     >
                       {editingRule ? 'Update Rule' : 'Add Rule'}
                     </button>
                     <button
-                      className={styles.secondaryButton}
+                      className={`${styles.button} ${styles.buttonSecondary}`}
                       onClick={() => {
                         setShowAddForm(false);
                         setEditingRule(null);
@@ -374,11 +363,11 @@ export default function LeadScoringSettings() {
 
           {/* Top Leads Preview */}
           <div>
-            <h2 style={{ marginBottom: '1rem' }}>Top 10 Leads</h2>
+            <h2 style={{ marginBottom: '1rem', fontSize: '1.25rem', fontWeight: 600 }}>🔥 Top 10 Leads</h2>
             <div style={{
               background: '#fff',
               border: '1px solid #e0e0e0',
-              borderRadius: '8px',
+              borderRadius: '12px',
               padding: '1rem',
             }}>
               {topLeads.length === 0 ? (
@@ -393,7 +382,7 @@ export default function LeadScoringSettings() {
                       style={{
                         padding: '0.75rem',
                         border: '1px solid #f0f0f0',
-                        borderRadius: '6px',
+                        borderRadius: '8px',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
@@ -401,7 +390,7 @@ export default function LeadScoringSettings() {
                     >
                       <div>
                         <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                          #{index + 1} {lead.firstName || lead.email}
+                          #{index + 1} {lead.firstName || lead.lastName ? `${lead.firstName || ''} ${lead.lastName || ''}`.trim() : lead.email}
                         </div>
                         <div style={{ fontSize: '0.85rem', color: '#666' }}>
                           {lead.email}
@@ -416,6 +405,8 @@ export default function LeadScoringSettings() {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </DepartmentLayout>
   );
 }
+
+export const getServerSideProps = requireDepartmentAuth(Department.MARKETING);
