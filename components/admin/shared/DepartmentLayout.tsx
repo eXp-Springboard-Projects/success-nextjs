@@ -306,6 +306,7 @@ function getNavigationSections(role: UserRole, primaryDepartment?: Department | 
         { label: 'Lists', href: '/admin/crm/lists' },
         { label: 'Forms', href: '/admin/crm/forms' },
         { label: 'Sequences', href: '/admin/crm/sequences' },
+        { label: 'Promotions', href: '/admin/crm/promotions' },
         { label: 'Analytics', href: '/admin/crm/analytics' },
         { label: 'Unsubscribes', href: '/admin/crm/unsubscribes' },
       ]
