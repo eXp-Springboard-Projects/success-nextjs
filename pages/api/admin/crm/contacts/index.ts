@@ -58,14 +58,15 @@ async function getContacts(req: NextApiRequest, res: NextApiResponse) {
       paramIndex++;
     }
 
-    if (tagId) {
-      whereClause += ` AND EXISTS (
-        SELECT 1 FROM contact_tag_assignments cta
-        WHERE cta.contact_id = c.id AND cta.tag_id = $${paramIndex}
-      )`;
-      params.push(tagId);
-      paramIndex++;
-    }
+    // Tag filtering temporarily disabled
+    // if (tagId) {
+    //   whereClause += ` AND EXISTS (
+    //     SELECT 1 FROM contact_tag_assignments cta
+    //     WHERE cta.contact_id = c.id AND cta.tag_id = $${paramIndex}
+    //   )`;
+    //   params.push(tagId);
+    //   paramIndex++;
+    // }
 
     if (listId) {
       whereClause += ` AND EXISTS (
@@ -85,28 +86,11 @@ async function getContacts(req: NextApiRequest, res: NextApiResponse) {
     const contacts = await prisma.$queryRawUnsafe(`
       SELECT
         c.*,
-        COALESCE(
-          json_agg(DISTINCT jsonb_build_object('id', ct.id, 'name', ct.name, 'color', ct.color))
-          FILTER (WHERE ct.id IS NOT NULL),
-          '[]'
-        ) as tags,
-        COALESCE(
-          json_agg(DISTINCT jsonb_build_object('id', cl.id, 'name', cl.name))
-          FILTER (WHERE cl.id IS NOT NULL),
-          '[]'
-        ) as lists,
-        (
-          SELECT MAX(created_at)
-          FROM contact_activities
-          WHERE contact_id = c.id
-        ) as last_activity
+        '[]'::json as tags,
+        '[]'::json as lists,
+        c.updated_at as last_activity
       FROM contacts c
-      LEFT JOIN contact_tag_assignments cta ON c.id = cta.contact_id
-      LEFT JOIN contact_tags ct ON cta.tag_id = ct.id
-      LEFT JOIN contact_list_members clm ON c.id = clm.contact_id
-      LEFT JOIN contact_lists cl ON clm.list_id = cl.id
       WHERE 1=1 ${whereClause}
-      GROUP BY c.id
       ORDER BY c.${sortBy === 'last_activity' ? 'updated_at' : sortBy} ${sortOrder.toUpperCase()}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `, ...params, parseInt(limit as string), offset);
@@ -114,8 +98,6 @@ async function getContacts(req: NextApiRequest, res: NextApiResponse) {
     const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
       `SELECT COUNT(DISTINCT c.id) as count
        FROM contacts c
-       ${tagId ? 'LEFT JOIN contact_tag_assignments cta ON c.id = cta.contact_id' : ''}
-       ${listId ? 'LEFT JOIN contact_list_members clm ON c.id = clm.contact_id' : ''}
        WHERE 1=1 ${whereClause}`,
       ...params
     );

@@ -42,9 +42,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       FROM deals
     `;
 
+    // Convert BigInt to Number for JSON serialization
+    const serializedStats = stats.map(s => ({
+      ...s,
+      deal_count: Number(s.deal_count),
+      total_value: Number(s.total_value),
+    }));
+
+    const serializedTotals = {
+      ...totalStats[0],
+      open_deals: Number(totalStats[0].open_deals),
+      won_deals: Number(totalStats[0].won_deals),
+      lost_deals: Number(totalStats[0].lost_deals),
+      open_value: Number(totalStats[0].open_value),
+      won_value: Number(totalStats[0].won_value),
+      lost_value: Number(totalStats[0].lost_value),
+    };
+
     return res.status(200).json({
-      stages: stats,
-      totals: totalStats[0],
+      stages: serializedStats,
+      totals: serializedTotals,
     });
   } catch (error) {
     console.error('Error fetching deal stats:', error);

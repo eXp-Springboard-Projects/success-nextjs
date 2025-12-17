@@ -14,6 +14,11 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "import:wordpress": "tsx scripts/import-wordpress.ts",
+    "import:members": "tsx scripts/import-members.ts",
+    "import:subscribers": "tsx scripts/import-subscribers.ts",
+    "import:products": "tsx scripts/import-products.ts",
+    "import:taxonomy": "tsx scripts/import-taxonomy.ts",
+    "verify:import": "tsx scripts/verify-import.ts",
     "seed:admins": "tsx scripts/seed-admin-users.ts",
     "import:all": "npm run seed:admins && npm run import:wordpress"
   },
