@@ -80,7 +80,7 @@ export default async function handler(
       FROM email_campaigns c
       LEFT JOIN email_sends s ON c.id = s.campaign_id
       WHERE c.status IN ('active', 'completed')
-        AND c.created_at >= CURRENT_DATE - INTERVAL '30 days'
+        AND c."createdAt" >= CURRENT_DATE - INTERVAL '30 days'
       GROUP BY c.id, c.name, c.type
       HAVING COUNT(*) > 0
       ORDER BY conversions DESC

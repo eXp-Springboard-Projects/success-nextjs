@@ -45,7 +45,7 @@ async function getTemplates(req: NextApiRequest, res: NextApiResponse) {
     const templates = await prisma.$queryRawUnsafe(`
       SELECT * FROM email_templates
       WHERE 1=1 ${whereClause}
-      ORDER BY updated_at DESC
+      ORDER BY "updatedAt" DESC
     `, ...params);
 
     return res.status(200).json({ templates });
