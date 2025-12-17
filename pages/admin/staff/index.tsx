@@ -115,11 +115,19 @@ export default function StaffManagement() {
             >
               {showBulkOps ? '✕ Close' : '⚡'} Bulk Operations
             </button>
+            {session?.user?.role === 'SUPER_ADMIN' && (
+              <button
+                onClick={() => router.push('/admin/staff/new')}
+                className={styles.primaryButton}
+              >
+                + Add Staff
+              </button>
+            )}
             <button
               onClick={() => router.push('/admin/staff/invite')}
               className={styles.primaryButton}
             >
-              + Invite Staff
+              📧 Invite Staff
             </button>
           </div>
         </div>
