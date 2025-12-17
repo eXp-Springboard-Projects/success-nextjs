@@ -1,5 +1,5 @@
 import Image from '@tiptap/extension-image';
-import { mergeAttributes, RawCommands } from '@tiptap/core';
+import { mergeAttributes } from '@tiptap/core';
 
 export const EnhancedImage = Image.extend({
   addAttributes() {
@@ -84,6 +84,6 @@ export const EnhancedImage = Image.extend({
       updateImage: (attributes: any) => ({ commands }: any) => {
         return commands.updateAttributes('image', attributes);
       },
-    } as Partial<RawCommands>;
+    };
   },
 });
