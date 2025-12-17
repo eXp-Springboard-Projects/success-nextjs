@@ -297,17 +297,17 @@ function getNavigationSections(role: UserRole, primaryDepartment?: Department | 
       title: 'CRM & EMAIL',
       items: [
         { label: 'CRM Dashboard', href: '/admin/crm' },
-        { label: 'Contacts', href: '/admin/crm/contacts' },
-        { label: 'Deals', href: '/admin/crm/deals' },
-        { label: 'Tasks', href: '/admin/crm/tasks' },
         { label: 'Campaigns', href: '/admin/crm/campaigns' },
+        { label: 'Contacts', href: '/admin/crm/contacts' },
         { label: 'Email Templates', href: '/admin/crm/templates' },
         { label: 'Automations', href: '/admin/crm/automations' },
+        { label: 'Help Desk', href: '/admin/crm/tickets' },
+        { label: 'Deals', href: '/admin/crm/deals' },
+        { label: 'Lists', href: '/admin/crm/lists' },
+        { label: 'Forms', href: '/admin/crm/forms' },
         { label: 'Sequences', href: '/admin/crm/sequences' },
-        { label: 'Help Desk', href: '/admin/help-desk' },
-        { label: 'Marketing Dashboard', href: '/admin/marketing' },
-        { label: 'Email Manager', href: '/admin/email-manager' },
-        { label: 'Subscribers', href: '/admin/subscribers' },
+        { label: 'Analytics', href: '/admin/crm/analytics' },
+        { label: 'Unsubscribes', href: '/admin/crm/unsubscribes' },
       ]
     });
   }

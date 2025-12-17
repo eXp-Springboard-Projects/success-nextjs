@@ -96,59 +96,53 @@ export default function MarketingDashboard() {
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Quick Actions</h2>
           <div className={styles.actionsGrid}>
-            <div className={styles.actionCardDisabled}>
-              <div className={styles.comingSoonBadge}>Coming Soon</div>
+            <Link href="/admin/crm/campaigns/new" className={styles.actionCard}>
               <div className={styles.actionIcon}>🚀</div>
               <div className={styles.actionTitle}>Create Campaign</div>
               <div className={styles.actionDescription}>
                 Launch a new marketing campaign
               </div>
-            </div>
+            </Link>
 
-            <div className={styles.actionCardDisabled}>
-              <div className={styles.comingSoonBadge}>Coming Soon</div>
+            <Link href="/admin/crm/campaigns/new?type=newsletter" className={styles.actionCard}>
               <div className={styles.actionIcon}>✉️</div>
               <div className={styles.actionTitle}>Send Newsletter</div>
               <div className={styles.actionDescription}>
                 Compose and send email campaign
               </div>
-            </div>
+            </Link>
 
-            <div className={styles.actionCardDisabled}>
-              <div className={styles.comingSoonBadge}>Coming Soon</div>
+            <Link href="/admin/crm/analytics" className={styles.actionCard}>
               <div className={styles.actionIcon}>📈</div>
               <div className={styles.actionTitle}>View Analytics</div>
               <div className={styles.actionDescription}>
                 Traffic and conversion metrics
               </div>
-            </div>
+            </Link>
 
-            <div className={styles.actionCardDisabled}>
-              <div className={styles.comingSoonBadge}>Coming Soon</div>
+            <Link href="/admin/crm/forms" className={styles.actionCard}>
               <div className={styles.actionIcon}>📄</div>
               <div className={styles.actionTitle}>Landing Pages</div>
               <div className={styles.actionDescription}>
                 Create and manage landing pages
               </div>
-            </div>
+            </Link>
 
-            <div className={styles.actionCardDisabled}>
-              <div className={styles.comingSoonBadge}>Coming Soon</div>
+            <Link href="/admin/crm/promotions" className={styles.actionCard}>
               <div className={styles.actionIcon}>🎁</div>
               <div className={styles.actionTitle}>Promotions</div>
               <div className={styles.actionDescription}>
                 Manage coupon codes and offers
               </div>
-            </div>
+            </Link>
 
-            <div className={styles.actionCardDisabled}>
-              <div className={styles.comingSoonBadge}>Coming Soon</div>
+            <Link href="/admin/crm/campaigns" className={styles.actionCard}>
               <div className={styles.actionIcon}>📋</div>
               <div className={styles.actionTitle}>All Campaigns</div>
               <div className={styles.actionDescription}>
                 View campaign performance
               </div>
-            </div>
+            </Link>
           </div>
         </div>
 
