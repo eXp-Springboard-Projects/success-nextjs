@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Department } from '@prisma/client';
 import DepartmentLayout from '@/components/admin/shared/DepartmentLayout';
 import { requireDepartmentAuth } from '@/lib/departmentAuth';
-import styles from '../../forms/Forms.module.css';
+import styles from '../forms/Forms.module.css';
 
 interface ScoringRule {
   id: string;

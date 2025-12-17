@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { authOptions } from '../../auth/[...nextauth]';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -57,7 +57,6 @@ export default async function handler(
           name: name || undefined,
           subject: subject || undefined,
           content: content || undefined,
-          blocks: blocks !== undefined ? blocks : undefined,
           isDefault: isDefault !== undefined ? isDefault : undefined,
           updatedAt: new Date(),
         },

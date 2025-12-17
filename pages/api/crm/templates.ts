@@ -52,7 +52,6 @@ export default async function handler(
           name,
           subject,
           content: content || '',
-          blocks: blocks || null,
           isDefault: isDefault || false,
           updatedAt: new Date(),
         },
