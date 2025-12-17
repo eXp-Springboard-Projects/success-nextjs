@@ -7,6 +7,7 @@ import styles from './Header.module.css';
 const navItems = [
   { label: 'MAGAZINE', path: '/magazine' },
   { label: 'COACHING', path: 'https://coaching.success.com/', external: true },
+  { label: 'WEBINAR', path: '/webinar' },
   { label: 'LABS', path: 'https://labs.success.com/', external: true },
   { label: 'SUCCESS+', path: '/success-plus' },
   { label: 'PROFESSIONAL GROWTH', path: '/category/professional-growth' },

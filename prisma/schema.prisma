@@ -2188,6 +2188,7 @@ enum UserRole {
   ADMIN
   EDITOR
   AUTHOR
+  PENDING
 }
 
 enum Department {

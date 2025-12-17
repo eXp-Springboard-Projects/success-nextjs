@@ -1,0 +1,58 @@
+.container {
+  min-height: 80vh;
+  background: #ffffff;
+}
+
+.header {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem 1rem;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  color: #000000;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.backLink:hover {
+  color: #666666;
+}
+
+.content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.iframeWrapper {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.iframeWrapper iframe {
+  display: block;
+  border: none;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 1.5rem 1rem 0.75rem;
+  }
+
+  .backLink {
+    font-size: 0.9rem;
+  }
+
+  .iframeWrapper iframe {
+    height: 700px !important;
+  }
+}
