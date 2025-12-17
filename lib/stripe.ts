@@ -1,13 +1,21 @@
 import Stripe from 'stripe';
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY is not set in environment variables');
-}
+// Initialize Stripe only if secret key is available
+// This allows builds to succeed without Stripe configured
+export const stripe: Stripe | null = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-09-30.clover',
+      typescript: true,
+    })
+  : null;
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-10-29.clover',
-  typescript: true,
-});
+// Helper to ensure Stripe is configured before use
+function requireStripe(): Stripe {
+  if (!stripe) {
+    throw new Error('STRIPE_SECRET_KEY is not configured. Please add it to your environment variables.');
+  }
+  return stripe;
+}
 
 // SUCCESS+ Price IDs (you'll need to create these in Stripe Dashboard)
 export const STRIPE_PRICES = {
@@ -36,8 +44,10 @@ export const PRODUCT_INFO = {
  * Create or retrieve a Stripe customer for a user
  */
 export async function getOrCreateStripeCustomer(email: string, name?: string): Promise<string> {
+  const stripeClient = requireStripe();
+  
   // Check if customer already exists
-  const existingCustomers = await stripe.customers.list({
+  const existingCustomers = await stripeClient.customers.list({
     email: email.toLowerCase(),
     limit: 1,
   });
@@ -47,7 +57,7 @@ export async function getOrCreateStripeCustomer(email: string, name?: string): P
   }
 
   // Create new customer
-  const customer = await stripe.customers.create({
+  const customer = await stripeClient.customers.create({
     email: email.toLowerCase(),
     name: name || undefined,
     metadata: {
@@ -108,7 +118,8 @@ export async function createCheckoutSession({
     sessionParams.subscription_data!.trial_period_days = trialPeriodDays;
   }
 
-  const session = await stripe.checkout.sessions.create(sessionParams);
+  const stripeClient = requireStripe();
+  const session = await stripeClient.checkout.sessions.create(sessionParams);
 
   return session;
 }
@@ -117,7 +128,8 @@ export async function createCheckoutSession({
  * Create a customer portal session for managing billing
  */
 export async function createPortalSession(customerId: string, returnUrl: string) {
-  const session = await stripe.billingPortal.sessions.create({
+  const stripeClient = requireStripe();
+  const session = await stripeClient.billingPortal.sessions.create({
     customer: customerId,
     return_url: returnUrl,
   });
@@ -129,7 +141,8 @@ export async function createPortalSession(customerId: string, returnUrl: string)
  * Cancel a subscription at period end
  */
 export async function cancelSubscription(subscriptionId: string) {
-  const subscription = await stripe.subscriptions.update(subscriptionId, {
+  const stripeClient = requireStripe();
+  const subscription = await stripeClient.subscriptions.update(subscriptionId, {
     cancel_at_period_end: true,
   });
 
@@ -140,7 +153,8 @@ export async function cancelSubscription(subscriptionId: string) {
  * Reactivate a subscription that was set to cancel
  */
 export async function reactivateSubscription(subscriptionId: string) {
-  const subscription = await stripe.subscriptions.update(subscriptionId, {
+  const stripeClient = requireStripe();
+  const subscription = await stripeClient.subscriptions.update(subscriptionId, {
     cancel_at_period_end: false,
   });
 
@@ -151,6 +165,7 @@ export async function reactivateSubscription(subscriptionId: string) {
  * Get subscription details
  */
 export async function getSubscription(subscriptionId: string) {
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const stripeClient = requireStripe();
+  const subscription = await stripeClient.subscriptions.retrieve(subscriptionId);
   return subscription;
 }

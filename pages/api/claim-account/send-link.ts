@@ -31,6 +31,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
+    // Check if Stripe is configured
+    if (!stripe) {
+      return res.status(503).json({
+        error: 'Payment system is not configured. Please contact support.',
+      });
+    }
+
     // Check if email has active subscription in Stripe
     const stripeCustomers = await stripe.customers.list({
       email: normalizedEmail,

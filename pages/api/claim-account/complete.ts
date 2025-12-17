@@ -44,28 +44,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Get Stripe customer and subscription info
-    const stripeCustomers = await stripe.customers.list({
-      email: user.email,
-      limit: 1,
-    });
-
     let stripeCustomerId: string | null = null;
     let membershipTier: 'Free' | 'SUCCESSPlus' = 'Free';
 
-    if (stripeCustomers.data.length > 0) {
-      const stripeCustomer = stripeCustomers.data[0];
-      stripeCustomerId = stripeCustomer.id;
-
-      // Check for active subscriptions
-      const subscriptions = await stripe.subscriptions.list({
-        customer: stripeCustomer.id,
-        status: 'active',
+    // Get Stripe customer and subscription info (only if Stripe is configured)
+    if (stripe) {
+      const stripeCustomers = await stripe.customers.list({
+        email: user.email,
         limit: 1,
       });
 
-      if (subscriptions.data.length > 0) {
-        membershipTier = 'SUCCESSPlus';
+      if (stripeCustomers.data.length > 0) {
+        const stripeCustomer = stripeCustomers.data[0];
+        stripeCustomerId = stripeCustomer.id;
+
+        // Check for active subscriptions
+        const subscriptions = await stripe.subscriptions.list({
+          customer: stripeCustomer.id,
+          status: 'active',
+          limit: 1,
+        });
+
+        if (subscriptions.data.length > 0) {
+          membershipTier = 'SUCCESSPlus';
+        }
       }
     }
 
@@ -112,7 +114,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     // If there's an active Stripe subscription, create subscription record
-    if (stripeCustomerId && membershipTier === 'SUCCESSPlus') {
+    if (stripe && stripeCustomerId && membershipTier === 'SUCCESSPlus') {
       const stripeSubscriptions = await stripe.subscriptions.list({
         customer: stripeCustomerId,
         status: 'active',

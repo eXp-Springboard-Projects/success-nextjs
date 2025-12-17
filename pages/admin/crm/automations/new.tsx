@@ -26,7 +26,7 @@ export default function NewAutomationPage() {
     name: '',
     trigger: 'contact_created',
     conditions: [] as Array<{ field: string; operator: string; value: string }>,
-    actions: [] as Array<{ type: string; templateId?: string; delay?: number; listId?: string }>,
+    actions: [] as Array<{ type: string; templateId?: string; delay?: number; listId?: string; tagName?: string }>,
     status: 'active',
   });
 
