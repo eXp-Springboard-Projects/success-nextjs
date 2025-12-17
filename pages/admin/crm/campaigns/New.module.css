@@ -1,0 +1,415 @@
+.container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Progress Bar */
+.progressBar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 3rem;
+  position: relative;
+}
+
+.progressBar::before {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 60px;
+  right: 60px;
+  height: 2px;
+  background: #e0e0e0;
+  z-index: 0;
+}
+
+.progressStep {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.progressNumber {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  color: #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  transition: all 0.3s;
+}
+
+.progressStepActive .progressNumber {
+  background: #000;
+  color: #fff;
+}
+
+.progressLabel {
+  font-size: 0.875rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.progressStepActive .progressLabel {
+  color: #000;
+  font-weight: 600;
+}
+
+/* Step Container */
+.stepContainer {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.stepTitle {
+  margin: 0 0 2rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Form Elements */
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.input,
+.select,
+.editor {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.input:focus,
+.select:focus,
+.editor:focus {
+  outline: none;
+  border-color: #000;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.subjectRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tokens {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tokenBtn {
+  padding: 0.5rem 1rem;
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tokenBtn:hover {
+  background: #e9ecef;
+  border-color: #000;
+}
+
+/* Editor */
+.editorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.previewToggle {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.previewBtn {
+  padding: 0.5rem 1rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.previewBtn:hover {
+  border-color: #000;
+}
+
+.previewBtnActive {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+
+.editorContainer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.editor {
+  min-height: 400px;
+  font-family: 'Courier New', monospace;
+  resize: vertical;
+}
+
+.preview {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.previewHeader {
+  background: #f8f9fa;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #ddd;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.preview > div:last-child {
+  padding: 1rem;
+  min-height: 400px;
+}
+
+.previewMobile {
+  max-width: 375px;
+}
+
+/* Lists */
+.listGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.listCheckbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.listCheckbox:hover {
+  border-color: #000;
+  background: #f8f9fa;
+}
+
+.listCheckbox input {
+  margin-top: 0.25rem;
+}
+
+.listName {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.listCount {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+/* Recipient Count */
+.recipientCount {
+  background: #f8f9fa;
+  border: 2px solid #000;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+}
+
+.recipientCountLabel {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.recipientCountValue {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #000;
+}
+
+/* Summary */
+.summaryCard {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.summaryCard h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.summaryRow:last-child {
+  border-bottom: none;
+}
+
+.summaryRow span:first-child {
+  color: #666;
+  font-weight: 500;
+}
+
+.summaryRow span:last-child {
+  font-weight: 600;
+}
+
+/* Test Email */
+.testEmailRow {
+  display: flex;
+  gap: 1rem;
+}
+
+.testEmailRow .input {
+  flex: 1;
+}
+
+/* Schedule */
+.scheduleRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.scheduleNote {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: #e7f3ff;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #0066cc;
+}
+
+/* Buttons */
+.buttonRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.buttonPrimary,
+.buttonSecondary {
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.buttonPrimary {
+  background: #000;
+  color: #fff;
+  border: none;
+}
+
+.buttonPrimary:hover:not(:disabled) {
+  background: #333;
+}
+
+.buttonPrimary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.buttonSecondary {
+  background: #fff;
+  color: #000;
+  border: 1px solid #ddd;
+}
+
+.buttonSecondary:hover {
+  background: #f8f9fa;
+  border-color: #000;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: #fff;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+}
+
+.modalContent h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.modalContent p {
+  margin: 0 0 1rem 0;
+  line-height: 1.6;
+}
+
+.modalButtons {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}

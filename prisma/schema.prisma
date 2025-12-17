@@ -84,6 +84,8 @@ model campaigns {
   totalSent         Int                 @default(0)
   totalOpened       Int                 @default(0)
   totalClicked      Int                 @default(0)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
   sentCount         Int                 @default(0)
   deliveredCount    Int                 @default(0)
   openedCount       Int                 @default(0)
@@ -91,8 +93,6 @@ model campaigns {
   bouncedCount      Int                 @default(0)
   failedCount       Int                 @default(0)
   sendErrors        Json?
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime
   campaign_contacts campaign_contacts[]
   email_templates   email_templates?    @relation(fields: [templateId], references: [id])
   drip_emails       drip_emails[]
@@ -100,17 +100,17 @@ model campaigns {
 }
 
 model categories {
-  id          String       @id
+  id          String   @id
   name        String
-  slug        String       @unique
+  slug        String   @unique
   description String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  wordpressId Int?         @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   color       String?
   icon        String?
-  order       Int          @default(0)
-  posts       posts[]      @relation("PostCategories")
+  order       Int      @default(0)
+  wordpressId Int?     @unique
+  posts       posts[]  @relation("PostCategories")
 
   @@index([slug])
   @@index([wordpressId])
@@ -137,26 +137,31 @@ model comments {
 }
 
 model contacts {
-  id                String              @id
-  email             String              @unique
-  firstName         String?
-  lastName          String?
-  phone             String?
-  company           String?
-  tags              String[]
-  status            ContactStatus       @default(ACTIVE)
-  source            String?
-  notes             String?
-  lastContactedAt   DateTime?
-  emailEngagementScore Int              @default(0)
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime
-  campaign_contacts campaign_contacts[]
-  email_logs        email_logs[]
-  email_events      email_events[]
+  id                   String              @id
+  email                String              @unique
+  firstName            String?
+  lastName             String?
+  phone                String?
+  company              String?
+  tags                 String[]
+  status               ContactStatus       @default(ACTIVE)
+  source               String?
+  notes                String?
+  lastContactedAt      DateTime?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime
+  emailEngagementScore Int                 @default(0)
+  leadScore            Int                 @default(0)
+  campaign_contacts    campaign_contacts[]
+  email_events         email_events[]
+  email_logs           email_logs[]
+  email_preferences    email_preferences[]
+  list_members         list_members[]
+  form_submissions     form_submissions[]
 
   @@index([email])
   @@index([status])
+  @@index([leadScore])
 }
 
 model content_analytics {
@@ -197,13 +202,13 @@ model drip_emails {
 }
 
 model email_events {
-  id           String   @id
+  id           String    @id
   campaignId   String
   contactId    String
   emailAddress String
   event        String
   eventData    Json?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
   campaigns    campaigns @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   contacts     contacts  @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
@@ -260,6 +265,107 @@ model email_templates {
   createdAt DateTime    @default(now())
   updatedAt DateTime
   campaigns campaigns[]
+}
+
+model email_preferences {
+  id                 String    @id
+  email              String    @unique
+  contactId          String?
+  unsubscribed       Boolean?  @default(false)
+  optInMarketing     Boolean?  @default(true)
+  optInTransactional Boolean?  @default(true)
+  optInNewsletter    Boolean?  @default(true)
+  unsubscribeToken   String?   @unique
+  unsubscribeReason  String?
+  unsubscribedAt     DateTime? @db.Timestamp(6)
+  createdAt          DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt          DateTime? @default(now()) @updatedAt @db.Timestamp(6)
+  contact            contacts? @relation(fields: [contactId], references: [id], onUpdate: NoAction, map: "fk_contact")
+
+  @@index([email], map: "idx_email_preferences_email")
+  @@index([unsubscribeToken], map: "idx_email_preferences_token")
+  @@index([unsubscribed], map: "idx_email_preferences_unsubscribed")
+}
+
+model contact_lists {
+  id           String         @id
+  name         String
+  description  String?
+  type         ListType       @default(STATIC)
+  filters      Json?
+  memberCount  Int            @default(0)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime
+  list_members list_members[]
+  forms        forms[]
+
+  @@index([type])
+  @@index([createdAt])
+}
+
+model list_members {
+  id        String        @id
+  listId    String
+  contactId String
+  addedAt   DateTime      @default(now())
+  contact   contacts      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  list      contact_lists @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, contactId])
+  @@index([listId])
+  @@index([contactId])
+}
+
+model forms {
+  id              String             @id
+  name            String
+  fields          Json               @default("[]")
+  settings        Json               @default("{}")
+  thankYouMessage String?
+  redirectUrl     String?
+  listId          String?
+  tags            String[]
+  notifyEmails    String[]
+  status          String             @default("active")
+  submissions     Int                @default(0)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime
+  list            contact_lists?     @relation(fields: [listId], references: [id], onDelete: SetNull)
+  form_submissions form_submissions[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model form_submissions {
+  id        String    @id
+  formId    String
+  contactId String?
+  data      Json
+  source    String?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime  @default(now())
+  form      forms     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  contact   contacts? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([formId])
+  @@index([contactId])
+  @@index([createdAt])
+}
+
+model lead_scoring_rules {
+  id        String   @id
+  name      String
+  eventType String
+  condition Json?
+  points    Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+
+  @@index([eventType])
+  @@index([isActive])
 }
 
 model magazine_subscriptions {
@@ -334,40 +440,40 @@ model order_items {
 }
 
 model orders {
-  id                  String            @id
-  orderNumber         String            @unique
-  memberId            String            // Changed from userId to memberId
-  userName            String
-  userEmail           String
-  total               Decimal           @db.Decimal(10, 2)
-  subtotal            Decimal           @db.Decimal(10, 2)
-  tax                 Decimal           @default(0) @db.Decimal(10, 2)
-  shipping            Decimal           @default(0) @db.Decimal(10, 2)
-  discount            Decimal           @default(0) @db.Decimal(10, 2)
-  status              OrderStatus       @default(PENDING)
-  paymentMethod       String
-  paymentId           String?
-  shippingAddress     String?
-  billingAddress      String?
-  notes               String?
-  orderSource         String            @default("InHouse")
-  woocommerceOrderId  String?
-  fulfillmentStatus   String            @default("UNFULFILLED")
-  fulfilledAt         DateTime?
-  fulfilledBy         String?
-  trackingNumber      String?
-  trackingCarrier     String?
-  trackingUrl         String?
-  shippedDate         DateTime?
-  deliveredDate       DateTime?
-  packingSlipPrinted  Boolean           @default(false)
-  internalNotes       String?
-  customerNotes       String?
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime
-  order_items         order_items[]
-  member              members           @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  refund_disputes     refund_disputes[]
+  id                 String            @id
+  orderNumber        String            @unique
+  userName           String
+  userEmail          String
+  total              Decimal           @db.Decimal(10, 2)
+  subtotal           Decimal           @db.Decimal(10, 2)
+  tax                Decimal           @default(0) @db.Decimal(10, 2)
+  shipping           Decimal           @default(0) @db.Decimal(10, 2)
+  discount           Decimal           @default(0) @db.Decimal(10, 2)
+  status             OrderStatus       @default(PENDING)
+  paymentMethod      String
+  paymentId          String?
+  shippingAddress    String?
+  billingAddress     String?
+  notes              String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime
+  orderSource        String            @default("InHouse")
+  woocommerceOrderId String?
+  fulfillmentStatus  String            @default("UNFULFILLED")
+  fulfilledAt        DateTime?
+  fulfilledBy        String?
+  trackingNumber     String?
+  trackingCarrier    String?
+  trackingUrl        String?
+  packingSlipPrinted Boolean           @default(false)
+  internalNotes      String?
+  customerNotes      String?
+  deliveredDate      DateTime?
+  memberId           String
+  shippedDate        DateTime?
+  order_items        order_items[]
+  member             members           @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  refund_disputes    refund_disputes[]
 
   @@index([createdAt])
   @@index([orderNumber])
@@ -422,22 +528,22 @@ model pay_links {
 }
 
 model pages {
-  id                String     @id
-  title             String
-  slug              String     @unique
-  content           String
-  status            PostStatus @default(DRAFT)
-  publishedAt       DateTime?
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
-  seoTitle          String?
-  seoDescription    String?
-  featuredImage     String?
-  featuredImageAlt  String?
-  wordpressId       Int?       @unique
-  template          String?
-  parentId          String?
-  order             Int        @default(0)
+  id               String     @id
+  title            String
+  slug             String     @unique
+  content          String
+  status           PostStatus @default(DRAFT)
+  publishedAt      DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  seoTitle         String?
+  seoDescription   String?
+  order            Int        @default(0)
+  parentId         String?
+  template         String?
+  wordpressId      Int?       @unique
+  featuredImage    String?
+  featuredImageAlt String?
 
   @@index([slug])
   @@index([wordpressId])
@@ -483,7 +589,6 @@ model posts {
   excerpt              String?
   featuredImage        String?
   featuredImageAlt     String?
-  featuredImageCaption String?
   status               PostStatus       @default(DRAFT)
   authorId             String
   publishedAt          DateTime?
@@ -491,18 +596,19 @@ model posts {
   updatedAt            DateTime         @updatedAt
   seoTitle             String?
   seoDescription       String?
-  metaKeywords         String?
-  canonicalUrl         String?
   readTime             Int?
   views                Int              @default(0)
+  canonicalUrl         String?
   customExcerpt        Boolean          @default(false)
+  featuredImageCaption String?
+  metaKeywords         String?
+  wordpressAuthor      String?
   wordpressId          Int?             @unique
   wordpressSlug        String?
-  wordpressAuthor      String?
+  post_revisions       post_revisions[]
   users                users            @relation(fields: [authorId], references: [id], onDelete: Cascade)
   categories           categories[]     @relation("PostCategories")
   tags                 tags[]           @relation("PostTags")
-  post_revisions       post_revisions[]
 
   @@index([publishedAt])
   @@index([slug])
@@ -639,13 +745,9 @@ model site_settings {
 
 model subscriptions {
   id                         String                  @id
-  memberId                   String                  // Changed from userId to memberId
   stripeCustomerId           String?
   stripeSubscriptionId       String?                 @unique
   stripePriceId              String?
-  paykickstartCustomerId     String?
-  paykickstartSubscriptionId String?                 @unique
-  provider                   String                  @default("stripe")
   currentPeriodStart         DateTime?
   currentPeriodEnd           DateTime?
   cancelAtPeriodEnd          Boolean                 @default(false)
@@ -654,6 +756,10 @@ model subscriptions {
   billingCycle               String?
   tier                       String?
   status                     String                  @default("inactive")
+  paykickstartCustomerId     String?
+  paykickstartSubscriptionId String?                 @unique
+  provider                   String                  @default("stripe")
+  memberId                   String
   magazine_subscriptions     magazine_subscriptions?
   member                     members                 @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
@@ -669,11 +775,11 @@ model tags {
   id          String   @id
   name        String
   slug        String   @unique
-  wordpressId Int?     @unique
-  description String?
-  postCount   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  description String?
+  postCount   Int      @default(0)
+  wordpressId Int?     @unique
   posts       posts[]  @relation("PostTags")
 
   @@index([slug])
@@ -709,7 +815,6 @@ model user_activities {
   @@index([userId])
 }
 
-// Platform Access - Admin, Staff, Editors
 model users {
   id                        String               @id
   name                      String
@@ -720,53 +825,44 @@ model users {
   avatar                    String?
   createdAt                 DateTime             @default(now())
   updatedAt                 DateTime             @updatedAt
-  lastLoginAt               DateTime?
-  emailVerified             Boolean              @default(false)
-  emailVerificationToken    String?
   resetToken                String?
   resetTokenExpiry          DateTime?
+  emailVerificationToken    String?
+  emailVerified             Boolean              @default(false)
+  lastLoginAt               DateTime?
   hasChangedDefaultPassword Boolean              @default(false)
-  invitedBy                 String?
-
-  // Trial fields
-  trialEndsAt               DateTime?
-  linkedMemberId            String?
   inviteCode                String?
-  isActive                  Boolean              @default(true)
-
-  // WordPress author fields (for content creators)
-  wordpressId               Int?                 @unique
-  socialTwitter             String?
-  socialLinkedin            String?
-  socialFacebook            String?
-  website                   String?
-  jobTitle                  String?
+  invitedBy                 String?
   authorPageSlug            String?              @unique
-  onboardingCompleted       Boolean              @default(false)
+  jobTitle                  String?
+  socialFacebook            String?
+  socialLinkedin            String?
+  socialTwitter             String?
+  website                   String?
+  wordpressId               Int?                 @unique
   interests                 String[]
-
-  // Department assignment for staff users
-  primaryDepartment         Department?
-
-  // Link to Member if this user is ALSO a customer
+  onboardingCompleted       Boolean              @default(false)
   memberId                  String?              @unique
-  member                    members?             @relation("UserMemberLink", fields: [memberId], references: [id], onDelete: SetNull)
-
+  isActive                  Boolean              @default(true)
+  primaryDepartment         Department?
+  linkedMemberId            String?
+  trialEndsAt               DateTime?
   activity_logs             activity_logs[]
   bookmarks                 bookmarks[]
   bulk_actions              bulk_actions[]
+  course_enrollments        course_enrollments[]
+  disputes                  disputes[]           @relation("DisputesToUsers")
   editorial_calendar        editorial_calendar[]
-  posts                     posts[]
-  reading_progress          reading_progress[]
-  sessions                  sessions[]
-  user_activities           user_activities[]
   pay_links                 pay_links[]
+  posts                     posts[]
   assigned_projects         projects[]           @relation("AssignedProjects")
   created_projects          projects[]           @relation("CreatedProjects")
-  course_enrollments        course_enrollments[]
-  staff_departments         staff_departments[]
+  reading_progress          reading_progress[]
   refunds                   refunds[]            @relation("RefundsToUsers")
-  disputes                  disputes[]           @relation("DisputesToUsers")
+  sessions                  sessions[]
+  staff_departments         staff_departments[]
+  user_activities           user_activities[]
+  member                    members?             @relation("UserMemberLink", fields: [memberId], references: [id])
 
   @@index([email])
   @@index([inviteCode])
@@ -776,53 +872,40 @@ model users {
   @@index([memberId])
 }
 
-// Commerce & Customers - People who have purchased/subscribed
 model members {
-  id                        String              @id
-  firstName                 String
-  lastName                  String
-  email                     String              @unique
-  phone                     String?
-  joinDate                  DateTime            @default(now())
-
-  // Customer-specific roles (based on purchases/subscriptions)
-  membershipTier            MembershipTier      @default(Free)
-  membershipStatus          MemberStatus        @default(Active)
-
-  // Trial fields
-  trialEndsAt               DateTime?
-  trialStartedAt            DateTime?
-
-  // Platform user link (if they ALSO have admin/staff access)
-  platformUser              users?              @relation("UserMemberLink")
-
-  // Customer metrics
-  lastLoginDate             DateTime?
-  totalSpent                Decimal             @db.Decimal(10, 2) @default(0)
-  lifetimeValue             Decimal             @db.Decimal(10, 2) @default(0)
-  engagementScore           Int                 @default(0)
-  tags                      String[]
-  billingAddress            Json?
-  shippingAddress           Json?
-  communicationPreferences  Json?
-  assignedCSRep             String?
-  priorityLevel             PriorityLevel       @default(Standard)
-  internalNotes             String?             @db.Text
-
-  // Payment provider IDs
-  stripeCustomerId          String?             @unique
-  paykickstartCustomerId    String?             @unique
-  woocommerceCustomerId     Int?                @unique
-
-  lastContactDate           DateTime?
-  createdAt                 DateTime            @default(now())
-  updatedAt                 DateTime            @updatedAt
-
-  transactions              transactions[]
-  subscriptions             subscriptions[]
-  subscribers               subscribers[]
-  orders                    orders[]
-  refund_disputes           refund_disputes[]
+  id                       String            @id
+  firstName                String
+  lastName                 String
+  email                    String            @unique
+  phone                    String?
+  joinDate                 DateTime          @default(now())
+  membershipTier           MembershipTier    @default(Free)
+  lastLoginDate            DateTime?
+  totalSpent               Decimal           @default(0) @db.Decimal(10, 2)
+  lifetimeValue            Decimal           @default(0) @db.Decimal(10, 2)
+  engagementScore          Int               @default(0)
+  tags                     String[]
+  billingAddress           Json?
+  shippingAddress          Json?
+  communicationPreferences Json?
+  assignedCSRep            String?
+  internalNotes            String?
+  stripeCustomerId         String?           @unique
+  paykickstartCustomerId   String?           @unique
+  woocommerceCustomerId    Int?              @unique
+  lastContactDate          DateTime?
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+  membershipStatus         MemberStatus      @default(Active)
+  priorityLevel            PriorityLevel     @default(Standard)
+  trialEndsAt              DateTime?
+  trialStartedAt           DateTime?
+  orders                   orders[]
+  refund_disputes          refund_disputes[]
+  subscribers              subscribers[]
+  subscriptions            subscriptions[]
+  transactions             transactions[]
+  platformUser             users?            @relation("UserMemberLink")
 
   @@index([email])
   @@index([membershipStatus])
@@ -832,22 +915,20 @@ model members {
   @@index([totalSpent])
 }
 
-// Transaction history for members
 model transactions {
-  id              String   @id @default(uuid())
-  memberId        String
-  amount          Decimal  @db.Decimal(10, 2)
-  currency        String   @default("USD")
-  status          String   // succeeded, failed, pending, refunded
-  type            String   // subscription, one-time, refund
-  description     String?
-  paymentMethod   String?  // card, paypal, etc.
-  provider        String   // stripe, paykickstart, woocommerce
-  providerTxnId   String?  // Provider's transaction ID
-  metadata        Json?
-  createdAt       DateTime @default(now())
-
-  member          members  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  id            String   @id @default(uuid())
+  memberId      String
+  amount        Decimal  @db.Decimal(10, 2)
+  currency      String   @default("USD")
+  status        String
+  type          String
+  description   String?
+  paymentMethod String?
+  provider      String
+  providerTxnId String?
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  member        members  @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
   @@index([memberId])
   @@index([status])
@@ -855,24 +936,22 @@ model transactions {
   @@index([provider])
 }
 
-// Newsletter subscribers (separate from members)
 model subscribers {
   id              String           @id @default(uuid())
   email           String           @unique
   firstName       String?
   lastName        String?
-  type            SubscriberType   @default(EmailNewsletter)
-  recipientType   RecipientType    @default(Customer)
   isComplimentary Boolean          @default(false)
-  status          SubscriberStatus @default(ACTIVE)
-  source          String?          // website, import, api
+  source          String?
   subscribedAt    DateTime         @default(now())
   unsubscribedAt  DateTime?
-  memberId        String?          // Link to member if they're also a customer
+  memberId        String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
-
-  member          members?         @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  type            SubscriberType   @default(EmailNewsletter)
+  recipientType   RecipientType    @default(Customer)
+  status          SubscriberStatus @default(ACTIVE)
+  member          members?         @relation(fields: [memberId], references: [id])
 
   @@index([email])
   @@index([status])
@@ -882,26 +961,24 @@ model subscribers {
   @@index([memberId])
 }
 
-// Refund & dispute tracking
 model refund_disputes {
-  id              String          @id @default(uuid())
-  memberId        String
-  orderId         String?
-  transactionId   String?
-  type            DisputeType
-  status          DisputeStatus   @default(OPEN)
-  amount          Decimal         @db.Decimal(10, 2)
-  reason          String?
-  description     String?         @db.Text
-  resolution      String?         @db.Text
-  assignedTo      String?         // Staff user ID
-  priority        Priority        @default(MEDIUM)
-  createdAt       DateTime        @default(now())
-  resolvedAt      DateTime?
-  updatedAt       DateTime        @updatedAt
-
-  member          members         @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  order           orders?         @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  id            String        @id @default(uuid())
+  memberId      String
+  orderId       String?
+  transactionId String?
+  type          DisputeType
+  status        DisputeStatus @default(OPEN)
+  amount        Decimal       @db.Decimal(10, 2)
+  reason        String?
+  description   String?
+  resolution    String?
+  assignedTo    String?
+  priority      Priority      @default(MEDIUM)
+  createdAt     DateTime      @default(now())
+  resolvedAt    DateTime?
+  updatedAt     DateTime      @updatedAt
+  member        members       @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  order         orders?       @relation(fields: [orderId], references: [id])
 
   @@index([memberId])
   @@index([status])
@@ -910,19 +987,18 @@ model refund_disputes {
 }
 
 model refunds {
-  id             String    @id
+  id             String   @id
   userId         String
   paymentId      String
-  originalAmount Decimal   @db.Decimal(10, 2)
-  amount         Decimal   @db.Decimal(10, 2)
+  originalAmount Decimal  @db.Decimal(10, 2)
+  amount         Decimal  @db.Decimal(10, 2)
   reason         String
-  notes          String?   @db.Text
-  status         String    @default("pending")
+  notes          String?
+  status         String   @default("pending")
   processedBy    String
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  users          users     @relation("RefundsToUsers", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  users          users    @relation("RefundsToUsers", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])
@@ -930,20 +1006,19 @@ model refunds {
 }
 
 model disputes {
-  id               String    @id
-  userId           String
-  chargeId         String
-  amount           Decimal   @db.Decimal(10, 2)
-  reason           String
-  status           String    @default("needs_response")
-  dueDate          DateTime?
-  notes            String?   @db.Text
-  stripeDisputeId  String?
-  createdBy        String
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  users            users     @relation("DisputesToUsers", fields: [userId], references: [id], onDelete: Cascade)
+  id              String    @id
+  userId          String
+  chargeId        String
+  amount          Decimal   @db.Decimal(10, 2)
+  reason          String
+  status          String    @default("needs_response")
+  dueDate         DateTime?
+  notes           String?
+  stripeDisputeId String?
+  createdBy       String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  users           users     @relation("DisputesToUsers", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])
@@ -951,12 +1026,12 @@ model disputes {
 }
 
 model dispute_status_history {
-  id         String   @id
-  disputeId  String
-  status     String
-  changedBy  String
-  notes      String?  @db.Text
-  createdAt  DateTime @default(now())
+  id        String   @id
+  disputeId String
+  status    String
+  changedBy String
+  notes     String?
+  createdAt DateTime @default(now())
 
   @@index([disputeId])
   @@index([createdAt])
@@ -992,11 +1067,11 @@ model videos {
   publishedAt      DateTime?
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
-  seoTitle         String?
-  seoDescription   String?
+  wordpressId      Int?       @unique
   featuredImage    String?
   featuredImageAlt String?
-  wordpressId      Int?       @unique
+  seoTitle         String?
+  seoDescription   String?
 
   @@index([slug])
   @@index([wordpressId])
@@ -1050,7 +1125,7 @@ model projects {
   order        Int           @default(0)
   tags         String[]
   notes        String?
-  users        users?        @relation("AssignedProjects", fields: [assignedToId], references: [id], onDelete: SetNull)
+  users        users?        @relation("AssignedProjects", fields: [assignedToId], references: [id])
   creator      users         @relation("CreatedProjects", fields: [createdBy], references: [id], onDelete: Cascade)
 
   @@index([status])
@@ -1058,6 +1133,785 @@ model projects {
   @@index([createdBy])
   @@index([priority])
   @@index([dueDate])
+}
+
+model audit_logs {
+  id         String   @id @default(uuid())
+  userId     String?
+  userEmail  String
+  userName   String?
+  action     String
+  entityType String
+  entityId   String?
+  changes    Json?
+  ipAddress  String?
+  userAgent  String?
+  requestUrl String?
+  method     String?
+  statusCode Int?
+  duration   Int?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([userEmail])
+  @@index([action])
+  @@index([entityType])
+  @@index([createdAt])
+}
+
+model system_alerts {
+  id              String        @id @default(uuid())
+  type            AlertType
+  category        AlertCategory
+  title           String
+  message         String
+  severity        Int
+  isRead          Boolean       @default(false)
+  isResolved      Boolean       @default(false)
+  assignedTo      String?
+  assignedToEmail String?
+  resolvedBy      String?
+  metadata        Json?
+  stackTrace      String?
+  errorCount      Int           @default(1)
+  firstSeen       DateTime      @default(now())
+  lastSeen        DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+  resolvedAt      DateTime?
+
+  @@index([type])
+  @@index([category])
+  @@index([isRead])
+  @@index([isResolved])
+  @@index([severity])
+  @@index([createdAt])
+  @@index([assignedTo])
+}
+
+model notifications {
+  id        String               @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  actionUrl String?
+  icon      String?
+  isRead    Boolean              @default(false)
+  priority  NotificationPriority @default(NORMAL)
+  metadata  Json?
+  expiresAt DateTime?
+  createdAt DateTime             @default(now())
+  readAt    DateTime?
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@index([priority])
+}
+
+model workflows {
+  id             String                @id @default(uuid())
+  name           String
+  description    String?
+  isActive       Boolean               @default(true)
+  trigger        Json
+  actions        Json[]
+  createdBy      String
+  createdByEmail String
+  lastRun        DateTime?
+  nextRun        DateTime?
+  runCount       Int                   @default(0)
+  successCount   Int                   @default(0)
+  failureCount   Int                   @default(0)
+  lastError      String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  executions     workflow_executions[]
+
+  @@index([isActive])
+  @@index([createdBy])
+}
+
+model workflow_executions {
+  id          String          @id @default(uuid())
+  workflowId  String
+  status      ExecutionStatus
+  triggeredBy Json
+  results     Json?
+  error       String?
+  duration    Int?
+  startedAt   DateTime        @default(now())
+  completedAt DateTime?
+  workflow    workflows       @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId])
+  @@index([status])
+  @@index([startedAt])
+}
+
+model webhook_logs {
+  id           String        @id @default(uuid())
+  provider     String
+  eventType    String
+  eventId      String?
+  payload      Json
+  headers      Json?
+  status       WebhookStatus
+  attempts     Int           @default(0)
+  maxAttempts  Int           @default(3)
+  lastAttempt  DateTime?
+  nextAttempt  DateTime?
+  errorMessage String?
+  responseCode Int?
+  responseBody String?
+  processedAt  DateTime?
+  createdAt    DateTime      @default(now())
+
+  @@index([provider])
+  @@index([eventType])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model scheduled_tasks {
+  id           String    @id @default(uuid())
+  name         String
+  description  String?
+  schedule     String
+  taskType     String
+  config       Json?
+  isActive     Boolean   @default(true)
+  lastRun      DateTime?
+  nextRun      DateTime?
+  runCount     Int       @default(0)
+  successCount Int       @default(0)
+  failureCount Int       @default(0)
+  lastStatus   String?
+  lastError    String?
+  lastDuration Int?
+  createdBy    String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([isActive])
+  @@index([taskType])
+  @@index([nextRun])
+}
+
+model custom_reports {
+  id             String    @id @default(uuid())
+  name           String
+  description    String?
+  createdBy      String
+  createdByEmail String
+  dataSource     String
+  config         Json
+  chartType      String?
+  isPublic       Boolean   @default(false)
+  isFavorite     Boolean   @default(false)
+  schedule       String?
+  lastRun        DateTime?
+  runCount       Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([createdBy])
+  @@index([dataSource])
+  @@index([isPublic])
+}
+
+model api_keys {
+  id          String    @id @default(uuid())
+  name        String
+  key         String    @unique
+  keyPreview  String
+  userId      String
+  userEmail   String
+  scopes      String[]
+  isActive    Boolean   @default(true)
+  expiresAt   DateTime?
+  lastUsedAt  DateTime?
+  usageCount  Int       @default(0)
+  rateLimit   Int       @default(1000)
+  ipWhitelist String[]  @default([])
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  revokedAt   DateTime?
+
+  @@index([userId])
+  @@index([isActive])
+}
+
+model security_sessions {
+  id           String    @id @default(uuid())
+  userId       String
+  userEmail    String
+  deviceInfo   Json
+  ipAddress    String
+  location     Json?
+  isActive     Boolean   @default(true)
+  isTrusted    Boolean   @default(false)
+  lastActivity DateTime  @default(now())
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+  revokedAt    DateTime?
+
+  @@index([userId])
+  @@index([isActive])
+  @@index([expiresAt])
+}
+
+model login_attempts {
+  id         String   @id @default(uuid())
+  email      String
+  ipAddress  String
+  userAgent  String?
+  success    Boolean
+  failReason String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([email])
+  @@index([ipAddress])
+  @@index([success])
+  @@index([createdAt])
+}
+
+model gdpr_requests {
+  id          String          @id @default(uuid())
+  userId      String?
+  email       String
+  requestType GDPRRequestType
+  status      GDPRStatus      @default(PENDING)
+  requestedBy String?
+  processedBy String?
+  dataExport  Json?
+  deletedData Json?
+  notes       String?
+  createdAt   DateTime        @default(now())
+  processedAt DateTime?
+  completedAt DateTime?
+
+  @@index([email])
+  @@index([requestType])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model system_metrics {
+  id         String   @id @default(uuid())
+  metricType String
+  value      Float
+  unit       String
+  metadata   Json?
+  timestamp  DateTime @default(now())
+
+  @@index([metricType])
+  @@index([timestamp])
+}
+
+model error_logs {
+  id          String    @id @default(uuid())
+  errorType   String
+  message     String
+  stackTrace  String?
+  userId      String?
+  userEmail   String?
+  url         String?
+  method      String?
+  statusCode  Int?
+  environment String    @default("production")
+  severity    String
+  isResolved  Boolean   @default(false)
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  occurrences Int       @default(1)
+  firstSeen   DateTime  @default(now())
+  lastSeen    DateTime  @default(now())
+  metadata    Json?
+
+  @@index([errorType])
+  @@index([severity])
+  @@index([isResolved])
+  @@index([firstSeen])
+  @@index([userId])
+}
+
+model database_backups {
+  id          String       @id @default(uuid())
+  filename    String
+  fileSize    BigInt
+  backupType  BackupType
+  status      BackupStatus
+  s3Url       String?
+  localPath   String?
+  checksum    String?
+  triggeredBy String?
+  error       String?
+  startedAt   DateTime     @default(now())
+  completedAt DateTime?
+  expiresAt   DateTime?
+
+  @@index([backupType])
+  @@index([status])
+  @@index([startedAt])
+}
+
+model email_deliverability {
+  id             String              @id @default(uuid())
+  provider       String
+  campaignId     String?
+  emailId        String?
+  recipientEmail String
+  subject        String?
+  status         EmailDeliveryStatus
+  bounceType     String?
+  bounceReason   String?
+  spamReport     Boolean             @default(false)
+  opened         Boolean             @default(false)
+  clicked        Boolean             @default(false)
+  openedAt       DateTime?
+  clickedAt      DateTime?
+  sentAt         DateTime            @default(now())
+  deliveredAt    DateTime?
+  bouncedAt      DateTime?
+
+  @@index([recipientEmail])
+  @@index([status])
+  @@index([provider])
+  @@index([sentAt])
+}
+
+model content_approvals {
+  id             String         @id @default(uuid())
+  contentType    String
+  contentId      String
+  contentTitle   String
+  submittedBy    String
+  submitterEmail String
+  currentStep    Int            @default(1)
+  totalSteps     Int            @default(1)
+  status         ApprovalStatus @default(PENDING)
+  approvers      Json[]
+  metadata       Json?
+  submittedAt    DateTime       @default(now())
+  approvedAt     DateTime?
+  rejectedAt     DateTime?
+
+  @@index([contentType])
+  @@index([contentId])
+  @@index([status])
+  @@index([submittedBy])
+}
+
+model content_versions {
+  id           String   @id @default(uuid())
+  contentType  String
+  contentId    String
+  version      Int
+  title        String
+  content      String
+  excerpt      String?
+  metadata     Json?
+  changedBy    String
+  changerEmail String
+  changeNote   String?
+  diff         Json?
+  createdAt    DateTime @default(now())
+
+  @@unique([contentType, contentId, version])
+  @@index([contentType])
+  @@index([contentId])
+  @@index([createdAt])
+}
+
+model success_labs_sessions {
+  id            String    @id @default(uuid())
+  userId        String?
+  memberId      String?
+  sessionType   String
+  toolName      String?
+  duration      Int?
+  messagesCount Int       @default(0)
+  satisfaction  Int?
+  outcome       String?
+  metadata      Json?
+  startedAt     DateTime  @default(now())
+  endedAt       DateTime?
+
+  @@index([userId])
+  @@index([memberId])
+  @@index([sessionType])
+  @@index([toolName])
+  @@index([startedAt])
+}
+
+model kpi_metrics {
+  id           String   @id @default(uuid())
+  name         String
+  category     String
+  value        Float
+  target       Float?
+  unit         String
+  period       String
+  periodStart  DateTime
+  periodEnd    DateTime
+  metadata     Json?
+  calculatedAt DateTime @default(now())
+
+  @@index([name])
+  @@index([category])
+  @@index([periodStart])
+}
+
+model courses {
+  id              String               @id @default(uuid())
+  title           String
+  slug            String               @unique
+  description     String?
+  thumbnail       String?
+  instructorName  String?
+  instructorBio   String?
+  instructorImage String?
+  duration        Int?
+  level           CourseLevel          @default(BEGINNER)
+  category        String?
+  isPremium       Boolean              @default(true)
+  isPublished     Boolean              @default(false)
+  order           Int                  @default(0)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  enrollments     course_enrollments[]
+  modules         course_modules[]
+
+  @@index([slug])
+  @@index([isPremium])
+  @@index([isPublished])
+}
+
+model course_modules {
+  id          String           @id @default(uuid())
+  courseId    String
+  title       String
+  description String?
+  order       Int
+  duration    Int?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  lessons     course_lessons[]
+  course      courses          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([order])
+}
+
+model course_lessons {
+  id          String            @id @default(uuid())
+  moduleId    String
+  title       String
+  description String?
+  videoUrl    String?
+  content     String?
+  duration    Int?
+  order       Int
+  isFree      Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  module      course_modules    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress    lesson_progress[]
+
+  @@index([moduleId])
+  @@index([order])
+}
+
+model course_enrollments {
+  id             String    @id @default(uuid())
+  userId         String
+  courseId       String
+  progress       Int       @default(0)
+  completedAt    DateTime?
+  lastAccessedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  course         courses   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  users          users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+}
+
+model lesson_progress {
+  id            String         @id @default(uuid())
+  userId        String
+  lessonId      String
+  completed     Boolean        @default(false)
+  progress      Int            @default(0)
+  watchTime     Int            @default(0)
+  lastWatchedAt DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  lesson        course_lessons @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+  @@index([lessonId])
+}
+
+model resources {
+  id          String           @id @default(uuid())
+  title       String
+  description String?
+  category    ResourceCategory
+  fileUrl     String
+  fileType    String
+  fileSize    Int?
+  thumbnail   String?
+  isPremium   Boolean          @default(true)
+  downloads   Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([category])
+  @@index([isPremium])
+}
+
+model success_labs {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  description String?
+  category    String?
+  thumbnail   String?
+  toolUrl     String
+  isPremium   Boolean  @default(true)
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slug])
+  @@index([isPremium])
+  @@index([isActive])
+}
+
+model events {
+  id               String                @id @default(uuid())
+  title            String
+  slug             String                @unique
+  description      String?
+  eventType        EventType             @default(WEBINAR)
+  startDateTime    DateTime
+  endDateTime      DateTime?
+  timezone         String                @default("America/New_York")
+  location         String?
+  thumbnail        String?
+  hostName         String?
+  hostBio          String?
+  hostImage        String?
+  isPremium        Boolean               @default(true)
+  maxAttendees     Int?
+  currentAttendees Int                   @default(0)
+  isPublished      Boolean               @default(false)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  registrations    event_registrations[]
+
+  @@index([slug])
+  @@index([startDateTime])
+  @@index([isPremium])
+  @@index([isPublished])
+}
+
+model event_registrations {
+  id           String                  @id @default(uuid())
+  userId       String
+  eventId      String
+  status       EventRegistrationStatus @default(REGISTERED)
+  attended     Boolean                 @default(false)
+  registeredAt DateTime                @default(now())
+  canceledAt   DateTime?
+  event        events                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@index([userId])
+  @@index([eventId])
+  @@index([status])
+}
+
+model magazine_progress {
+  id          String   @id @default(uuid())
+  userId      String
+  magazineId  String
+  currentPage Int      @default(1)
+  totalPages  Int
+  completed   Boolean  @default(false)
+  lastReadAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, magazineId])
+  @@index([userId])
+  @@index([magazineId])
+}
+
+model staff_departments {
+  id         String     @id @default(uuid())
+  userId     String
+  department Department
+  assignedBy String
+  assignedAt DateTime   @default(now())
+  user       users      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, department])
+  @@index([userId])
+  @@index([department])
+}
+
+model page_permissions {
+  id                     String                   @id @default(uuid())
+  pagePath               String                   @unique
+  displayName            String
+  description            String?
+  category               String
+  isActive               Boolean                  @default(true)
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  department_permissions department_permissions[]
+  role_permissions       role_permissions[]
+
+  @@index([category])
+  @@index([isActive])
+}
+
+model role_permissions {
+  id        String           @id @default(uuid())
+  pageId    String
+  role      UserRole
+  canAccess Boolean          @default(true)
+  canCreate Boolean          @default(false)
+  canEdit   Boolean          @default(false)
+  canDelete Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  page      page_permissions @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, role])
+  @@index([role])
+}
+
+model department_permissions {
+  id         String           @id @default(uuid())
+  pageId     String
+  department Department
+  canAccess  Boolean          @default(true)
+  canCreate  Boolean          @default(false)
+  canEdit    Boolean          @default(false)
+  canDelete  Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  page       page_permissions @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, department])
+  @@index([department])
+}
+
+model feature_flags {
+  id             String   @id @default(uuid())
+  name           String   @unique
+  description    String
+  enabled        Boolean  @default(false)
+  affectedUsers  Int      @default(0)
+  lastModifiedBy String?
+  lastModifiedAt DateTime @updatedAt
+  createdAt      DateTime @default(now())
+
+  @@index([enabled])
+}
+
+model deployments {
+  id           String           @id @default(uuid())
+  version      String
+  branch       String
+  commit       String
+  deployedBy   String
+  deployedAt   DateTime         @default(now())
+  status       DeploymentStatus @default(IN_PROGRESS)
+  environment  String           @default("production")
+  buildTime    Int?
+  errorMessage String?
+
+  @@index([deployedAt])
+  @@index([status])
+  @@index([environment])
+}
+
+model system_settings {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+}
+
+model staff_announcements {
+  id             String               @id @default(uuid())
+  title          String
+  content        String
+  createdAt      DateTime             @default(now())
+  createdBy      String
+  createdByEmail String
+  expiresAt      DateTime?
+  isActive       Boolean              @default(true)
+  updatedAt      DateTime             @updatedAt
+  priority       AnnouncementPriority @default(NORMAL)
+
+  @@index([isActive])
+  @@index([createdAt])
+  @@index([priority])
+}
+
+model staff_activity_feed {
+  id          String   @id @default(uuid())
+  department  String?
+  action      String
+  description String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  entityId    String?
+  entityName  String?
+  entityType  String?
+  userEmail   String
+  userId      String?
+  userName    String?
+
+  @@index([userId])
+  @@index([department])
+  @@index([createdAt])
+  @@index([action])
+}
+
+model department_access_log {
+  id         String   @id @default(uuid())
+  department String
+  action     String
+  createdAt  DateTime @default(now())
+  ipAddress  String?
+  pagePath   String
+  userAgent  String?
+  userEmail  String
+  userId     String
+
+  @@index([userId])
+  @@index([department])
+  @@index([createdAt])
+  @@index([pagePath])
+}
+
+enum ListType {
+  STATIC
+  DYNAMIC
 }
 
 enum ActivityType {
@@ -1124,11 +1978,11 @@ enum EditorialStatus {
 }
 
 enum MembershipTier {
-  Free              // Free account, no purchases
-  Customer          // Made a purchase
-  SUCCESSPlus       // Active SUCCESS+ subscription
-  VIP               // VIP tier
-  Enterprise        // Enterprise tier
+  Free
+  Customer
+  SUCCESSPlus
+  VIP
+  Enterprise
 }
 
 enum MemberStatus {
@@ -1160,461 +2014,6 @@ enum DisputeStatus {
   ESCALATED
 }
 
-// ============================================
-// ENTERPRISE ADMIN FEATURES
-// ============================================
-
-// Audit Logging - Track every action for compliance
-model audit_logs {
-  id          String   @id @default(uuid())
-  userId      String?
-  userEmail   String
-  userName    String?
-  action      String   // "user.created", "transaction.refunded", "content.published"
-  entityType  String   // "User", "Transaction", "Member", "Post"
-  entityId    String?
-  changes     Json?    // {before: {...}, after: {...}}
-  ipAddress   String?
-  userAgent   String?
-  requestUrl  String?
-  method      String?  // GET, POST, PUT, DELETE
-  statusCode  Int?
-  duration    Int?     // milliseconds
-  metadata    Json?
-  createdAt   DateTime @default(now())
-
-  @@index([userId])
-  @@index([userEmail])
-  @@index([action])
-  @@index([entityType])
-  @@index([createdAt])
-}
-
-// System Alerts & Notifications
-model system_alerts {
-  id           String      @id @default(uuid())
-  type         AlertType   // Error, Warning, Info, Critical
-  category     AlertCategory
-  title        String
-  message      String      @db.Text
-  severity     Int         // 1-5 (5 = critical)
-  isRead       Boolean     @default(false)
-  isResolved   Boolean     @default(false)
-  assignedTo   String?
-  assignedToEmail String?
-  resolvedBy   String?
-  metadata     Json?
-  stackTrace   String?     @db.Text
-  errorCount   Int         @default(1)
-  firstSeen    DateTime    @default(now())
-  lastSeen     DateTime    @default(now())
-  createdAt    DateTime    @default(now())
-  resolvedAt   DateTime?
-
-  @@index([type])
-  @@index([category])
-  @@index([isRead])
-  @@index([isResolved])
-  @@index([severity])
-  @@index([createdAt])
-  @@index([assignedTo])
-}
-
-// User Notifications (in-app)
-model notifications {
-  id          String             @id @default(uuid())
-  userId      String
-  type        NotificationType
-  title       String
-  message     String             @db.Text
-  actionUrl   String?
-  icon        String?
-  isRead      Boolean            @default(false)
-  priority    NotificationPriority @default(NORMAL)
-  metadata    Json?
-  expiresAt   DateTime?
-  createdAt   DateTime           @default(now())
-  readAt      DateTime?
-
-  @@index([userId])
-  @@index([isRead])
-  @@index([createdAt])
-  @@index([priority])
-}
-
-// Workflow Automation Engine
-model workflows {
-  id          String        @id @default(uuid())
-  name        String
-  description String?       @db.Text
-  isActive    Boolean       @default(true)
-  trigger     Json          // {type: "payment.received", conditions: {...}}
-  actions     Json[]        // [{type: "send.email", config: {...}}]
-  createdBy   String
-  createdByEmail String
-  lastRun     DateTime?
-  nextRun     DateTime?
-  runCount    Int           @default(0)
-  successCount Int          @default(0)
-  failureCount Int          @default(0)
-  lastError   String?       @db.Text
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  executions  workflow_executions[]
-
-  @@index([isActive])
-  @@index([createdBy])
-}
-
-model workflow_executions {
-  id          String          @id @default(uuid())
-  workflowId  String
-  status      ExecutionStatus
-  triggeredBy Json            // event data
-  results     Json?           // action results
-  error       String?         @db.Text
-  duration    Int?            // milliseconds
-  startedAt   DateTime        @default(now())
-  completedAt DateTime?
-  workflow    workflows       @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-
-  @@index([workflowId])
-  @@index([status])
-  @@index([startedAt])
-}
-
-// Webhook Delivery Logs
-model webhook_logs {
-  id            String          @id @default(uuid())
-  provider      String          // Stripe, PayKickstart, WooCommerce, Custom
-  eventType     String
-  eventId       String?         // Provider's event ID
-  payload       Json
-  headers       Json?
-  status        WebhookStatus
-  attempts      Int             @default(0)
-  maxAttempts   Int             @default(3)
-  lastAttempt   DateTime?
-  nextAttempt   DateTime?
-  errorMessage  String?         @db.Text
-  responseCode  Int?
-  responseBody  String?         @db.Text
-  processedAt   DateTime?
-  createdAt     DateTime        @default(now())
-
-  @@index([provider])
-  @@index([eventType])
-  @@index([status])
-  @@index([createdAt])
-}
-
-// Scheduled Tasks / Cron Jobs
-model scheduled_tasks {
-  id            String      @id @default(uuid())
-  name          String
-  description   String?     @db.Text
-  schedule      String      // cron expression (e.g., "0 0 * * *")
-  taskType      String      // "email.digest", "data.sync", "cleanup"
-  config        Json?
-  isActive      Boolean     @default(true)
-  lastRun       DateTime?
-  nextRun       DateTime?
-  runCount      Int         @default(0)
-  successCount  Int         @default(0)
-  failureCount  Int         @default(0)
-  lastStatus    String?     // success, failed, running
-  lastError     String?     @db.Text
-  lastDuration  Int?        // milliseconds
-  createdBy     String
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-
-  @@index([isActive])
-  @@index([taskType])
-  @@index([nextRun])
-}
-
-// Custom Reports
-model custom_reports {
-  id          String   @id @default(uuid())
-  name        String
-  description String?  @db.Text
-  createdBy   String
-  createdByEmail String
-  dataSource  String   // "transactions", "members", "content"
-  config      Json     // {filters, grouping, charts, columns}
-  chartType   String?  // bar, line, pie, table
-  isPublic    Boolean  @default(false)
-  isFavorite  Boolean  @default(false)
-  schedule    String?  // cron for scheduled reports
-  lastRun     DateTime?
-  runCount    Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([createdBy])
-  @@index([dataSource])
-  @@index([isPublic])
-}
-
-// API Keys Management
-model api_keys {
-  id          String      @id @default(uuid())
-  name        String
-  key         String      @unique  // Hashed API key
-  keyPreview  String      // Last 4 characters for display
-  userId      String
-  userEmail   String
-  scopes      String[]    // ["read:members", "write:transactions"]
-  isActive    Boolean     @default(true)
-  expiresAt   DateTime?
-  lastUsedAt  DateTime?
-  usageCount  Int         @default(0)
-  rateLimit   Int         @default(1000)  // requests per hour
-  ipWhitelist String[]    @default([])
-  metadata    Json?
-  createdAt   DateTime    @default(now())
-  revokedAt   DateTime?
-
-  @@index([userId])
-  @@index([isActive])
-}
-
-// Security Sessions
-model security_sessions {
-  id          String   @id @default(uuid())
-  userId      String
-  userEmail   String
-  deviceInfo  Json     // {browser, os, device}
-  ipAddress   String
-  location    Json?    // {country, city, lat, lon}
-  isActive    Boolean  @default(true)
-  isTrusted   Boolean  @default(false)
-  lastActivity DateTime @default(now())
-  expiresAt   DateTime
-  createdAt   DateTime @default(now())
-  revokedAt   DateTime?
-
-  @@index([userId])
-  @@index([isActive])
-  @@index([expiresAt])
-}
-
-// Failed Login Attempts (Security)
-model login_attempts {
-  id          String   @id @default(uuid())
-  email       String
-  ipAddress   String
-  userAgent   String?
-  success     Boolean
-  failReason  String?
-  metadata    Json?
-  createdAt   DateTime @default(now())
-
-  @@index([email])
-  @@index([ipAddress])
-  @@index([success])
-  @@index([createdAt])
-}
-
-// GDPR Data Requests
-model gdpr_requests {
-  id          String       @id @default(uuid())
-  userId      String?
-  email       String
-  requestType GDPRRequestType
-  status      GDPRStatus   @default(PENDING)
-  requestedBy String?      // User ID who made request
-  processedBy String?      // Admin who processed
-  dataExport  Json?        // Exported data
-  deletedData Json?        // What was deleted
-  notes       String?      @db.Text
-  createdAt   DateTime     @default(now())
-  processedAt DateTime?
-  completedAt DateTime?
-
-  @@index([email])
-  @@index([requestType])
-  @@index([status])
-  @@index([createdAt])
-}
-
-// System Metrics (Performance Monitoring)
-model system_metrics {
-  id          String   @id @default(uuid())
-  metricType  String   // cpu, memory, disk, db_connections, api_latency
-  value       Float
-  unit        String   // percent, mb, ms, count
-  metadata    Json?
-  timestamp   DateTime @default(now())
-
-  @@index([metricType])
-  @@index([timestamp])
-}
-
-// Error Tracking
-model error_logs {
-  id          String   @id @default(uuid())
-  errorType   String   // TypeError, ValidationError, APIError
-  message     String   @db.Text
-  stackTrace  String?  @db.Text
-  userId      String?
-  userEmail   String?
-  url         String?
-  method      String?
-  statusCode  Int?
-  environment String   @default("production")
-  severity    String   // low, medium, high, critical
-  isResolved  Boolean  @default(false)
-  resolvedBy  String?
-  resolvedAt  DateTime?
-  occurrences Int      @default(1)
-  firstSeen   DateTime @default(now())
-  lastSeen    DateTime @default(now())
-  metadata    Json?
-
-  @@index([errorType])
-  @@index([severity])
-  @@index([isResolved])
-  @@index([firstSeen])
-  @@index([userId])
-}
-
-// Database Backups
-model database_backups {
-  id          String        @id @default(uuid())
-  filename    String
-  fileSize    BigInt        // bytes
-  backupType  BackupType
-  status      BackupStatus
-  s3Url       String?
-  localPath   String?
-  checksum    String?
-  triggeredBy String?
-  error       String?       @db.Text
-  startedAt   DateTime      @default(now())
-  completedAt DateTime?
-  expiresAt   DateTime?
-
-  @@index([backupType])
-  @@index([status])
-  @@index([startedAt])
-}
-
-// Email Deliverability Tracking
-model email_deliverability {
-  id              String   @id @default(uuid())
-  provider        String   // SendGrid, Mailchimp, AWS SES
-  campaignId      String?
-  emailId         String?
-  recipientEmail  String
-  subject         String?
-  status          EmailDeliveryStatus
-  bounceType      String?  // hard, soft, transient
-  bounceReason    String?  @db.Text
-  spamReport      Boolean  @default(false)
-  opened          Boolean  @default(false)
-  clicked         Boolean  @default(false)
-  openedAt        DateTime?
-  clickedAt       DateTime?
-  sentAt          DateTime  @default(now())
-  deliveredAt     DateTime?
-  bouncedAt       DateTime?
-
-  @@index([recipientEmail])
-  @@index([status])
-  @@index([provider])
-  @@index([sentAt])
-}
-
-// Content Approval Workflow
-model content_approvals {
-  id          String          @id @default(uuid())
-  contentType String          // post, page, video, podcast
-  contentId   String
-  contentTitle String
-  submittedBy String
-  submitterEmail String
-  currentStep Int             @default(1)
-  totalSteps  Int             @default(1)
-  status      ApprovalStatus  @default(PENDING)
-  approvers   Json[]          // [{userId, email, step, approved, comments}]
-  metadata    Json?
-  submittedAt DateTime        @default(now())
-  approvedAt  DateTime?
-  rejectedAt  DateTime?
-
-  @@index([contentType])
-  @@index([contentId])
-  @@index([status])
-  @@index([submittedBy])
-}
-
-// Content Version History
-model content_versions {
-  id          String   @id @default(uuid())
-  contentType String
-  contentId   String
-  version     Int
-  title       String
-  content     String   @db.Text
-  excerpt     String?  @db.Text
-  metadata    Json?
-  changedBy   String
-  changerEmail String
-  changeNote  String?  @db.Text
-  diff        Json?    // Calculated differences
-  createdAt   DateTime @default(now())
-
-  @@unique([contentType, contentId, version])
-  @@index([contentType])
-  @@index([contentId])
-  @@index([createdAt])
-}
-
-// SUCCESS Labs Analytics
-model success_labs_sessions {
-  id              String   @id @default(uuid())
-  userId          String?
-  memberId        String?
-  sessionType     String   // victor_ai, notebooklm, tool_usage
-  toolName        String?  // Which SUCCESS Lab tool
-  duration        Int?     // seconds
-  messagesCount   Int      @default(0)
-  satisfaction    Int?     // 1-5 rating
-  outcome         String?  // completed, abandoned, error
-  metadata        Json?
-  startedAt       DateTime @default(now())
-  endedAt         DateTime?
-
-  @@index([userId])
-  @@index([memberId])
-  @@index([sessionType])
-  @@index([toolName])
-  @@index([startedAt])
-}
-
-// KPI Tracking
-model kpi_metrics {
-  id          String   @id @default(uuid())
-  name        String
-  category    String   // revenue, growth, engagement, retention
-  value       Float
-  target      Float?
-  unit        String   // dollars, percent, count
-  period      String   // daily, weekly, monthly, quarterly
-  periodStart DateTime
-  periodEnd   DateTime
-  metadata    Json?
-  calculatedAt DateTime @default(now())
-
-  @@index([name])
-  @@index([category])
-  @@index([periodStart])
-}
-
-// Enums for Enterprise Features
 enum AlertType {
   Error
   Warning
@@ -1816,197 +2215,6 @@ enum ProjectStatus {
   DONE
 }
 
-model courses {
-  id              String               @id @default(uuid())
-  title           String
-  slug            String               @unique
-  description     String?
-  thumbnail       String?
-  instructorName  String?
-  instructorBio   String?
-  instructorImage String?
-  duration        Int? // in minutes
-  level           CourseLevel          @default(BEGINNER)
-  category        String?
-  isPremium       Boolean              @default(true)
-  isPublished     Boolean              @default(false)
-  order           Int                  @default(0)
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
-  modules         course_modules[]
-  enrollments     course_enrollments[]
-
-  @@index([slug])
-  @@index([isPremium])
-  @@index([isPublished])
-}
-
-model course_modules {
-  id          String           @id @default(uuid())
-  courseId    String
-  title       String
-  description String?
-  order       Int
-  duration    Int? // in minutes
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  course      courses          @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  lessons     course_lessons[]
-
-  @@index([courseId])
-  @@index([order])
-}
-
-model course_lessons {
-  id          String            @id @default(uuid())
-  moduleId    String
-  title       String
-  description String?
-  videoUrl    String?
-  content     String?
-  duration    Int? // in minutes
-  order       Int
-  isFree      Boolean           @default(false)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  module      course_modules    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  progress    lesson_progress[]
-
-  @@index([moduleId])
-  @@index([order])
-}
-
-model course_enrollments {
-  id             String    @id @default(uuid())
-  userId         String
-  courseId       String
-  progress       Int       @default(0) // percentage
-  completedAt    DateTime?
-  lastAccessedAt DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  users          users     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course         courses   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, courseId])
-  @@index([userId])
-  @@index([courseId])
-}
-
-model lesson_progress {
-  id            String         @id @default(uuid())
-  userId        String
-  lessonId      String
-  completed     Boolean        @default(false)
-  progress      Int            @default(0) // percentage for video
-  watchTime     Int            @default(0) // in seconds
-  lastWatchedAt DateTime?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  lesson        course_lessons @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, lessonId])
-  @@index([userId])
-  @@index([lessonId])
-}
-
-model resources {
-  id          String           @id @default(uuid())
-  title       String
-  description String?
-  category    ResourceCategory
-  fileUrl     String
-  fileType    String
-  fileSize    Int?
-  thumbnail   String?
-  isPremium   Boolean          @default(true)
-  downloads   Int              @default(0)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-
-  @@index([category])
-  @@index([isPremium])
-}
-
-model success_labs {
-  id          String   @id @default(uuid())
-  title       String
-  slug        String   @unique
-  description String?
-  category    String?
-  thumbnail   String?
-  toolUrl     String
-  isPremium   Boolean  @default(true)
-  isActive    Boolean  @default(true)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([slug])
-  @@index([isPremium])
-  @@index([isActive])
-}
-
-model events {
-  id               String                @id @default(uuid())
-  title            String
-  slug             String                @unique
-  description      String?
-  eventType        EventType             @default(WEBINAR)
-  startDateTime    DateTime
-  endDateTime      DateTime?
-  timezone         String                @default("America/New_York")
-  location         String? // For virtual events, this could be the meeting link
-  thumbnail        String?
-  hostName         String?
-  hostBio          String?
-  hostImage        String?
-  isPremium        Boolean               @default(true)
-  maxAttendees     Int?
-  currentAttendees Int                   @default(0)
-  isPublished      Boolean               @default(false)
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  registrations    event_registrations[]
-
-  @@index([slug])
-  @@index([startDateTime])
-  @@index([isPremium])
-  @@index([isPublished])
-}
-
-model event_registrations {
-  id           String                  @id @default(uuid())
-  userId       String
-  eventId      String
-  status       EventRegistrationStatus @default(REGISTERED)
-  attended     Boolean                 @default(false)
-  registeredAt DateTime                @default(now())
-  canceledAt   DateTime?
-  event        events                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, eventId])
-  @@index([userId])
-  @@index([eventId])
-  @@index([status])
-}
-
-model magazine_progress {
-  id          String   @id @default(uuid())
-  userId      String
-  magazineId  String
-  currentPage Int      @default(1)
-  totalPages  Int
-  completed   Boolean  @default(false)
-  lastReadAt  DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([userId, magazineId])
-  @@index([userId])
-  @@index([magazineId])
-}
-
 enum CourseLevel {
   BEGINNER
   INTERMEDIATE
@@ -2039,187 +2247,10 @@ enum EventRegistrationStatus {
   ATTENDED
 }
 
-model staff_departments {
-  id         String     @id @default(uuid())
-  userId     String
-  department Department
-  assignedBy String // User ID of Super Admin who assigned
-  assignedAt DateTime   @default(now())
-  user       users      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, department])
-  @@index([userId])
-  @@index([department])
-}
-
-// Page Permissions System
-model page_permissions {
-  id          String   @id @default(uuid())
-  pagePath    String // e.g., "/admin/posts", "/admin/media", "/admin/analytics"
-  displayName String // Human-readable name for the page
-  description String? // Description of what this page does
-  category    String // e.g., "Content", "User Management", "Analytics", "System"
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  role_permissions       role_permissions[]
-  department_permissions department_permissions[]
-
-  @@unique([pagePath])
-  @@index([category])
-  @@index([isActive])
-}
-
-// Role-based permissions (e.g., all EDITORs can access /admin/posts)
-model role_permissions {
-  id        String           @id @default(uuid())
-  pageId    String
-  role      UserRole
-  canAccess Boolean          @default(true)
-  canCreate Boolean          @default(false)
-  canEdit   Boolean          @default(false)
-  canDelete Boolean          @default(false)
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-  page      page_permissions @relation(fields: [pageId], references: [id], onDelete: Cascade)
-
-  @@unique([pageId, role])
-  @@index([role])
-}
-
-// Department-based permissions (e.g., EDITORIAL department can access /admin/editorial)
-model department_permissions {
-  id         String           @id @default(uuid())
-  pageId     String
-  department Department
-  canAccess  Boolean          @default(true)
-  canCreate  Boolean          @default(false)
-  canEdit    Boolean          @default(false)
-  canDelete  Boolean          @default(false)
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
-  page       page_permissions @relation(fields: [pageId], references: [id], onDelete: Cascade)
-
-  @@unique([pageId, department])
-  @@index([department])
-}
-
-// Note: This project already has existing orders, subscription-related tables.
-// The Sales & CS admin section will use and extend the existing tables.
-// See existing: orders, subscriptions, magazine_subscriptions, email_subscribers, users
-
-// ============================================
-// DEVOPS & SYSTEM MANAGEMENT
-// ============================================
-
-// Feature Flags for toggling features on/off
-model feature_flags {
-  id            String   @id @default(uuid())
-  name          String   @unique
-  description   String
-  enabled       Boolean  @default(false)
-  affectedUsers Int      @default(0)
-  lastModifiedBy String?
-  lastModifiedAt DateTime @updatedAt
-  createdAt     DateTime @default(now())
-
-  @@index([enabled])
-}
-
-// Deployment History
-model deployments {
-  id          String           @id @default(uuid())
-  version     String
-  branch      String
-  commit      String
-  deployedBy  String
-  deployedAt  DateTime         @default(now())
-  status      DeploymentStatus @default(IN_PROGRESS)
-  environment String           @default("production")
-  buildTime   Int?             // seconds
-  errorMessage String?         @db.Text
-
-  @@index([deployedAt])
-  @@index([status])
-  @@index([environment])
-}
-
 enum DeploymentStatus {
   IN_PROGRESS
   SUCCESS
   FAILED
-}
-
-// System Settings for cache, maintenance mode, etc.
-model system_settings {
-  id    String @id @default(uuid())
-  key   String @unique
-  value String @db.Text
-  updatedAt DateTime @updatedAt
-  updatedBy String?
-}
-
-// ============================================
-// ROLE-BASED ADMIN DASHBOARD SYSTEM
-// ============================================
-
-// Staff announcements (company-wide news from Super Admin)
-model staff_announcements {
-  id              String                    @id @default(uuid())
-  title           String
-  content         String                    @db.Text
-  createdBy       String
-  createdByEmail  String
-  isActive        Boolean                   @default(true)
-  priority        AnnouncementPriority      @default(NORMAL)
-  expiresAt       DateTime?
-  createdAt       DateTime                  @default(now())
-  updatedAt       DateTime                  @updatedAt
-
-  @@index([isActive])
-  @@index([createdAt])
-  @@index([priority])
-}
-
-// Staff activity feed (cross-department activity log)
-model staff_activity_feed {
-  id          String   @id @default(uuid())
-  userId      String?
-  userEmail   String
-  userName    String?
-  department  String?
-  action      String
-  entityType  String?
-  entityId    String?
-  entityName  String?
-  description String?  @db.Text
-  metadata    Json?
-  createdAt   DateTime @default(now())
-
-  @@index([userId])
-  @@index([department])
-  @@index([createdAt])
-  @@index([action])
-}
-
-// Department access log (track which staff access which dashboards)
-model department_access_log {
-  id         String   @id @default(uuid())
-  userId     String
-  userEmail  String
-  department String
-  pagePath   String
-  action     String
-  ipAddress  String?
-  userAgent  String?  @db.Text
-  createdAt  DateTime @default(now())
-
-  @@index([userId])
-  @@index([department])
-  @@index([createdAt])
-  @@index([pagePath])
 }
 
 enum AnnouncementPriority {

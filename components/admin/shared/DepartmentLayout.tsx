@@ -296,12 +296,20 @@ function getNavigationSections(role: UserRole, primaryDepartment?: Department | 
     sections.push({
       title: 'CRM & EMAIL',
       items: [
-        { label: 'Marketing Dashboard', href: '/admin/marketing' },
+        { label: 'CRM Dashboard', href: '/admin/crm' },
         { label: 'Campaigns', href: '/admin/crm/campaigns' },
         { label: 'Contacts', href: '/admin/crm/contacts' },
         { label: 'Email Templates', href: '/admin/crm/templates' },
-        { label: 'Email Manager', href: '/admin/email-manager' },
-        { label: 'Subscribers', href: '/admin/subscribers' },
+        { label: 'Automations', href: '/admin/crm/automations' },
+        { label: 'Help Desk', href: '/admin/crm/tickets' },
+        { label: 'Deals', href: '/admin/crm/deals' },
+        { label: 'Lists', href: '/admin/crm/lists' },
+        { label: 'Forms', href: '/admin/crm/forms' },
+        { label: 'Landing Pages', href: '/admin/crm/landing-pages' },
+        { label: 'Sequences', href: '/admin/crm/sequences' },
+        { label: 'Promotions', href: '/admin/crm/promotions' },
+        { label: 'Analytics', href: '/admin/crm/analytics' },
+        { label: 'Unsubscribes', href: '/admin/crm/unsubscribes' },
       ]
     });
   }

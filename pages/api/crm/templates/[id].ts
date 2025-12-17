@@ -38,7 +38,7 @@ export default async function handler(
     }
 
     if (req.method === 'PUT') {
-      const { name, subject, content, isDefault } = req.body;
+      const { name, subject, content, blocks, isDefault } = req.body;
 
       // If this is set as default, unset all other defaults
       if (isDefault) {
@@ -57,6 +57,7 @@ export default async function handler(
           name: name || undefined,
           subject: subject || undefined,
           content: content || undefined,
+          blocks: blocks !== undefined ? blocks : undefined,
           isDefault: isDefault !== undefined ? isDefault : undefined,
           updatedAt: new Date(),
         },

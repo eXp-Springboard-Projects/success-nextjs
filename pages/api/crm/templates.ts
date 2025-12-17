@@ -32,10 +32,10 @@ export default async function handler(
     }
 
     if (req.method === 'POST') {
-      const { name, subject, content, isDefault } = req.body;
+      const { name, subject, content, blocks, isDefault } = req.body;
 
-      if (!name || !subject || !content) {
-        return res.status(400).json({ message: 'Name, subject, and content are required' });
+      if (!name || !subject) {
+        return res.status(400).json({ message: 'Name and subject are required' });
       }
 
       // If this is set as default, unset all other defaults
@@ -51,7 +51,8 @@ export default async function handler(
           id: randomUUID(),
           name,
           subject,
-          content,
+          content: content || '',
+          blocks: blocks || null,
           isDefault: isDefault || false,
           updatedAt: new Date(),
         },

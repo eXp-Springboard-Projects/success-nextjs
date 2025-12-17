@@ -144,7 +144,7 @@ export default function TemplatesPage() {
       <div className={styles.container}>
         <div className={styles.header}>
           <h1>Email Templates</h1>
-          <button onClick={() => setShowCreateModal(true)} className={styles.addButton}>
+          <button onClick={() => router.push('/admin/crm/templates/new')} className={styles.addButton}>
             ➕ Create Template
           </button>
         </div>
@@ -214,7 +214,7 @@ export default function TemplatesPage() {
 
                 <div className={styles.campaignActions}>
                   <button
-                    onClick={() => handleEdit(template)}
+                    onClick={() => router.push(`/admin/crm/templates/${template.id}`)}
                     className={styles.viewButton}
                   >
                     ✏️ Edit

@@ -1,25 +1,22 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth/next';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../auth/[...nextauth]';
-import { prisma } from '../../../../../../lib/prisma';
-import { sendCampaignEmail, sendEmailBatch } from '../../../../../../lib/email';
+import { PrismaClient } from '@prisma/client';
+import { nanoid } from 'nanoid';
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+const prisma = new PrismaClient();
 
+const BATCH_SIZE = 100;
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
 
-  if (!session || !session.user) {
+  if (!session?.user) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role)) {
-    return res.status(403).json({ error: 'Forbidden' });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const { id } = req.query;
@@ -29,107 +26,124 @@ export default async function handler(
   }
 
   try {
-    // Get campaign with template
-    const campaign = await prisma.campaigns.findUnique({
+    const campaigns = await prisma.campaigns.findMany({
       where: { id },
-      include: {
-        email_templates: true,
-        campaign_contacts: {
-          include: {
-            contacts: true,
-          },
-        },
-      },
+      include: { email_templates: true },
     });
 
-    if (!campaign) {
+    if (campaigns.length === 0) {
       return res.status(404).json({ error: 'Campaign not found' });
     }
 
-    if (!campaign.email_templates) {
-      return res.status(400).json({ error: 'Campaign has no email template' });
+    const campaign = campaigns[0];
+
+    if (campaign.status !== 'DRAFT' && campaign.status !== 'SCHEDULED') {
+      return res.status(400).json({ error: 'Campaign cannot be sent in current status' });
     }
 
-    if (campaign.status === 'SENT') {
-      return res.status(400).json({ error: 'Campaign has already been sent' });
-    }
-
-    // Get all contacts for this campaign
-    type CampaignContact = typeof campaign.campaign_contacts[number];
-    const contacts = campaign.campaign_contacts.map((cc: CampaignContact) => cc.contacts);
-
-    if (contacts.length === 0) {
-      return res.status(400).json({ error: 'No contacts in this campaign' });
-    }
-
-    const htmlTemplate = campaign.email_templates.html;
-    const subject = campaign.subject;
-
-    // Create email sending tasks
-    type Contact = NonNullable<typeof contacts[number]>;
-    const emailTasks = contacts.map((contact: Contact) => {
-      return async () => {
-        const result = await sendCampaignEmail(contact, subject, htmlTemplate);
-
-        // Log the email event
-        if (result.success) {
-          await prisma.email_events.create({
-            data: {
-              id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-              campaignId: id,
-              contactId: contact.id,
-              emailAddress: contact.email,
-              event: 'sent',
-              eventData: {},
-            },
-          });
-        }
-
-        return result;
-      };
+    // Get campaign contacts
+    const campaignContacts = await prisma.campaign_contacts.findMany({
+      where: { campaignId: id },
+      include: { contacts: true },
     });
 
-    // Send in batches of 100 with 1 second delay
-    const { sentCount, failedCount, errors } = await sendEmailBatch(emailTasks, 100, 1000);
+    if (campaignContacts.length === 0) {
+      return res.status(400).json({ error: 'No recipients found for this campaign' });
+    }
 
-    // Update campaign with stats
+    // Filter out unsubscribed contacts
+    const validRecipients = [];
+    for (const cc of campaignContacts) {
+      const contact = cc.contacts;
+
+      // Check unsubscribe status in email_preferences
+      const prefs = await prisma.email_preferences.findFirst({
+        where: { email: contact.email },
+      });
+
+      // Skip if unsubscribed
+      if (prefs && prefs.unsubscribed) {
+        continue;
+      }
+
+      // Skip if contact is not active
+      if (contact.status !== 'ACTIVE') {
+        continue;
+      }
+
+      validRecipients.push(contact);
+    }
+
+    if (validRecipients.length === 0) {
+      return res.status(400).json({ error: 'No valid recipients after filtering unsubscribes' });
+    }
+
+    // Queue emails in batches
+    let totalQueued = 0;
+    for (let i = 0; i < validRecipients.length; i += BATCH_SIZE) {
+      const batch = validRecipients.slice(i, i + BATCH_SIZE);
+
+      for (const recipient of batch) {
+        // Generate unsubscribe token
+        const unsubToken = nanoid(32);
+
+        // Ensure email_preferences record exists with unsubscribe token
+        await prisma.$executeRaw`
+          INSERT INTO email_preferences (
+            id, email, "contactId", "unsubscribeToken", "createdAt", "updatedAt"
+          ) VALUES (
+            ${nanoid()}, ${recipient.email}, ${recipient.id}, ${unsubToken},
+            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+          )
+          ON CONFLICT (email)
+          DO UPDATE SET "unsubscribeToken" = ${unsubToken}, "updatedAt" = CURRENT_TIMESTAMP
+        `;
+
+        // Create email event
+        await prisma.email_events.create({
+          data: {
+            id: nanoid(),
+            campaignId: id,
+            contactId: recipient.id,
+            emailAddress: recipient.email,
+            event: 'queued',
+            eventData: {
+              subject: campaign.subject,
+              fromName: session.user.name,
+              fromEmail: 'hello@success.com',
+              unsubscribeUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://success.com'}/unsubscribe?token=${unsubToken}`,
+            },
+          },
+        });
+
+        totalQueued++;
+      }
+
+      // Small delay between batches to avoid overwhelming the system
+      if (i + BATCH_SIZE < validRecipients.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+
+    // Update campaign status
     await prisma.campaigns.update({
       where: { id },
       data: {
-        status: 'SENT',
+        status: 'SENDING',
         sentAt: new Date(),
-        sentCount,
-        failedCount,
-        sendErrors: errors.length > 0 ? errors : null,
-      },
-    });
-
-    // Log activity
-    await prisma.activity_logs.create({
-      data: {
-        id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        userId: session.user.id,
-        action: 'SEND_CAMPAIGN',
-        entity: 'campaign',
-        entityId: id,
-        details: JSON.stringify({
-          name: campaign.name,
-          sentCount,
-          failedCount,
-          totalContacts: contacts.length,
-        }),
+        sentCount: totalQueued,
+        updatedAt: new Date(),
       },
     });
 
     return res.status(200).json({
       success: true,
-      sentCount,
-      failedCount,
-      totalContacts: contacts.length,
-      errors: errors.length > 0 ? errors.slice(0, 10) : [], // Return first 10 errors only
+      totalQueued,
+      totalFiltered: campaignContacts.length - validRecipients.length,
+      message: `Queued ${totalQueued} emails for sending`,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error sending campaign:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+    return res.status(500).json({ error: 'Failed to send campaign' });
   }
 }
