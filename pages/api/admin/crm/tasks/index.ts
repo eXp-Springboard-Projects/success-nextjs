@@ -44,6 +44,10 @@ async function getTasks(req: NextApiRequest, res: NextApiResponse, session: any)
       paramIndex++;
     } else if (filter === 'overdue') {
       whereClause += ` AND t.status = 'pending' AND t.due_date < CURRENT_DATE`;
+    } else if (filter === 'today') {
+      whereClause += ` AND t.status = 'pending' AND t.due_date = CURRENT_DATE`;
+    } else if (filter === 'upcoming') {
+      whereClause += ` AND t.status = 'pending' AND t.due_date > CURRENT_DATE`;
     } else if (filter === 'completed') {
       whereClause += ` AND t.status = 'completed'`;
     }
@@ -119,6 +123,7 @@ async function createTask(req: NextApiRequest, res: NextApiResponse, session: an
       ticketId,
       assignedTo,
       assignedToName,
+      reminderAt,
     } = req.body;
 
     if (!title) {
@@ -130,13 +135,14 @@ async function createTask(req: NextApiRequest, res: NextApiResponse, session: an
     await prisma.$executeRaw`
       INSERT INTO tasks (
         id, title, description, type, priority, due_date, due_time,
-        contact_id, deal_id, ticket_id, assigned_to, assigned_to_name, created_by
+        contact_id, deal_id, ticket_id, assigned_to, assigned_to_name,
+        reminder_at, created_by
       ) VALUES (
         ${taskId}, ${title}, ${description || null}, ${type}, ${priority},
         ${dueDate || null}, ${dueTime || null}, ${contactId || null},
         ${dealId || null}, ${ticketId || null},
         ${assignedTo || session.user.id}, ${assignedToName || session.user.name},
-        ${session.user.id}
+        ${reminderAt || null}, ${session.user.id}
       )
     `;
 

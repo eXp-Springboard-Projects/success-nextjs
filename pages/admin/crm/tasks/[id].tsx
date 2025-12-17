@@ -36,6 +36,7 @@ export default function TaskDetailPage() {
     dueTime: '',
     contactId: '',
     dealId: '',
+    reminderAt: '',
   });
 
   useEffect(() => {
@@ -60,6 +61,7 @@ export default function TaskDetailPage() {
         dueTime: data.due_time || '',
         contactId: data.contact_id || '',
         dealId: data.deal_id || '',
+        reminderAt: data.reminder_at || '',
       });
     } catch (error) {
       console.error('Error fetching task:', error);
@@ -242,6 +244,16 @@ export default function TaskDetailPage() {
                     onChange={(e) => setFormData(prev => ({ ...prev, dueTime: e.target.value }))}
                   />
                 </div>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Reminder</label>
+                <input
+                  type="datetime-local"
+                  className={styles.input}
+                  value={formData.reminderAt}
+                  onChange={(e) => setFormData(prev => ({ ...prev, reminderAt: e.target.value }))}
+                />
               </div>
             </div>
 

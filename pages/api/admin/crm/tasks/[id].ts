@@ -72,6 +72,7 @@ async function updateTask(id: string, req: NextApiRequest, res: NextApiResponse,
       ticketId,
       assignedTo,
       assignedToName,
+      reminderAt,
     } = req.body;
 
     const updates: string[] = [];
@@ -154,6 +155,12 @@ async function updateTask(id: string, req: NextApiRequest, res: NextApiResponse,
     if (assignedToName !== undefined) {
       updates.push(`assigned_to_name = $${paramIndex}`);
       params.push(assignedToName);
+      paramIndex++;
+    }
+
+    if (reminderAt !== undefined) {
+      updates.push(`reminder_at = $${paramIndex}`);
+      params.push(reminderAt);
       paramIndex++;
     }
 
