@@ -1,7 +1,7 @@
 /**
  * Simple Rich Text Editor using TipTap
  * Provides full formatting support for videos, podcasts, and other content types
- * Replaces basic ReactQuill with advanced TipTap editor
+ * Now includes advanced text styling via TextStylePanel
  */
 
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -12,7 +12,8 @@ import TextAlign from '@tiptap/extension-text-align';
 import TextStyle from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import TextStylePanel from './TextStylePanel';
 import styles from './SimpleRichTextEditor.module.css';
 
 interface SimpleRichTextEditorProps {
@@ -26,6 +27,8 @@ export default function SimpleRichTextEditor({
   onChange,
   placeholder = 'Write your content here...',
 }: SimpleRichTextEditorProps) {
+  const [showStylePanel, setShowStylePanel] = useState(false);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -227,7 +230,20 @@ export default function SimpleRichTextEditor({
             ↷
           </button>
         </div>
+
+        <div className={styles.toolbarGroup}>
+          <button
+            onClick={() => setShowStylePanel(!showStylePanel)}
+            className={showStylePanel ? styles.active : ''}
+            title="Advanced Text Styling"
+          >
+            🎨 Styles
+          </button>
+        </div>
       </div>
+
+      {/* Text Style Panel */}
+      {showStylePanel && <TextStylePanel editor={editor} />}
 
       {/* Editor Content */}
       <EditorContent editor={editor} className={styles.content} />
