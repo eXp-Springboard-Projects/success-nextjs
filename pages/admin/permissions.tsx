@@ -259,7 +259,7 @@ export default function PermissionsManagement() {
               <h2>Configure: {selectedPage.displayName}</h2>
               <p className={styles.modalPath}>{selectedPage.pagePath}</p>
               <p className={styles.modalNote}>
-                Editing permissions UI coming soon. Use the seed script to update permissions for now.
+                To update permissions, use the seed script or database query.
               </p>
               <button onClick={() => setSelectedPage(null)} className={styles.closeButton}>
                 Close

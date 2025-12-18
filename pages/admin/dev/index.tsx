@@ -152,15 +152,6 @@ export default function DevDashboard() {
               </div>
             </Link>
 
-            <div className={styles.actionCardDisabled}>
-              <div className={styles.comingSoonBadge}>Coming Soon</div>
-              <div className={styles.actionIcon}>🚩</div>
-              <div className={styles.actionTitle}>Feature Flags</div>
-              <div className={styles.actionDescription}>
-                Toggle features on/off
-              </div>
-            </div>
-
             <Link href="/admin/devops/cache" className={styles.actionCard}>
               <div className={styles.actionIcon}>💾</div>
               <div className={styles.actionTitle}>Cache Management</div>
@@ -168,24 +159,6 @@ export default function DevDashboard() {
                 Clear caches and view cache stats
               </div>
             </Link>
-
-            <div className={styles.actionCardDisabled}>
-              <div className={styles.comingSoonBadge}>Coming Soon</div>
-              <div className={styles.actionIcon}>🔌</div>
-              <div className={styles.actionTitle}>Webhooks</div>
-              <div className={styles.actionDescription}>
-                Monitor webhook events and retries
-              </div>
-            </div>
-
-            <div className={styles.actionCardDisabled}>
-              <div className={styles.comingSoonBadge}>Coming Soon</div>
-              <div className={styles.actionIcon}>🚀</div>
-              <div className={styles.actionTitle}>Deployments</div>
-              <div className={styles.actionDescription}>
-                View deployment history
-              </div>
-            </div>
           </div>
         </div>
 

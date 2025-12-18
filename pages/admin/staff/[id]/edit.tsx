@@ -325,7 +325,7 @@ export default function StaffEdit() {
             </p>
             <button
               className={styles.dangerButton}
-              onClick={() => alert('Deactivate feature coming soon')}
+              onClick={() => alert('Deactivate feature not yet available')}
             >
               🚫 Deactivate Account
             </button>

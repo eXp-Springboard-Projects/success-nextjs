@@ -201,10 +201,10 @@ export default function StaffDetail() {
             <Link href={`/admin/staff/${id}/edit`} className={styles.actionButton}>
               ✏️ Edit Profile
             </Link>
-            <button className={styles.actionButton} onClick={() => alert('Send email feature coming soon')}>
+            <button className={styles.actionButton} onClick={() => alert('Send email feature not yet available')}>
               📧 Send Email
             </button>
-            <button className={styles.actionButton} onClick={() => alert('Reset password feature coming soon')}>
+            <button className={styles.actionButton} onClick={() => alert('Reset password feature not yet available')}>
               🔐 Reset Password
             </button>
           </div>
