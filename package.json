@@ -83,5 +83,16 @@
   "devDependencies": {
     "eslint": "^8.57.0",
     "eslint-config-next": "^16.0.10"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma",
+      "sharp",
+      "esbuild",
+      "core-js",
+      "unrs-resolver"
+    ]
   }
 }
