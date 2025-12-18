@@ -1,6 +1,18 @@
 /**
  * Email utility for sending transactional emails
  *
+ * Priority Order:
+ * 1. AWS SES (cheapest, production-ready, full tracking)
+ * 2. SendGrid (established, good deliverability)
+ * 3. Resend (modern, excellent DX)
+ *
+ * To use AWS SES (RECOMMENDED):
+ * 1. Set AWS_SES_ENABLED=true
+ * 2. Set AWS_REGION=us-east-1
+ * 3. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+ * 4. Set SES_FROM_EMAIL=hello@success.com
+ * 5. Verify domain in AWS SES Console
+ *
  * To use SendGrid:
  * 1. npm install @sendgrid/mail
  * 2. Set SENDGRID_API_KEY and SENDGRID_FROM_EMAIL in .env.local
@@ -19,24 +31,45 @@ interface EmailOptions {
 
 /**
  * Send an email using configured email service
+ * Checks AWS SES first, then SendGrid, then Resend
  */
 export async function sendEmail({ to, subject, html, text }: EmailOptions): Promise<boolean> {
-  // Check which email service is configured
+  // Check which email service is configured (priority order)
+  const useAWSSES = process.env.AWS_SES_ENABLED === 'true' && !!process.env.AWS_ACCESS_KEY_ID;
   const useSendGrid = !!process.env.SENDGRID_API_KEY;
   const useResend = !!process.env.RESEND_API_KEY;
 
-  if (!useSendGrid && !useResend) {
-return false;
+  if (!useAWSSES && !useSendGrid && !useResend) {
+    console.error('No email service configured. Set AWS_SES_ENABLED, SENDGRID_API_KEY, or RESEND_API_KEY');
+    return false;
   }
 
   try {
+    // AWS SES (priority 1 - cheapest and most features)
+    if (useAWSSES) {
+      const sesEmail = await import('./email/ses');
+      const result = await sesEmail.sendEmail({
+        to,
+        subject,
+        html,
+        from: process.env.SES_FROM_EMAIL,
+      });
+      return result.success;
+    }
+
+    // SendGrid (priority 2 - established service)
     if (useSendGrid) {
       return await sendViaSendGrid({ to, subject, html, text });
-    } else if (useResend) {
+    }
+
+    // Resend (priority 3 - modern service, good DX)
+    if (useResend) {
       return await sendViaResend({ to, subject, html, text });
     }
+
     return false;
   } catch (error) {
+    console.error('Email send error:', error);
     return false;
   }
 }
