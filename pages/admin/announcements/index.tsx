@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Department } from '@prisma/client';
 import DepartmentLayout from '@/components/admin/shared/DepartmentLayout';
 import { requireDepartmentAuth } from '@/lib/departmentAuth';

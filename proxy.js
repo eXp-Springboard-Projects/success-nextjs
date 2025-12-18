@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
-export async function middleware(request) {
+export async function proxy(request) {
   const { pathname } = request.nextUrl;
 
   // Protect all /admin routes except /admin/login
@@ -41,3 +41,4 @@ export const config = {
     '/admin/:path*',
   ],
 };
+
