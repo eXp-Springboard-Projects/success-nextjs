@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]';
 import { PrismaClient } from '@prisma/client';
 import { nanoid } from 'nanoid';
+import { sendCampaignEmail, sendEmailBatch } from '../../../lib/email';
 
 const prisma = new PrismaClient();
 
@@ -32,151 +33,114 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Subject, content, and list ID are required' });
     }
 
-    // Get contact count from list
-    const listContacts = await prisma.$queryRaw<Array<{ count: bigint }>>`
-      SELECT COUNT(*) as count
-      FROM contact_list_memberships
-      WHERE list_id = ${listId}
-    `;
+    // Get contacts from list using proper Prisma schema
+    const listMembers = await prisma.list_members.findMany({
+      where: { listId },
+      include: { contacts: true },
+    });
 
-    const recipientCount = Number(listContacts[0]?.count || 0);
-
-    if (recipientCount === 0) {
+    if (listMembers.length === 0) {
       return res.status(400).json({ error: 'Selected list has no contacts' });
     }
 
-    // Create a campaign for this email
+    const contacts = listMembers.map(lm => lm.contacts);
+    const recipientCount = contacts.length;
+
+    // Create campaign using proper campaigns table
     const campaignId = nanoid();
-    const scheduledDate = sendNow ? null : new Date(scheduledAt);
+    const scheduledDate = sendNow ? null : (scheduledAt ? new Date(scheduledAt) : null);
 
-    await prisma.$executeRaw`
-      INSERT INTO crm_campaigns (
-        id,
-        name,
+    const campaign = await prisma.campaigns.create({
+      data: {
+        id: campaignId,
+        name: `Quick Email: ${subject.substring(0, 50)}`,
         subject,
-        from_name,
-        from_email,
-        status,
-        scheduled_at,
-        created_by,
-        created_at,
-        updated_at
-      ) VALUES (
-        ${campaignId},
-        ${'Quick Email: ' + subject.substring(0, 50)},
-        ${subject},
-        ${fromName},
-        ${fromEmail},
-        ${sendNow ? 'SENDING' : 'SCHEDULED'},
-        ${scheduledDate},
-        ${session.user.id},
-        CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-      )
-    `;
-
-    // Create campaign email content
-    const emailId = nanoid();
-    await prisma.$executeRaw`
-      INSERT INTO crm_campaign_emails (
-        id,
-        campaign_id,
-        subject,
-        content,
-        send_delay_days,
-        created_at,
-        updated_at
-      ) VALUES (
-        ${emailId},
-        ${campaignId},
-        ${subject},
-        ${content},
-        0,
-        CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-      )
-    `;
-
-    // Link campaign to list
-    await prisma.$executeRaw`
-      INSERT INTO crm_campaign_lists (
-        campaign_id,
-        list_id,
-        created_at
-      ) VALUES (
-        ${campaignId},
-        ${listId},
-        CURRENT_TIMESTAMP
-      )
-    `;
-
-    // If sending now, queue emails for all contacts in the list
-    if (sendNow) {
-      await prisma.$executeRaw`
-        INSERT INTO crm_emails (
-          id,
-          campaign_id,
-          contact_id,
-          subject,
-          content,
-          from_name,
-          from_email,
-          status,
-          created_at,
-          updated_at
-        )
-        SELECT
-          gen_random_uuid(),
-          ${campaignId},
-          clm.contact_id,
-          ${subject},
-          ${content},
-          ${fromName},
-          ${fromEmail},
-          'PENDING',
-          CURRENT_TIMESTAMP,
-          CURRENT_TIMESTAMP
-        FROM contact_list_memberships clm
-        WHERE clm.list_id = ${listId}
-      `;
-    }
-
-    // Log activity
-    await prisma.$executeRaw`
-      INSERT INTO crm_activities (
-        id,
-        contact_id,
-        type,
-        source,
-        description,
-        metadata,
-        created_by,
-        created_at
-      )
-      SELECT
-        gen_random_uuid(),
-        clm.contact_id,
-        'EMAIL_QUEUED',
-        'CRM',
-        ${'Email queued: ' + subject},
-        jsonb_build_object(
-          'campaign_id', ${campaignId},
-          'subject', ${subject},
-          'scheduled', ${!sendNow}
-        ),
-        ${session.user.id},
-        CURRENT_TIMESTAMP
-      FROM contact_list_memberships clm
-      WHERE clm.list_id = ${listId}
-      LIMIT 100
-    `;
-
-    return res.status(200).json({
-      message: sendNow ? 'Email queued for sending' : 'Email scheduled successfully',
-      campaignId,
-      recipientCount,
+        status: sendNow ? 'SENDING' : 'SCHEDULED',
+        scheduledAt: scheduledDate,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
     });
-  } catch (error) {
-    return res.status(500).json({ error: 'Failed to send email' });
+
+    // If sending now, send emails immediately
+    if (sendNow) {
+      // Create email sending tasks
+      const emailTasks = contacts.map((contact) => {
+        return async () => {
+          const result = await sendCampaignEmail(contact, subject, content);
+
+          // Log the email event
+          if (result.success) {
+            await prisma.email_events.create({
+              data: {
+                id: nanoid(),
+                campaignId: campaign.id,
+                contactId: contact.id,
+                emailAddress: contact.email,
+                event: 'sent',
+                eventData: {
+                  fromName,
+                  fromEmail,
+                },
+              },
+            });
+          } else {
+            await prisma.email_events.create({
+              data: {
+                id: nanoid(),
+                campaignId: campaign.id,
+                contactId: contact.id,
+                emailAddress: contact.email,
+                event: 'failed',
+                eventData: {
+                  error: result.error || 'Unknown error',
+                },
+              },
+            });
+          }
+
+          return result;
+        };
+      });
+
+      // Send in batches
+      const { sentCount, failedCount, errors } = await sendEmailBatch(emailTasks, 50, 500);
+
+      // Update campaign with results
+      await prisma.campaigns.update({
+        where: { id: campaignId },
+        data: {
+          status: 'SENT',
+          sentAt: new Date(),
+          sentCount,
+          failedCount,
+          sendErrors: errors.length > 0 ? errors : null,
+          updatedAt: new Date(),
+        },
+      });
+
+      return res.status(200).json({
+        message: `Email sent to ${sentCount} recipients${failedCount > 0 ? `, ${failedCount} failed` : ''}`,
+        campaignId,
+        sentCount,
+        failedCount,
+        recipientCount,
+      });
+    } else {
+      // Schedule for later - cron job will process it
+      return res.status(200).json({
+        message: 'Email scheduled successfully',
+        campaignId,
+        recipientCount,
+        scheduledAt: scheduledDate?.toISOString(),
+      });
+    }
+  } catch (error: any) {
+    console.error('Email send error:', error);
+    return res.status(500).json({
+      error: error.message || 'Failed to send email',
+    });
+  } finally {
+    await prisma.$disconnect();
   }
 }
