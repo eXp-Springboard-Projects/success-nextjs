@@ -48,7 +48,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           member: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               email: true,
             },
           },
@@ -84,7 +85,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const formattedRefunds = refundDisputes.map((dispute) => ({
         id: dispute.id,
         ticketNumber: `RFD-${dispute.id.slice(0, 8).toUpperCase()}`,
-        customerName: dispute.member.name || 'Unknown',
+        customerName: `${dispute.member.firstName || ''} ${dispute.member.lastName || ''}`.trim() || 'Unknown',
         customerEmail: dispute.member.email || '',
         amount: Number(dispute.amount),
         type: dispute.type.charAt(0) + dispute.type.slice(1).toLowerCase().replace('_', ' '),

@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]';
 import { PrismaClient } from '@prisma/client';
 import { nanoid } from 'nanoid';
-import { sendCampaignEmail, sendEmailBatch } from '../../../lib/email';
+import { sendCampaignEmail, sendEmailBatch } from '../../../../lib/email';
 
 const prisma = new PrismaClient();
 
@@ -36,14 +36,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Get contacts from list using proper Prisma schema
     const listMembers = await prisma.list_members.findMany({
       where: { listId },
-      include: { contacts: true },
+      include: { contact: true },
     });
 
     if (listMembers.length === 0) {
       return res.status(400).json({ error: 'Selected list has no contacts' });
     }
 
-    const contacts = listMembers.map(lm => lm.contacts);
+    const contacts = listMembers.map(lm => lm.contact);
     const recipientCount = contacts.length;
 
     // Create campaign using proper campaigns table
@@ -114,7 +114,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           sentAt: new Date(),
           sentCount,
           failedCount,
-          sendErrors: errors.length > 0 ? errors : null,
+          sendErrors: errors.length > 0 ? errors : undefined,
           updatedAt: new Date(),
         },
       });
