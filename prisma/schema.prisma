@@ -862,6 +862,7 @@ model users {
   sessions                  sessions[]
   staff_departments         staff_departments[]
   user_activities           user_activities[]
+  watch_history             watch_history[]
   member                    members?             @relation("UserMemberLink", fields: [memberId], references: [id])
 
   @@index([email])
@@ -1075,6 +1076,28 @@ model videos {
 
   @@index([slug])
   @@index([wordpressId])
+}
+
+model watch_history {
+  id            String   @id @default(uuid())
+  userId        String
+  contentType   String   // 'video' or 'podcast'
+  contentId     String
+  contentTitle  String
+  contentUrl    String
+  thumbnail     String?
+  duration      Int?     // Total duration in seconds
+  position      Int      @default(0) // Current position in seconds
+  completed     Boolean  @default(false)
+  lastWatchedAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  users         users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contentType, contentId])
+  @@index([userId])
+  @@index([contentType])
+  @@index([lastWatchedAt])
 }
 
 model press_releases {
