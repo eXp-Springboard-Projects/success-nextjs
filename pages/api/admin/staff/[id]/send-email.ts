@@ -87,6 +87,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const result = await resend.emails.send(emailData);
 
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
       // Log activity
       await prisma.activity_logs.create({
         data: {
@@ -102,7 +106,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({
         message: 'Email sent successfully',
-        emailId: result.id,
+        emailId: result.data?.id,
         recipient: {
           name: staffMember.name,
           email: staffMember.email,

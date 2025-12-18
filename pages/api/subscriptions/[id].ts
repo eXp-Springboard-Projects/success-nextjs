@@ -6,7 +6,7 @@ import Stripe from 'stripe';
 
 const prisma = new PrismaClient();
 const stripe = process.env.STRIPE_SECRET_KEY
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' })
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-09-30.clover' })
   : null;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
