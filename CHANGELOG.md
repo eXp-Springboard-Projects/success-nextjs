@@ -14,6 +14,20 @@ Based on [Keep a Changelog](https://keepachangelog.com/) • Uses [ISO 8601](htt
 =======================================================
 -->
 
+### [Fixed] - 2025-12-18T15:30:00 - Stripe API Version & Dashboard Icon Improvements
+
+**Fixed build-breaking Stripe API version and upgraded dashboard icons**
+
+- **Why**: Stripe package v19.1.0 only supports API version '2025-09-30.clover', but code had '2025-10-29.clover'. Dashboard was using emojis which could cause encoding issues in production.
+- **What**: 
+  - Fixed Stripe API version in 6 files (lib/stripe.ts, lib/stripe.js, create-checkout.ts, verify-session.ts, webhooks.ts, subscriptions/[id].js)
+  - Replaced emoji icons with Lucide React icons in DashboardStats.tsx and admin/index.tsx
+  - Removed console.log/error statements from key dashboard components
+- **Files**: `lib/stripe.ts`, `lib/stripe.js`, `pages/api/stripe/create-checkout.ts`, `pages/api/stripe/verify-session.ts`, `pages/api/stripe/webhooks.ts`, `pages/api/subscriptions/[id].js`, `components/admin/DashboardStats.tsx`, `pages/admin/index.tsx`, `components/admin/shared/Icon.tsx`
+- **Impact**: Build now passes, dashboard uses proper encoding-safe icons, more premium appearance
+
+---
+
 ### [Security] - 2025-12-17T15:00:00 - Critical: Enabled Admin Route Authentication
 
 **Fixed disabled middleware authentication**

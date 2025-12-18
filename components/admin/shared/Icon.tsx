@@ -254,8 +254,7 @@ export default function Icon({
   const IconComponent = iconMap[iconKey];
   
   if (!IconComponent) {
-    // Fallback: return a placeholder or the original text
-    console.warn(`Icon not found for: ${name}`);
+    // Fallback: return the original text if no icon mapping exists
     return <span className={className}>{name}</span>;
   }
   
