@@ -118,41 +118,37 @@ export default function SuccessPlusDashboard() {
               </div>
             </Link>
 
-            <div className={styles.actionCardDisabled}>
-              <div className={styles.comingSoonBadge}>Coming Soon</div>
+            <Link href="/admin/members" className={styles.actionCard}>
               <div className={styles.actionIcon}>👥</div>
               <div className={styles.actionTitle}>View All Members</div>
               <div className={styles.actionDescription}>
                 Manage member accounts and subscriptions
               </div>
-            </div>
+            </Link>
 
-            <div className={styles.actionCardDisabled}>
-              <div className={styles.comingSoonBadge}>Coming Soon</div>
+            <Link href="/admin/success-plus/tiers" className={styles.actionCard}>
               <div className={styles.actionIcon}>🏆</div>
               <div className={styles.actionTitle}>Manage Tiers</div>
               <div className={styles.actionDescription}>
                 Edit pricing and tier features
               </div>
-            </div>
+            </Link>
 
-            <div className={styles.actionCardDisabled}>
-              <div className={styles.comingSoonBadge}>Coming Soon</div>
+            <Link href="/admin/success-plus/content" className={styles.actionCard}>
               <div className={styles.actionIcon}>🔒</div>
               <div className={styles.actionTitle}>Content Access</div>
               <div className={styles.actionDescription}>
                 Manage gated content and drip schedules
               </div>
-            </div>
+            </Link>
 
-            <div className={styles.actionCardDisabled}>
-              <div className={styles.comingSoonBadge}>Coming Soon</div>
+            <Link href="/admin/crm/campaigns" className={styles.actionCard}>
               <div className={styles.actionIcon}>📧</div>
               <div className={styles.actionTitle}>Communications</div>
               <div className={styles.actionDescription}>
                 Send emails and manage templates
               </div>
-            </div>
+            </Link>
 
             <Link href="/admin/analytics?dept=success-plus" className={styles.actionCard}>
               <div className={styles.actionIcon}>📊</div>
@@ -162,14 +158,13 @@ export default function SuccessPlusDashboard() {
               </div>
             </Link>
 
-            <div className={styles.actionCardDisabled}>
-              <div className={styles.comingSoonBadge}>Coming Soon</div>
+            <Link href="/admin/subscriptions" className={styles.actionCard}>
               <div className={styles.actionIcon}>💳</div>
               <div className={styles.actionTitle}>Billing</div>
               <div className={styles.actionDescription}>
                 Manage payments and subscriptions
               </div>
-            </div>
+            </Link>
           </div>
         </div>
 
