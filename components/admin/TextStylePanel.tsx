@@ -56,11 +56,22 @@ const LETTER_SPACINGS = [
   { label: 'Wider', value: '0.1em' },
 ];
 
+const FONT_WEIGHTS = [
+  { label: 'Light', value: '300' },
+  { label: 'Regular', value: '400' },
+  { label: 'Medium', value: '500' },
+  { label: 'Semibold', value: '600' },
+  { label: 'Bold', value: '700' },
+  { label: 'Black', value: '900' },
+];
+
 export default function TextStylePanel({ editor }: TextStylePanelProps) {
   const [loadedFonts, setLoadedFonts] = useState<Set<string>>(new Set());
   const [customFontUrl, setCustomFontUrl] = useState('');
   const [customFontName, setCustomFontName] = useState('');
   const [showCustomFontInput, setShowCustomFontInput] = useState(false);
+  const [customTextColor, setCustomTextColor] = useState('#000000');
+  const [customHighlightColor, setCustomHighlightColor] = useState('#FFFF00');
 
   // Load Google Fonts dynamically
   useEffect(() => {
@@ -128,6 +139,22 @@ export default function TextStylePanel({ editor }: TextStylePanelProps) {
     editor.chain().focus().setMark('textStyle', { letterSpacing: spacing }).run();
   };
 
+  const setFontWeight = (weight: string) => {
+    editor.chain().focus().setMark('textStyle', { fontWeight: weight }).run();
+  };
+
+  const applyCustomTextColor = () => {
+    if (customTextColor) {
+      editor.chain().focus().setColor(customTextColor).run();
+    }
+  };
+
+  const applyCustomHighlightColor = () => {
+    if (customHighlightColor) {
+      editor.chain().focus().toggleHighlight({ color: customHighlightColor }).run();
+    }
+  };
+
   return (
     <div className={styles.panel}>
       <div className={styles.section}>
@@ -143,6 +170,22 @@ export default function TextStylePanel({ editor }: TextStylePanelProps) {
               <option key={size} value={size}>{size}px</option>
             ))}
           </select>
+        </div>
+
+        <div className={styles.field}>
+          <label>Font Weight</label>
+          <div className={styles.buttonGroup}>
+            {FONT_WEIGHTS.map(fw => (
+              <button
+                key={fw.value}
+                onClick={() => setFontWeight(fw.value)}
+                className={styles.button}
+                style={{ fontWeight: fw.value }}
+              >
+                {fw.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className={styles.field}>
@@ -226,6 +269,25 @@ export default function TextStylePanel({ editor }: TextStylePanelProps) {
               />
             ))}
           </div>
+          <div className={styles.customColorPicker}>
+            <input
+              type="color"
+              value={customTextColor}
+              onChange={(e) => setCustomTextColor(e.target.value)}
+              className={styles.colorInput}
+            />
+            <input
+              type="text"
+              value={customTextColor}
+              onChange={(e) => setCustomTextColor(e.target.value)}
+              placeholder="#000000"
+              className={styles.hexInput}
+              maxLength={7}
+            />
+            <button onClick={applyCustomTextColor} className={styles.applyButton}>
+              Apply
+            </button>
+          </div>
         </div>
 
         <div className={styles.field}>
@@ -240,6 +302,25 @@ export default function TextStylePanel({ editor }: TextStylePanelProps) {
                 title={color}
               />
             ))}
+          </div>
+          <div className={styles.customColorPicker}>
+            <input
+              type="color"
+              value={customHighlightColor}
+              onChange={(e) => setCustomHighlightColor(e.target.value)}
+              className={styles.colorInput}
+            />
+            <input
+              type="text"
+              value={customHighlightColor}
+              onChange={(e) => setCustomHighlightColor(e.target.value)}
+              placeholder="#FFFF00"
+              className={styles.hexInput}
+              maxLength={7}
+            />
+            <button onClick={applyCustomHighlightColor} className={styles.applyButton}>
+              Apply
+            </button>
           </div>
         </div>
       </div>
