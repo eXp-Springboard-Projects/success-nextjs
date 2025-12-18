@@ -78,7 +78,6 @@ export default function AnalyticsTracker({ contentId, contentType }: AnalyticsTr
         }),
       });
     } catch (error) {
-      console.error('Analytics tracking error:', error);
     }
   }
 

@@ -55,7 +55,6 @@ export default function AccountPage() {
         setSubscription(subData);
       }
     } catch (err) {
-      console.error('Failed to fetch account info:', err);
     }
   }
 
@@ -83,7 +82,6 @@ export default function AccountPage() {
         throw new Error('No portal URL returned');
       }
     } catch (err) {
-      console.error('Billing portal error:', err);
       alert(err instanceof Error ? err.message : 'Failed to access billing portal');
       setLoading(false);
     }

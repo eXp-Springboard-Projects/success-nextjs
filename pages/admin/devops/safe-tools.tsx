@@ -55,7 +55,6 @@ export default function SafeToolsPage() {
         alert(`✗ ${error.error || 'Tool execution failed'}`);
       }
     } catch (error) {
-      console.error('Error running tool:', error);
       alert('✗ Tool execution failed');
     } finally {
       setProcessing(null);

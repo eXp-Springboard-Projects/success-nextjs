@@ -62,7 +62,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       url: portalSession.url,
     });
   } catch (error) {
-    console.error('Portal session error:', error);
     return res.status(500).json({
       error: 'Failed to create portal session',
       details: error instanceof Error ? error.message : 'Unknown error',

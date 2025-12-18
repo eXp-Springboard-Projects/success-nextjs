@@ -70,7 +70,6 @@ const coverBuffer = await readFile(coverImageFile.filepath);
       if (coverImageFile) {
         coverUrl = `/uploads/magazines/covers/${coverImageFile.originalFilename || coverImageFile.newFilename}`;
       }
-      console.warn('BLOB_READ_WRITE_TOKEN not configured. Using placeholder URLs for development.');
     }
 
     // Generate unique ID for the magazine
@@ -98,7 +97,6 @@ return res.status(201).json({
       magazine,
     });
   } catch (error) {
-    console.error('Error uploading magazine:', error);
 
     // Provide more detailed error messages
     let errorMessage = 'Upload failed';

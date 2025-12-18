@@ -436,7 +436,6 @@ export default async function handler(
       refundAmount,
     });
   } catch (error: unknown) {
-    console.error('Error fetching revenue analytics:', error);
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return res.status(500).json({ error: errorMessage });
   }

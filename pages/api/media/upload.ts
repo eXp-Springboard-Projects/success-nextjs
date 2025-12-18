@@ -90,7 +90,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         width = dimensions.width || 0;
         height = dimensions.height || 0;
       } catch (e) {
-        console.warn('Could not get image dimensions');
       }
     } else {
       const optimized = await uploadAndOptimizeImage(
@@ -157,7 +156,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       variants,
     });
   } catch (error) {
-    console.error('Error uploading media:', error);
     return res.status(500).json({
       error: 'Failed to upload media',
       message: error instanceof Error ? error.message : 'Unknown error',

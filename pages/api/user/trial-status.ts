@@ -61,7 +61,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       membershipStatus: member?.membershipStatus || 'Inactive',
     });
   } catch (error) {
-    console.error('Trial status API error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   } finally {
     await prisma.$disconnect();

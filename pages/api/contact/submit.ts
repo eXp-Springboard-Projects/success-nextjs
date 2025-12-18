@@ -91,7 +91,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       contactId: contact.id
     });
   } catch (error) {
-    console.error('Contact form error:', error);
     return res.status(500).json({ error: 'Failed to submit form. Please try again.' });
   }
 }
@@ -118,7 +117,6 @@ async function sendAdminNotification(data: any) {
     await sgMail.send(msg);
     */
   } catch (error) {
-    console.error('Admin notification error:', error);
   }
 }
 
@@ -143,6 +141,5 @@ async function sendUserConfirmation(email: string, firstName: string) {
     await sgMail.send(msg);
     */
   } catch (error) {
-    console.error('User confirmation error:', error);
   }
 }

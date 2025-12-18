@@ -72,7 +72,6 @@ async function getLandingPages(req: NextApiRequest, res: NextApiResponse) {
       limit: parseInt(limit),
     });
   } catch (error) {
-    console.error('Error fetching landing pages:', error);
     return res.status(500).json({ error: 'Failed to fetch landing pages' });
   }
 }
@@ -119,7 +118,6 @@ async function createLandingPage(req: NextApiRequest, res: NextApiResponse, sess
 
     return res.status(201).json(page[0]);
   } catch (error: any) {
-    console.error('Error creating landing page:', error);
     if (error?.code === '23505') {
       return res.status(400).json({ error: 'Slug already exists' });
     }

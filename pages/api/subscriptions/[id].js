@@ -55,7 +55,6 @@ async function getSubscription(req, res, id) {
 
     return res.status(200).json(subscription);
   } catch (error) {
-    console.error('Error fetching subscription:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -88,7 +87,6 @@ async function cancelSubscription(req, res, id) {
         });
 
 } catch (stripeError) {
-        console.error('Error canceling Stripe subscription:', stripeError);
 
         // If Stripe cancellation fails, don't update database
         return res.status(500).json({
@@ -114,7 +112,6 @@ return res.status(200).json({
       endDate: subscription.currentPeriodEnd,
     });
   } catch (error) {
-    console.error('Error canceling subscription:', error);
     return res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 }
@@ -208,7 +205,6 @@ break;
       stripeData: updatedStripeSubscription,
     });
   } catch (error) {
-    console.error('Error updating subscription:', error);
     return res.status(500).json({
       message: 'Failed to update subscription',
       error: error.message,

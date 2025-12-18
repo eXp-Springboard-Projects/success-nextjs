@@ -89,7 +89,6 @@ export default async function handler(
           }
 
         } catch (wooError: any) {
-          console.error('⚠️  Failed to sync with WooCommerce:', wooError);
           // Don't fail the request - order is fulfilled in our system
         }
       }
@@ -127,7 +126,6 @@ export default async function handler(
       });
 
     } catch (error: any) {
-      console.error('Error fulfilling order:', error);
       return res.status(500).json({ error: error.message || 'Internal server error' });
     }
   }

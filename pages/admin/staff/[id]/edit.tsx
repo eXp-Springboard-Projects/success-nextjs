@@ -89,7 +89,6 @@ export default function StaffEdit() {
           data.departments = deptData.departments;
         }
       } catch (err) {
-        console.error('Error fetching departments:', err);
       }
 
       setStaff(data);

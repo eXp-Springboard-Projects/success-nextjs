@@ -25,7 +25,6 @@ export default function PodcastsPage() {
         router.push('/subscribe?error=subscription_required');
       }
     } catch (error) {
-      console.error('Error checking subscription:', error);
     }
   };
 

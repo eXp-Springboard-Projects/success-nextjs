@@ -67,7 +67,6 @@ export default function MediaLibraryPicker({
         setMedia(data);
       }
     } catch (error) {
-      console.error('Error fetching media:', error);
     } finally {
       setLoading(false);
     }
@@ -119,7 +118,6 @@ export default function MediaLibraryPicker({
       // Switch to library tab to show uploaded files
       setActiveTab('library');
     } catch (error) {
-      console.error('Upload error:', error);
       alert('Failed to upload some files');
     } finally {
       setUploading(false);
@@ -164,7 +162,6 @@ export default function MediaLibraryPicker({
       await fetchMedia();
       setActiveTab('library');
     } catch (error) {
-      console.error('Upload error:', error);
       alert('Failed to upload some files');
     } finally {
       setUploading(false);

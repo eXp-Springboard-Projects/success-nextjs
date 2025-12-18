@@ -71,7 +71,6 @@ export async function getSEOSettings(): Promise<SEOSettings> {
     lastFetchTime = now;
     return cachedSEOSettings;
   } catch (error) {
-    console.error('Error fetching SEO settings:', error);
 
     // Return default settings
     return {

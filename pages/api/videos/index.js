@@ -60,7 +60,6 @@ async function getVideos(req, res) {
 
     return res.status(200).json(transformedVideos);
   } catch (error) {
-    console.error('Error fetching videos:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -92,7 +91,6 @@ async function createVideo(req, res) {
 
     return res.status(201).json(video);
   } catch (error) {
-    console.error('Error creating video:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

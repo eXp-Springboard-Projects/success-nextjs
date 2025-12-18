@@ -30,7 +30,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           revalidatedCount++;
 } catch (error) {
           const errorMsg = `Failed to clear cache for ${path}: ${error}`;
-          console.error(errorMsg);
           errors.push(errorMsg);
         }
       }
@@ -68,7 +67,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         clearedBy: session.user.name
       });
     } catch (error) {
-      console.error('Error clearing cache:', error);
       return res.status(500).json({ error: 'Failed to clear cache' });
     }
   }

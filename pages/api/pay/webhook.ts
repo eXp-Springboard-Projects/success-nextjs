@@ -36,7 +36,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       process.env.STRIPE_WEBHOOK_SECRET || ''
     );
   } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message);
     return res.status(400).json({ error: `Webhook Error: ${err.message}` });
   }
 
@@ -58,7 +57,6 @@ break;
 
     return res.status(200).json({ received: true });
   } catch (error) {
-    console.error('Webhook handler error:', error);
     return res.status(500).json({ error: 'Webhook handler failed' });
   }
 }
@@ -67,7 +65,6 @@ async function handleCheckoutSessionCompleted(session: any) {
 const paylinkId = session.metadata?.paylink_id;
 
   if (!paylinkId) {
-    console.error('No paylink_id in session metadata');
     return;
   }
 
@@ -109,6 +106,5 @@ const paylinkId = session.metadata?.paylink_id;
     });
 
 } catch (error) {
-    console.error('Error updating paylink usage:', error);
   }
 }

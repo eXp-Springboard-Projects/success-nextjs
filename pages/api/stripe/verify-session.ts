@@ -53,7 +53,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(400).json({ error: 'Payment not completed' });
   } catch (error) {
-    console.error('Session verification error:', error);
     return res.status(500).json({ error: 'Failed to verify session' });
   }
 }

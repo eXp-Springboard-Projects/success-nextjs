@@ -70,7 +70,6 @@ export default function Settings() {
         setFacebookPixelId(data.facebookPixelId || '');
       }
     } catch (error) {
-      console.error('Error fetching settings:', error);
     } finally {
       setLoading(false);
     }
@@ -108,14 +107,12 @@ export default function Settings() {
         alert('Settings saved successfully!');
       } else {
         const errorData = await res.json();
-        console.error('Save error:', errorData);
         const errorMsg = errorData.hint
           ? `${errorData.message}\n\n${errorData.hint}`
           : errorData.message || 'Failed to save settings';
         alert(errorMsg);
       }
     } catch (error) {
-      console.error('Error saving settings:', error);
       alert('Failed to save settings. Please check console for details.');
     } finally {
       setSaving(false);

@@ -43,7 +43,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json(result);
   } catch (error: any) {
-    console.error('WordPress sync error:', error);
     return res.status(500).json({
       error: 'Sync failed',
       message: error.message,
@@ -190,7 +189,6 @@ async function syncPosts(
         result.created++;
       }
     } catch (error: any) {
-      console.error(`Error syncing post ${wpPost.id}:`, error);
       result.errors.push({
         id: wpPost.id,
         title: wpPost.title?.rendered || 'Unknown',
@@ -282,7 +280,6 @@ async function syncPostCategories(postId: string, wpCategories: any[]) {
         },
       });
     } catch (error) {
-      console.error(`Error syncing category ${wpCat.id}:`, error);
     }
   }
 }
@@ -328,7 +325,6 @@ async function syncPostTags(postId: string, wpTags: any[]) {
         },
       });
     } catch (error) {
-      console.error(`Error syncing tag ${wpTag.id}:`, error);
     }
   }
 }
@@ -395,7 +391,6 @@ async function syncCategories(
         result.created++;
       }
     } catch (error: any) {
-      console.error(`Error syncing category ${wpCat.id}:`, error);
       result.errors.push({
         id: wpCat.id,
         name: wpCat.name,
@@ -465,7 +460,6 @@ async function syncTags(
         result.created++;
       }
     } catch (error: any) {
-      console.error(`Error syncing tag ${wpTag.id}:`, error);
       result.errors.push({
         id: wpTag.id,
         name: wpTag.name,
@@ -550,7 +544,6 @@ async function syncUsers(
         result.created++;
       }
     } catch (error: any) {
-      console.error(`Error syncing user ${wpUser.id}:`, error);
       result.errors.push({
         id: wpUser.id,
         name: wpUser.name,

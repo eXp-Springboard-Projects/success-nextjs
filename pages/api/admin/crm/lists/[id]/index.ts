@@ -22,7 +22,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(list);
     } catch (error) {
-      console.error('Error fetching list:', error);
       return res.status(500).json({ error: 'Failed to fetch list' });
     }
   }
@@ -42,7 +41,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(list);
     } catch (error) {
-      console.error('Error updating list:', error);
       return res.status(500).json({ error: 'Failed to update list' });
     }
   }
@@ -55,7 +53,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(204).end();
     } catch (error) {
-      console.error('Error deleting list:', error);
       return res.status(500).json({ error: 'Failed to delete list' });
     }
   }

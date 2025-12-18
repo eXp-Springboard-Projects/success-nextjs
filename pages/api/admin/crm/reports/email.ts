@@ -98,7 +98,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       unsubscribeRate,
     });
   } catch (error) {
-    console.error('Error fetching email reports:', error);
     return res.status(500).json({ error: 'Failed to fetch email reports' });
   }
 }

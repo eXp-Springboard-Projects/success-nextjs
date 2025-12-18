@@ -46,7 +46,6 @@ export default function LeadScoringSettings() {
       const data = await res.json();
       setRules(data.rules || []);
     } catch (error) {
-      console.error('Error fetching rules:', error);
     } finally {
       setLoading(false);
     }
@@ -58,7 +57,6 @@ export default function LeadScoringSettings() {
       const data = await res.json();
       setTopLeads(data.leads || []);
     } catch (error) {
-      console.error('Error fetching top leads:', error);
     }
   };
 
@@ -84,7 +82,6 @@ export default function LeadScoringSettings() {
         alert('Failed to save rule');
       }
     } catch (error) {
-      console.error('Error saving rule:', error);
       alert('Error saving rule');
     }
   };
@@ -103,7 +100,6 @@ export default function LeadScoringSettings() {
         alert('Failed to delete rule');
       }
     } catch (error) {
-      console.error('Error deleting rule:', error);
       alert('Error deleting rule');
     }
   };
@@ -122,7 +118,6 @@ export default function LeadScoringSettings() {
         alert('Failed to toggle rule');
       }
     } catch (error) {
-      console.error('Error toggling rule:', error);
       alert('Error toggling rule');
     }
   };
@@ -144,7 +139,6 @@ export default function LeadScoringSettings() {
         alert('Failed to recalculate scores');
       }
     } catch (error) {
-      console.error('Error recalculating scores:', error);
       alert('Error recalculating scores');
     } finally {
       setRecalculating(false);

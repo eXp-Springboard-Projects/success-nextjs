@@ -41,7 +41,6 @@ async function getLandingPage(id: string, res: NextApiResponse) {
 
     return res.status(200).json(page[0]);
   } catch (error) {
-    console.error('Error fetching landing page:', error);
     return res.status(500).json({ error: 'Failed to fetch landing page' });
   }
 }
@@ -83,7 +82,6 @@ async function updateLandingPage(id: string, req: NextApiRequest, res: NextApiRe
 
     return res.status(200).json(page[0]);
   } catch (error: any) {
-    console.error('Error updating landing page:', error);
     if (error?.code === '23505') {
       return res.status(400).json({ error: 'Slug already exists' });
     }
@@ -99,7 +97,6 @@ async function deleteLandingPage(id: string, res: NextApiResponse) {
 
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Error deleting landing page:', error);
     return res.status(500).json({ error: 'Failed to delete landing page' });
   }
 }

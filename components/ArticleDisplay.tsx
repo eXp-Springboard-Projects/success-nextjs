@@ -98,7 +98,6 @@ export default function ArticleDisplay({
         googletag.display(slotId);
       });
     } catch (error) {
-      console.error('Ad loading error:', error);
     }
   }
 

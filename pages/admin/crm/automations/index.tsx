@@ -30,7 +30,6 @@ export default function AutomationsPage() {
         setAutomations(data.automations || []);
       }
     } catch (error) {
-      console.error('Error fetching automations:', error);
     } finally {
       setLoading(false);
     }
@@ -49,7 +48,6 @@ export default function AutomationsPage() {
         fetchAutomations();
       }
     } catch (error) {
-      console.error('Error toggling automation:', error);
     }
   };
 

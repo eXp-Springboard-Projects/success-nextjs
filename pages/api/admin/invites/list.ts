@@ -34,7 +34,6 @@ export default async function handler(
     });
 
   } catch (error) {
-    console.error('List invites error:', error);
     return res.status(500).json({ error: 'Failed to fetch invite codes' });
   }
 }

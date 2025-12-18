@@ -28,7 +28,6 @@ async function getVideo(req, res, id) {
 
     return res.status(200).json(video);
   } catch (error) {
-    console.error('Error fetching video:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -53,7 +52,6 @@ async function updateVideo(req, res, id) {
 
     return res.status(200).json(video);
   } catch (error) {
-    console.error('Error updating video:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -66,7 +64,6 @@ async function deleteVideo(req, res, id) {
 
     return res.status(200).json({ message: 'Video deleted successfully' });
   } catch (error) {
-    console.error('Error deleting video:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

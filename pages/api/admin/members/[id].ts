@@ -109,7 +109,6 @@ export default async function handler(
 
       return res.status(200).json(transformedMember);
     } catch (error) {
-      console.error('Error fetching member:', error);
       return res.status(500).json({ message: 'Failed to fetch member' });
     }
   }
@@ -224,7 +223,6 @@ export default async function handler(
         },
       });
     } catch (error: any) {
-      console.error('Error updating member:', error);
       return res.status(500).json({ message: error.message || 'Failed to update member' });
     }
   }
@@ -258,7 +256,6 @@ export default async function handler(
 
       return res.status(200).json({ message: 'Member deleted successfully' });
     } catch (error) {
-      console.error('Error deleting member:', error);
       return res.status(500).json({ message: 'Failed to delete member' });
     }
   }

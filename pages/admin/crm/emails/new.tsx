@@ -57,7 +57,6 @@ export default function NewEmailPage() {
       const data = await res.json();
       setLists(data);
     } catch (error) {
-      console.error('Error fetching lists:', error);
     }
   };
 
@@ -67,7 +66,6 @@ export default function NewEmailPage() {
       const data = await res.json();
       setTemplates(data);
     } catch (error) {
-      console.error('Error fetching templates:', error);
     }
   };
 
@@ -108,7 +106,6 @@ export default function NewEmailPage() {
         alert(`Error: ${error.message || 'Failed to send email'}`);
       }
     } catch (error) {
-      console.error('Error sending email:', error);
       alert('Failed to send email');
     } finally {
       setLoading(false);

@@ -37,7 +37,6 @@ export default async function handler(
     return res.status(200).json({ hasAccess });
 
   } catch (error) {
-    console.error('Check department access error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

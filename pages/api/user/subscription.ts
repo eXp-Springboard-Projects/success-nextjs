@@ -63,7 +63,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       stripeSubscriptionId: subscription.stripeSubscriptionId,
     });
   } catch (error) {
-    console.error('Subscription API error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   } finally {
     await prisma.$disconnect();

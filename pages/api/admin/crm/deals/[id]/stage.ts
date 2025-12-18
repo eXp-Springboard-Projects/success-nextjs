@@ -78,7 +78,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json(deal[0]);
   } catch (error) {
-    console.error('Error updating deal stage:', error);
     return res.status(500).json({ error: 'Failed to update deal stage' });
   }
 }

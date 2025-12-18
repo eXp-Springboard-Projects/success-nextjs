@@ -58,7 +58,6 @@ export default function VideoEditor({ videoId }: VideoEditorProps) {
       setFeaturedImage(video.featuredImage || '');
       setFeaturedImageAlt(video.featuredImageAlt || '');
     } catch (error) {
-      console.error('Error fetching video:', error);
       alert('Failed to load video');
     } finally {
       setLoading(false);
@@ -153,7 +152,6 @@ export default function VideoEditor({ videoId }: VideoEditorProps) {
         throw new Error('Upload failed');
       }
     } catch (error) {
-      console.error('Error uploading video:', error);
       alert('Failed to upload video. Please try again or use a video URL instead.');
     } finally {
       setUploadingVideo(false);
@@ -198,7 +196,6 @@ export default function VideoEditor({ videoId }: VideoEditorProps) {
         throw new Error('Upload failed');
       }
     } catch (error) {
-      console.error('Error uploading thumbnail:', error);
       alert('Failed to upload thumbnail');
     } finally {
       setUploadingThumbnail(false);
@@ -245,7 +242,6 @@ export default function VideoEditor({ videoId }: VideoEditorProps) {
         throw new Error('Failed to save video');
       }
     } catch (error) {
-      console.error('Error saving video:', error);
       alert('Failed to save video');
     } finally {
       setSaving(false);

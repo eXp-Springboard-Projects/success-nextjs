@@ -50,7 +50,6 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600');
     res.status(200).send(rss);
   } catch (error) {
-    console.error('Error generating RSS feed:', error);
     res.status(500).json({ message: 'Failed to generate RSS feed', error: error.message });
   }
 }

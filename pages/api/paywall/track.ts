@@ -127,7 +127,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       isSubscriber: false
     });
   } catch (error) {
-    console.error('Paywall tracking error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

@@ -13,7 +13,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(lists);
     } catch (error) {
-      console.error('Error fetching lists:', error);
       return res.status(500).json({ error: 'Failed to fetch lists' });
     }
   }
@@ -40,7 +39,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(201).json(list);
     } catch (error) {
-      console.error('Error creating list:', error);
       return res.status(500).json({ error: 'Failed to create list' });
     }
   }

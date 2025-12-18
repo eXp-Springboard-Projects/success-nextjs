@@ -81,7 +81,6 @@ export default async function handler(
     const webhookSecret = process.env.WOOCOMMERCE_WEBHOOK_SECRET;
 
     if (!webhookSecret) {
-      console.error('❌ WOOCOMMERCE_WEBHOOK_SECRET not configured');
       return res.status(500).json({ error: 'Webhook secret not configured' });
     }
 
@@ -93,7 +92,6 @@ export default async function handler(
       .digest('base64');
 
     if (signature !== expectedSignature) {
-      console.error('❌ Invalid webhook signature');
       return res.status(401).json({ error: 'Invalid signature' });
     }
 
@@ -283,7 +281,6 @@ return res.status(200).json({
     });
 
   } catch (error: any) {
-    console.error('❌ WooCommerce webhook error:', error);
     return res.status(500).json({
       error: 'Internal server error',
       message: error.message,

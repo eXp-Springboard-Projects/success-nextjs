@@ -29,7 +29,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(config);
     } catch (error) {
-      console.error('Error fetching paywall config:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
@@ -85,7 +84,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(201).json(created);
       }
     } catch (error) {
-      console.error('Error updating paywall config:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
   }

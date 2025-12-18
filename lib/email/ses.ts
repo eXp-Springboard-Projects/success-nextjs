@@ -94,7 +94,6 @@ return { success: false, error: 'Recipient has unsubscribed or email bounced' };
 
     return { success: true, messageId: response.MessageId };
   } catch (error) {
-    console.error('Error sending email:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
@@ -149,7 +148,6 @@ return { success: false, error: 'Recipient has unsubscribed or email bounced' };
 
     return { success: true, messageId: response.MessageId };
   } catch (error) {
-    console.error('Error sending template email:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
@@ -167,7 +165,6 @@ async function checkEmailPermission(email: string): Promise<boolean> {
     const pref = prefs[0];
     return !pref.unsubscribed && pref.opt_in_marketing;
   } catch (error) {
-    console.error('Error checking email permission:', error);
     return false;
   }
 }
@@ -195,7 +192,6 @@ async function getUnsubscribeToken(email: string): Promise<string> {
 
     return token;
   } catch (error) {
-    console.error('Error getting unsubscribe token:', error);
     return nanoid(32);
   }
 }
@@ -250,7 +246,6 @@ async function trackEmailSend({
       `;
     }
   } catch (error) {
-    console.error('Error tracking email send:', error);
   }
 }
 
@@ -272,7 +267,6 @@ export async function handleBounce(email: string, bounceType: string): Promise<v
       WHERE recipient_email = ${email} AND bounced_at IS NULL
     `;
   } catch (error) {
-    console.error('Error handling bounce:', error);
   }
 }
 
@@ -302,7 +296,6 @@ export async function handleComplaint(email: string): Promise<void> {
       WHERE recipient_email = ${email} AND complained_at IS NULL
     `;
   } catch (error) {
-    console.error('Error handling complaint:', error);
   }
 }
 
@@ -324,7 +317,6 @@ export async function trackEmailOpen(emailSendId: string, contactId?: string): P
       `;
     }
   } catch (error) {
-    console.error('Error tracking email open:', error);
   }
 }
 
@@ -354,6 +346,5 @@ export async function trackEmailClick(emailSendId: string, contactId?: string, u
       `;
     }
   } catch (error) {
-    console.error('Error tracking email click:', error);
   }
 }

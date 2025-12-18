@@ -53,7 +53,6 @@ export default function TemplateEditorPage() {
           blocks = typeof data.blocks === 'string' ? JSON.parse(data.blocks) : data.blocks;
         }
       } catch (e) {
-        console.error('Error parsing blocks:', e);
       }
 
       setFormData({
@@ -70,7 +69,6 @@ export default function TemplateEditorPage() {
         setEditorMode('html');
       }
     } catch (error) {
-      console.error('Error fetching template:', error);
     } finally {
       setLoading(false);
     }
@@ -114,7 +112,6 @@ export default function TemplateEditorPage() {
         alert('Failed to save template');
       }
     } catch (error) {
-      console.error('Error saving template:', error);
       alert('Failed to save template');
     } finally {
       setSaving(false);
@@ -135,7 +132,6 @@ export default function TemplateEditorPage() {
         alert('Failed to delete template');
       }
     } catch (error) {
-      console.error('Error deleting template:', error);
       alert('Failed to delete template');
     }
   };

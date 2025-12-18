@@ -41,7 +41,6 @@ export async function getServerSideProps() {
       }
     };
   } catch (error) {
-    console.error('Error fetching privacy policy page:', error);
     return { notFound: true };
   }
 }

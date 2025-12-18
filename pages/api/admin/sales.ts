@@ -156,7 +156,6 @@ export default async function handler(
       },
     });
   } catch (error: any) {
-    console.error('Sales API error:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }

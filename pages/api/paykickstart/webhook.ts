@@ -23,7 +23,6 @@ async function getRawBody(req: NextApiRequest): Promise<string> {
 // Verify PayKickstart webhook signature
 function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
   if (!secret) {
-    console.warn('PAYKICKSTART_WEBHOOK_SECRET not configured, skipping signature verification');
     return true; // Allow in development, but log warning
   }
 
@@ -88,7 +87,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const webhookSecret = process.env.PAYKICKSTART_WEBHOOK_SECRET || '';
 
     if (!verifyWebhookSignature(rawBody, signature, webhookSecret)) {
-      console.error('Invalid webhook signature');
       return res.status(401).json({ error: 'Invalid signature' });
     }
 
@@ -131,7 +129,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({ received: true });
   } catch (error: any) {
-    console.error('Error processing PayKickstart webhook:', error);
     return res.status(500).json({ error: 'Webhook processing failed', message: error.message });
   }
 }
@@ -276,7 +273,6 @@ async function handleSubscriptionUpdated(event: any) {
   });
 
   if (!subscription) {
-    console.warn(`Subscription not found: ${subscriptionId}`);
     return;
   }
 
@@ -339,7 +335,6 @@ async function handleSubscriptionCancelled(event: any) {
   });
 
   if (!subscription) {
-    console.warn(`Subscription not found: ${subscriptionId}`);
     return;
   }
 
@@ -393,7 +388,6 @@ async function handlePaymentFailed(event: any) {
   const subscriptionId = data.subscription_id || data.subscription?.id;
 
   if (!subscriptionId) {
-    console.warn('Payment failed event missing subscription_id');
     return;
   }
 
@@ -403,7 +397,6 @@ async function handlePaymentFailed(event: any) {
   });
 
   if (!subscription) {
-    console.warn(`Subscription not found: ${subscriptionId}`);
     return;
   }
 

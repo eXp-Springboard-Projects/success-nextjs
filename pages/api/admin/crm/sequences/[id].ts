@@ -41,7 +41,6 @@ async function getSequence(id: string, res: NextApiResponse) {
 
     return res.status(200).json(sequence[0]);
   } catch (error) {
-    console.error('Error fetching sequence:', error);
     return res.status(500).json({ error: 'Failed to fetch sequence' });
   }
 }
@@ -104,7 +103,6 @@ async function updateSequence(id: string, req: NextApiRequest, res: NextApiRespo
 
     return res.status(200).json(sequence[0]);
   } catch (error) {
-    console.error('Error updating sequence:', error);
     return res.status(500).json({ error: 'Failed to update sequence' });
   }
 }
@@ -114,7 +112,6 @@ async function deleteSequence(id: string, res: NextApiResponse) {
     await prisma.$executeRaw`DELETE FROM sequences WHERE id = ${id}`;
     return res.status(200).json({ message: 'Sequence deleted successfully' });
   } catch (error) {
-    console.error('Error deleting sequence:', error);
     return res.status(500).json({ error: 'Failed to delete sequence' });
   }
 }

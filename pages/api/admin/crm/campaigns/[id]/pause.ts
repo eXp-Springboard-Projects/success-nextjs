@@ -36,7 +36,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json(campaign[0]);
   } catch (error) {
-    console.error('Error pausing campaign:', error);
     return res.status(500).json({ error: 'Failed to pause campaign' });
   }
 }

@@ -50,7 +50,6 @@ export default function MagazineHero({ magazine }) {
         });
       }
     } catch (e) {
-      console.error('Error parsing magazine related data:', e);
       // Fallback to regex parsing if phpunserialize fails
       try {
         const item0Match = relatedDataRaw.match(/item-0.*?banner-related-data-title";s:\d+:"([^"]+)".*?banner-related-data-description";s:\d+:"([^"]+)".*?banner-related-data-link";s:\d+:"([^"]+)"/);
@@ -63,7 +62,6 @@ export default function MagazineHero({ magazine }) {
           sideFeatures.push({ title: item1Match[1], description: item1Match[2], link: item1Match[3] });
         }
       } catch (regexError) {
-        console.error('Fallback regex parsing also failed:', regexError);
       }
     }
   }

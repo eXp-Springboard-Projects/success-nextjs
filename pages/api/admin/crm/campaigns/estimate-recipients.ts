@@ -110,7 +110,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
   } catch (error) {
-    console.error('Error estimating recipients:', error);
     return res.status(500).json({ error: 'Failed to estimate recipients' });
   }
 }

@@ -368,7 +368,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         tickets: ticketStats,
       });
     } catch (error) {
-      console.error('Error fetching analytics:', error);
       return res.status(500).json({ error: 'Failed to fetch analytics' });
     }
   }

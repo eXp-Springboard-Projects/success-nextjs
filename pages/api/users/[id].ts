@@ -45,7 +45,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { password: _, ...userWithoutPassword } = updatedUser;
       return res.status(200).json(userWithoutPassword);
     } catch (error: any) {
-      console.error('Error updating user:', error);
       return res.status(500).json({ error: 'Failed to update user', message: error.message });
     }
   }
@@ -60,7 +59,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await prisma.users.delete({ where: { id } });
       return res.status(200).json({ message: 'User deleted successfully' });
     } catch (error: any) {
-      console.error('Error deleting user:', error);
       return res.status(500).json({ error: 'Failed to delete user', message: error.message });
     }
   }

@@ -74,7 +74,6 @@ export default function PostsListWithFilters() {
         setPosts(data);
       }
     } catch (error) {
-      console.error('Error fetching posts:', error);
     } finally {
       setLoading(false);
     }
@@ -88,7 +87,6 @@ export default function PostsListWithFilters() {
         setAuthors(data);
       }
     } catch (error) {
-      console.error('Error fetching authors:', error);
     }
   };
 
@@ -100,7 +98,6 @@ export default function PostsListWithFilters() {
         setCategories(data);
       }
     } catch (error) {
-      console.error('Error fetching categories:', error);
     }
   };
 
@@ -207,7 +204,6 @@ export default function PostsListWithFilters() {
 
       // In real implementation: fetchPosts();
     } catch (error) {
-      console.error('Bulk action error:', error);
       alert('Failed to perform bulk action');
     } finally {
       setProcessing(false);

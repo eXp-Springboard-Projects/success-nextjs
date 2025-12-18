@@ -43,7 +43,6 @@ export default function PodcastEditor({ podcastId }: PodcastEditorProps) {
       setDuration(podcast.duration ? String(podcast.duration) : '');
       setStatus(podcast.status);
     } catch (error) {
-      console.error('Error fetching podcast:', error);
       alert('Failed to load podcast');
     } finally {
       setLoading(false);
@@ -100,7 +99,6 @@ export default function PodcastEditor({ podcastId }: PodcastEditorProps) {
         throw new Error('Failed to save podcast');
       }
     } catch (error) {
-      console.error('Error saving podcast:', error);
       alert('Failed to save podcast');
     } finally {
       setSaving(false);

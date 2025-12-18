@@ -37,7 +37,6 @@ export async function logActivity(activity: ActivityLog): Promise<void> {
       },
     });
   } catch (error) {
-    console.error('Failed to log activity:', error);
     // Don't throw - logging failure shouldn't break the app
   }
 }
@@ -60,7 +59,6 @@ export async function getRecentActivity(
 
     return activities;
   } catch (error) {
-    console.error('Failed to fetch activity feed:', error);
     return [];
   }
 }
@@ -81,7 +79,6 @@ export async function getUserActivity(
 
     return activities;
   } catch (error) {
-    console.error('Failed to fetch user activity:', error);
     return [];
   }
 }

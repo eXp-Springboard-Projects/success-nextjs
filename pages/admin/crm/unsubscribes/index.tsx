@@ -32,7 +32,6 @@ export default function UnsubscribesIndex() {
       const data = await res.json();
       setUnsubscribes(data);
     } catch (error) {
-      console.error('Failed to fetch unsubscribes:', error);
     } finally {
       setLoading(false);
     }
@@ -50,7 +49,6 @@ export default function UnsubscribesIndex() {
         fetchUnsubscribes();
       }
     } catch (error) {
-      console.error('Failed to resubscribe:', error);
     }
   };
 

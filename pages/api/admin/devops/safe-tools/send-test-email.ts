@@ -133,7 +133,6 @@ This is an automated test email from the DevOps system.
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('Error sending test email:', error);
       return res.status(500).json({
         error: 'Failed to send test email',
         details: error instanceof Error ? error.message : 'Unknown error'

@@ -107,7 +107,6 @@ export async function getServerSideProps({ params }: any) {
       }
     };
   } catch (error) {
-    console.error('Error fetching category:', error);
     return { notFound: true };
   }
 }

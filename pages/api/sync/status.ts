@@ -58,7 +58,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       stats,
     });
   } catch (error: any) {
-    console.error('Error fetching sync status:', error);
     return res.status(500).json({
       error: 'Failed to fetch sync status',
       message: error.message,

@@ -36,7 +36,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(comments);
     } catch (error) {
-      console.error('Error fetching comments:', error);
       return res.status(500).json({ error: 'Failed to fetch comments' });
     }
   }
@@ -91,7 +90,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           : 'Your comment has been submitted and is awaiting moderation',
       });
     } catch (error) {
-      console.error('Error creating comment:', error);
       return res.status(500).json({ error: 'Failed to submit comment' });
     }
   }

@@ -55,7 +55,6 @@ export default async function handler(
     const emailAddress = data.to?.[0] || data.email;
 
     if (!emailAddress) {
-      console.warn('Missing email address in Resend webhook', event);
       return res.status(200).json({ received: true });
     }
 
@@ -65,7 +64,6 @@ export default async function handler(
     });
 
     if (!contact) {
-      console.warn(`Contact not found for email: ${emailAddress}`);
       return res.status(200).json({ received: true });
     }
 
@@ -73,7 +71,6 @@ export default async function handler(
     const campaignId = data.tags?.campaignId || data.metadata?.campaignId;
 
     if (!campaignId) {
-      console.warn('No campaign ID in Resend webhook event');
       return res.status(200).json({ received: true });
     }
 
@@ -155,7 +152,6 @@ export default async function handler(
 
     return res.status(200).json({ received: true });
   } catch (error: any) {
-    console.error('Resend webhook error:', error);
     return res.status(500).json({ error: error.message });
   }
 }

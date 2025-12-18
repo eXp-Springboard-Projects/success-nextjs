@@ -50,7 +50,6 @@ export default function NewDealPage() {
         setFormData(prev => ({ ...prev, stageId: data.stages[0].id }));
       }
     } catch (error) {
-      console.error('Error fetching stages:', error);
     }
   };
 
@@ -60,7 +59,6 @@ export default function NewDealPage() {
       const data = await res.json();
       setContacts(data.contacts || []);
     } catch (error) {
-      console.error('Error fetching contacts:', error);
     }
   };
 
@@ -92,7 +90,6 @@ export default function NewDealPage() {
         alert('Failed to create deal');
       }
     } catch (error) {
-      console.error('Error creating deal:', error);
       alert('Failed to create deal');
     } finally {
       setLoading(false);

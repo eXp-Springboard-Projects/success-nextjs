@@ -41,7 +41,6 @@ export default function SuccessPlusDashboard() {
         setLoading(false);
       })
       .catch((error) => {
-        console.error('Failed to fetch dashboard stats:', error);
         setLoading(false);
       });
   }, []);

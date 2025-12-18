@@ -45,7 +45,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       email: user.email,
     });
   } catch (error) {
-    console.error('Token validation error:', error);
     return res.status(500).json({
       error: 'Failed to validate token',
       valid: false,

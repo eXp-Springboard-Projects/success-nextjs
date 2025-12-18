@@ -37,7 +37,6 @@ return false;
     }
     return false;
   } catch (error) {
-    console.error('Error sending email:', error);
     return false;
   }
 }
@@ -62,7 +61,6 @@ async function sendViaSendGrid({ to, subject, html, text }: EmailOptions): Promi
 
 return true;
   } catch (error) {
-    console.error('[SendGrid] Error:', error);
     return false;
   }
 }
@@ -87,7 +85,6 @@ async function sendViaResend({ to, subject, html, text }: EmailOptions): Promise
 
 return true;
   } catch (error) {
-    console.error('[Resend] Error:', error);
     return false;
   }
 }
@@ -323,7 +320,6 @@ export async function sendCampaignEmail(
 
     return { success };
   } catch (error: any) {
-    console.error(`Failed to send email to ${contact.email}:`, error);
     return { success: false, error: error.message };
   }
 }

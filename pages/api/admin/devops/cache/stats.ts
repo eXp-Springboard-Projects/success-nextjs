@@ -42,7 +42,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         clearedBy: clearedBy || 'System',
       });
     } catch (error) {
-      console.error('Error fetching cache stats:', error);
       // Return fallback data if database query fails
       return res.status(200).json({
         size: '124 MB',

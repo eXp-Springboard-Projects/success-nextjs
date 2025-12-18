@@ -41,7 +41,6 @@ async function getTemplate(id: string, res: NextApiResponse) {
 
     return res.status(200).json(template[0]);
   } catch (error) {
-    console.error('Error fetching template:', error);
     return res.status(500).json({ error: 'Failed to fetch template' });
   }
 }
@@ -125,7 +124,6 @@ async function updateTemplate(id: string, req: NextApiRequest, res: NextApiRespo
 
     return res.status(200).json(template[0]);
   } catch (error) {
-    console.error('Error updating template:', error);
     return res.status(500).json({ error: 'Failed to update template' });
   }
 }
@@ -138,7 +136,6 @@ async function deleteTemplate(id: string, res: NextApiResponse) {
 
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Error deleting template:', error);
     return res.status(500).json({ error: 'Failed to delete template' });
   }
 }

@@ -41,7 +41,6 @@ export default function FormSubmissions() {
       const data = await res.json();
       setForm(data);
     } catch (error) {
-      console.error('Error fetching form:', error);
     }
   };
 
@@ -53,7 +52,6 @@ export default function FormSubmissions() {
       setSubmissions(data.submissions || []);
       setPagination(data.pagination);
     } catch (error) {
-      console.error('Error fetching submissions:', error);
     } finally {
       setLoading(false);
     }

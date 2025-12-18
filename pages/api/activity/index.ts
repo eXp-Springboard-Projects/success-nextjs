@@ -34,7 +34,6 @@ export default async function handler(
 
       return res.status(200).json(activities);
     } catch (error) {
-      console.error('Error fetching activities:', error);
       return res.status(500).json({ error: 'Failed to fetch activities' });
     }
   }
@@ -61,7 +60,6 @@ export default async function handler(
 
       return res.status(201).json(activity);
     } catch (error) {
-      console.error('Error creating activity:', error);
       return res.status(500).json({ error: 'Failed to create activity' });
     }
   }

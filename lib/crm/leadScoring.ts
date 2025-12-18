@@ -60,7 +60,6 @@ export async function updateContactScore(contactId: string, event: ScoringEvent,
       newScore: contact.leadScore,
     };
   } catch (error) {
-    console.error('Error updating contact score:', error);
     return null;
   }
 }
@@ -138,7 +137,6 @@ export async function recalculateAllScores() {
 
 return { processedCount };
   } catch (error) {
-    console.error('Error recalculating scores:', error);
     throw error;
   }
 }
@@ -163,7 +161,6 @@ export async function getTopLeads(limit: number = 10) {
 
     return topLeads;
   } catch (error) {
-    console.error('Error getting top leads:', error);
     return [];
   }
 }
@@ -204,7 +201,6 @@ export async function getScoreDistribution() {
       count: Number(d.count),
     }));
   } catch (error) {
-    console.error('Error getting score distribution:', error);
     return [];
   }
 }

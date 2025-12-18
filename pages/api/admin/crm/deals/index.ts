@@ -72,7 +72,6 @@ async function getDeals(req: NextApiRequest, res: NextApiResponse) {
 
     return res.status(200).json({ deals });
   } catch (error) {
-    console.error('Error fetching deals:', error);
     return res.status(500).json({ error: 'Failed to fetch deals' });
   }
 }
@@ -126,7 +125,6 @@ async function createDeal(req: NextApiRequest, res: NextApiResponse, session: an
 
     return res.status(201).json(deal[0]);
   } catch (error) {
-    console.error('Error creating deal:', error);
     return res.status(500).json({ error: 'Failed to create deal' });
   }
 }

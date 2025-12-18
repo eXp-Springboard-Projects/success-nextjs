@@ -86,7 +86,6 @@ async function getContact(id: string, res: NextApiResponse) {
       emailSends,
     });
   } catch (error) {
-    console.error('Error fetching contact:', error);
     return res.status(500).json({ error: 'Failed to fetch contact' });
   }
 }
@@ -181,7 +180,6 @@ async function updateContact(id: string, req: NextApiRequest, res: NextApiRespon
 
     return res.status(200).json(contact[0]);
   } catch (error) {
-    console.error('Error updating contact:', error);
     return res.status(500).json({ error: 'Failed to update contact' });
   }
 }
@@ -194,7 +192,6 @@ async function deleteContact(id: string, res: NextApiResponse) {
 
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Error deleting contact:', error);
     return res.status(500).json({ error: 'Failed to delete contact' });
   }
 }

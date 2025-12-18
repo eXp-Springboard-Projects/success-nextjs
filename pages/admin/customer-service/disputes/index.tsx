@@ -42,7 +42,6 @@ export default function DisputesPage() {
       setDisputes(data.disputes || []);
       setTotalPages(data.pagination?.totalPages || 1);
     } catch (error) {
-      console.error('Failed to fetch disputes:', error);
     } finally {
       setLoading(false);
     }
@@ -239,7 +238,6 @@ function CreateDisputeModal({ onClose, onSuccess }: { onClose: () => void; onSuc
         alert(data.error || 'Failed to create dispute');
       }
     } catch (error) {
-      console.error('Error creating dispute:', error);
       alert('Failed to create dispute');
     } finally {
       setSubmitting(false);

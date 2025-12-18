@@ -121,7 +121,6 @@ return res.status(200).json({
       results,
     });
   } catch (error) {
-    console.error('Daily sync failed:', error);
 
     return res.status(500).json({
       success: false,

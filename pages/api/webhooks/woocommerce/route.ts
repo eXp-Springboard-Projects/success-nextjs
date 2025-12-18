@@ -39,7 +39,6 @@ export default async function handler(
         .digest('base64');
 
       if (signature !== expectedSignature) {
-        console.error('Signature mismatch:', { received: signature, expected: expectedSignature });
         return res.status(401).json({ error: 'Invalid signature' });
       }
     }
@@ -193,7 +192,6 @@ export default async function handler(
 
 return res.status(200).json({ received: true, orderId: savedOrder.id });
   } catch (error: any) {
-    console.error('WooCommerce webhook error:', error);
     return res.status(500).json({ error: error.message });
   }
 }

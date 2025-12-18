@@ -38,7 +38,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json(task[0]);
   } catch (error) {
-    console.error('Error completing task:', error);
     return res.status(500).json({ error: 'Failed to complete task' });
   }
 }

@@ -166,7 +166,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({ metrics });
     } catch (error) {
-      console.error('Error fetching system health:', error);
       return res.status(500).json({ error: 'Failed to fetch system health' });
     }
   }

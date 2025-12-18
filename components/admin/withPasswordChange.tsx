@@ -48,7 +48,6 @@ router.push('/admin/change-password');
 
           setIsCheckingPassword(false);
         } catch (error) {
-          console.error('Error checking password status:', error);
           setIsCheckingPassword(false);
         }
       };

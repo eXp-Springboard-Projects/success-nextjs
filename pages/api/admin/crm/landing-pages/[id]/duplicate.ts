@@ -60,7 +60,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(201).json(newPage[0]);
   } catch (error) {
-    console.error('Error duplicating landing page:', error);
     return res.status(500).json({ error: 'Failed to duplicate landing page' });
   }
 }

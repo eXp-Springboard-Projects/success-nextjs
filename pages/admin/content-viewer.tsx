@@ -60,7 +60,6 @@ export default function ContentViewer() {
 
       setContent(allContent);
     } catch (error) {
-      console.error('Error fetching content:', error);
     } finally {
       setLoading(false);
     }

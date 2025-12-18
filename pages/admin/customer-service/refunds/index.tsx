@@ -44,7 +44,6 @@ export default function RefundsPage() {
       setRefunds(data.refunds || []);
       setTotalPages(data.pagination?.totalPages || 1);
     } catch (error) {
-      console.error('Failed to fetch refunds:', error);
     } finally {
       setLoading(false);
     }
@@ -256,7 +255,6 @@ function ProcessRefundModal({ onClose, onSuccess }: { onClose: () => void; onSuc
         alert(data.error || 'Failed to process refund');
       }
     } catch (error) {
-      console.error('Error processing refund:', error);
       alert('Failed to process refund');
     } finally {
       setSubmitting(false);
@@ -389,7 +387,6 @@ function CreateDisputeModal({ onClose, onSuccess }: { onClose: () => void; onSuc
         alert(data.error || 'Failed to create dispute');
       }
     } catch (error) {
-      console.error('Error creating dispute:', error);
       alert('Failed to create dispute');
     } finally {
       setSubmitting(false);

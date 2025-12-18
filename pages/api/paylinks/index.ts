@@ -64,7 +64,6 @@ async function getPayLinks(req: NextApiRequest, res: NextApiResponse, session: a
 
     return res.status(200).json(paylinkswithExpiry);
   } catch (error) {
-    console.error('Error fetching paylinks:', error);
     return res.status(500).json({ error: 'Failed to fetch paylinks' });
   }
 }
@@ -134,7 +133,6 @@ async function createPayLink(req: NextApiRequest, res: NextApiResponse, session:
 
         stripePriceId = price.id;
       } catch (stripeError) {
-        console.error('Stripe error:', stripeError);
         // Continue without Stripe if it fails
       }
     }
@@ -186,7 +184,6 @@ async function createPayLink(req: NextApiRequest, res: NextApiResponse, session:
 
     return res.status(201).json(paylink);
   } catch (error) {
-    console.error('Error creating paylink:', error);
     return res.status(500).json({ error: 'Failed to create paylink' });
   }
 }

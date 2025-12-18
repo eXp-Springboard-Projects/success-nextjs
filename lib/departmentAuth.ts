@@ -192,7 +192,6 @@ export async function logDepartmentAccess(
 
     await prisma.$disconnect();
   } catch (error) {
-    console.error('Failed to log department access:', error);
     // Don't throw - logging failure shouldn't break the app
   }
 }

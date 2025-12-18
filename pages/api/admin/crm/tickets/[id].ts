@@ -60,7 +60,6 @@ async function getTicket(id: string, res: NextApiResponse) {
       messages,
     });
   } catch (error) {
-    console.error('Error fetching ticket:', error);
     return res.status(500).json({ error: 'Failed to fetch ticket' });
   }
 }
@@ -133,7 +132,6 @@ async function updateTicket(id: string, req: NextApiRequest, res: NextApiRespons
 
     return res.status(200).json(ticket[0]);
   } catch (error) {
-    console.error('Error updating ticket:', error);
     return res.status(500).json({ error: 'Failed to update ticket' });
   }
 }

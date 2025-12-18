@@ -24,7 +24,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         unsubscribed: preferences.unsubscribed,
       });
     } catch (error) {
-      console.error('Error fetching preferences:', error);
       return res.status(500).json({ error: 'Failed to fetch preferences' });
     }
   }
@@ -43,7 +42,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({ success: true });
     } catch (error) {
-      console.error('Error updating preferences:', error);
       return res.status(500).json({ error: 'Failed to update preferences' });
     }
   }

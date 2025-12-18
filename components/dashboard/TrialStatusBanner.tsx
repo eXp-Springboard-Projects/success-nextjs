@@ -25,7 +25,6 @@ export default function TrialStatusBanner() {
         setTrialStatus(data);
       }
     } catch (error) {
-      console.error('Failed to fetch trial status:', error);
     } finally {
       setLoading(false);
     }

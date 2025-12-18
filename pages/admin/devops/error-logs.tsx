@@ -43,7 +43,6 @@ export default function ErrorLogsPage() {
         setLogs(data.logs);
       }
     } catch (error) {
-      console.error('Error fetching logs:', error);
     } finally {
       setLoading(false);
     }
@@ -62,7 +61,6 @@ export default function ErrorLogsPage() {
         alert('Failed to clear logs');
       }
     } catch (error) {
-      console.error('Error clearing logs:', error);
       alert('Failed to clear logs');
     } finally {
       setShowClearModal(false);

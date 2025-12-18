@@ -13,12 +13,10 @@ interface EmailOptions {
  */
 export async function sendMail(to: string, subject: string, html: string) {
   if (!process.env.RESEND_API_KEY) {
-    console.error('RESEND_API_KEY not configured');
     return { success: false, error: 'Email service not configured' };
   }
 
   if (!process.env.RESEND_FROM_EMAIL) {
-    console.error('RESEND_FROM_EMAIL not configured');
     return { success: false, error: 'Sender email not configured' };
   }
 
@@ -32,7 +30,6 @@ export async function sendMail(to: string, subject: string, html: string) {
 
 return { success: true, data: result.data };
   } catch (error: any) {
-    console.error('Failed to send email:', error);
     return { success: false, error: error.message };
   }
 }

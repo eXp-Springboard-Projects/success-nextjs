@@ -134,7 +134,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
   } catch (error: any) {
-    console.error('Error creating staff member:', error);
 
     // Check for duplicate email error
     if (error.code === '23505') {

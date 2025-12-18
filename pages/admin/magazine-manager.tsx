@@ -79,7 +79,6 @@ setMagazines([demoIssue]);
         setSelectedMagazine(demoIssue);
       }
     } catch (error) {
-      console.error('Error fetching magazines:', error);
 
       // Show demo issue on error
       const demoIssue = {
@@ -156,7 +155,6 @@ setMagazines([demoIssue]);
       setView('grid');
       fetchMagazines();
     } catch (error) {
-      console.error('Error uploading magazine:', error);
       alert(`Failed to upload magazine issue: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setUploadingPDF(false);

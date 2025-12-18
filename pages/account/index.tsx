@@ -38,7 +38,6 @@ export default function AccountPage() {
         });
       }
     } catch (error) {
-      console.error('Failed to fetch account data:', error);
     } finally {
       setLoading(false);
     }
