@@ -26,17 +26,23 @@ export default async function handler(
           publishedAt: {
             lte: now,
           },
-          OR: [
-            { expiresAt: null },
-            { expiresAt: { gt: now } },
-          ],
-          // Filter by target audience
-          OR: [
-            { targetAudience: 'ALL' },
-            ...(session.user.role === 'SUPER_ADMIN' || session.user.role === 'ADMIN' || session.user.role === 'EDITOR' || session.user.role === 'AUTHOR'
-              ? [{ targetAudience: 'STAFF' }]
-              : []),
-            ...(session.user.memberId ? [{ targetAudience: 'MEMBERS' }] : []),
+          AND: [
+            {
+              OR: [
+                { expiresAt: null },
+                { expiresAt: { gt: now } },
+              ],
+            },
+            {
+              // Filter by target audience
+              OR: [
+                { targetAudience: 'ALL' },
+                ...(session.user.role === 'SUPER_ADMIN' || session.user.role === 'ADMIN' || session.user.role === 'EDITOR' || session.user.role === 'AUTHOR'
+                  ? [{ targetAudience: 'STAFF' }]
+                  : []),
+                ...((session.user as any).memberId ? [{ targetAudience: 'MEMBERS' }] : []),
+              ],
+            },
           ],
         },
         orderBy: [
