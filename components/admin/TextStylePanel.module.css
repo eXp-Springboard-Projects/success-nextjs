@@ -246,3 +246,50 @@
 .input:focus {
   border-color: #667eea;
 }
+
+/* Custom Color Picker */
+.customColorPicker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+}
+
+.colorInput {
+  width: 50px;
+  height: 40px;
+  border: 2px solid #d0d0d0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.colorInput:hover {
+  border-color: #667eea;
+}
+
+.hexInput {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-family: 'Courier New', monospace;
+  text-transform: uppercase;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.hexInput:focus {
+  border-color: #667eea;
+}
+
+.customColorPicker .applyButton {
+  flex: 0 0 auto;
+  padding: 0.5rem 1rem;
+  white-space: nowrap;
+}

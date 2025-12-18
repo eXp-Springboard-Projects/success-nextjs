@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
+import { sendEmail } from '../../../../../lib/email';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -20,16 +21,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // In a real implementation, this would use an email service like SendGrid, Mailgun, etc.
-    // For now, we'll just log it and return success
-// Simulate sending delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Actually send the email using configured email service (Resend or SendGrid)
+    const success = await sendEmail({
+      to,
+      subject,
+      html: content,
+    });
+
+    if (!success) {
+      return res.status(500).json({
+        success: false,
+        error: 'Email service not configured or failed to send. Check RESEND_API_KEY or SENDGRID_API_KEY in environment variables.',
+      });
+    }
 
     return res.status(200).json({
       success: true,
       message: `Test email sent to ${to}`,
     });
-  } catch (error) {
-    return res.status(500).json({ error: 'Failed to send test email' });
+  } catch (error: any) {
+    console.error('Test email error:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to send test email',
+    });
   }
 }

@@ -370,8 +370,8 @@ export default function SiteMonitor() {
             <div className={styles.recommendation}>
               <span className={styles.recommendationIcon}>📧</span>
               <div>
-                <strong>Enable alerts</strong>
-                <p>Set up email or Slack notifications for critical issues (coming soon).</p>
+                <strong>Manual monitoring</strong>
+                <p>Check this dashboard regularly to monitor system health.</p>
               </div>
             </div>
           </div>

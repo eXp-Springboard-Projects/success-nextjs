@@ -31,6 +31,12 @@ export default function StaffDetail() {
   const [staff, setStaff] = useState<StaffMember | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailMessage, setEmailMessage] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -84,6 +90,67 @@ export default function StaffDetail() {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const handleSendEmail = async () => {
+    if (!emailSubject || !emailMessage) {
+      alert('Please provide both subject and message');
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const res = await fetch(`/api/admin/staff/${id}/send-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: emailSubject,
+          message: emailMessage,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(`✓ Email sent successfully to ${data.recipient.name}`);
+        setShowEmailModal(false);
+        setEmailSubject('');
+        setEmailMessage('');
+      } else {
+        alert(`✗ Failed to send email: ${data.error}`);
+      }
+    } catch (error) {
+      alert('✗ Failed to send email');
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!confirm('Send password reset email to this staff member?')) return;
+
+    setResettingPassword(true);
+    try {
+      const res = await fetch(`/api/admin/staff/${id}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          forceChangeOnLogin: true,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(`✓ Password reset email sent to ${data.recipient.name}`);
+      } else {
+        alert(`✗ Failed to send reset email: ${data.error}`);
+      }
+    } catch (error) {
+      alert('✗ Failed to reset password');
+    } finally {
+      setResettingPassword(false);
+    }
   };
 
   if (status === 'loading' || loading) {
@@ -201,14 +268,68 @@ export default function StaffDetail() {
             <Link href={`/admin/staff/${id}/edit`} className={styles.actionButton}>
               ✏️ Edit Profile
             </Link>
-            <button className={styles.actionButton} onClick={() => alert('Send email feature coming soon')}>
+            <button className={styles.actionButton} onClick={() => setShowEmailModal(true)}>
               📧 Send Email
             </button>
-            <button className={styles.actionButton} onClick={() => alert('Reset password feature coming soon')}>
-              🔐 Reset Password
+            <button className={styles.actionButton} onClick={handleResetPassword} disabled={resettingPassword}>
+              🔐 {resettingPassword ? 'Sending...' : 'Reset Password'}
             </button>
           </div>
         </div>
+
+        {/* Email Modal */}
+        {showEmailModal && (
+          <div className={styles.modal}>
+            <div className={styles.modalContent}>
+              <div className={styles.modalHeader}>
+                <h2>Send Email to {staff.name}</h2>
+                <button className={styles.closeButton} onClick={() => setShowEmailModal(false)}>
+                  ✕
+                </button>
+              </div>
+              <div className={styles.modalBody}>
+                <div className={styles.formGroup}>
+                  <label htmlFor="emailSubject">Subject</label>
+                  <input
+                    id="emailSubject"
+                    type="text"
+                    className={styles.input}
+                    value={emailSubject}
+                    onChange={(e) => setEmailSubject(e.target.value)}
+                    placeholder="Enter email subject"
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label htmlFor="emailMessage">Message</label>
+                  <textarea
+                    id="emailMessage"
+                    className={styles.textarea}
+                    value={emailMessage}
+                    onChange={(e) => setEmailMessage(e.target.value)}
+                    placeholder="Enter your message"
+                    rows={8}
+                  />
+                </div>
+              </div>
+              <div className={styles.modalFooter}>
+                <button
+                  className={styles.cancelButton}
+                  onClick={() => setShowEmailModal(false)}
+                  disabled={sendingEmail}
+                >
+                  Cancel
+                </button>
+                <button
+                  className={styles.sendButton}
+                  onClick={handleSendEmail}
+                  disabled={sendingEmail}
+                >
+                  {sendingEmail ? 'Sending...' : '📧 Send Email'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

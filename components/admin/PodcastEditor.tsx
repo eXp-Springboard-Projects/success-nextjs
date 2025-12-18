@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import dynamic from 'next/dynamic';
+import SimpleRichTextEditor from './SimpleRichTextEditor';
 import styles from './PostEditor.module.css';
-
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
-import 'react-quill/dist/quill.snow.css';
 
 interface PodcastEditorProps {
   podcastId?: string;
@@ -109,16 +106,6 @@ export default function PodcastEditor({ podcastId }: PodcastEditorProps) {
     return <div className={styles.loading}>Loading podcast...</div>;
   }
 
-  const modules = {
-    toolbar: [
-      [{ header: [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline'],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      ['link'],
-      ['clean'],
-    ],
-  };
-
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -181,12 +168,10 @@ export default function PodcastEditor({ podcastId }: PodcastEditorProps) {
 
           <div className={styles.field}>
             <label>Description</label>
-            <ReactQuill
-              theme="snow"
-              value={description}
+            <SimpleRichTextEditor
+              content={description}
               onChange={setDescription}
-              modules={modules}
-              className={styles.editor}
+              placeholder="Describe your podcast..."
             />
           </div>
         </div>

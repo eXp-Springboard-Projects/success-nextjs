@@ -103,7 +103,7 @@ export default function MarketingDashboard() {
               </div>
             </Link>
 
-            <Link href="/admin/crm/emails/new" className={styles.actionCard}>
+            <Link href="/admin/crm/campaigns/new" className={styles.actionCard}>
               <div className={styles.actionIcon}>✉️</div>
               <div className={styles.actionTitle}>Send Newsletter</div>
               <div className={styles.actionDescription}>

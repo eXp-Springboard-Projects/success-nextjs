@@ -35,6 +35,7 @@ interface StaffMember {
   email: string;
   role: string;
   emailVerified: boolean;
+  isActive?: boolean;
   bio?: string;
   departments?: string[];
 }
@@ -48,6 +49,7 @@ export default function StaffEdit() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [deactivating, setDeactivating] = useState(false);
 
   // Form fields
   const [name, setName] = useState('');
@@ -166,6 +168,63 @@ export default function StaffEdit() {
       setDepartments(departments.filter(d => d !== dept));
     } else {
       setDepartments([...departments, dept]);
+    }
+  };
+
+  const handleDeactivate = async () => {
+    if (!confirm(`Are you sure you want to deactivate ${staff?.name}'s account? They will not be able to log in.`)) {
+      return;
+    }
+
+    const reason = prompt('Optional: Provide a reason for deactivation');
+
+    setDeactivating(true);
+    try {
+      const res = await fetch(`/api/admin/staff/${id}/deactivate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(`✓ Account deactivated successfully`);
+        await fetchStaffMember(); // Refresh data
+      } else {
+        alert(`✗ Failed to deactivate: ${data.error}`);
+      }
+    } catch (error) {
+      alert('✗ Failed to deactivate account');
+    } finally {
+      setDeactivating(false);
+    }
+  };
+
+  const handleReactivate = async () => {
+    if (!confirm(`Reactivate ${staff?.name}'s account? They will be able to log in again.`)) {
+      return;
+    }
+
+    setDeactivating(true);
+    try {
+      const res = await fetch(`/api/admin/staff/${id}/reactivate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(`✓ Account reactivated successfully`);
+        await fetchStaffMember(); // Refresh data
+      } else {
+        alert(`✗ Failed to reactivate: ${data.error}`);
+      }
+    } catch (error) {
+      alert('✗ Failed to reactivate account');
+    } finally {
+      setDeactivating(false);
     }
   };
 
@@ -316,18 +375,24 @@ export default function StaffEdit() {
           </form>
         </div>
 
-        {staff && (
+        {staff && isSuperAdmin && (
           <div className={styles.dangerZone}>
-            <h3>Danger Zone</h3>
+            <h3>{staff.isActive !== false ? 'Danger Zone' : 'Account Status'}</h3>
             <p>
-              Deactivating this account will prevent the user from logging in.
-              This action can be reversed.
+              {staff.isActive !== false
+                ? 'Deactivating this account will prevent the user from logging in. This action can be reversed.'
+                : 'This account is currently deactivated. Reactivate to allow login.'}
             </p>
             <button
-              className={styles.dangerButton}
-              onClick={() => alert('Deactivate feature coming soon')}
+              className={staff.isActive !== false ? styles.dangerButton : styles.reactivateButton}
+              onClick={staff.isActive !== false ? handleDeactivate : handleReactivate}
+              disabled={deactivating}
             >
-              🚫 Deactivate Account
+              {deactivating
+                ? 'Processing...'
+                : staff.isActive !== false
+                ? '🚫 Deactivate Account'
+                : '✅ Reactivate Account'}
             </button>
           </div>
         )}

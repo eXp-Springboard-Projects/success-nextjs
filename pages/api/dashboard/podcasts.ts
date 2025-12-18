@@ -56,8 +56,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(404).json({ error: 'Podcast not found' });
       }
 
-      // Feature coming soon
-      return res.status(200).json({ message: 'Listen history tracking coming soon' });
+      // Listen history tracking not yet implemented
+      return res.status(200).json({ message: 'Listen history tracking not available' });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });

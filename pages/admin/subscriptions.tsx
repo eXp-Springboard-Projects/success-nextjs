@@ -46,8 +46,10 @@ export default function AdminSubscriptions() {
       const url = filter === 'all' ? '/api/subscriptions' : `/api/subscriptions?status=${filter}`;
       const res = await fetch(url);
       const data = await res.json();
-      setSubscriptions(data);
+      // API returns { subscriptions, pagination }
+      setSubscriptions(data.subscriptions || data);
     } catch (error) {
+      console.error('Error fetching subscriptions:', error);
     } finally {
       setLoading(false);
     }

@@ -402,7 +402,7 @@ export default function EmailManager() {
             <div className={styles.detailedStats}>
               <h2>📊 Performance Overview</h2>
               <p className={styles.comingSoon}>
-                Detailed analytics charts and graphs coming soon. This will include:
+                Additional analytics features planned:
               </p>
               <ul className={styles.featureList}>
                 <li>📈 Growth trends over time</li>
