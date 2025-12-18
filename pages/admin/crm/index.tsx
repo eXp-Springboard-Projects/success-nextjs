@@ -253,7 +253,7 @@ export default function CRMDashboard() {
               <div className={styles.actionLabel}>New Deal</div>
             </a>
 
-            <a href="/admin/help-desk/tickets/new" className={styles.actionCard}>
+            <a href="/admin/crm/tickets/new" className={styles.actionCard}>
               <div className={styles.actionIcon} style={{ color: '#f59e0b' }}>🎫</div>
               <div className={styles.actionLabel}>New Ticket</div>
             </a>
