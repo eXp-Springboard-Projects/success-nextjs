@@ -88,7 +88,6 @@ export default function CRMReports() {
           break;
       }
     } catch (error) {
-      console.error('Error fetching reports:', error);
     } finally {
       setLoading(false);
     }
@@ -104,7 +103,6 @@ export default function CRMReports() {
       a.download = `${activeTab}-report-${new Date().toISOString().split('T')[0]}.${format}`;
       a.click();
     } catch (error) {
-      console.error('Error exporting report:', error);
     }
   };
 

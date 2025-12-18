@@ -22,14 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // In a real implementation, this would use an email service like SendGrid, Mailgun, etc.
     // For now, we'll just log it and return success
-    console.log('Sending test email:', {
-      to,
-      from: `${fromName} <${fromEmail}>`,
-      subject,
-      contentLength: content.length,
-    });
-
-    // Simulate sending delay
+// Simulate sending delay
     await new Promise(resolve => setTimeout(resolve, 500));
 
     return res.status(200).json({
@@ -37,7 +30,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: `Test email sent to ${to}`,
     });
   } catch (error) {
-    console.error('Error sending test email:', error);
     return res.status(500).json({ error: 'Failed to send test email' });
   }
 }

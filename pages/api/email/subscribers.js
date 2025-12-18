@@ -10,7 +10,6 @@ export default async function handler(req, res) {
 
     res.status(200).json(subscribers);
   } catch (error) {
-    console.error('Error fetching subscribers:', error);
     res.status(500).json({ message: 'Failed to fetch subscribers' });
   }
 }

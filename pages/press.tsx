@@ -164,7 +164,6 @@ export async function getServerSideProps() {
       }
     };
   } catch (error) {
-    console.error('Error fetching press releases:', error);
     return {
       props: {
         recentReleases: [],

@@ -54,7 +54,6 @@ export default function ContactsPage() {
       const data = await res.json();
       setContacts(data);
     } catch (error) {
-      console.error('Error fetching contacts:', error);
     } finally {
       setLoading(false);
     }
@@ -95,7 +94,6 @@ export default function ContactsPage() {
         alert(error.message || 'Failed to add contact');
       }
     } catch (error) {
-      console.error('Error adding contact:', error);
       alert('Failed to add contact');
     }
   };
@@ -112,7 +110,6 @@ export default function ContactsPage() {
         fetchContacts();
       }
     } catch (error) {
-      console.error('Error deleting contact:', error);
     }
   };
 

@@ -99,7 +99,6 @@ export default function SEOManager() {
         });
       }
     } catch (error) {
-      console.error('Error fetching SEO data:', error);
       setMessage({ type: 'error', text: 'Failed to load SEO settings' });
     } finally {
       setLoading(false);
@@ -179,7 +178,6 @@ export default function SEOManager() {
       }).catch(() => {});
 
     } catch (error) {
-      console.error('Error saving SEO settings:', error);
       setMessage({ type: 'error', text: 'Failed to save SEO settings' });
     } finally {
       setSaving(false);

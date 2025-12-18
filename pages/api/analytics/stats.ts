@@ -171,7 +171,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       viewsChart,
     });
   } catch (error) {
-    console.error('Error fetching analytics:', error);
     return res.status(500).json({ error: 'Failed to fetch analytics' });
   }
 }

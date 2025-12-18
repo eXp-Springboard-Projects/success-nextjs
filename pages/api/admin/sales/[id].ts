@@ -111,7 +111,6 @@ export default async function handler(
     // Not found
     return res.status(404).json({ error: 'Transaction not found' });
   } catch (error: any) {
-    console.error('Transaction detail API error:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }

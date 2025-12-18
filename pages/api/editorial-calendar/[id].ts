@@ -38,7 +38,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(item);
     } catch (error) {
-      console.error('Error fetching editorial item:', error);
       return res.status(500).json({ error: 'Failed to fetch editorial item' });
     }
   }
@@ -85,7 +84,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(item);
     } catch (error) {
-      console.error('Error updating editorial item:', error);
       return res.status(500).json({ error: 'Failed to update editorial item' });
     }
   }
@@ -98,7 +96,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({ success: true });
     } catch (error) {
-      console.error('Error deleting editorial item:', error);
       return res.status(500).json({ error: 'Failed to delete editorial item' });
     }
   }

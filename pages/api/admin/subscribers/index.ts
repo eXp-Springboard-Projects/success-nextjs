@@ -95,7 +95,6 @@ export default async function handler(
         totalPages: Math.ceil(total / limitNum),
       });
     } catch (error) {
-      console.error('Error fetching subscribers:', error);
       return res.status(500).json({ message: 'Failed to fetch subscribers' });
     }
   }
@@ -135,7 +134,6 @@ export default async function handler(
 
       return res.status(201).json(subscriber);
     } catch (error) {
-      console.error('Error creating subscriber:', error);
       return res.status(500).json({ message: 'Failed to create subscriber' });
     }
   }

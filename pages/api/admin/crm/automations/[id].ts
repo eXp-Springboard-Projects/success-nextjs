@@ -41,7 +41,6 @@ async function getAutomation(id: string, res: NextApiResponse) {
 
     return res.status(200).json(automation[0]);
   } catch (error) {
-    console.error('Error fetching automation:', error);
     return res.status(500).json({ error: 'Failed to fetch automation' });
   }
 }
@@ -104,7 +103,6 @@ async function updateAutomation(id: string, req: NextApiRequest, res: NextApiRes
 
     return res.status(200).json(automation[0]);
   } catch (error) {
-    console.error('Error updating automation:', error);
     return res.status(500).json({ error: 'Failed to update automation' });
   }
 }
@@ -114,7 +112,6 @@ async function deleteAutomation(id: string, res: NextApiResponse) {
     await prisma.$executeRaw`DELETE FROM automations WHERE id = ${id}`;
     return res.status(200).json({ message: 'Automation deleted successfully' });
   } catch (error) {
-    console.error('Error deleting automation:', error);
     return res.status(500).json({ error: 'Failed to delete automation' });
   }
 }

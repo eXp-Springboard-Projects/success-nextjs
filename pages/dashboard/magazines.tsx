@@ -58,7 +58,6 @@ export default function MagazinesPage() {
       const data = await response.json();
       setMagazines(data);
     } catch (error) {
-      console.error('Error fetching magazines:', error);
     } finally {
       setLoading(false);
     }
@@ -90,7 +89,6 @@ export default function MagazinesPage() {
         }),
       });
     } catch (error) {
-      console.error('Error updating progress:', error);
     }
   };
 

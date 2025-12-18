@@ -50,7 +50,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({ enrollments });
   } catch (error) {
-    console.error('Error fetching enrollments:', error);
     return res.status(500).json({ error: 'Failed to fetch enrollments' });
   }
 }

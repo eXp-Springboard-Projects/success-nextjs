@@ -48,7 +48,6 @@ export default function PublicForm() {
       });
       setFormData(initialData);
     } catch (error) {
-      console.error('Error fetching form:', error);
       setForm({ error: 'Failed to load form' });
     } finally {
       setLoading(false);
@@ -101,7 +100,6 @@ export default function PublicForm() {
         alert(data.error || 'Failed to submit form');
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
       alert('Error submitting form. Please try again.');
     } finally {
       setSubmitting(false);

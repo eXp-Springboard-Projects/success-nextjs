@@ -37,14 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const totalPodcastsCount = podcastsResponse ? parseInt(podcastsResponse.headers.get('X-Wp-Total') || podcastsResponse.headers.get('x-wp-total') || '0') : 0;
       const totalCategoriesCount = parseInt(categoriesResponse.headers.get('X-Wp-Total') || categoriesResponse.headers.get('x-wp-total') || '0');
 
-      console.log('WordPress API Totals:', {
-        posts: totalPostsCount,
-        videos: totalVideosCount,
-        podcasts: totalPodcastsCount,
-        categories: totalCategoriesCount,
-      });
-
-      // Fetch recent posts for period calculation (last 100 is enough for recent data)
+// Fetch recent posts for period calculation (last 100 is enough for recent data)
       const [posts, videos, podcasts] = await Promise.all([
         fetchWordPressData('posts?per_page=100&orderby=date&order=desc'),
         fetchWordPressData('videos?per_page=100&orderby=date&order=desc').catch(() => []),
@@ -68,16 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         prisma.editorial_calendar.count(),
       ]);
 
-      console.log('Database Stats:', {
-        totalUsers,
-        activeSubscribers,
-        totalBookmarks,
-        newsletterSubscribers,
-        magazineIssues,
-        editorialItems,
-      });
-
-      // Calculate content stats
+// Calculate content stats
       const now = new Date();
       const recentPosts = posts.filter((post: any) => {
         const postDate = new Date(post.date);
@@ -86,13 +70,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const recentVideos = videos.filter((v: any) => new Date(v.date) >= startDate);
       const recentPodcasts = podcasts.filter((p: any) => new Date(p.date) >= startDate);
-
-      console.log('Recent Content (last ' + days + ' days):', {
-        posts: recentPosts.length,
-        videos: recentVideos.length,
-        podcasts: recentPodcasts.length,
-        startDate: startDate.toISOString(),
-      });
 
       // Get editorial calendar stats
       const editorialStats = await prisma.editorial_calendar.groupBy({
@@ -142,7 +119,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(dashboardData);
     } catch (error) {
-      console.error('Error fetching dashboard analytics:', error);
       return res.status(500).json({
         error: 'Failed to fetch analytics',
         message: error instanceof Error ? error.message : 'Unknown error'

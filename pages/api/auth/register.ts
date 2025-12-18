@@ -81,7 +81,6 @@ export default async function handler(
       try {
         await markInviteCodeAsUsed(inviteCode, userId);
       } catch (err) {
-        console.error('Failed to mark invite code as used:', err);
         // Don't fail registration if this fails
       }
     }
@@ -90,11 +89,9 @@ export default async function handler(
     try {
       const emailResult = await sendStaffWelcomeEmail(user.email, user.name, DEFAULT_PASSWORD);
       if (!emailResult.success) {
-        console.error('Failed to send welcome email:', emailResult.error);
         // Don't fail registration if email fails
       }
     } catch (err) {
-      console.error('Error sending welcome email:', err);
       // Don't fail registration if email fails
     }
 
@@ -111,7 +108,6 @@ export default async function handler(
     });
 
   } catch (error) {
-    console.error('Registration error:', error);
     return res.status(500).json({ error: 'Failed to create account' });
   }
 }

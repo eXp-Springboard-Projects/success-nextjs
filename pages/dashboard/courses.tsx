@@ -55,7 +55,6 @@ export default function CoursesPage() {
       const data = await response.json();
       setCourses(data);
     } catch (error) {
-      console.error('Error fetching courses:', error);
     } finally {
       setLoading(false);
     }
@@ -73,7 +72,6 @@ export default function CoursesPage() {
         fetchCourses(); // Refresh courses
       }
     } catch (error) {
-      console.error('Error enrolling:', error);
     }
   };
 

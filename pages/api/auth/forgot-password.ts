@@ -49,7 +49,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const emailResult = await sendPasswordResetEmail(user.email, user.name || 'User', resetUrl);
 
     if (!emailResult.success) {
-      console.error('Failed to send password reset email:', emailResult.error);
       // Don't fail the request - user doesn't know if email exists anyway
     }
 
@@ -58,7 +57,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: 'If an account exists with that email, a password reset link has been sent.',
     });
   } catch (error) {
-    console.error('Error in forgot password:', error);
     return res.status(500).json({ error: 'Failed to process request' });
   }
 }

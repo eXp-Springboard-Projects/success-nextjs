@@ -64,16 +64,12 @@ export default async function handler(
         },
       });
 
-      console.log(`✅ Marked order ${order.orderNumber} as fulfilled`);
-
-      // If this is a WooCommerce order, sync back to WooCommerce
+// If this is a WooCommerce order, sync back to WooCommerce
       if (order.woocommerceOrderId) {
         try {
           // Mark order as completed in WooCommerce
           await woocommerce.completeOrder(order.woocommerceOrderId);
-          console.log(`✅ Synced status to WooCommerce order #${order.woocommerceOrderId}`);
-
-          // Add tracking info if provided
+// Add tracking info if provided
           if (trackingNumber && trackingCarrier) {
             await woocommerce.addTracking(order.woocommerceOrderId, {
               trackingNumber,
@@ -81,8 +77,7 @@ export default async function handler(
               trackingUrl: trackingUrl || undefined,
               dateShipped: new Date().toISOString(),
             });
-            console.log(`✅ Added tracking to WooCommerce order #${order.woocommerceOrderId}`);
-          }
+}
 
           // Add customer note if provided
           if (customerNotes) {
@@ -94,7 +89,6 @@ export default async function handler(
           }
 
         } catch (wooError: any) {
-          console.error('⚠️  Failed to sync with WooCommerce:', wooError);
           // Don't fail the request - order is fulfilled in our system
         }
       }
@@ -132,7 +126,6 @@ export default async function handler(
       });
 
     } catch (error: any) {
-      console.error('Error fulfilling order:', error);
       return res.status(500).json({ error: error.message || 'Internal server error' });
     }
   }

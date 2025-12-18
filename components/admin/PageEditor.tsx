@@ -44,7 +44,6 @@ export default function PageEditor({ pageId }: PageEditorProps) {
       setSeoTitle(page.seoTitle || '');
       setSeoDescription(page.seoDescription || '');
     } catch (error) {
-      console.error('Error fetching page:', error);
       alert('Failed to load page');
     } finally {
       setLoading(false);
@@ -100,7 +99,6 @@ export default function PageEditor({ pageId }: PageEditorProps) {
         throw new Error('Failed to save page');
       }
     } catch (error) {
-      console.error('Error saving page:', error);
       alert('Failed to save page');
     } finally {
       setSaving(false);

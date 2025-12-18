@@ -47,7 +47,6 @@ export default function CommentsModeration() {
         setComments(data.comments || []);
       }
     } catch (error) {
-      console.error('Error fetching comments:', error);
     } finally {
       setLoading(false);
     }
@@ -92,7 +91,6 @@ export default function CommentsModeration() {
         await fetchComments();
       }
     } catch (error) {
-      console.error('Error performing bulk action:', error);
       alert('Failed to perform bulk action');
     }
   };
@@ -109,7 +107,6 @@ export default function CommentsModeration() {
         await fetchComments();
       }
     } catch (error) {
-      console.error('Error updating comment:', error);
       alert('Failed to update comment');
     }
   };

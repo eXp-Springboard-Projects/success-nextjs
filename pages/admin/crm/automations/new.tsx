@@ -43,7 +43,6 @@ export default function NewAutomationPage() {
         setTemplates(data.templates || []);
       }
     } catch (error) {
-      console.error('Error fetching templates:', error);
     }
   };
 
@@ -55,7 +54,6 @@ export default function NewAutomationPage() {
         setLists(data.lists || []);
       }
     } catch (error) {
-      console.error('Error fetching lists:', error);
     }
   };
 
@@ -130,7 +128,6 @@ export default function NewAutomationPage() {
         alert('Failed to create automation');
       }
     } catch (error) {
-      console.error('Error creating automation:', error);
       alert('Failed to create automation');
     } finally {
       setLoading(false);

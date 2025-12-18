@@ -33,7 +33,6 @@ async function getTag(req, res, id) {
 
     return res.status(200).json(tag);
   } catch (error) {
-    console.error('Error fetching tag:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -52,7 +51,6 @@ async function updateTag(req, res, id) {
 
     return res.status(200).json(tag);
   } catch (error) {
-    console.error('Error updating tag:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -65,7 +63,6 @@ async function deleteTag(req, res, id) {
 
     return res.status(200).json({ message: 'Tag deleted successfully' });
   } catch (error) {
-    console.error('Error deleting tag:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

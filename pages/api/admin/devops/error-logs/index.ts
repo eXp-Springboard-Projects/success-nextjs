@@ -45,7 +45,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({ logs });
     } catch (error) {
-      console.error('Error fetching error logs:', error);
       // Return empty array if query fails
       return res.status(200).json({ logs: [] });
     }

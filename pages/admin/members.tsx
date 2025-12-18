@@ -83,10 +83,8 @@ export default function MembersPage() {
         const data = await res.json();
         setMembers(data);
       } else {
-        console.error('Failed to fetch members');
       }
     } catch (error) {
-      console.error('Error fetching members:', error);
     } finally {
       setLoading(false);
     }
@@ -139,7 +137,6 @@ export default function MembersPage() {
         showToast(error.message || 'Failed to update customer', 'error');
       }
     } catch (error) {
-      console.error('Error updating member:', error);
       showToast('Failed to update customer', 'error');
     } finally {
       setSaving(false);

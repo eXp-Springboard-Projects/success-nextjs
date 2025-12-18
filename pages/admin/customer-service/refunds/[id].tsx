@@ -41,7 +41,6 @@ export default function RefundDetailPage() {
       const data = await res.json();
       setRefund(data.refund);
     } catch (error) {
-      console.error('Failed to fetch refund:', error);
     } finally {
       setLoading(false);
     }
@@ -243,7 +242,6 @@ function UpdateStatusModal({
         alert(data.error || 'Failed to update status');
       }
     } catch (error) {
-      console.error('Error updating status:', error);
       alert('Failed to update status');
     } finally {
       setSubmitting(false);
@@ -323,7 +321,6 @@ function AddNotesModal({
         alert(data.error || 'Failed to add notes');
       }
     } catch (error) {
-      console.error('Error adding notes:', error);
       alert('Failed to add notes');
     } finally {
       setSubmitting(false);

@@ -50,7 +50,6 @@ async function getSequences(req: NextApiRequest, res: NextApiResponse) {
 
     return res.status(200).json({ sequences });
   } catch (error) {
-    console.error('Error fetching sequences:', error);
     return res.status(500).json({ error: 'Failed to fetch sequences' });
   }
 }
@@ -85,7 +84,6 @@ async function createSequence(req: NextApiRequest, res: NextApiResponse, session
 
     return res.status(201).json(sequence[0]);
   } catch (error) {
-    console.error('Error creating sequence:', error);
     return res.status(500).json({ error: 'Failed to create sequence' });
   }
 }

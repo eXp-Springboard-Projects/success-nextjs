@@ -45,7 +45,6 @@ async function getAutomations(req: NextApiRequest, res: NextApiResponse) {
 
     return res.status(200).json({ automations });
   } catch (error) {
-    console.error('Error fetching automations:', error);
     return res.status(500).json({ error: 'Failed to fetch automations' });
   }
 }
@@ -80,7 +79,6 @@ async function createAutomation(req: NextApiRequest, res: NextApiResponse, sessi
 
     return res.status(201).json(automation[0]);
   } catch (error) {
-    console.error('Error creating automation:', error);
     return res.status(500).json({ error: 'Failed to create automation' });
   }
 }

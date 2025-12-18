@@ -45,7 +45,6 @@ async function getMedia(req, res) {
 
     return res.status(200).json(media);
   } catch (error) {
-    console.error('Error fetching media:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

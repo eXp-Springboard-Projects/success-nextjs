@@ -33,7 +33,6 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
 
   } catch (error) {
-    console.error('Error fetching notification count:', error);
     return res.status(200).json({ count: 0, hasUnread: false });
   } finally {
     await prisma.$disconnect();

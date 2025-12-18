@@ -119,7 +119,6 @@ export async function getActiveSubscription(userId: string): Promise<Subscriptio
       cancelAtPeriodEnd: false,
     };
   } catch (error) {
-    console.error('Error checking subscription status:', error);
     return {
       hasActiveSubscription: false,
       tier: 'free',

@@ -240,7 +240,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       status: errors.length > 0 && processedCount === 0 ? 'FAILED' : 'COMPLETED',
     });
   } catch (error: any) {
-    console.error('Bulk assign staff error:', error);
     return res.status(500).json({ error: error.message || 'Failed to perform bulk operation' });
   }
 }

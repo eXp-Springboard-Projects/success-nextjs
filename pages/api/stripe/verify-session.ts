@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-10-29.clover',
+  apiVersion: '2025-09-30.clover',
 });
 
 const prisma = new PrismaClient();
@@ -53,7 +53,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(400).json({ error: 'Payment not completed' });
   } catch (error) {
-    console.error('Session verification error:', error);
     return res.status(500).json({ error: 'Failed to verify session' });
   }
 }

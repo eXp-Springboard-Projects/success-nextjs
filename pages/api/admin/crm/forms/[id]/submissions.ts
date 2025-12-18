@@ -46,7 +46,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
   } catch (error) {
-    console.error('Error fetching submissions:', error);
     return res.status(500).json({ error: 'Failed to fetch submissions' });
   }
 }

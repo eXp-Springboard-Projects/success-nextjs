@@ -50,7 +50,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(201).json(createdMessage[0]);
   } catch (error) {
-    console.error('Error adding message:', error);
     return res.status(500).json({ error: 'Failed to add message' });
   }
 }

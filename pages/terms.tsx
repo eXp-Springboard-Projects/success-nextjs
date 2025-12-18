@@ -41,7 +41,6 @@ export async function getServerSideProps() {
       }
     };
   } catch (error) {
-    console.error('Error fetching terms of use page:', error);
     return { notFound: true };
   }
 }

@@ -59,7 +59,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(201).json(newTemplate[0]);
   } catch (error) {
-    console.error('Error duplicating template:', error);
     return res.status(500).json({ error: 'Failed to duplicate template' });
   }
 }

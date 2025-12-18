@@ -74,7 +74,6 @@ export default function SubscribersPage() {
         setTotalPages(data.totalPages);
       }
     } catch (error) {
-      console.error('Error fetching subscribers:', error);
     } finally {
       setLoading(false);
     }

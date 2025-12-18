@@ -128,7 +128,6 @@ export async function checkTrialAccess(userEmail: string): Promise<TrialAccessRe
       reason: 'no_access',
     };
   } catch (error) {
-    console.error('Error checking trial access:', error);
     return {
       hasAccess: false,
       reason: 'no_access',

@@ -45,7 +45,6 @@ export default function AdminMedia() {
       const data = await res.json();
       setMedia(data);
     } catch (error) {
-      console.error('Error fetching media:', error);
     } finally {
       setLoading(false);
     }
@@ -84,7 +83,6 @@ export default function AdminMedia() {
         throw new Error('Upload failed');
       }
     } catch (error) {
-      console.error('Error uploading file:', error);
       alert(`Failed to upload ${file.name}`);
     }
   };
@@ -103,7 +101,6 @@ export default function AdminMedia() {
         throw new Error('Failed to delete media');
       }
     } catch (error) {
-      console.error('Error deleting media:', error);
       alert('Failed to delete media');
     }
   };
@@ -131,7 +128,6 @@ export default function AdminMedia() {
         }
       );
     } catch (error) {
-      console.error('Error exporting PDF:', error);
       alert('Failed to export PDF');
     }
   };

@@ -43,7 +43,6 @@ async function getSubscriptions(req, res) {
 
     return res.status(200).json(subscriptions);
   } catch (error) {
-    console.error('Error fetching subscriptions:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

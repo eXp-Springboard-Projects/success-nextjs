@@ -70,7 +70,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         }
       } catch (stripeError) {
-        console.error('Error fetching Stripe payment method:', stripeError);
         // Continue without payment method info
       }
     }
@@ -88,7 +87,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       paymentMethod,
     });
   } catch (error) {
-    console.error('Subscription status API error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   } finally {
     await prisma.$disconnect();

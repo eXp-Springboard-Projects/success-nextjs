@@ -37,7 +37,6 @@ export default function NewContactPage() {
         alert(error.error || 'Failed to create contact');
       }
     } catch (error) {
-      console.error('Error creating contact:', error);
       alert('Failed to create contact');
     } finally {
       setSaving(false);

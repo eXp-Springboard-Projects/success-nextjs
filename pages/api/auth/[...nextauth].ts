@@ -2,6 +2,7 @@ import NextAuth, { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { prisma } from '../../../lib/prisma';
 import bcrypt from 'bcryptjs';
+import { logger } from '../../../lib/logger';
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -27,7 +28,7 @@ export const authOptions: AuthOptions = {
         const user = users[0];
 
         if (!user) {
-          console.log('User not found:', credentials.email);
+          logger.debug('User not found', { email: credentials.email });
           throw new Error('Invalid credentials');
         }
 
@@ -37,11 +38,11 @@ export const authOptions: AuthOptions = {
         );
 
         if (!isPasswordValid) {
-          console.log('Invalid password for:', credentials.email);
+          logger.debug('Invalid password', { email: credentials.email });
           throw new Error('Invalid credentials');
         }
 
-        console.log('User authenticated:', { email: user.email, role: user.role });
+        logger.info('User authenticated', { email: user.email, role: user.role });
 
         // Update last login timestamp with raw query
         await prisma.$executeRaw`
@@ -70,7 +71,7 @@ export const authOptions: AuthOptions = {
         token.avatar = user.avatar;
         token.hasChangedDefaultPassword = user.hasChangedDefaultPassword;
         token.membershipTier = user.membershipTier || 'FREE';
-        console.log('JWT callback - setting role:', user.role);
+        logger.debug('JWT callback - setting role', { role: user.role });
       }
       return token;
     },
@@ -81,7 +82,7 @@ export const authOptions: AuthOptions = {
         session.user.avatar = token.avatar;
         session.user.hasChangedDefaultPassword = token.hasChangedDefaultPassword;
         session.user.membershipTier = token.membershipTier || 'FREE';
-        console.log('Session callback - user role:', token.role);
+        logger.debug('Session callback', { role: token.role });
       }
       return session;
     },

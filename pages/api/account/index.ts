@@ -48,7 +48,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       bookmarksCount: user.bookmarks.length,
     });
   } catch (error) {
-    console.error('Error fetching account data:', error);
     return res.status(500).json({ error: 'Failed to fetch account data' });
   }
 }

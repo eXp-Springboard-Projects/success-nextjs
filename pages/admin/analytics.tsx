@@ -58,7 +58,6 @@ export default function Analytics() {
       const data = await res.json();
       setAnalytics(data);
     } catch (error) {
-      console.error('Error fetching analytics:', error);
       setError('Failed to load analytics data. Please try again.');
     } finally {
       setLoading(false);

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { BookOpen, Star, Mail, Bookmark, RefreshCw } from 'lucide-react';
 import styles from './DashboardStats.module.css';
 
 interface DashboardData {
@@ -49,8 +50,8 @@ export default function DashboardStats() {
         const dashboardData = await res.json();
         setData(dashboardData);
       }
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+    } catch {
+      // Silent fail - dashboard will show empty state
     } finally {
       setLoading(false);
     }
@@ -81,28 +82,28 @@ export default function DashboardStats() {
       label: 'Total Content',
       value: data.overview.totalPosts + data.overview.totalVideos + data.overview.totalPodcasts,
       change: `+${data.content.postsThisPeriod + data.content.videosThisPeriod + data.content.podcastsThisPeriod} this period`,
-      icon: '📚',
+      icon: BookOpen,
       color: '#667eea',
     },
     {
       label: 'Active Subscribers',
       value: data.overview.activeSubscribers,
       change: 'SUCCESS+ Members',
-      icon: '⭐',
+      icon: Star,
       color: '#d32f2f',
     },
     {
       label: 'Newsletter Subscribers',
       value: data.overview.newsletterSubscribers,
       change: 'Total subscribers',
-      icon: '📧',
+      icon: Mail,
       color: '#43e97b',
     },
     {
       label: 'Content Bookmarks',
       value: data.engagement.totalBookmarks,
       change: `${data.engagement.avgBookmarksPerUser} avg per user`,
-      icon: '🔖',
+      icon: Bookmark,
       color: '#f093fb',
     },
   ];
@@ -136,23 +137,26 @@ export default function DashboardStats() {
           disabled={loading}
           title="Refresh data"
         >
-          🔄 Refresh Data
+          <RefreshCw size={16} /> Refresh Data
         </button>
       </div>
 
       <div className={styles.statsGrid}>
-        {stats.map((stat) => (
-          <div key={stat.label} className={styles.statCard} style={{ borderTopColor: stat.color }}>
-            <div className={styles.statIcon} style={{ backgroundColor: `${stat.color}20`, color: stat.color }}>
-              {stat.icon}
+        {stats.map((stat) => {
+          const IconComponent = stat.icon;
+          return (
+            <div key={stat.label} className={styles.statCard} style={{ borderTopColor: stat.color }}>
+              <div className={styles.statIcon} style={{ backgroundColor: `${stat.color}20`, color: stat.color }}>
+                <IconComponent size={24} />
+              </div>
+              <div className={styles.statContent}>
+                <h3 className={styles.statLabel}>{stat.label}</h3>
+                <p className={styles.statValue}>{stat.value.toLocaleString()}</p>
+                <p className={styles.statChange}>{stat.change}</p>
+              </div>
             </div>
-            <div className={styles.statContent}>
-              <h3 className={styles.statLabel}>{stat.label}</h3>
-              <p className={styles.statValue}>{stat.value.toLocaleString()}</p>
-              <p className={styles.statChange}>{stat.change}</p>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className={styles.detailsGrid}>

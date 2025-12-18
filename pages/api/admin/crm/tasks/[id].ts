@@ -52,7 +52,6 @@ async function getTask(id: string, res: NextApiResponse) {
 
     return res.status(200).json(task[0]);
   } catch (error) {
-    console.error('Error fetching task:', error);
     return res.status(500).json({ error: 'Failed to fetch task' });
   }
 }
@@ -184,7 +183,6 @@ async function updateTask(id: string, req: NextApiRequest, res: NextApiResponse,
 
     return res.status(200).json(task[0]);
   } catch (error) {
-    console.error('Error updating task:', error);
     return res.status(500).json({ error: 'Failed to update task' });
   }
 }
@@ -194,7 +192,6 @@ async function deleteTask(id: string, res: NextApiResponse) {
     await prisma.$executeRaw`DELETE FROM tasks WHERE id = ${id}`;
     return res.status(200).json({ message: 'Task deleted successfully' });
   } catch (error) {
-    console.error('Error deleting task:', error);
     return res.status(500).json({ error: 'Failed to delete task' });
   }
 }

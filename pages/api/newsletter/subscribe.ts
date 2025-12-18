@@ -93,19 +93,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Optional: Send welcome email
     await sendWelcomeEmail(email, firstName);
 
-    // Log activity
-    console.log('Newsletter subscription:', {
-      email,
-      source,
-      timestamp: new Date().toISOString()
-    });
-
     return res.status(201).json({
       message: 'Thanks for subscribing! Check your email for confirmation.',
       success: true
     });
   } catch (error) {
-    console.error('Newsletter subscription error:', error);
     return res.status(500).json({ error: 'Failed to subscribe. Please try again.' });
   }
 }
@@ -134,7 +126,6 @@ async function addToConvertKit(email: string, firstName?: string): Promise<boole
 
     return response.ok;
   } catch (error) {
-    console.error('ConvertKit error:', error);
     return false;
   }
 }
@@ -176,13 +167,11 @@ async function addToMailchimp(email: string, firstName?: string): Promise<boolea
       if (error.title === 'Member Exists') {
         return true;
       }
-      console.error('Mailchimp error:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Mailchimp error:', error);
     return false;
   }
 }
@@ -198,9 +187,7 @@ async function sendWelcomeEmail(email: string, firstName?: string) {
       addToMailchimp(email, firstName),
     ]);
 
-    console.log('Newsletter services synced for:', email);
-  } catch (error) {
-    console.error('Welcome email error:', error);
+} catch (error) {
     // Don't fail the subscription if email fails
   }
 }

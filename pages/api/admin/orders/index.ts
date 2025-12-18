@@ -116,7 +116,6 @@ export default async function handler(
         },
       });
     } catch (error: any) {
-      console.error('Error fetching orders:', error);
       return res.status(500).json({ error: error.message || 'Internal server error' });
     }
   }

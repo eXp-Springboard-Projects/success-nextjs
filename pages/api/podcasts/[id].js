@@ -28,7 +28,6 @@ async function getPodcast(req, res, id) {
 
     return res.status(200).json(podcast);
   } catch (error) {
-    console.error('Error fetching podcast:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -53,7 +52,6 @@ async function updatePodcast(req, res, id) {
 
     return res.status(200).json(podcast);
   } catch (error) {
-    console.error('Error updating podcast:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -66,7 +64,6 @@ async function deletePodcast(req, res, id) {
 
     return res.status(200).json({ message: 'Podcast deleted successfully' });
   } catch (error) {
-    console.error('Error deleting podcast:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

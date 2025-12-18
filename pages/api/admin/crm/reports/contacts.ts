@@ -122,7 +122,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       growthRate,
     });
   } catch (error) {
-    console.error('Error fetching contact reports:', error);
     return res.status(500).json({ error: 'Failed to fetch contact reports' });
   }
 }

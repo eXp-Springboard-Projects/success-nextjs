@@ -62,7 +62,6 @@ async function getDeal(id: string, res: NextApiResponse) {
 
     return res.status(200).json({ ...deal[0], activities });
   } catch (error) {
-    console.error('Error fetching deal:', error);
     return res.status(500).json({ error: 'Failed to fetch deal' });
   }
 }
@@ -203,7 +202,6 @@ async function updateDeal(id: string, req: NextApiRequest, res: NextApiResponse,
 
     return res.status(200).json(deal[0]);
   } catch (error) {
-    console.error('Error updating deal:', error);
     return res.status(500).json({ error: 'Failed to update deal' });
   }
 }
@@ -213,7 +211,6 @@ async function deleteDeal(id: string, res: NextApiResponse, session: any) {
     await prisma.$executeRaw`DELETE FROM deals WHERE id = ${id}`;
     return res.status(200).json({ message: 'Deal deleted successfully' });
   } catch (error) {
-    console.error('Error deleting deal:', error);
     return res.status(500).json({ error: 'Failed to delete deal' });
   }
 }

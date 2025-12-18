@@ -136,8 +136,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Send notifications if configured
     if (form.notifyEmails && form.notifyEmails.length > 0) {
       // TODO: Implement email notification
-      // For now, just log
-      console.log(`Form submission notification needed for: ${form.notifyEmails.join(', ')}`);
     }
 
     return res.status(200).json({
@@ -147,7 +145,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       redirectUrl: form.redirectUrl,
     });
   } catch (error) {
-    console.error('Error submitting form:', error);
     return res.status(500).json({ error: 'Failed to submit form' });
   }
 }

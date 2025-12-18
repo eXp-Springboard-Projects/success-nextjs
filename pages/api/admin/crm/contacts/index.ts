@@ -114,7 +114,6 @@ async function getContacts(req: NextApiRequest, res: NextApiResponse) {
       },
     });
   } catch (error) {
-    console.error('Error fetching contacts:', error);
     return res.status(500).json({ error: 'Failed to fetch contacts' });
   }
 }
@@ -201,7 +200,6 @@ async function createContact(req: NextApiRequest, res: NextApiResponse) {
 
     return res.status(201).json(contact[0]);
   } catch (error) {
-    console.error('Error creating contact:', error);
     return res.status(500).json({ error: 'Failed to create contact' });
   }
 }

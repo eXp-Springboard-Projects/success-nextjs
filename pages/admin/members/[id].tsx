@@ -82,10 +82,8 @@ export default function MemberDetailPage() {
         setMember(data);
         setNotesText(data.internalNotes || '');
       } else {
-        console.error('Failed to fetch member');
       }
     } catch (error) {
-      console.error('Error fetching member:', error);
     } finally {
       setLoading(false);
     }
@@ -111,7 +109,6 @@ export default function MemberDetailPage() {
         showToast(error.message || 'Failed to save notes', 'error');
       }
     } catch (error) {
-      console.error('Error saving notes:', error);
       showToast('Failed to save notes', 'error');
     } finally {
       setSaving(false);

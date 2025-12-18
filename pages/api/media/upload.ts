@@ -76,8 +76,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Use local storage for development, Vercel Blob for production
     if (shouldUseLocalStorage()) {
-      console.log('📁 Using local file storage (development mode)');
-
       const localResult = await saveFileLocally(
         fileBuffer,
         uploadedFile.originalFilename || 'upload.jpg',
@@ -92,11 +90,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         width = dimensions.width || 0;
         height = dimensions.height || 0;
       } catch (e) {
-        console.warn('Could not get image dimensions');
       }
     } else {
-      console.log('☁️ Using Vercel Blob storage (production mode)');
-
       const optimized = await uploadAndOptimizeImage(
         fileBuffer,
         uploadedFile.originalFilename || 'upload.jpg',
@@ -161,7 +156,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       variants,
     });
   } catch (error) {
-    console.error('Error uploading media:', error);
     return res.status(500).json({
       error: 'Failed to upload media',
       message: error instanceof Error ? error.message : 'Unknown error',

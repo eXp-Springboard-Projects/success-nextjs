@@ -57,7 +57,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       userId,
     });
   } catch (error) {
-    console.error('Error creating staff account:', error);
     return res.status(500).json({ error: 'Failed to create account' });
   }
 }

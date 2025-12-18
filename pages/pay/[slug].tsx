@@ -90,7 +90,6 @@ export default function PaymentPage({ paylink, error }: PayLinkPageProps) {
         throw new Error(data.error || 'Failed to create checkout session');
       }
     } catch (error: any) {
-      console.error('Payment error:', error);
       alert(error.message || 'Failed to process payment. Please try again.');
       setLoading(false);
     }
@@ -359,7 +358,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       },
     };
   } catch (error) {
-    console.error('Error fetching paylink:', error);
     return {
       props: {
         paylink: null,

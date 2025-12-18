@@ -83,7 +83,6 @@ export default function NotificationsPage() {
         setUnreadCount(data.filter((n: Notification) => !n.isRead).length);
       }
     } catch (error) {
-      console.error('Error fetching notifications:', error);
     } finally {
       setLoading(false);
     }
@@ -97,7 +96,6 @@ export default function NotificationsPage() {
         setSystemAlerts(data);
       }
     } catch (error) {
-      console.error('Error fetching system alerts:', error);
     }
   };
 
@@ -109,7 +107,6 @@ export default function NotificationsPage() {
       ));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
-      console.error('Error marking notification as read:', error);
     }
   };
 
@@ -119,7 +116,6 @@ export default function NotificationsPage() {
       setNotifications(notifications.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch (error) {
-      console.error('Error marking all as read:', error);
     }
   };
 
@@ -130,7 +126,6 @@ export default function NotificationsPage() {
         a.id === id ? { ...a, isResolved: true } : a
       ));
     } catch (error) {
-      console.error('Error resolving alert:', error);
     }
   };
 
@@ -139,7 +134,6 @@ export default function NotificationsPage() {
       await fetch(`/api/admin/notifications/${id}`, { method: 'DELETE' });
       setNotifications(notifications.filter(n => n.id !== id));
     } catch (error) {
-      console.error('Error deleting notification:', error);
     }
   };
 

@@ -32,7 +32,6 @@ export default function ListsIndex() {
       const data = await res.json();
       setLists(data);
     } catch (error) {
-      console.error('Failed to fetch lists:', error);
     } finally {
       setLoading(false);
     }
@@ -50,7 +49,6 @@ export default function ListsIndex() {
       fetchLists();
       setDeleteConfirm(null);
     } catch (error) {
-      console.error('Failed to delete list:', error);
     }
   };
 
@@ -70,7 +68,6 @@ export default function ListsIndex() {
         fetchLists();
       }
     } catch (error) {
-      console.error('Failed to duplicate list:', error);
     }
   };
 

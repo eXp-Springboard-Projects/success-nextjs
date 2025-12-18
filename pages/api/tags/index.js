@@ -61,7 +61,6 @@ async function getTags(req, res) {
 
     return res.status(200).json(transformedTags);
   } catch (error) {
-    console.error('Error fetching tags:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -79,7 +78,6 @@ async function createTag(req, res) {
 
     return res.status(201).json(tag);
   } catch (error) {
-    console.error('Error creating tag:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

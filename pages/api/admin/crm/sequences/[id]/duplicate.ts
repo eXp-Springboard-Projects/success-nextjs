@@ -51,7 +51,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(201).json(newSequence[0]);
   } catch (error) {
-    console.error('Error duplicating sequence:', error);
     return res.status(500).json({ error: 'Failed to duplicate sequence' });
   }
 }

@@ -59,7 +59,6 @@ export default function DealsPage() {
       const data = await res.json();
       setDeals(data.deals || []);
     } catch (error) {
-      console.error('Error fetching deals:', error);
     } finally {
       setLoading(false);
     }
@@ -71,7 +70,6 @@ export default function DealsPage() {
       const data = await res.json();
       setStages(data.stages || []);
     } catch (error) {
-      console.error('Error fetching stages:', error);
     }
   };
 
@@ -95,7 +93,6 @@ export default function DealsPage() {
       });
       fetchDeals();
     } catch (error) {
-      console.error('Error updating deal stage:', error);
     }
   };
 

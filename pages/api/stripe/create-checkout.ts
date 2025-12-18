@@ -4,7 +4,7 @@ import { authOptions } from '../auth/[...nextauth]';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-10-29.clover',
+  apiVersion: '2025-09-30.clover',
 });
 
 // SUCCESS+ Pricing Configuration
@@ -88,7 +88,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({ url: checkoutSession.url });
   } catch (error) {
-    console.error('Stripe checkout error:', error);
     return res.status(500).json({ error: 'Failed to create checkout session' });
   }
 }

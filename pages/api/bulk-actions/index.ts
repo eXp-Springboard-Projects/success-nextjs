@@ -43,7 +43,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         bulkActionId: bulkAction.id,
       });
     } catch (error) {
-      console.error('Error creating bulk action:', error);
       return res.status(500).json({ error: 'Failed to create bulk action' });
     }
   }
@@ -84,7 +83,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         totalPages: Math.ceil(total / parseInt(perPage as string)),
       });
     } catch (error) {
-      console.error('Error fetching bulk actions:', error);
       return res.status(500).json({ error: 'Failed to fetch bulk actions' });
     }
   }
@@ -150,7 +148,6 @@ async function processBulkAction(
       },
     });
   } catch (error) {
-    console.error('Error processing bulk action:', error);
     await prisma.bulk_actions.update({
       where: { id: bulkActionId },
       data: {

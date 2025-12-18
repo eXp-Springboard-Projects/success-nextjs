@@ -36,7 +36,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       process.env.STRIPE_WEBHOOK_SECRET || ''
     );
   } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message);
     return res.status(400).json({ error: `Webhook Error: ${err.message}` });
   }
 
@@ -48,31 +47,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         break;
 
       case 'payment_intent.succeeded':
-        console.log('PaymentIntent succeeded:', event.data.object.id);
-        break;
+break;
 
       case 'payment_intent.payment_failed':
-        console.log('PaymentIntent failed:', event.data.object.id);
-        break;
+break;
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
-    }
+}
 
     return res.status(200).json({ received: true });
   } catch (error) {
-    console.error('Webhook handler error:', error);
     return res.status(500).json({ error: 'Webhook handler failed' });
   }
 }
 
 async function handleCheckoutSessionCompleted(session: any) {
-  console.log('Checkout session completed:', session.id);
-
-  const paylinkId = session.metadata?.paylink_id;
+const paylinkId = session.metadata?.paylink_id;
 
   if (!paylinkId) {
-    console.error('No paylink_id in session metadata');
     return;
   }
 
@@ -113,8 +105,6 @@ async function handleCheckoutSessionCompleted(session: any) {
       },
     });
 
-    console.log(`Payment recorded for paylink ${paylinkId}, order ${orderNumber}`);
-  } catch (error) {
-    console.error('Error updating paylink usage:', error);
+} catch (error) {
   }
 }

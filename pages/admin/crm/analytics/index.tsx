@@ -79,7 +79,6 @@ export default function CRMAnalytics() {
       const analyticsData = await res.json();
       setData(analyticsData);
     } catch (error) {
-      console.error('Failed to fetch analytics:', error);
     } finally {
       setLoading(false);
     }

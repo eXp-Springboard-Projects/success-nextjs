@@ -50,7 +50,6 @@ export default function TemplatesPage() {
       const data = await res.json();
       setTemplates(data);
     } catch (error) {
-      console.error('Error fetching templates:', error);
     } finally {
       setLoading(false);
     }
@@ -75,7 +74,6 @@ export default function TemplatesPage() {
         fetchTemplates();
       }
     } catch (error) {
-      console.error('Error creating template:', error);
     }
   };
 
@@ -98,7 +96,6 @@ export default function TemplatesPage() {
         fetchTemplates();
       }
     } catch (error) {
-      console.error('Error updating template:', error);
     }
   };
 
@@ -111,7 +108,6 @@ export default function TemplatesPage() {
       });
       fetchTemplates();
     } catch (error) {
-      console.error('Error deleting template:', error);
     }
   };
 

@@ -53,7 +53,6 @@ export default function ResourcesPage() {
       const data = await response.json();
       setResources(data);
     } catch (error) {
-      console.error('Error fetching resources:', error);
     } finally {
       setLoading(false);
     }
@@ -71,7 +70,6 @@ export default function ResourcesPage() {
       // Open the file in a new tab
       window.open(resource.fileUrl, '_blank');
     } catch (error) {
-      console.error('Error downloading resource:', error);
     }
   };
 

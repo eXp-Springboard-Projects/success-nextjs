@@ -99,7 +99,6 @@ async function getTickets(req: NextApiRequest, res: NextApiResponse) {
       },
     });
   } catch (error) {
-    console.error('Error fetching tickets:', error);
     return res.status(500).json({ error: 'Failed to fetch tickets' });
   }
 }
@@ -151,7 +150,6 @@ async function createTicket(req: NextApiRequest, res: NextApiResponse, session: 
 
     return res.status(201).json(ticket[0]);
   } catch (error) {
-    console.error('Error creating ticket:', error);
     return res.status(500).json({ error: 'Failed to create ticket' });
   }
 }

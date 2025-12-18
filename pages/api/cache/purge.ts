@@ -142,7 +142,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
-    console.error('Cache purge error:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to purge cache',

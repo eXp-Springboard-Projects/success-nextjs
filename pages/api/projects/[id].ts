@@ -47,7 +47,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({ project });
     } catch (error) {
-      console.error('Error fetching project:', error);
       return res.status(500).json({ error: 'Failed to fetch project' });
     } finally {
       await prisma.$disconnect();
@@ -104,7 +103,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({ project });
     } catch (error) {
-      console.error('Error updating project:', error);
       return res.status(500).json({ error: 'Failed to update project' });
     } finally {
       await prisma.$disconnect();
@@ -119,7 +117,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({ success: true, message: 'Project deleted successfully' });
     } catch (error) {
-      console.error('Error deleting project:', error);
       return res.status(500).json({ error: 'Failed to delete project' });
     } finally {
       await prisma.$disconnect();

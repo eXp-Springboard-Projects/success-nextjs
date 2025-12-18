@@ -68,7 +68,6 @@ export default function DealDetailPage() {
       const data = await res.json();
       setDeal(data);
     } catch (error) {
-      console.error('Error fetching deal:', error);
     } finally {
       setLoading(false);
     }
@@ -80,7 +79,6 @@ export default function DealDetailPage() {
       const data = await res.json();
       setStages(data.stages || []);
     } catch (error) {
-      console.error('Error fetching stages:', error);
     }
   };
 
@@ -93,7 +91,6 @@ export default function DealDetailPage() {
       });
       fetchDeal();
     } catch (error) {
-      console.error('Error updating stage:', error);
     }
   };
 
@@ -113,7 +110,6 @@ export default function DealDetailPage() {
       setNewNote('');
       fetchDeal();
     } catch (error) {
-      console.error('Error adding note:', error);
     }
   };
 
@@ -131,7 +127,6 @@ export default function DealDetailPage() {
       });
       fetchDeal();
     } catch (error) {
-      console.error('Error marking deal as won:', error);
     }
   };
 
@@ -151,7 +146,6 @@ export default function DealDetailPage() {
       });
       fetchDeal();
     } catch (error) {
-      console.error('Error marking deal as lost:', error);
     }
   };
 

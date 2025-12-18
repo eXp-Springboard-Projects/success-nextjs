@@ -83,7 +83,6 @@ export default function SubscriptionsPage() {
       setGroupedUsers(Array.from(userMap.values()));
       setTotalPages(data.pagination?.totalPages || 1);
     } catch (error) {
-      console.error('Failed to fetch subscriptions:', error);
     } finally {
       setLoading(false);
     }

@@ -56,7 +56,6 @@ export default async function handler(
 
       return res.status(200).json(videos);
     } catch (error: any) {
-      console.error('Error fetching videos:', error);
       return res.status(500).json({ error: error.message || 'Internal server error' });
     }
   }
@@ -122,7 +121,6 @@ export default async function handler(
 
       return res.status(201).json(video);
     } catch (error: any) {
-      console.error('Error creating video:', error);
       return res.status(500).json({ error: error.message || 'Internal server error' });
     }
   }

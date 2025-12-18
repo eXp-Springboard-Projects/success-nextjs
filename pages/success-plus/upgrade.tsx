@@ -37,7 +37,6 @@ export default function UpgradePage() {
         setTrialStatus(data);
       }
     } catch (err) {
-      console.error('Failed to fetch trial status:', err);
     }
   }
 
