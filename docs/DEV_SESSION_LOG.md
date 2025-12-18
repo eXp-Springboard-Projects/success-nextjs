@@ -11,6 +11,46 @@
 =======================================================
 -->
 
+## 2025-12-18T23:00:00 — TipTap TextStyle Import Fix (Amplify Branch)
+
+**Session Context:**
+- 📚 Docs Loaded: DEV_SESSION_LOG.md, CHANGELOG.md, package.json, EnhancedPostEditor.tsx
+- 🎯 Objective: Fix CI build failure on amplify branch caused by incorrect TipTap import
+- 🚫 Non-Goals: Adding new features, refactoring
+- ✅ Done When: Build passes, import corrected
+
+### Summary
+
+- **Problem**: CI build on the `amplify` branch was failing with TypeScript error: "Module '@tiptap/extension-text-style' has no default export". The `SimpleRichTextEditor.tsx` component was using `import TextStyle from '@tiptap/extension-text-style'` but the package only provides a named export.
+- **Solution**: Changed to named import `import { TextStyle } from '@tiptap/extension-text-style'`, matching the pattern already used in `EnhancedPostEditor.tsx` and `EnhancedPageEditor.tsx`. Created the files in main branch since they only existed in amplify.
+- **Result**: Build passes successfully. 24 static pages generated, 350+ routes compiled.
+
+### Changes Made
+
+| File | Change |
+|------|--------|
+| `components/admin/SimpleRichTextEditor.tsx` | Created file with corrected named import for TextStyle |
+| `components/admin/SimpleRichTextEditor.module.css` | Created accompanying CSS module |
+
+### Build Verification
+
+```
+✓ Compiled successfully in 10.6s
+✓ Generating static pages (24/24) in 574.8ms
+```
+
+### Follow-up Items
+
+- [x] Verified build passes locally
+- [ ] Push to main and merge to amplify branch
+- [ ] Verify amplify CI build passes
+
+### Session Stats
+- Files Created: 2
+- Build Status: ✅ PASSING
+
+---
+
 ## 2025-12-18T22:30:00 — Missing lucide-react Dependency Fix
 
 **Session Context:**

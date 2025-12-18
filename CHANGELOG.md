@@ -14,6 +14,17 @@ Based on [Keep a Changelog](https://keepachangelog.com/) • Uses [ISO 8601](htt
 =======================================================
 -->
 
+### [Fixed] - 2025-12-18T23:00:00 - TipTap TextStyle Import Fix (Amplify Build Fix)
+
+**Fixed incorrect default import for @tiptap/extension-text-style**
+
+- **Why**: CI build on amplify branch failing with "Module has no default export" error for `@tiptap/extension-text-style`. The package exports `TextStyle` as a named export, not default.
+- **What**: Changed `import TextStyle from '@tiptap/extension-text-style'` to `import { TextStyle } from '@tiptap/extension-text-style'` in `SimpleRichTextEditor.tsx`. Also added the component and its CSS file to main branch.
+- **Files**: `components/admin/SimpleRichTextEditor.tsx`, `components/admin/SimpleRichTextEditor.module.css`
+- **Impact**: Amplify branch build should now pass
+
+---
+
 ### [Fixed] - 2025-12-18T22:30:00 - Missing lucide-react Dependency (Deploy Fix)
 
 **Added missing lucide-react package that was breaking CI/CD builds**
