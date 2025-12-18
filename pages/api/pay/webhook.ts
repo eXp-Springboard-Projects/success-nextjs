@@ -48,16 +48,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         break;
 
       case 'payment_intent.succeeded':
-        console.log('PaymentIntent succeeded:', event.data.object.id);
-        break;
+break;
 
       case 'payment_intent.payment_failed':
-        console.log('PaymentIntent failed:', event.data.object.id);
-        break;
+break;
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
-    }
+}
 
     return res.status(200).json({ received: true });
   } catch (error) {
@@ -67,9 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 }
 
 async function handleCheckoutSessionCompleted(session: any) {
-  console.log('Checkout session completed:', session.id);
-
-  const paylinkId = session.metadata?.paylink_id;
+const paylinkId = session.metadata?.paylink_id;
 
   if (!paylinkId) {
     console.error('No paylink_id in session metadata');
@@ -113,8 +108,7 @@ async function handleCheckoutSessionCompleted(session: any) {
       },
     });
 
-    console.log(`Payment recorded for paylink ${paylinkId}, order ${orderNumber}`);
-  } catch (error) {
+} catch (error) {
     console.error('Error updating paylink usage:', error);
   }
 }

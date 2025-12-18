@@ -102,11 +102,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 // Placeholder for admin notification
 async function sendAdminNotification(comment: any) {
   // TODO: Implement email notification to admin
-  console.log('Admin notification: New comment pending moderation', {
-    postTitle: comment.postTitle,
-    author: comment.author,
-    excerpt: comment.content.substring(0, 100),
-  });
 
   // When implementing email, use SendGrid or Resend:
   // await sendEmail({

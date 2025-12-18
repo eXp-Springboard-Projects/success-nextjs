@@ -17,8 +17,7 @@ export default async function handler(req, res) {
       try {
         settings = await prisma.site_settings.findFirst();
       } catch (dbError) {
-        console.log('Database not available, using defaults:', dbError.message);
-        settings = null;
+settings = null;
       }
 
       if (!settings) {

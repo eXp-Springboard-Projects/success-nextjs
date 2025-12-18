@@ -8,8 +8,7 @@ export default function NewsletterPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Newsletter signup:', email);
-    setSubscribed(true);
+setSubscribed(true);
     setTimeout(() => {
       setSubscribed(false);
       setEmail('');

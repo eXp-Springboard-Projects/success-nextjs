@@ -214,8 +214,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         };
       } catch (error) {
         // Deals table might not exist
-        console.log('Deals table not found or error querying:', error);
-      }
+}
 
       // Ticket Analytics (if tickets table exists)
       let ticketStats: {
@@ -312,8 +311,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         };
       } catch (error) {
         // Tickets table might not exist
-        console.log('Tickets table not found or error querying:', error);
-      }
+}
 
       // Unsubscribe rate
       const unsubscribeCount = await prisma.email_preferences.count({

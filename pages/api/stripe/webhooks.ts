@@ -3,6 +3,9 @@ import { buffer } from 'micro';
 import Stripe from 'stripe';
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('StripeWebhook');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-09-30.clover',
@@ -25,7 +28,7 @@ async function sendToCWFulfillment(subscription: any, customer: any) {
   const cwWebhookSecret = process.env.CW_WEBHOOK_SECRET;
 
   if (!cwWebhookUrl) {
-    console.warn('CW_WEBHOOK_URL not configured, skipping magazine fulfillment');
+    log.warn('CW_WEBHOOK_URL not configured, skipping magazine fulfillment');
     return;
   }
 
@@ -56,10 +59,9 @@ async function sendToCWFulfillment(subscription: any, customer: any) {
       throw new Error(`C+W webhook failed: ${response.status} ${response.statusText}`);
     }
 
-    const result = await response.json();
-    console.log('Magazine fulfillment sent to C+W:', result);
+    await response.json();
   } catch (error) {
-    console.error('Failed to send to C+W fulfillment:', error);
+    log.error('Failed to send to C+W fulfillment', error);
     // Log to database for manual retry
     await prisma.activity_logs.create({
       data: {
@@ -82,7 +84,7 @@ async function sendToCWFulfillment(subscription: any, customer: any) {
  */
 async function sendWelcomeEmail(email: string, tier: string, billingCycle: string) {
   // TODO: Implement email sending with SendGrid/Resend
-  console.log(`TODO: Send welcome email to ${email} for ${tier} ${billingCycle}`);
+  log.debug('Welcome email pending implementation', { email, tier, billingCycle });
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -106,7 +108,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (err) {
-    console.error('Webhook signature verification failed:', err);
+    log.error('Webhook signature verification failed', err);
     return res.status(400).json({ error: 'Invalid signature' });
   }
 
@@ -225,7 +227,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             });
           }
 
-          console.log('Subscription created:', subscription.id);
+          log.info('Subscription created', { subscriptionId: subscription.id });
         }
         break;
       }
@@ -304,7 +306,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         }
 
-        console.log('Subscription updated:', subscription.id);
+        log.info('Subscription updated', { subscriptionId: subscription.id });
         break;
       }
 
@@ -334,7 +336,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           // TODO: Send cancellation to C+W
         }
 
-        console.log('Subscription canceled:', subscription.id);
+        log.info('Subscription canceled', { subscriptionId: subscription.id });
         break;
       }
 
@@ -403,12 +405,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        log.debug('Unhandled event type', { eventType: event.type });
     }
 
     return res.status(200).json({ received: true });
   } catch (error) {
-    console.error('Webhook processing error:', error);
+    log.error('Webhook processing error', error);
     return res.status(500).json({
       error: 'Webhook processing failed',
       message: error instanceof Error ? error.message : 'Unknown error',

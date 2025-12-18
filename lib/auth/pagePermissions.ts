@@ -358,5 +358,4 @@ export async function initializeDefaultPermissions() {
     });
   }
 
-  console.log(`Initialized ${defaultPages.length} page permissions`);
 }

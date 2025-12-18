@@ -394,8 +394,6 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
   );
 }
 
-
-
 export async function getServerSideProps({ params, req, res }: any) {
   const { slug } = params;
 

@@ -96,9 +96,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const event = JSON.parse(rawBody);
     const eventType = event.event_type || event.type;
 
-    console.log('PayKickstart webhook received:', eventType);
-
-    // Handle different event types
+// Handle different event types
     switch (eventType) {
       case 'subscription_created':
       case 'subscription.created':
@@ -129,8 +127,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         break;
 
       default:
-        console.log(`Unhandled event type: ${eventType}`);
-    }
+}
 
     return res.status(200).json({ received: true });
   } catch (error: any) {
@@ -262,7 +259,6 @@ async function handleSubscriptionCreated(event: any) {
     },
   });
 
-  console.log(`Subscription created for user ${user.email}: ${subscriptionId}`);
 }
 
 async function handleSubscriptionUpdated(event: any) {
@@ -330,7 +326,6 @@ async function handleSubscriptionUpdated(event: any) {
     });
   }
 
-  console.log(`Subscription updated: ${subscriptionId} - ${status}`);
 }
 
 async function handleSubscriptionCancelled(event: any) {
@@ -391,7 +386,6 @@ async function handleSubscriptionCancelled(event: any) {
     });
   }
 
-  console.log(`Subscription cancelled: ${subscriptionId}`);
 }
 
 async function handlePaymentFailed(event: any) {
@@ -455,7 +449,6 @@ async function handlePaymentFailed(event: any) {
     }
   }
 
-  console.log(`Payment failed for subscription: ${subscriptionId}`);
 }
 
 async function handlePaymentSucceeded(event: any) {
@@ -516,5 +509,4 @@ async function handlePaymentSucceeded(event: any) {
     }
   }
 
-  console.log(`Payment succeeded, subscription reactivated: ${subscriptionId}`);
 }

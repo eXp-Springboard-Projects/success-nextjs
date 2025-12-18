@@ -191,9 +191,7 @@ export default async function handler(
       });
     }
 
-    console.log(`✅ WooCommerce order ${wcOrderId} ${existingOrder ? 'updated' : 'created'} successfully`);
-
-    return res.status(200).json({ received: true, orderId: savedOrder.id });
+return res.status(200).json({ received: true, orderId: savedOrder.id });
   } catch (error: any) {
     console.error('WooCommerce webhook error:', error);
     return res.status(500).json({ error: error.message });

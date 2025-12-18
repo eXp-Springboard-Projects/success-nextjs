@@ -45,8 +45,7 @@ export async function sendEmail({
     for (const recipient of recipients) {
       const canSend = await checkEmailPermission(recipient);
       if (!canSend) {
-        console.log(`Skipping email to ${recipient} - unsubscribed or bounced`);
-        return { success: false, error: 'Recipient has unsubscribed or email bounced' };
+return { success: false, error: 'Recipient has unsubscribed or email bounced' };
       }
     }
 
@@ -115,8 +114,7 @@ export async function sendTemplateEmail({
     for (const recipient of recipients) {
       const canSend = await checkEmailPermission(recipient);
       if (!canSend) {
-        console.log(`Skipping email to ${recipient} - unsubscribed or bounced`);
-        return { success: false, error: 'Recipient has unsubscribed or email bounced' };
+return { success: false, error: 'Recipient has unsubscribed or email bounced' };
       }
     }
 
@@ -273,8 +271,6 @@ export async function handleBounce(email: string, bounceType: string): Promise<v
         bounced_at = CURRENT_TIMESTAMP
       WHERE recipient_email = ${email} AND bounced_at IS NULL
     `;
-
-    console.log(`Marked ${email} as bounced (${bounceType})`);
   } catch (error) {
     console.error('Error handling bounce:', error);
   }
@@ -305,8 +301,6 @@ export async function handleComplaint(email: string): Promise<void> {
         complained_at = CURRENT_TIMESTAMP
       WHERE recipient_email = ${email} AND complained_at IS NULL
     `;
-
-    console.log(`Marked ${email} as complained and unsubscribed`);
   } catch (error) {
     console.error('Error handling complaint:', error);
   }

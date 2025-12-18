@@ -76,8 +76,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Use local storage for development, Vercel Blob for production
     if (shouldUseLocalStorage()) {
-      console.log('📁 Using local file storage (development mode)');
-
       const localResult = await saveFileLocally(
         fileBuffer,
         uploadedFile.originalFilename || 'upload.jpg',
@@ -95,8 +93,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.warn('Could not get image dimensions');
       }
     } else {
-      console.log('☁️ Using Vercel Blob storage (production mode)');
-
       const optimized = await uploadAndOptimizeImage(
         fileBuffer,
         uploadedFile.originalFilename || 'upload.jpg',

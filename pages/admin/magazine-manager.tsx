@@ -71,13 +71,11 @@ export default function MagazineManager() {
 
       // Always add demo issue at the end
       if (data && Array.isArray(data) && data.length > 0) {
-        console.log('✅ Loaded', data.length, 'real magazines + 1 demo issue');
-        setMagazines([...data, demoIssue]);
+setMagazines([...data, demoIssue]);
         setSelectedMagazine(data[0]); // Select first (current) real issue
       } else {
         // If no real magazines, show only demo
-        console.log('✅ No real magazines found, showing demo issue only');
-        setMagazines([demoIssue]);
+setMagazines([demoIssue]);
         setSelectedMagazine(demoIssue);
       }
     } catch (error) {
@@ -108,7 +106,6 @@ export default function MagazineManager() {
       setLoading(false);
     }
   };
-
 
   const getMagazineStatus = (index: number) => {
     if (index === 0) return 'Current Issue';
@@ -451,8 +448,7 @@ export default function MagazineManager() {
                   className={styles.saveButton}
                   onClick={() => {
                     alert('Note: This is a preview-only interface. To actually update the magazine, you need to edit it in WordPress admin at www.success.com/wp-admin/');
-                    console.log('Edit data:', editData);
-                  }}
+}}
                 >
                   💾 Save Changes (Preview Only)
                 </button>

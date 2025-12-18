@@ -81,8 +81,6 @@ export default function CategoryPage({ category, posts, totalPages, currentPage 
   );
 }
 
-
-
 export async function getServerSideProps({ params }: any) {
   const { slug } = params;
 

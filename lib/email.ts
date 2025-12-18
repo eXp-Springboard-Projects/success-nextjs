@@ -26,9 +26,7 @@ export async function sendEmail({ to, subject, html, text }: EmailOptions): Prom
   const useResend = !!process.env.RESEND_API_KEY;
 
   if (!useSendGrid && !useResend) {
-    console.log('[EMAIL PLACEHOLDER] Would send email:', { to, subject });
-    console.log('[EMAIL PLACEHOLDER] HTML:', html.substring(0, 200) + '...');
-    return false;
+return false;
   }
 
   try {
@@ -62,8 +60,7 @@ async function sendViaSendGrid({ to, subject, html, text }: EmailOptions): Promi
       text: text || html.replace(/<[^>]*>/g, ''), // Strip HTML if no text provided
     });
 
-    console.log('[SendGrid] Email sent successfully to:', recipients);
-    return true;
+return true;
   } catch (error) {
     console.error('[SendGrid] Error:', error);
     return false;
@@ -88,8 +85,7 @@ async function sendViaResend({ to, subject, html, text }: EmailOptions): Promise
       text,
     });
 
-    console.log('[Resend] Email sent successfully to:', recipients);
-    return true;
+return true;
   } catch (error) {
     console.error('[Resend] Error:', error);
     return false;

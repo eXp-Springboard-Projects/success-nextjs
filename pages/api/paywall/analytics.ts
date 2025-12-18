@@ -16,13 +16,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // You can extend this to log to a separate analytics table
     // For now, we're just acknowledging the event
-    console.log('Paywall Analytics Event:', {
-      articleId,
-      articleTitle,
-      blocked,
-      userId: userId || 'anonymous',
-      timestamp: new Date().toISOString()
-    });
 
     // Could also send to external analytics service
     // await sendToGoogleAnalytics({ ... });

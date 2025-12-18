@@ -1,7 +1,9 @@
 import { buffer } from 'micro';
 import { stripe } from '../../../lib/stripe';
 import { PrismaClient } from '@prisma/client';
+import { createLogger } from '../../../lib/logger';
 
+const log = createLogger('StripeWebhook');
 const prisma = new PrismaClient();
 
 // Disable body parsing, need raw body for webhook signature verification
@@ -20,7 +22,7 @@ export default async function handler(req, res) {
   const sig = req.headers['stripe-signature'];
 
   if (!stripe) {
-    console.error('Stripe is not configured');
+    log.error('Stripe is not configured');
     return res.status(500).json({ message: 'Stripe not configured' });
   }
 
@@ -34,7 +36,7 @@ export default async function handler(req, res) {
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
+    log.error('Webhook signature verification failed', err);
     return res.status(400).json({ message: `Webhook Error: ${err.message}` });
   }
 
@@ -62,12 +64,12 @@ export default async function handler(req, res) {
         break;
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        log.debug('Unhandled event type', { eventType: event.type });
     }
 
     res.json({ received: true });
   } catch (error) {
-    console.error('Error handling webhook:', error);
+    log.error('Error handling webhook', error);
     res.status(500).json({ message: 'Webhook handler failed' });
   }
 }
@@ -91,7 +93,6 @@ async function handleSubscriptionCreated(subscription) {
 
   if (!member) {
     // Create new Member (this is a new customer)
-    console.log('Creating new member for:', customer.email);
 
     const name = customer.name || customer.email.split('@')[0];
     const nameParts = name.split(' ');
@@ -153,10 +154,10 @@ async function handleSubscriptionCreated(subscription) {
       where: { id: platformUser.id },
       data: { memberId: member.id },
     });
-    console.log('Linked platform user to member:', platformUser.email);
+    log.info('Linked platform user to member', { email: platformUser.email });
   }
 
-  console.log('Subscription created for member:', member.id);
+  log.info('Subscription created for member', { memberId: member.id });
 }
 
 // Handle subscription updated
@@ -168,7 +169,7 @@ async function handleSubscriptionUpdated(subscription) {
   });
 
   if (!member) {
-    console.error('Member not found for customer:', customerId);
+    log.error('Member not found for customer', { customerId });
     return;
   }
 
@@ -193,7 +194,7 @@ async function handleSubscriptionUpdated(subscription) {
     },
   });
 
-  console.log('Subscription updated for member:', member.id);
+  log.info('Subscription updated', { memberId: member.id });
 }
 
 // Handle subscription deleted
@@ -205,7 +206,7 @@ async function handleSubscriptionDeleted(subscription) {
   });
 
   if (!member) {
-    console.error('Member not found for customer:', customerId);
+    log.error('Member not found for customer', { customerId });
     return;
   }
 
@@ -226,7 +227,7 @@ async function handleSubscriptionDeleted(subscription) {
     },
   });
 
-  console.log('Subscription deleted for member:', member.id);
+  log.info('Subscription deleted', { memberId: member.id });
 }
 
 // Handle successful payment
@@ -239,7 +240,7 @@ async function handlePaymentSucceeded(invoice) {
   });
 
   if (!member) {
-    console.error('Member not found for customer:', customerId);
+    log.error('Member not found for customer', { customerId });
     return;
   }
 
@@ -283,7 +284,7 @@ async function handlePaymentSucceeded(invoice) {
     html: getSubscriptionConfirmationHTML(fullName || 'Subscriber', plan, amount.toFixed(2)),
   });
 
-  console.log('Payment succeeded and email sent for member:', member.id);
+  log.info('Payment succeeded', { memberId: member.id });
 }
 
 // Handle failed payment
@@ -295,7 +296,7 @@ async function handlePaymentFailed(invoice) {
   });
 
   if (!member) {
-    console.error('Member not found for customer:', customerId);
+    log.error('Member not found for customer', { customerId });
     return;
   }
 
@@ -339,5 +340,5 @@ async function handlePaymentFailed(invoice) {
     html: getPaymentFailedHTML(fullName || 'Subscriber'),
   });
 
-  console.log('Payment failed and email sent for member:', member.id);
+  log.info('Payment failed', { memberId: member.id });
 }

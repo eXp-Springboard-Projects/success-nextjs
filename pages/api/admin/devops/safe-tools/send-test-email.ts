@@ -18,8 +18,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       const adminName = session.user.name || 'Admin';
 
-      console.log(`Test email requested by ${adminName} (${adminEmail})`);
-
       // Send test email
       const emailHTML = `
         <!DOCTYPE html>

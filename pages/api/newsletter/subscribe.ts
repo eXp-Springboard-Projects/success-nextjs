@@ -93,13 +93,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Optional: Send welcome email
     await sendWelcomeEmail(email, firstName);
 
-    // Log activity
-    console.log('Newsletter subscription:', {
-      email,
-      source,
-      timestamp: new Date().toISOString()
-    });
-
     return res.status(201).json({
       message: 'Thanks for subscribing! Check your email for confirmation.',
       success: true
@@ -198,8 +191,7 @@ async function sendWelcomeEmail(email: string, firstName?: string) {
       addToMailchimp(email, firstName),
     ]);
 
-    console.log('Newsletter services synced for:', email);
-  } catch (error) {
+} catch (error) {
     console.error('Welcome email error:', error);
     // Don't fail the subscription if email fails
   }

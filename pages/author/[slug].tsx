@@ -78,8 +78,6 @@ export default function AuthorPage({ author, posts }: AuthorPageProps) {
   );
 }
 
-
-
 export async function getServerSideProps({ params }: any) {
   try {
     const authors = await fetchWordPressData(`users?slug=${params.slug}`);

@@ -87,8 +87,7 @@ async function cancelSubscription(req, res, id) {
           cancel_at_period_end: true,
         });
 
-        console.log(`✓ Stripe subscription ${subscription.stripeSubscriptionId} set to cancel at period end`);
-      } catch (stripeError) {
+} catch (stripeError) {
         console.error('Error canceling Stripe subscription:', stripeError);
 
         // If Stripe cancellation fails, don't update database
@@ -109,9 +108,7 @@ async function cancelSubscription(req, res, id) {
     });
 
     // Log the cancellation
-    console.log(`✓ Subscription ${id} canceled by admin. Will end on ${subscription.currentPeriodEnd}`);
-
-    return res.status(200).json({
+return res.status(200).json({
       message: 'Subscription canceled successfully. Will remain active until end of billing period.',
       subscription: updatedSubscription,
       endDate: subscription.currentPeriodEnd,
@@ -163,8 +160,7 @@ async function updateSubscription(req, res, id) {
           updatedAt: new Date(),
         };
 
-        console.log(`✓ Subscription ${id} paused in Stripe`);
-        break;
+break;
 
       case 'resume':
         // Resume subscription in Stripe
@@ -180,8 +176,7 @@ async function updateSubscription(req, res, id) {
           updatedAt: new Date(),
         };
 
-        console.log(`✓ Subscription ${id} resumed in Stripe`);
-        break;
+break;
 
       case 'cancel':
         // Immediate cancellation (not at period end)
@@ -195,8 +190,7 @@ async function updateSubscription(req, res, id) {
           updatedAt: new Date(),
         };
 
-        console.log(`✓ Subscription ${id} canceled immediately in Stripe`);
-        break;
+break;
 
       default:
         return res.status(400).json({ message: 'Invalid action. Use: pause, resume, or cancel' });

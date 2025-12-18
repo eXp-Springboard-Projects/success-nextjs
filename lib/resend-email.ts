@@ -30,8 +30,7 @@ export async function sendMail(to: string, subject: string, html: string) {
       html,
     });
 
-    console.log('Email sent successfully:', { to, subject, id: result.data?.id });
-    return { success: true, data: result.data };
+return { success: true, data: result.data };
   } catch (error: any) {
     console.error('Failed to send email:', error);
     return { success: false, error: error.message };
