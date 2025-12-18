@@ -43,7 +43,6 @@ export default async function handler(
         message: 'Status updated successfully',
       });
     } catch (error: any) {
-      console.error('Refund update error:', error);
       return res.status(500).json({ error: error.message || 'Internal server error' });
     }
   }

@@ -49,7 +49,6 @@ export default function EditorialDashboard() {
         setLoading(false);
       })
       .catch((error) => {
-        console.error('Failed to fetch dashboard stats:', error);
         setLoading(false);
       });
   }, []);

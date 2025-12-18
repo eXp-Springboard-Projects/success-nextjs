@@ -36,7 +36,6 @@ export default async function handler(
         return res.status(405).json({ error: 'Method not allowed' });
     }
   } catch (error: any) {
-    console.error('Permissions API error:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }

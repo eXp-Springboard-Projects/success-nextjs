@@ -49,7 +49,6 @@ export default function PagesIndex() {
         setPages(data);
       }
     } catch (error) {
-      console.error('Error fetching pages:', error);
     } finally {
       setLoading(false);
     }
@@ -66,7 +65,6 @@ export default function PagesIndex() {
         alert('Failed to delete page');
       }
     } catch (error) {
-      console.error('Error deleting page:', error);
       alert('Failed to delete page');
     }
   };

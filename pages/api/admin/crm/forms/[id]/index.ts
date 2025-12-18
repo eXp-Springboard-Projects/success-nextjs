@@ -21,7 +21,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(form);
     } catch (error) {
-      console.error('Error fetching form:', error);
       return res.status(500).json({ error: 'Failed to fetch form' });
     }
   }
@@ -48,7 +47,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(form);
     } catch (error) {
-      console.error('Error updating form:', error);
       return res.status(500).json({ error: 'Failed to update form' });
     }
   }
@@ -61,7 +59,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({ success: true });
     } catch (error) {
-      console.error('Error deleting form:', error);
       return res.status(500).json({ error: 'Failed to delete form' });
     }
   }

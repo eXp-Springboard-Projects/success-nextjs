@@ -64,7 +64,6 @@ export default async function handler(
             try {
               await woocommerce.completeOrder(order.woocommerceOrderId);
             } catch (wooError) {
-              console.error(`⚠️  Failed to sync order ${orderId} to WooCommerce:`, wooError);
               // Don't fail - order is fulfilled in our system
             }
           }
@@ -89,7 +88,6 @@ export default async function handler(
           results.success.push(orderId);
 
         } catch (error: any) {
-          console.error(`Error fulfilling order ${orderId}:`, error);
           results.failed.push({ orderId, error: error.message });
         }
       }
@@ -101,7 +99,6 @@ export default async function handler(
       });
 
     } catch (error: any) {
-      console.error('Error bulk fulfilling orders:', error);
       return res.status(500).json({ error: error.message || 'Internal server error' });
     }
   }

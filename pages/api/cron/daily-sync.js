@@ -19,8 +19,6 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  console.log('Starting daily sync:', new Date().toISOString());
-
   try {
     const results = {
       timestamp: new Date().toISOString(),
@@ -117,15 +115,12 @@ export default async function handler(req, res) {
       });
     }
 
-    console.log('Daily sync completed:', results);
-
-    return res.status(200).json({
+return res.status(200).json({
       success: true,
       message: 'Daily sync completed',
       results,
     });
   } catch (error) {
-    console.error('Daily sync failed:', error);
 
     return res.status(500).json({
       success: false,

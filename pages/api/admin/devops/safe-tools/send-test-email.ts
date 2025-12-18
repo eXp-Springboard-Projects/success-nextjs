@@ -18,8 +18,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       const adminName = session.user.name || 'Admin';
 
-      console.log(`Test email requested by ${adminName} (${adminEmail})`);
-
       // Send test email
       const emailHTML = `
         <!DOCTYPE html>
@@ -135,7 +133,6 @@ This is an automated test email from the DevOps system.
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('Error sending test email:', error);
       return res.status(500).json({
         error: 'Failed to send test email',
         details: error instanceof Error ? error.message : 'Unknown error'

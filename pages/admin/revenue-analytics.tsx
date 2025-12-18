@@ -112,7 +112,6 @@ export default function RevenueAnalyticsPage() {
         setAnalytics(data);
       }
     } catch (error) {
-      console.error('Error fetching analytics:', error);
     } finally {
       setLoading(false);
     }
@@ -223,7 +222,6 @@ export default function RevenueAnalyticsPage() {
 
       pdf.save(`revenue-analytics-${startDate}-to-${endDate}.pdf`);
     } catch (error) {
-      console.error('Error exporting PDF:', error);
       alert('Failed to export PDF. Please try again.');
     } finally {
       setExportingPDF(false);

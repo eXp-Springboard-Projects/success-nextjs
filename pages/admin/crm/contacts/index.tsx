@@ -89,7 +89,6 @@ export default function ContactsListPage() {
       setContacts(data.contacts || []);
       setTotalPages(data.pagination?.totalPages || 1);
     } catch (error) {
-      console.error('Error fetching contacts:', error);
     } finally {
       setLoading(false);
     }

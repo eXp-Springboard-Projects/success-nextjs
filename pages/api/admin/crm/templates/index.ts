@@ -50,7 +50,6 @@ async function getTemplates(req: NextApiRequest, res: NextApiResponse) {
 
     return res.status(200).json({ templates });
   } catch (error) {
-    console.error('Error fetching templates:', error);
     return res.status(500).json({ error: 'Failed to fetch templates' });
   }
 }
@@ -93,7 +92,6 @@ async function createTemplate(req: NextApiRequest, res: NextApiResponse, session
 
     return res.status(201).json(template[0]);
   } catch (error) {
-    console.error('Error creating template:', error);
     return res.status(500).json({ error: 'Failed to create template' });
   }
 }

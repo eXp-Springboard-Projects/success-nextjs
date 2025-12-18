@@ -100,7 +100,6 @@ export const getServerSideProps: GetServerSideProps = async ({ res }) => {
       props: {},
     };
   } catch (error) {
-    console.error('Error generating sitemap:', error);
     res.statusCode = 500;
     res.end();
     return {

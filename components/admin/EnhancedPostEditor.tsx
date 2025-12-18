@@ -193,7 +193,6 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         setLastSaved(new Date());
       }
     } catch (error) {
-      console.error('Auto-save error:', error);
     } finally {
       setAutoSaving(false);
     }
@@ -205,7 +204,6 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
       const data = await res.json();
       setCategories(data);
     } catch (error) {
-      console.error('Error fetching categories:', error);
     }
   };
 
@@ -241,7 +239,6 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
       setAccessTier(post.accessTier || 'free');
       setScheduledDate(post.scheduledDate || '');
     } catch (error) {
-      console.error('Error fetching post:', error);
       alert('Failed to load post');
     } finally {
       setLoading(false);
@@ -367,7 +364,6 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         }
       }
     } catch (error) {
-      console.error('Upload error:', error);
       alert('Failed to upload image');
     } finally {
       setUploading(false);
@@ -409,7 +405,6 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         }
       }
     } catch (error) {
-      console.error('Upload error:', error);
       alert('Failed to upload images');
     } finally {
       setUploading(false);
@@ -569,7 +564,6 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         alert(`Failed to save post: ${error.message || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Error saving post:', error);
       alert('Failed to save post');
     } finally {
       setSaving(false);

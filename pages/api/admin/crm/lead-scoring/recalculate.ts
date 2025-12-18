@@ -10,7 +10,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const result = await recalculateAllScores();
     return res.status(200).json(result);
   } catch (error) {
-    console.error('Error recalculating scores:', error);
     return res.status(500).json({ error: 'Failed to recalculate scores' });
   }
 }

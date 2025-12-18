@@ -180,7 +180,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: 'Account claimed successfully',
     });
   } catch (error) {
-    console.error('Complete claim error:', error);
     return res.status(500).json({
       error: 'Failed to complete account claim. Please try again or contact support.',
     });

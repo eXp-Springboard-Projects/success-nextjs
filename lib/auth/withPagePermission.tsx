@@ -70,7 +70,6 @@ export function withPagePermission<P extends object>(
 
           setPermissions(result);
         } catch (error) {
-          console.error('Permission check error:', error);
           router.push('/admin?error=permission_check_failed');
         } finally {
           setChecking(false);
@@ -130,7 +129,6 @@ export function usePagePermissions() {
       setPermissions(result);
       return result;
     } catch (error) {
-      console.error('Permission check error:', error);
       return null;
     } finally {
       setLoading(false);

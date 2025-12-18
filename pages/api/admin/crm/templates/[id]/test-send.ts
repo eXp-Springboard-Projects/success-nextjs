@@ -69,7 +69,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       renderedHtml: htmlContent,
     });
   } catch (error) {
-    console.error('Error sending test email:', error);
     return res.status(500).json({ error: 'Failed to send test email' });
   }
 }

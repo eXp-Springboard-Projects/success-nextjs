@@ -61,7 +61,6 @@ export default function EventsPage() {
       const data = await response.json();
       setEvents(data);
     } catch (error) {
-      console.error('Error fetching events:', error);
     } finally {
       setLoading(false);
     }
@@ -83,7 +82,6 @@ export default function EventsPage() {
         }
       }
     } catch (error) {
-      console.error('Error registering:', error);
     }
   };
 
@@ -101,7 +99,6 @@ export default function EventsPage() {
         fetchEvents(); // Refresh events
       }
     } catch (error) {
-      console.error('Error canceling registration:', error);
     }
   };
 

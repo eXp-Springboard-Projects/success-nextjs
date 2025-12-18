@@ -37,7 +37,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({ message: 'Contact unenrolled successfully' });
   } catch (error) {
-    console.error('Error unenrolling contact:', error);
     return res.status(500).json({ error: 'Failed to unenroll contact' });
   }
 }

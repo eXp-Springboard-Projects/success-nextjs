@@ -130,7 +130,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({ count });
     } catch (error) {
-      console.error('Error previewing list:', error);
       return res.status(500).json({ error: 'Failed to preview list' });
     }
   }

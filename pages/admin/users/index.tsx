@@ -91,7 +91,6 @@ export default function AdminUsers() {
                 return { ...user, departments: deptsData.departments };
               }
             } catch (err) {
-              console.error(`Error fetching departments for user ${user.id}:`, err);
             }
             return { ...user, departments: [] };
           })
@@ -101,7 +100,6 @@ export default function AdminUsers() {
         setUsers(data);
       }
     } catch (error) {
-      console.error('Error fetching users:', error);
     } finally {
       setLoading(false);
     }
@@ -115,7 +113,6 @@ export default function AdminUsers() {
         setSelectedDepartments(data.departments || []);
       }
     } catch (error) {
-      console.error('Error fetching user departments:', error);
       setSelectedDepartments([]);
     }
   };
@@ -180,7 +177,6 @@ export default function AdminUsers() {
         throw new Error(error.message || 'Failed to save user');
       }
     } catch (error: any) {
-      console.error('Error saving user:', error);
       alert(error.message || 'Failed to save user');
     } finally {
       setSaving(false);
@@ -220,7 +216,6 @@ export default function AdminUsers() {
         throw new Error('Failed to delete user');
       }
     } catch (error) {
-      console.error('Error deleting user:', error);
       alert('Failed to delete user');
     }
   };

@@ -91,7 +91,6 @@ export default function PremiumContentPage() {
         setContent(data);
       }
     } catch (error) {
-      console.error('Error fetching premium content:', error);
     } finally {
       setLoading(false);
       setLoadingMore(false);

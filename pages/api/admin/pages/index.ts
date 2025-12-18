@@ -56,7 +56,6 @@ export default async function handler(
 
       return res.status(200).json(pages);
     } catch (error: any) {
-      console.error('Error fetching pages:', error);
       return res.status(500).json({ error: error.message || 'Internal server error' });
     }
   }
@@ -122,7 +121,6 @@ export default async function handler(
 
       return res.status(201).json(page);
     } catch (error: any) {
-      console.error('Error creating page:', error);
       return res.status(500).json({ error: error.message || 'Internal server error' });
     }
   }

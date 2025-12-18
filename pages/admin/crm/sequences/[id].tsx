@@ -49,7 +49,6 @@ export default function SequenceBuilderPage() {
       const data = await res.json();
       setTemplates(data.templates || []);
     } catch (error) {
-      console.error('Error fetching templates:', error);
     }
   };
 
@@ -64,7 +63,6 @@ export default function SequenceBuilderPage() {
         steps: data.steps || [],
       });
     } catch (error) {
-      console.error('Error fetching sequence:', error);
     } finally {
       setLoading(false);
     }
@@ -102,7 +100,6 @@ export default function SequenceBuilderPage() {
         }
       }
     } catch (error) {
-      console.error('Error saving sequence:', error);
       alert('Failed to save sequence');
     } finally {
       setSaving(false);

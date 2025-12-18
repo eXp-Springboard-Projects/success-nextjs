@@ -49,7 +49,6 @@ async function getCampaign(id: string, res: NextApiResponse) {
 
     return res.status(200).json(campaign[0]);
   } catch (error) {
-    console.error('Error fetching campaign:', error);
     return res.status(500).json({ error: 'Failed to fetch campaign' });
   }
 }
@@ -140,7 +139,6 @@ async function updateCampaign(id: string, req: NextApiRequest, res: NextApiRespo
 
     return res.status(200).json(campaign[0]);
   } catch (error) {
-    console.error('Error updating campaign:', error);
     return res.status(500).json({ error: 'Failed to update campaign' });
   }
 }
@@ -153,7 +151,6 @@ async function deleteCampaign(id: string, res: NextApiResponse) {
 
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Error deleting campaign:', error);
     return res.status(500).json({ error: 'Failed to delete campaign' });
   }
 }

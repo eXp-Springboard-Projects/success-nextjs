@@ -53,7 +53,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         totalPages: Math.ceil(total / parseInt(perPage as string)),
       });
     } catch (error) {
-      console.error('Error fetching activity logs:', error);
       return res.status(500).json({ error: 'Failed to fetch activity logs' });
     }
   }
@@ -77,7 +76,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(201).json(log);
     } catch (error) {
-      console.error('Error creating activity log:', error);
       return res.status(500).json({ error: 'Failed to create activity log' });
     }
   }

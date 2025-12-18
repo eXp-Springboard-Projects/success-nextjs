@@ -141,7 +141,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       hasMore: parseInt(offset as string) + formattedPosts.length < totalCount,
     });
   } catch (error) {
-    console.error('Premium content API error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   } finally {
     await prisma.$disconnect();

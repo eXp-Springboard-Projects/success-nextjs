@@ -49,7 +49,6 @@ export function withDepartmentAccess<P extends object>(
               router.push('/admin');
             }
           } catch (error) {
-            console.error('Error checking department access:', error);
             router.push('/admin');
           } finally {
             setChecking(false);

@@ -70,7 +70,6 @@ async function getPromotions(req: NextApiRequest, res: NextApiResponse) {
       limit: parseInt(limit),
     });
   } catch (error) {
-    console.error('Error fetching promotions:', error);
     return res.status(500).json({ error: 'Failed to fetch promotions' });
   }
 }
@@ -119,7 +118,6 @@ async function createPromotion(req: NextApiRequest, res: NextApiResponse, sessio
 
     return res.status(201).json(promotion[0]);
   } catch (error: any) {
-    console.error('Error creating promotion:', error);
     if (error?.code === '23505') {
       return res.status(400).json({ error: 'Promotion code already exists' });
     }

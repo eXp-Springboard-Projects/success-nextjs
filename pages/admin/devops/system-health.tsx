@@ -35,7 +35,6 @@ export default function SystemHealthPage() {
         setMetrics(data.metrics);
       }
     } catch (error) {
-      console.error('Error fetching metrics:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);

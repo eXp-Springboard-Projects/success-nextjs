@@ -76,7 +76,6 @@ export async function auditLog(
       });
     }
   } catch (error) {
-    console.error('Failed to create audit log:', error);
     // Don't throw - audit logging should never break the main flow
   }
 }
@@ -111,7 +110,6 @@ export async function createSystemAlert(data: {
       },
     });
   } catch (error) {
-    console.error('Failed to create system alert:', error);
   }
 }
 
@@ -144,7 +142,6 @@ export async function createNotification(data: {
       },
     });
   } catch (error) {
-    console.error('Failed to create notification:', error);
   }
 }
 
@@ -182,7 +179,6 @@ export async function logWebhook(data: {
 
     return log.id;
   } catch (error) {
-    console.error('Failed to log webhook:', error);
     throw error;
   }
 }
@@ -253,7 +249,6 @@ export async function logError(data: {
       }
     }
   } catch (error) {
-    console.error('Failed to log error:', error);
   }
 }
 
@@ -276,7 +271,6 @@ export async function recordMetric(
       },
     });
   } catch (error) {
-    console.error('Failed to record metric:', error);
   }
 }
 

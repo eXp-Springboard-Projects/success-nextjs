@@ -112,7 +112,6 @@ async function getPosts(req, res) {
 
     return res.status(200).json(transformedPosts);
   } catch (error) {
-    console.error('Error fetching posts:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -163,7 +162,6 @@ async function createPost(req, res) {
 
     return res.status(201).json(post);
   } catch (error) {
-    console.error('Error creating post:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

@@ -133,7 +133,6 @@ export default function EnhancedPageEditor({ pageId }: EnhancedPageEditorProps) 
       setSeoDescription(page.seoDescription || '');
       setTemplate(page.template || '');
     } catch (error) {
-      console.error('Error fetching page:', error);
       alert('Failed to load page');
     } finally {
       setLoading(false);
@@ -243,7 +242,6 @@ export default function EnhancedPageEditor({ pageId }: EnhancedPageEditorProps) 
         }
       }
     } catch (error) {
-      console.error('Upload error:', error);
       alert('Failed to upload image');
     } finally {
       setUploading(false);
@@ -285,7 +283,6 @@ export default function EnhancedPageEditor({ pageId }: EnhancedPageEditorProps) 
         }
       }
     } catch (error) {
-      console.error('Upload error:', error);
       alert('Failed to upload images');
     } finally {
       setUploading(false);
@@ -451,7 +448,6 @@ export default function EnhancedPageEditor({ pageId }: EnhancedPageEditorProps) 
         alert(`Failed to save page: ${error.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Error saving page:', error);
       alert('Failed to save page');
     } finally {
       setSaving(false);

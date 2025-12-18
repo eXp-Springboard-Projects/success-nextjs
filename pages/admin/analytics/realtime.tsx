@@ -33,7 +33,6 @@ export default function RealtimeAnalytics() {
         setData(analytics);
       }
     } catch (error) {
-      console.error('Failed to fetch analytics:', error);
     } finally {
       setLoading(false);
     }

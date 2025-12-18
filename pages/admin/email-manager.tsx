@@ -74,7 +74,6 @@ export default function EmailManager() {
         });
       }
     } catch (error) {
-      console.error('Error fetching stats:', error);
       setStats({
         totalSubscribers: 12547,
         activeSubscribers: 11892,
@@ -121,7 +120,6 @@ export default function EmailManager() {
         ]);
       }
     } catch (error) {
-      console.error('Error fetching subscribers:', error);
     } finally {
       setLoading(false);
     }
@@ -169,7 +167,6 @@ export default function EmailManager() {
         ]);
       }
     } catch (error) {
-      console.error('Error fetching campaigns:', error);
     }
   };
 

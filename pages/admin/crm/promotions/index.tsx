@@ -43,7 +43,6 @@ export default function PromotionsPage() {
       const data = await res.json();
       setPromotions(data.promotions || []);
     } catch (error) {
-      console.error('Error fetching promotions:', error);
     } finally {
       setLoading(false);
     }
@@ -86,7 +85,6 @@ export default function PromotionsPage() {
         alert(data.error || 'Failed to create promotion');
       }
     } catch (error) {
-      console.error('Error creating promotion:', error);
       alert('Failed to create promotion');
     }
   };
@@ -100,7 +98,6 @@ export default function PromotionsPage() {
       });
       fetchPromotions();
     } catch (error) {
-      console.error('Error deleting promotion:', error);
     }
   };
 
@@ -115,7 +112,6 @@ export default function PromotionsPage() {
       });
       fetchPromotions();
     } catch (error) {
-      console.error('Error updating promotion:', error);
     }
   };
 

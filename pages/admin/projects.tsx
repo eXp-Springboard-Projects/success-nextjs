@@ -115,7 +115,6 @@ export default function ProjectsPage() {
         setStaff(data.staff || []);
       }
     } catch (err) {
-      console.error('Failed to fetch staff:', err);
     }
   };
 

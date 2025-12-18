@@ -23,7 +23,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate');
     res.status(200).send(sitemap);
   } catch (error) {
-    console.error('Sitemap generation error:', error);
     res.status(500).end();
   }
 }

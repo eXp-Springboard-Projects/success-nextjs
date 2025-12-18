@@ -49,7 +49,6 @@ export default function SuccessLabsPage() {
       const data = await response.json();
       setLabs(data);
     } catch (error) {
-      console.error('Error fetching labs:', error);
     } finally {
       setLoading(false);
     }

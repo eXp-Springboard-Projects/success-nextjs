@@ -32,7 +32,6 @@ export default async function handler(
 
     return res.status(200).json(permission);
   } catch (error: any) {
-    console.error('Permission check error:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }

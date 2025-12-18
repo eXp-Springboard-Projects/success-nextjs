@@ -78,7 +78,6 @@ export default function OrdersPage() {
         setOrders(data.orders);
       }
     } catch (error) {
-      console.error('Error fetching orders:', error);
     } finally {
       setLoading(false);
     }
@@ -124,7 +123,6 @@ export default function OrdersPage() {
         showToast(error.error || 'Failed to fulfill order', 'error');
       }
     } catch (error) {
-      console.error('Error fulfilling order:', error);
       showToast('Failed to fulfill order', 'error');
     } finally {
       setSaving(false);
@@ -155,7 +153,6 @@ export default function OrdersPage() {
         showToast(error.error || 'Failed to fulfill orders', 'error');
       }
     } catch (error) {
-      console.error('Error bulk fulfilling orders:', error);
       showToast('Failed to fulfill orders', 'error');
     } finally {
       setSaving(false);

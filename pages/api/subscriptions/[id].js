@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-10-29.clover',
+  apiVersion: '2025-09-30.clover',
 });
 
 export default async function handler(req, res) {
@@ -55,7 +55,6 @@ async function getSubscription(req, res, id) {
 
     return res.status(200).json(subscription);
   } catch (error) {
-    console.error('Error fetching subscription:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -87,9 +86,7 @@ async function cancelSubscription(req, res, id) {
           cancel_at_period_end: true,
         });
 
-        console.log(`✓ Stripe subscription ${subscription.stripeSubscriptionId} set to cancel at period end`);
-      } catch (stripeError) {
-        console.error('Error canceling Stripe subscription:', stripeError);
+} catch (stripeError) {
 
         // If Stripe cancellation fails, don't update database
         return res.status(500).json({
@@ -109,15 +106,12 @@ async function cancelSubscription(req, res, id) {
     });
 
     // Log the cancellation
-    console.log(`✓ Subscription ${id} canceled by admin. Will end on ${subscription.currentPeriodEnd}`);
-
-    return res.status(200).json({
+return res.status(200).json({
       message: 'Subscription canceled successfully. Will remain active until end of billing period.',
       subscription: updatedSubscription,
       endDate: subscription.currentPeriodEnd,
     });
   } catch (error) {
-    console.error('Error canceling subscription:', error);
     return res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 }
@@ -163,8 +157,7 @@ async function updateSubscription(req, res, id) {
           updatedAt: new Date(),
         };
 
-        console.log(`✓ Subscription ${id} paused in Stripe`);
-        break;
+break;
 
       case 'resume':
         // Resume subscription in Stripe
@@ -180,8 +173,7 @@ async function updateSubscription(req, res, id) {
           updatedAt: new Date(),
         };
 
-        console.log(`✓ Subscription ${id} resumed in Stripe`);
-        break;
+break;
 
       case 'cancel':
         // Immediate cancellation (not at period end)
@@ -195,8 +187,7 @@ async function updateSubscription(req, res, id) {
           updatedAt: new Date(),
         };
 
-        console.log(`✓ Subscription ${id} canceled immediately in Stripe`);
-        break;
+break;
 
       default:
         return res.status(400).json({ message: 'Invalid action. Use: pause, resume, or cancel' });
@@ -214,7 +205,6 @@ async function updateSubscription(req, res, id) {
       stripeData: updatedStripeSubscription,
     });
   } catch (error) {
-    console.error('Error updating subscription:', error);
     return res.status(500).json({
       message: 'Failed to update subscription',
       error: error.message,

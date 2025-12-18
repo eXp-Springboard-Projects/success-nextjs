@@ -36,16 +36,12 @@ export default function MemberLogin() {
         const response = await fetch('/api/auth/session');
         const sessionData = await response.json();
 
-        console.log('Session data after login:', sessionData);
-
-        // Redirect based on user role
+// Redirect based on user role
         const staffRoles = ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR'];
         if (staffRoles.includes(sessionData?.user?.role)) {
-          console.log('Redirecting staff to /admin');
-          router.push('/admin');
+router.push('/admin');
         } else {
-          console.log('Redirecting member to /dashboard');
-          const callbackUrl = router.query.callbackUrl as string || '/dashboard';
+const callbackUrl = router.query.callbackUrl as string || '/dashboard';
           router.push(callbackUrl);
         }
       }

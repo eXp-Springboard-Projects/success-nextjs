@@ -33,7 +33,6 @@ export default function AnnouncementsPage({ userDepartment }: AnnouncementsPageP
       const data = await res.json();
       setAnnouncements(data.announcements || []);
     } catch (error) {
-      console.error('Failed to fetch announcements:', error);
     } finally {
       setLoading(false);
     }

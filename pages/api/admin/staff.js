@@ -32,7 +32,6 @@ export default async function handler(req, res) {
       count: mockStaff.length,
     });
   } catch (error) {
-    console.error('Error in staff API:', error);
     return res.status(500).json({
       error: 'Internal server error',
       message: error.message,

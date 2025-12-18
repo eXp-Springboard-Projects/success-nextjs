@@ -50,7 +50,6 @@ async function getCampaigns(req: NextApiRequest, res: NextApiResponse) {
 
     return res.status(200).json({ campaigns });
   } catch (error) {
-    console.error('Error fetching campaigns:', error);
     return res.status(500).json({ error: 'Failed to fetch campaigns' });
   }
 }
@@ -91,7 +90,6 @@ async function createCampaign(req: NextApiRequest, res: NextApiResponse, session
 
     return res.status(201).json(campaign[0]);
   } catch (error) {
-    console.error('Error creating campaign:', error);
     return res.status(500).json({ error: 'Failed to create campaign' });
   }
 }

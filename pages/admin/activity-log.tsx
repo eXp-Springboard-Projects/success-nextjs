@@ -60,7 +60,6 @@ export default function ActivityLogPage() {
         setTotal(data.total);
       }
     } catch (error) {
-      console.error('Error fetching activity logs:', error);
     } finally {
       setLoading(false);
     }

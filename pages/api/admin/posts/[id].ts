@@ -104,7 +104,6 @@ export default async function handler(
 
       return res.status(200).json(formattedPost);
     } catch (error) {
-      console.error('Error fetching post:', error);
       return res.status(500).json({ error: 'Failed to fetch post' });
     }
   }
@@ -183,7 +182,6 @@ export default async function handler(
         }
       });
     } catch (error) {
-      console.error('Error updating post:', error);
       return res.status(500).json({ error: 'Failed to update post' });
     }
   }
@@ -196,7 +194,6 @@ export default async function handler(
 
       return res.status(200).json({ success: true, message: 'Post deleted' });
     } catch (error) {
-      console.error('Error deleting post:', error);
       return res.status(500).json({ error: 'Failed to delete post' });
     }
   }

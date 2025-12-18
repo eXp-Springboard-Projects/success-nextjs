@@ -56,7 +56,6 @@ export default async function handler(
 
       return res.status(200).json(media);
     } catch (error) {
-      console.error('Error fetching media:', error);
       return res.status(500).json({ error: 'Failed to fetch media' });
     }
   }

@@ -61,7 +61,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(comment);
     } catch (error) {
-      console.error('Error updating comment:', error);
       return res.status(500).json({ error: 'Failed to update comment' });
     }
   }
@@ -85,7 +84,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({ success: true });
     } catch (error) {
-      console.error('Error deleting comment:', error);
       return res.status(500).json({ error: 'Failed to delete comment' });
     }
   }

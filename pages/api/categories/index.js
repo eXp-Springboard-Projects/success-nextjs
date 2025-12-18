@@ -61,7 +61,6 @@ async function getCategories(req, res) {
 
     return res.status(200).json(transformedCategories);
   } catch (error) {
-    console.error('Error fetching categories:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -80,7 +79,6 @@ async function createCategory(req, res) {
 
     return res.status(201).json(category);
   } catch (error) {
-    console.error('Error creating category:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

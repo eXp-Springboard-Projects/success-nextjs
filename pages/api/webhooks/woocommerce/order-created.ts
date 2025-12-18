@@ -81,7 +81,6 @@ export default async function handler(
     const webhookSecret = process.env.WOOCOMMERCE_WEBHOOK_SECRET;
 
     if (!webhookSecret) {
-      console.error('❌ WOOCOMMERCE_WEBHOOK_SECRET not configured');
       return res.status(500).json({ error: 'Webhook secret not configured' });
     }
 
@@ -93,13 +92,10 @@ export default async function handler(
       .digest('base64');
 
     if (signature !== expectedSignature) {
-      console.error('❌ Invalid webhook signature');
       return res.status(401).json({ error: 'Invalid signature' });
     }
 
     const wooOrder: WooCommerceOrder = req.body;
-
-    console.log(`📦 Received WooCommerce order #${wooOrder.number} (ID: ${wooOrder.id})`);
 
     // Check if order already exists
     const existingOrder = await prisma.orders.findFirst({
@@ -109,8 +105,7 @@ export default async function handler(
     });
 
     if (existingOrder) {
-      console.log(`⚠️  Order already exists: ${existingOrder.id}`);
-      return res.status(200).json({
+return res.status(200).json({
         message: 'Order already synced',
         orderId: existingOrder.id
       });
@@ -138,8 +133,7 @@ export default async function handler(
           tags: ['WooCommerce'],
         },
       });
-      console.log(`✅ Created new member: ${member.id}`);
-    }
+}
 
     // Map WooCommerce status to our OrderStatus
     const statusMap: Record<string, string> = {
@@ -205,8 +199,6 @@ export default async function handler(
       },
     });
 
-    console.log(`✅ Created order: ${order.id} (${order.orderNumber})`);
-
     // Create order items
     for (const item of wooOrder.line_items) {
       // Find or create product
@@ -233,8 +225,7 @@ export default async function handler(
             category: 'MERCHANDISE',
           },
         });
-        console.log(`✅ Created product: ${product.name}`);
-      }
+}
 
       await prisma.order_items.create({
         data: {
@@ -249,9 +240,7 @@ export default async function handler(
       });
     }
 
-    console.log(`✅ Created ${wooOrder.line_items.length} order items`);
-
-    // Update member's total spent
+// Update member's total spent
     await prisma.members.update({
       where: { id: member.id },
       data: {
@@ -284,9 +273,7 @@ export default async function handler(
       },
     });
 
-    console.log('✅ Created transaction record');
-
-    return res.status(200).json({
+return res.status(200).json({
       success: true,
       message: 'Order synced successfully',
       orderId: order.id,
@@ -294,7 +281,6 @@ export default async function handler(
     });
 
   } catch (error: any) {
-    console.error('❌ WooCommerce webhook error:', error);
     return res.status(500).json({
       error: 'Internal server error',
       message: error.message,

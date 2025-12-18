@@ -45,7 +45,6 @@ export default function AdminTags() {
       const data = await res.json();
       setTags(data);
     } catch (error) {
-      console.error('Error fetching tags:', error);
     } finally {
       setLoading(false);
     }
@@ -97,7 +96,6 @@ export default function AdminTags() {
         throw new Error('Failed to save tag');
       }
     } catch (error) {
-      console.error('Error saving tag:', error);
       alert('Failed to save tag');
     } finally {
       setSaving(false);
@@ -122,7 +120,6 @@ export default function AdminTags() {
         throw new Error('Failed to delete tag');
       }
     } catch (error) {
-      console.error('Error deleting tag:', error);
       alert('Failed to delete tag');
     }
   };

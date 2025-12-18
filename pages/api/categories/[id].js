@@ -33,7 +33,6 @@ async function getCategory(req, res, id) {
 
     return res.status(200).json(category);
   } catch (error) {
-    console.error('Error fetching category:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -53,7 +52,6 @@ async function updateCategory(req, res, id) {
 
     return res.status(200).json(category);
   } catch (error) {
-    console.error('Error updating category:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -66,7 +64,6 @@ async function deleteCategory(req, res, id) {
 
     return res.status(200).json({ message: 'Category deleted successfully' });
   } catch (error) {
-    console.error('Error deleting category:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

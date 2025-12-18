@@ -186,7 +186,6 @@ export default function ImportContactsPage() {
         errors: data.errors || 0,
       });
     } catch (error) {
-      console.error('Error importing contacts:', error);
       alert('Failed to import contacts');
     } finally {
       setImporting(false);

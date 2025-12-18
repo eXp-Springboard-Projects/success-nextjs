@@ -2,6 +2,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Pencil, FileText, Calendar, Target, Star, Image, TrendingUp, Search, CheckCircle, Lock, BarChart3, type LucideIcon } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import DashboardStats from '../../components/admin/DashboardStats';
 import styles from './Dashboard.module.css';
@@ -27,8 +28,8 @@ export default function AdminDashboard() {
           const data = await res.json();
           setRecentPosts(data);
         }
-      } catch (error) {
-        console.error('Error fetching recent posts:', error);
+      } catch {
+        // Silent fail - recent posts section will show empty state
       }
     }
 
@@ -45,15 +46,15 @@ export default function AdminDashboard() {
     return null;
   }
 
-  const quickActions = [
-    { label: 'New Post', href: '/admin/posts/new', icon: '📝', color: '#667eea' },
-    { label: 'New Page', href: '/admin/pages/new', icon: '📄', color: '#764ba2' },
-    { label: 'Editorial Calendar', href: '/admin/editorial-calendar', icon: '📅', color: '#8b5cf6' },
-    { label: 'SEO Manager', href: '/admin/seo', icon: '🎯', color: '#10b981' },
-    { label: 'SUCCESS+ Members', href: '/admin/members', icon: '⭐', color: '#d32f2f' },
-    { label: 'Media Library', href: '/admin/media', icon: '🖼️', color: '#f093fb' },
-    { label: 'Analytics', href: '/admin/analytics', icon: '📈', color: '#4facfe' },
-    { label: 'Site Monitor', href: '/admin/site-monitor', icon: '🔍', color: '#ff6b6b' },
+  const quickActions: Array<{ label: string; href: string; icon: LucideIcon; color: string }> = [
+    { label: 'New Post', href: '/admin/posts/new', icon: Pencil, color: '#667eea' },
+    { label: 'New Page', href: '/admin/pages/new', icon: FileText, color: '#764ba2' },
+    { label: 'Editorial Calendar', href: '/admin/editorial-calendar', icon: Calendar, color: '#8b5cf6' },
+    { label: 'SEO Manager', href: '/admin/seo', icon: Target, color: '#10b981' },
+    { label: 'SUCCESS+ Members', href: '/admin/members', icon: Star, color: '#d32f2f' },
+    { label: 'Media Library', href: '/admin/media', icon: Image, color: '#f093fb' },
+    { label: 'Analytics', href: '/admin/analytics', icon: TrendingUp, color: '#4facfe' },
+    { label: 'Site Monitor', href: '/admin/site-monitor', icon: Search, color: '#ff6b6b' },
   ];
 
   return (
@@ -66,7 +67,7 @@ export default function AdminDashboard() {
           </div>
           <div className={styles.headerActions}>
             <Link href="/admin/posts/new" className={styles.primaryButton}>
-              ✏️ New Post
+              <Pencil size={16} /> New Post
             </Link>
           </div>
         </div>
@@ -76,17 +77,22 @@ export default function AdminDashboard() {
         <div className={styles.quickActionsSection}>
           <h2>Quick Actions</h2>
           <div className={styles.quickActions}>
-            {quickActions.map((action) => (
-              <Link
-                key={action.label}
-                href={action.href}
-                className={styles.quickAction}
-                style={{ borderLeftColor: action.color }}
-              >
-                <span className={styles.quickActionIcon}>{action.icon}</span>
-                <span className={styles.quickActionLabel}>{action.label}</span>
-              </Link>
-            ))}
+            {quickActions.map((action) => {
+              const IconComponent = action.icon;
+              return (
+                <Link
+                  key={action.label}
+                  href={action.href}
+                  className={styles.quickAction}
+                  style={{ borderLeftColor: action.color }}
+                >
+                  <span className={styles.quickActionIcon} style={{ color: action.color }}>
+                    <IconComponent size={20} />
+                  </span>
+                  <span className={styles.quickActionLabel}>{action.label}</span>
+                </Link>
+              );
+            })}
           </div>
         </div>
 
@@ -123,21 +129,27 @@ export default function AdminDashboard() {
             <h2>Site Health</h2>
             <div className={styles.healthCards}>
               <div className={styles.healthCard}>
-                <div className={styles.healthIcon}>✅</div>
+                <div className={styles.healthIcon} style={{ color: '#10b981' }}>
+                  <CheckCircle size={24} />
+                </div>
                 <div>
                   <h3>Performance</h3>
                   <p>Good</p>
                 </div>
               </div>
               <div className={styles.healthCard}>
-                <div className={styles.healthIcon}>🔒</div>
+                <div className={styles.healthIcon} style={{ color: '#3b82f6' }}>
+                  <Lock size={24} />
+                </div>
                 <div>
                   <h3>Security</h3>
                   <p>Protected</p>
                 </div>
               </div>
               <div className={styles.healthCard}>
-                <div className={styles.healthIcon}>📊</div>
+                <div className={styles.healthIcon} style={{ color: '#8b5cf6' }}>
+                  <BarChart3 size={24} />
+                </div>
                 <div>
                   <h3>SEO</h3>
                   <p>Optimized</p>
@@ -148,10 +160,10 @@ export default function AdminDashboard() {
             <div className={styles.atAGlance}>
               <h3>At a Glance</h3>
               <ul className={styles.glanceList}>
-                <li>✓ WordPress API Connected</li>
-                <li>✓ Database Connected</li>
-                <li>✓ Admin Access Active</li>
-                <li>✓ All Systems Operational</li>
+                <li><CheckCircle size={14} style={{ marginRight: '6px', color: '#10b981' }} /> WordPress API Connected</li>
+                <li><CheckCircle size={14} style={{ marginRight: '6px', color: '#10b981' }} /> Database Connected</li>
+                <li><CheckCircle size={14} style={{ marginRight: '6px', color: '#10b981' }} /> Admin Access Active</li>
+                <li><CheckCircle size={14} style={{ marginRight: '6px', color: '#10b981' }} /> All Systems Operational</li>
               </ul>
             </div>
           </div>

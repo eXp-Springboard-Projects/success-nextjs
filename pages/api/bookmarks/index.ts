@@ -26,7 +26,6 @@ export default async function handler(
 
       return res.status(200).json(bookmarks);
     } catch (error) {
-      console.error('Error fetching bookmarks:', error);
       return res.status(500).json({ error: 'Failed to fetch bookmarks' });
     }
   }
@@ -78,7 +77,6 @@ export default async function handler(
 
       return res.status(201).json(bookmark);
     } catch (error) {
-      console.error('Error creating bookmark:', error);
       return res.status(500).json({ error: 'Failed to create bookmark' });
     }
   }

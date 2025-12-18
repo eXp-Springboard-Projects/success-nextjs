@@ -48,7 +48,6 @@ export default function SuccessPlusContent() {
         setPosts(data.posts || []);
       }
     } catch (error) {
-      console.error('Error fetching premium content:', error);
     } finally {
       setLoading(false);
     }

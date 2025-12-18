@@ -35,7 +35,6 @@ export default function SubscriptionStatusWidget() {
         setSubscription(data);
       }
     } catch (error) {
-      console.error('Error fetching subscription:', error);
     } finally {
       setLoading(false);
     }

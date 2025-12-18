@@ -38,7 +38,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(items);
     } catch (error) {
-      console.error('Error fetching editorial items:', error);
       return res.status(500).json({ error: 'Failed to fetch editorial items' });
     }
   }
@@ -81,7 +80,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(201).json(item);
     } catch (error) {
-      console.error('Error creating editorial item:', error);
       return res.status(500).json({ error: 'Failed to create editorial item' });
     }
   }

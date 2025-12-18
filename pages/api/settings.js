@@ -17,8 +17,7 @@ export default async function handler(req, res) {
       try {
         settings = await prisma.site_settings.findFirst();
       } catch (dbError) {
-        console.log('Database not available, using defaults:', dbError.message);
-        settings = null;
+settings = null;
       }
 
       if (!settings) {
@@ -44,7 +43,6 @@ export default async function handler(req, res) {
 
       return res.status(200).json(settings);
     } catch (error) {
-      console.error('Error fetching settings:', error);
       return res.status(500).json({ message: 'Failed to fetch settings' });
     }
   }
@@ -74,7 +72,6 @@ export default async function handler(req, res) {
       try {
         existingSettings = await prisma.site_settings.findFirst();
       } catch (dbError) {
-        console.error('Database error:', dbError);
         return res.status(503).json({
           message: 'Database not available. Please run: npx prisma migrate dev --name add_site_settings',
           error: dbError.message,
@@ -133,7 +130,6 @@ export default async function handler(req, res) {
         settings,
       });
     } catch (error) {
-      console.error('Error saving settings:', error);
       return res.status(500).json({
         message: 'Failed to save settings. Database may not be configured.',
         error: error.message,

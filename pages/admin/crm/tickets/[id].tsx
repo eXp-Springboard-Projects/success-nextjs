@@ -67,7 +67,6 @@ export default function TicketDetailPage() {
       const data = await res.json();
       setTicket(data);
     } catch (error) {
-      console.error('Error fetching ticket:', error);
     } finally {
       setLoading(false);
     }
@@ -85,7 +84,6 @@ export default function TicketDetailPage() {
         fetchTicket();
       }
     } catch (error) {
-      console.error('Error updating status:', error);
     }
   };
 
@@ -101,7 +99,6 @@ export default function TicketDetailPage() {
         fetchTicket();
       }
     } catch (error) {
-      console.error('Error updating priority:', error);
     }
   };
 
@@ -117,7 +114,6 @@ export default function TicketDetailPage() {
         fetchTicket();
       }
     } catch (error) {
-      console.error('Error updating category:', error);
     }
   };
 
@@ -133,7 +129,6 @@ export default function TicketDetailPage() {
         fetchTicket();
       }
     } catch (error) {
-      console.error('Error updating assignee:', error);
     }
   };
 
@@ -158,7 +153,6 @@ export default function TicketDetailPage() {
         fetchTicket();
       }
     } catch (error) {
-      console.error('Error sending reply:', error);
     } finally {
       setSending(false);
     }

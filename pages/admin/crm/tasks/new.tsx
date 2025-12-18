@@ -45,7 +45,6 @@ export default function NewTaskPage() {
       const data = await res.json();
       setContacts(data.contacts || []);
     } catch (error) {
-      console.error('Error fetching contacts:', error);
     }
   };
 
@@ -55,7 +54,6 @@ export default function NewTaskPage() {
       const data = await res.json();
       setDeals(data.deals || []);
     } catch (error) {
-      console.error('Error fetching deals:', error);
     }
   };
 
@@ -92,7 +90,6 @@ export default function NewTaskPage() {
         alert('Failed to create task');
       }
     } catch (error) {
-      console.error('Error creating task:', error);
       alert('Failed to create task');
     } finally {
       setLoading(false);

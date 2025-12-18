@@ -29,7 +29,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(seoSettings);
     } catch (error) {
-      console.error('Error fetching SEO settings:', error);
       return res.status(500).json({ error: 'Failed to fetch SEO settings' });
     }
   }
@@ -121,7 +120,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({ success: true, data: seoSettings });
     } catch (error) {
-      console.error('Error saving SEO settings:', error);
       return res.status(500).json({ error: 'Failed to save SEO settings' });
     }
   }

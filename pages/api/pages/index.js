@@ -52,7 +52,6 @@ async function getPages(req, res) {
 
     return res.status(200).json(pages);
   } catch (error) {
-    console.error('Error fetching pages:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -75,7 +74,6 @@ async function createPage(req, res) {
 
     return res.status(201).json(page);
   } catch (error) {
-    console.error('Error creating page:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

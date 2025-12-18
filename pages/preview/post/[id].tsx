@@ -212,7 +212,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       },
     };
   } catch (error) {
-    console.error('Preview error:', error);
     return {
       props: {
         post: null,

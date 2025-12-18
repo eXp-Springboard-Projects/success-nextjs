@@ -41,7 +41,6 @@ export default function AdminVideos() {
       const data = await res.json();
       setVideos(data);
     } catch (error) {
-      console.error('Error fetching videos:', error);
     } finally {
       setLoading(false);
     }
@@ -58,7 +57,6 @@ export default function AdminVideos() {
         throw new Error('Failed to delete video');
       }
     } catch (error) {
-      console.error('Error deleting video:', error);
       alert('Failed to delete video');
     }
   };

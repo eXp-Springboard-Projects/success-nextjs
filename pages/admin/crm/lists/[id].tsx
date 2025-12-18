@@ -60,7 +60,6 @@ export default function ListDetail() {
       setList(data);
       setEditedList({ name: data.name, description: data.description || '' });
     } catch (error) {
-      console.error('Failed to fetch list:', error);
     }
   };
 
@@ -73,7 +72,6 @@ export default function ListDetail() {
       setMembers(data.members);
       setTotal(data.total);
     } catch (error) {
-      console.error('Failed to fetch members:', error);
     } finally {
       setLoading(false);
     }
@@ -85,7 +83,6 @@ export default function ListDetail() {
       const data = await res.json();
       setPreviewCount(data.count);
     } catch (error) {
-      console.error('Failed to fetch preview:', error);
     }
   };
 
@@ -101,7 +98,6 @@ export default function ListDetail() {
         setEditMode(false);
       }
     } catch (error) {
-      console.error('Failed to update list:', error);
     }
   };
 
@@ -119,7 +115,6 @@ export default function ListDetail() {
         fetchList();
       }
     } catch (error) {
-      console.error('Failed to add contact:', error);
     }
   };
 
@@ -131,7 +126,6 @@ export default function ListDetail() {
       fetchMembers();
       fetchList();
     } catch (error) {
-      console.error('Failed to remove member:', error);
     }
   };
 
@@ -145,7 +139,6 @@ export default function ListDetail() {
       a.download = `${list?.name || 'list'}-members.csv`;
       a.click();
     } catch (error) {
-      console.error('Failed to export:', error);
     }
   };
 

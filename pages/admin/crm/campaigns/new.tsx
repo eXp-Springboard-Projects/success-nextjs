@@ -67,7 +67,6 @@ export default function NewCampaignPage() {
       const data = await res.json();
       setTemplates(data.templates || []);
     } catch (error) {
-      console.error('Error fetching templates:', error);
     }
   };
 
@@ -77,7 +76,6 @@ export default function NewCampaignPage() {
       const data = await res.json();
       setLists(data.lists || []);
     } catch (error) {
-      console.error('Error fetching lists:', error);
     }
   };
 
@@ -92,7 +90,6 @@ export default function NewCampaignPage() {
       const data = await res.json();
       setEstimatedRecipients(data.count || 0);
     } catch (error) {
-      console.error('Error calculating recipients:', error);
     }
   };
 
@@ -125,7 +122,6 @@ export default function NewCampaignPage() {
       });
       alert('Test email sent!');
     } catch (error) {
-      console.error('Error sending test:', error);
       alert('Failed to send test email');
     }
   };
@@ -176,7 +172,6 @@ export default function NewCampaignPage() {
 
       router.push(`/admin/crm/campaigns/${campaign.id}`);
     } catch (error) {
-      console.error('Error creating campaign:', error);
       alert('Failed to create campaign');
     } finally {
       setLoading(false);

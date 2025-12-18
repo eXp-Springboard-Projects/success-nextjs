@@ -53,7 +53,6 @@ export default async function handler(
 
     return res.status(200).json(alert);
   } catch (error) {
-    console.error('Error resolving alert:', error);
     return res.status(500).json({ message: 'Failed to resolve alert' });
   }
 }

@@ -51,7 +51,6 @@ export default async function handler(
     for (const campaign of scheduledCampaigns) {
       try {
         if (!campaign.email_templates) {
-          console.error(`Campaign ${campaign.id} has no email template`);
           continue;
         }
 
@@ -59,7 +58,6 @@ export default async function handler(
         const contacts = campaign.campaign_contacts.map((cc: CampaignContact) => cc.contacts);
 
         if (contacts.length === 0) {
-          console.error(`Campaign ${campaign.id} has no contacts`);
           continue;
         }
 
@@ -113,7 +111,6 @@ export default async function handler(
           totalContacts: contacts.length,
         });
       } catch (error: any) {
-        console.error(`Error processing campaign ${campaign.id}:`, error);
         results.push({
           campaignId: campaign.id,
           campaignName: campaign.name,
@@ -128,7 +125,6 @@ export default async function handler(
       results,
     });
   } catch (error: any) {
-    console.error('Error processing scheduled campaigns:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }

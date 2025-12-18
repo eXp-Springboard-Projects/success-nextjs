@@ -47,7 +47,6 @@ export default function PostEditor({ postId }: PostEditorProps) {
       const data = await res.json();
       setCategories(data);
     } catch (error) {
-      console.error('Error fetching categories:', error);
     }
   };
 
@@ -67,7 +66,6 @@ export default function PostEditor({ postId }: PostEditorProps) {
       setStatus(post.status.toUpperCase());
       setSelectedCategories(post._embedded?.['wp:term']?.[0]?.map((c: any) => c.id) || []);
     } catch (error) {
-      console.error('Error fetching post:', error);
       alert('Failed to load post');
     } finally {
       setLoading(false);
@@ -102,7 +100,6 @@ export default function PostEditor({ postId }: PostEditorProps) {
         new Date().toLocaleDateString()
       );
     } catch (error) {
-      console.error('Error exporting PDF:', error);
       alert('Failed to export PDF');
     }
   };
@@ -145,7 +142,6 @@ export default function PostEditor({ postId }: PostEditorProps) {
         throw new Error('Failed to save post');
       }
     } catch (error) {
-      console.error('Error saving post:', error);
       alert('Failed to save post');
     } finally {
       setSaving(false);

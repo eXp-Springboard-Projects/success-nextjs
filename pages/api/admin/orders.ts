@@ -52,7 +52,6 @@ export default async function handler(
 
     return res.status(200).json(orders);
   } catch (error: any) {
-    console.error('Orders API error:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }

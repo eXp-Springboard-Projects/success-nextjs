@@ -65,7 +65,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: 'Password has been reset successfully',
     });
   } catch (error) {
-    console.error('Error in reset password:', error);
     return res.status(500).json({ error: 'Failed to reset password' });
   }
 }

@@ -3,7 +3,9 @@ import { PrismaClient } from '@prisma/client';
 import { stripe } from '@/lib/stripe';
 import Stripe from 'stripe';
 import { nanoid } from 'nanoid';
+import { createLogger } from '@/lib/logger';
 
+const log = createLogger('StripeWebhook');
 const prisma = new PrismaClient();
 
 // Disable body parsing, need raw body for webhook signature verification
@@ -30,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!webhookSecret) {
-    console.error('STRIPE_WEBHOOK_SECRET is not set');
+    log.error('STRIPE_WEBHOOK_SECRET is not set');
     return res.status(500).json({ error: 'Webhook secret not configured' });
   }
 
@@ -44,7 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Verify Stripe is configured
     if (!stripe) {
-      console.error('Stripe is not configured');
+      log.error('Stripe is not configured');
       return res.status(500).json({ error: 'Stripe is not configured' });
     }
 
@@ -53,14 +55,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
     } catch (err) {
-      console.error('Webhook signature verification failed:', err);
+      log.error('Webhook signature verification failed', err);
       return res.status(400).json({
         error: 'Webhook signature verification failed',
         details: err instanceof Error ? err.message : 'Unknown error',
       });
     }
 
-    console.log(`Received Stripe webhook: ${event.type}`);
+    log.info('Received Stripe webhook', { eventType: event.type });
 
     // Handle different event types
     switch (event.type) {
@@ -86,12 +88,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         break;
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        log.debug('Unhandled event type', { eventType: event.type });
     }
 
     return res.status(200).json({ received: true });
   } catch (error) {
-    console.error('Webhook error:', error);
+    log.error('Webhook error', error);
     return res.status(500).json({
       error: 'Webhook processing failed',
       details: error instanceof Error ? error.message : 'Unknown error',
@@ -109,7 +111,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   const subscriptionId = session.subscription as string;
 
   if (!customerId || !subscriptionId) {
-    console.error('Missing customer or subscription ID in checkout session');
+    log.error('Missing customer or subscription ID in checkout session');
     return;
   }
 
@@ -122,7 +124,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   });
 
   if (!member) {
-    console.error(`No member found with Stripe customer ID: ${customerId}`);
+    log.error('No member found with Stripe customer ID', { customerId });
     return;
   }
 
@@ -205,7 +207,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     });
   }
 
-  console.log(`✅ Subscription activated for member: ${member.email}`);
+  log.info('Subscription activated for member', { email: member.email });
 }
 
 /**
@@ -294,7 +296,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     },
   });
 
-  console.log(`✅ Subscription updated: ${subscriptionId} - Status: ${subscription.status}`);
+  log.info('Subscription updated', { subscriptionId, status: subscription.status });
 }
 
 /**
@@ -315,7 +317,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   });
 
   if (!existingSubscription) {
-    console.error(`Subscription not found: ${subscriptionId}`);
+    log.error('Subscription not found', { subscriptionId });
     return;
   }
 
@@ -356,7 +358,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     });
   }
 
-  console.log(`❌ Subscription cancelled: ${subscriptionId}`);
+  log.info('Subscription cancelled', { subscriptionId });
 }
 
 /**
@@ -386,7 +388,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       },
     });
 
-    console.log(`✅ Payment succeeded for subscription: ${subscriptionId}`);
+    log.info('Payment succeeded for subscription', { subscriptionId });
   }
 }
 
@@ -441,6 +443,6 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
       });
     }
 
-    console.log(`❌ Payment failed for subscription: ${subscriptionId}`);
+    log.info('Payment failed for subscription', { subscriptionId });
   }
 }

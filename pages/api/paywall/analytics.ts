@@ -16,13 +16,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // You can extend this to log to a separate analytics table
     // For now, we're just acknowledging the event
-    console.log('Paywall Analytics Event:', {
-      articleId,
-      articleTitle,
-      blocked,
-      userId: userId || 'anonymous',
-      timestamp: new Date().toISOString()
-    });
 
     // Could also send to external analytics service
     // await sendToGoogleAnalytics({ ... });
@@ -30,7 +23,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Analytics tracking error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

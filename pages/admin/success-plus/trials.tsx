@@ -46,7 +46,6 @@ export default function TrialUsersPage() {
         setLoading(false);
       })
       .catch((error) => {
-        console.error('Failed to fetch trial stats:', error);
         setLoading(false);
       });
   }, []);
