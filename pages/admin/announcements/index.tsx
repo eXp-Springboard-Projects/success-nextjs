@@ -38,6 +38,42 @@ export default function AnnouncementsPage({ userDepartment }: AnnouncementsPageP
     }
   };
 
+  const handleDelete = async (id: string, title: string) => {
+    if (!confirm(`Delete announcement "${title}"?`)) return;
+
+    try {
+      const res = await fetch(`/api/admin/announcements/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setAnnouncements(announcements.filter(a => a.id !== id));
+        alert('✓ Announcement deleted successfully');
+      } else {
+        const data = await res.json();
+        alert(`✗ Failed to delete: ${data.error}`);
+      }
+    } catch (error) {
+      alert('✗ Failed to delete announcement');
+    }
+  };
+
+  const handleToggleActive = async (id: string, isActive: boolean) => {
+    try {
+      const res = await fetch(`/api/admin/announcements/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !isActive }),
+      });
+
+      if (res.ok) {
+        fetchAnnouncements();
+      }
+    } catch (error) {
+      alert('✗ Failed to update announcement');
+    }
+  };
+
   const getStatusBadge = (announcement: Announcement) => {
     if (!announcement.isActive) {
       return <span className={`${styles.badge} ${styles.badgeInactive}`}>Inactive</span>;
@@ -59,12 +95,25 @@ export default function AnnouncementsPage({ userDepartment }: AnnouncementsPageP
       description="Company-wide announcements and updates"
     >
       <div className={styles.container}>
+        <div className={styles.header}>
+          <div>
+            <h1>Announcements</h1>
+            <p>Manage company-wide announcements and updates</p>
+          </div>
+          <Link href="/admin/announcements/new" className={styles.createButton}>
+            + New Announcement
+          </Link>
+        </div>
+
         {loading ? (
           <div className={styles.loading}>Loading announcements...</div>
         ) : announcements.length === 0 ? (
           <div className={styles.empty}>
             <div className={styles.emptyIcon}>📢</div>
             <div>No announcements yet</div>
+            <Link href="/admin/announcements/new" className={styles.createButton}>
+              Create Your First Announcement
+            </Link>
           </div>
         ) : (
           <div className={styles.announcementsList}>
@@ -88,6 +137,23 @@ export default function AnnouncementsPage({ userDepartment }: AnnouncementsPageP
                       <span>Expires {new Date(announcement.expiresAt).toLocaleDateString()}</span>
                     </>
                   )}
+                </div>
+                <div className={styles.actions}>
+                  <Link href={`/admin/announcements/${announcement.id}/edit`} className={styles.actionButton}>
+                    Edit
+                  </Link>
+                  <button
+                    onClick={() => handleToggleActive(announcement.id, announcement.isActive)}
+                    className={styles.actionButton}
+                  >
+                    {announcement.isActive ? 'Deactivate' : 'Activate'}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(announcement.id, announcement.title)}
+                    className={`${styles.actionButton} ${styles.deleteButton}`}
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             ))}

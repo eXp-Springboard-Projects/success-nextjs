@@ -863,6 +863,8 @@ model users {
   staff_departments         staff_departments[]
   user_activities           user_activities[]
   watch_history             watch_history[]
+  announcements             announcements[]
+  announcement_views        announcement_views[]
   member                    members?             @relation("UserMemberLink", fields: [memberId], references: [id])
 
   @@index([email])
@@ -1098,6 +1100,46 @@ model watch_history {
   @@index([userId])
   @@index([contentType])
   @@index([lastWatchedAt])
+}
+
+model announcements {
+  id               String              @id @default(uuid())
+  title            String
+  content          String
+  type             AnnouncementType    @default(INFO)
+  priority         AnnouncementPriority @default(NORMAL)
+  targetAudience   String              @default("ALL") // ALL, STAFF, MEMBERS, SUCCESS_PLUS, etc.
+  isActive         Boolean             @default(true)
+  isPinned         Boolean             @default(false)
+  publishedAt      DateTime            @default(now())
+  expiresAt        DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  createdBy        String
+  dismissible      Boolean             @default(true)
+  linkUrl          String?
+  linkText         String?
+  users            users               @relation(fields: [createdBy], references: [id])
+  announcement_views announcement_views[]
+
+  @@index([isActive])
+  @@index([publishedAt])
+  @@index([expiresAt])
+  @@index([targetAudience])
+}
+
+model announcement_views {
+  id              String        @id @default(uuid())
+  announcementId  String
+  userId          String
+  viewedAt        DateTime      @default(now())
+  dismissedAt     DateTime?
+  announcements   announcements @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  users           users         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+  @@index([userId])
+  @@index([announcementId])
 }
 
 model press_releases {
@@ -2282,4 +2324,12 @@ enum AnnouncementPriority {
   NORMAL
   HIGH
   URGENT
+}
+
+enum AnnouncementType {
+  INFO
+  WARNING
+  SUCCESS
+  ALERT
+  MAINTENANCE
 }
