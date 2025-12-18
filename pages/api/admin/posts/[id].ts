@@ -126,6 +126,14 @@ export default async function handler(
       } = req.body;
 
       // Update post
+      const currentPost = await prisma.posts.findUnique({
+        where: { id: id as string },
+        select: { publishedAt: true }
+      });
+
+      const newStatus = status?.toUpperCase() || 'DRAFT';
+      const isBeingPublished = newStatus === 'PUBLISHED' || newStatus === 'PUBLISH';
+
       const updatedPost = await prisma.posts.update({
         where: { id: id as string },
         data: {
@@ -133,12 +141,14 @@ export default async function handler(
           slug,
           content,
           excerpt,
-          status: status?.toUpperCase() || 'DRAFT',
+          status: newStatus,
           featuredImage,
           featuredImageAlt,
           seoTitle,
           seoDescription,
-          publishedAt: publishedAt ? new Date(publishedAt) : undefined,
+          publishedAt: isBeingPublished
+            ? (publishedAt ? new Date(publishedAt) : (currentPost?.publishedAt || new Date()))
+            : undefined,
           categories: categoryIds ? {
             set: categoryIds.map((catId: string) => ({ id: catId }))
           } : undefined,
