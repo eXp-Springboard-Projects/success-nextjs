@@ -9,6 +9,10 @@ import Underline from '@tiptap/extension-underline';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
+import Table from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableHeader from '@tiptap/extension-table-header';
+import TableCell from '@tiptap/extension-table-cell';
 import { EnhancedImage } from './editor-extensions/EnhancedImage';
 import { EnhancedTextStyle } from './editor-extensions/EnhancedTextStyle';
 import { FullWidthImage } from './editor-extensions/FullWidthImage';
@@ -88,6 +92,15 @@ export default function EnhancedPageEditor({ pageId }: EnhancedPageEditorProps) 
       Highlight.configure({
         multicolor: true,
       }),
+      Table.configure({
+        resizable: true,
+        HTMLAttributes: {
+          class: 'editor-table',
+        },
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
       FullWidthImage,
       TwoColumnText,
       ImageTextLayout,
@@ -717,6 +730,72 @@ export default function EnhancedPageEditor({ pageId }: EnhancedPageEditorProps) 
                   >
                     ➡
                   </button>
+                </div>
+
+                <div className={styles.toolbarDivider}></div>
+
+                {/* Table Controls */}
+                <div className={styles.toolbarGroup}>
+                  <button
+                    onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+                    className={styles.toolbarButton}
+                    title="Insert Table"
+                  >
+                    ⊞ Table
+                  </button>
+                  {editor?.isActive('table') && (
+                    <>
+                      <button
+                        onClick={() => editor.chain().focus().addColumnBefore().run()}
+                        className={styles.toolbarButton}
+                        title="Add Column Before"
+                      >
+                        ◀ Col
+                      </button>
+                      <button
+                        onClick={() => editor.chain().focus().addColumnAfter().run()}
+                        className={styles.toolbarButton}
+                        title="Add Column After"
+                      >
+                        Col ▶
+                      </button>
+                      <button
+                        onClick={() => editor.chain().focus().deleteColumn().run()}
+                        className={styles.toolbarButton}
+                        title="Delete Column"
+                      >
+                        ✕ Col
+                      </button>
+                      <button
+                        onClick={() => editor.chain().focus().addRowBefore().run()}
+                        className={styles.toolbarButton}
+                        title="Add Row Before"
+                      >
+                        ▲ Row
+                      </button>
+                      <button
+                        onClick={() => editor.chain().focus().addRowAfter().run()}
+                        className={styles.toolbarButton}
+                        title="Add Row After"
+                      >
+                        Row ▼
+                      </button>
+                      <button
+                        onClick={() => editor.chain().focus().deleteRow().run()}
+                        className={styles.toolbarButton}
+                        title="Delete Row"
+                      >
+                        ✕ Row
+                      </button>
+                      <button
+                        onClick={() => editor.chain().focus().deleteTable().run()}
+                        className={styles.toolbarButton}
+                        title="Delete Table"
+                      >
+                        ✕ Table
+                      </button>
+                    </>
+                  )}
                 </div>
 
                 <div className={styles.toolbarDivider}></div>
