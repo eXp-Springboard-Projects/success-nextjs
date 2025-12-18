@@ -55,7 +55,6 @@ export default function RevisionHistory({
         setRevisions(data);
       }
     } catch (error) {
-      console.error('Error fetching revisions:', error);
     } finally {
       setLoading(false);
     }

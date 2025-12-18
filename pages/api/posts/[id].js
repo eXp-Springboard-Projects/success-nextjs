@@ -79,7 +79,6 @@ async function getPost(id, req, res) {
 
     return res.status(200).json(transformedPost);
   } catch (error) {
-    console.error('Error fetching post:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -140,7 +139,6 @@ async function updatePost(id, req, res) {
 
     return res.status(200).json(post);
   } catch (error) {
-    console.error('Error updating post:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -153,7 +151,6 @@ async function deletePost(id, res) {
 
     return res.status(200).json({ message: 'Post deleted successfully' });
   } catch (error) {
-    console.error('Error deleting post:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

@@ -11,9 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'POST') {
     try {
-      console.log(`Cache cleared by ${session.user.name}`);
-
-      // Pages Router cache clearing - trigger on-demand ISR revalidation
+// Pages Router cache clearing - trigger on-demand ISR revalidation
       const pagesToRevalidate = [
         '/',
         '/blog',
@@ -30,10 +28,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         try {
           await res.revalidate(path);
           revalidatedCount++;
-          console.log(`✓ Cache cleared for: ${path}`);
-        } catch (error) {
+} catch (error) {
           const errorMsg = `Failed to clear cache for ${path}: ${error}`;
-          console.error(errorMsg);
           errors.push(errorMsg);
         }
       }
@@ -71,7 +67,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         clearedBy: session.user.name
       });
     } catch (error) {
-      console.error('Error clearing cache:', error);
       return res.status(500).json({ error: 'Failed to clear cache' });
     }
   }

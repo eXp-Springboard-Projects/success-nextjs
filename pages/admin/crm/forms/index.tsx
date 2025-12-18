@@ -33,7 +33,6 @@ export default function FormsPage() {
       const data = await res.json();
       setForms(data.forms || []);
     } catch (error) {
-      console.error('Error fetching forms:', error);
     } finally {
       setLoading(false);
     }
@@ -53,7 +52,6 @@ export default function FormsPage() {
         alert('Failed to delete form');
       }
     } catch (error) {
-      console.error('Error deleting form:', error);
       alert('Error deleting form');
     }
   };
@@ -71,7 +69,6 @@ export default function FormsPage() {
         alert('Failed to duplicate form');
       }
     } catch (error) {
-      console.error('Error duplicating form:', error);
       alert('Error duplicating form');
     }
   };

@@ -214,7 +214,6 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     };
   } catch (error) {
     // Table doesn't exist or other error
-    console.error('Landing page error:', error);
     return { notFound: true };
   }
 };

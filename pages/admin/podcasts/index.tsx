@@ -41,7 +41,6 @@ export default function AdminPodcasts() {
       const data = await res.json();
       setPodcasts(data);
     } catch (error) {
-      console.error('Error fetching podcasts:', error);
     } finally {
       setLoading(false);
     }
@@ -58,7 +57,6 @@ export default function AdminPodcasts() {
         throw new Error('Failed to delete podcast');
       }
     } catch (error) {
-      console.error('Error deleting podcast:', error);
       alert('Failed to delete podcast');
     }
   };

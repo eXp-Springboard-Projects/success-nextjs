@@ -125,7 +125,6 @@ export async function checkPagePermission(
       reason: 'No permission granted for this page',
     };
   } catch (error) {
-    console.error('Error checking page permission:', error);
     return {
       allowed: false,
       canAccess: false,
@@ -205,7 +204,6 @@ export async function getUserAccessiblePages(userId: string): Promise<string[]> 
 
     return Array.from(accessiblePages);
   } catch (error) {
-    console.error('Error getting accessible pages:', error);
     return [];
   }
 }
@@ -358,5 +356,4 @@ export async function initializeDefaultPermissions() {
     });
   }
 
-  console.log(`Initialized ${defaultPages.length} page permissions`);
 }

@@ -43,7 +43,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         totalPages: Math.ceil(total / parseInt(perPage as string)),
       });
     } catch (error) {
-      console.error('Error fetching comments:', error);
       return res.status(500).json({ error: 'Failed to fetch comments' });
     }
   }
@@ -79,7 +78,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(201).json(comment);
     } catch (error) {
-      console.error('Error creating comment:', error);
       return res.status(500).json({ error: 'Failed to create comment' });
     }
   }

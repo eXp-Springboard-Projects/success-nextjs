@@ -34,7 +34,6 @@ export default async function handler(
       count: result.count,
     });
   } catch (error) {
-    console.error('Error marking all notifications as read:', error);
     return res.status(500).json({ message: 'Failed to mark all notifications as read' });
   }
 }

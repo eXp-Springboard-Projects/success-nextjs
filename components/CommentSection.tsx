@@ -52,7 +52,6 @@ export default function CommentSection({ postId, postTitle }: CommentSectionProp
         setComments(data);
       }
     } catch (error) {
-      console.error('Failed to fetch comments:', error);
     } finally {
       setLoading(false);
     }

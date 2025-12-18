@@ -44,7 +44,6 @@ export default function TaskWidget({ contactId, dealId, ticketId, title = 'Tasks
       const data = await res.json();
       setTasks(data.tasks || []);
     } catch (error) {
-      console.error('Error fetching tasks:', error);
     } finally {
       setLoading(false);
     }
@@ -79,7 +78,6 @@ export default function TaskWidget({ contactId, dealId, ticketId, title = 'Tasks
         fetchTasks();
       }
     } catch (error) {
-      console.error('Error creating task:', error);
     } finally {
       setCreating(false);
     }
@@ -95,7 +93,6 @@ export default function TaskWidget({ contactId, dealId, ticketId, title = 'Tasks
       });
       fetchTasks();
     } catch (error) {
-      console.error('Error completing task:', error);
     }
   };
 

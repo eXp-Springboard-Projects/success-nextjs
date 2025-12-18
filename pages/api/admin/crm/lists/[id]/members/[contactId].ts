@@ -32,7 +32,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(204).end();
     } catch (error) {
-      console.error('Error removing member:', error);
       return res.status(500).json({ error: 'Failed to remove member' });
     }
   }

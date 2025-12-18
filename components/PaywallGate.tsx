@@ -84,7 +84,6 @@ export default function PaywallGate({
         setConfig(configData);
       }
     } catch (error) {
-      console.error('Paywall check failed:', error);
       // Fail open - don't block on error
       setIsBlocked(false);
     }
@@ -104,7 +103,6 @@ export default function PaywallGate({
         })
       });
     } catch (error) {
-      console.error('Failed to track article view:', error);
     }
   }
 

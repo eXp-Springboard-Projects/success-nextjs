@@ -177,7 +177,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       recipientCount,
     });
   } catch (error) {
-    console.error('Error sending email:', error);
     return res.status(500).json({ error: 'Failed to send email' });
   }
 }

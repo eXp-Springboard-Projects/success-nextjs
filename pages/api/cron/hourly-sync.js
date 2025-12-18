@@ -8,8 +8,6 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  console.log('Starting hourly sync:', new Date().toISOString());
-
   try {
     const results = {
       timestamp: new Date().toISOString(),
@@ -123,19 +121,12 @@ export default async function handler(req, res) {
       results.errors.push({ task: 'fetch magazines', error: error.message });
     }
 
-    console.log('Hourly sync completed:', {
-      revalidated: results.revalidated.length,
-      errors: results.errors.length,
-      contentStats: results.contentStats
-    });
-
-    return res.status(200).json({
+return res.status(200).json({
       success: true,
       message: 'Hourly sync completed',
       results
     });
   } catch (error) {
-    console.error('Hourly sync failed:', error);
     return res.status(500).json({
       success: false,
       error: error.message

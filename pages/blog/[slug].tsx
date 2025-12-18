@@ -40,7 +40,6 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
           setIsBookmarked(isAlreadyBookmarked);
         }
       } catch (error) {
-        console.error('Error checking bookmark:', error);
       }
     };
 
@@ -64,7 +63,6 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
       await navigator.clipboard.writeText(shareUrl);
       alert('Link copied to clipboard!');
     } catch (err) {
-      console.error('Failed to copy link:', err);
     }
   };
 
@@ -120,7 +118,6 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
         }
       }
     } catch (error) {
-      console.error('Error toggling bookmark:', error);
     } finally {
       setBookmarkLoading(false);
     }
@@ -394,8 +391,6 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
   );
 }
 
-
-
 export async function getServerSideProps({ params, req, res }: any) {
   const { slug } = params;
 
@@ -445,7 +440,6 @@ export async function getServerSideProps({ params, req, res }: any) {
       }
     };
   } catch (error) {
-    console.error('Error fetching post:', error);
     return { notFound: true };
   }
 }

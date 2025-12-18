@@ -35,7 +35,6 @@ export default function NewList() {
       const data = await res.json();
       setPreviewCount(data.count);
     } catch (error) {
-      console.error('Failed to preview:', error);
     }
   };
 
@@ -65,7 +64,6 @@ export default function NewList() {
         alert('Failed to create list');
       }
     } catch (error) {
-      console.error('Failed to create list:', error);
       alert('Failed to create list');
     } finally {
       setSaving(false);

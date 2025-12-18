@@ -56,7 +56,6 @@ export async function exportElementToPDF(
     // Save PDF
     pdf.save(filename);
   } catch (error) {
-    console.error('Error exporting to PDF:', error);
     throw error;
   }
 }
@@ -223,7 +222,6 @@ export async function exportImageToPDF(
       }
     }
   } catch (error) {
-    console.error('Error loading image:', error);
   }
 
   const filename = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`;
@@ -340,7 +338,6 @@ export async function exportMagazineCoverToPDF(
       }
     }
   } catch (error) {
-    console.error('Error loading cover image:', error);
     throw error;
   }
 
@@ -442,7 +439,6 @@ export async function exportMagazinePrintPDF(
     }
 
   } catch (error) {
-    console.error('Error creating print PDF:', error);
     throw error;
   }
 

@@ -79,7 +79,6 @@ export default function CRMDashboard() {
       setPipeline(data.pipelineSummary || []);
       setTickets(data.ticketsByPriority || []);
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
     }
@@ -91,7 +90,6 @@ export default function CRMDashboard() {
       const data = await res.json();
       setHotLeads(data.leads || []);
     } catch (error) {
-      console.error('Error fetching hot leads:', error);
     }
   };
 

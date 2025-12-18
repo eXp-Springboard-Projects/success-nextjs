@@ -92,7 +92,6 @@ export default function SiteMonitor() {
         });
       }
     } catch (error) {
-      console.error('Error fetching system status:', error);
     } finally {
       setLoading(false);
     }
@@ -114,7 +113,6 @@ export default function SiteMonitor() {
         });
       }
     } catch (error) {
-      console.error('Error fetching performance metrics:', error);
       setPerformance({
         avgResponseTime: 245,
         uptime: 99.98,
@@ -133,7 +131,6 @@ export default function SiteMonitor() {
       ]);
       alert('Health check completed successfully!');
     } catch (error) {
-      console.error('Error running health check:', error);
       alert('Health check failed. Please try again.');
     } finally {
       setChecking(false);

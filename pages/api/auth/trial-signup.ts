@@ -119,7 +119,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
   } catch (error) {
-    console.error('Trial signup error:', error);
     return res.status(500).json({
       error: 'Failed to create trial account',
       details: error instanceof Error ? error.message : 'Unknown error',

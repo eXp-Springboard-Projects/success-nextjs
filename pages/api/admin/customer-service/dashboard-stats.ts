@@ -133,7 +133,6 @@ export default async function handler(
     return res.status(200).json(stats);
 
   } catch (error) {
-    console.error('Error fetching Customer Service dashboard stats:', error);
     return res.status(500).json({ error: 'Internal server error' });
   } finally {
     await prisma.$disconnect();

@@ -74,7 +74,6 @@ export default function CampaignDetailPage() {
       const data = await res.json();
       setCampaign(data);
     } catch (error) {
-      console.error('Error fetching campaign:', error);
     } finally {
       setLoading(false);
     }
@@ -88,7 +87,6 @@ export default function CampaignDetailPage() {
         setEvents(data);
       }
     } catch (error) {
-      console.error('Error fetching events:', error);
     }
   };
 
@@ -123,7 +121,6 @@ export default function CampaignDetailPage() {
         alert(`Failed to send campaign: ${error.error}`);
       }
     } catch (error: any) {
-      console.error('Error sending campaign:', error);
       alert(`Error: ${error.message}`);
     } finally {
       setSending(false);

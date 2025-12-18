@@ -89,8 +89,6 @@ export default function PressReleasePage({ pressRelease }: PressReleasePageProps
   );
 }
 
-
-
 export async function getServerSideProps({ params }: any) {
   try {
     const pressReleases = await fetchWordPressData(`press-releases?slug=${params.slug}&_embed`);

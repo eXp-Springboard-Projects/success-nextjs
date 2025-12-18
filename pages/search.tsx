@@ -56,7 +56,6 @@ export default function SearchPage() {
         });
       }
     } catch (error) {
-      console.error('Search error:', error);
       setResults([]);
     } finally {
       setLoading(false);

@@ -65,7 +65,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({ projects });
     } catch (error) {
-      console.error('Error fetching projects:', error);
       return res.status(500).json({ error: 'Failed to fetch projects' });
     } finally {
       await prisma.$disconnect();
@@ -122,7 +121,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(201).json({ project });
     } catch (error) {
-      console.error('Error creating project:', error);
       return res.status(500).json({ error: 'Failed to create project' });
     } finally {
       await prisma.$disconnect();

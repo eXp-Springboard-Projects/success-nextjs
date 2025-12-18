@@ -48,7 +48,6 @@ export default function AdminSubscriptions() {
       const data = await res.json();
       setSubscriptions(data);
     } catch (error) {
-      console.error('Error fetching subscriptions:', error);
     } finally {
       setLoading(false);
     }
@@ -71,7 +70,6 @@ export default function AdminSubscriptions() {
         throw new Error(error.message || 'Failed to cancel subscription');
       }
     } catch (error) {
-      console.error('Error canceling subscription:', error);
       alert(`Failed to cancel subscription: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
@@ -95,7 +93,6 @@ export default function AdminSubscriptions() {
         throw new Error(error.message || 'Failed to pause subscription');
       }
     } catch (error) {
-      console.error('Error pausing subscription:', error);
       alert(`Failed to pause subscription: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
@@ -119,7 +116,6 @@ export default function AdminSubscriptions() {
         throw new Error(error.message || 'Failed to resume subscription');
       }
     } catch (error) {
-      console.error('Error resuming subscription:', error);
       alert(`Failed to resume subscription: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };

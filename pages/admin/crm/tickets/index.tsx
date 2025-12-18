@@ -53,7 +53,6 @@ export default function TicketsListPage() {
       setTickets(data.tickets || []);
       setTotalPages(data.pagination?.totalPages || 1);
     } catch (error) {
-      console.error('Error fetching tickets:', error);
     } finally {
       setLoading(false);
     }
@@ -71,7 +70,6 @@ export default function TicketsListPage() {
         fetchTickets();
       }
     } catch (error) {
-      console.error('Error updating ticket status:', error);
     }
   };
 

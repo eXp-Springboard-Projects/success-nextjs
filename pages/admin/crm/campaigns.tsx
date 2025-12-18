@@ -52,7 +52,6 @@ export default function CampaignsPage() {
       const data = await res.json();
       setCampaigns(data);
     } catch (error) {
-      console.error('Error fetching campaigns:', error);
     } finally {
       setLoading(false);
     }
@@ -77,7 +76,6 @@ export default function CampaignsPage() {
         fetchCampaigns();
       }
     } catch (error) {
-      console.error('Error creating campaign:', error);
     }
   };
 
@@ -90,7 +88,6 @@ export default function CampaignsPage() {
       });
       fetchCampaigns();
     } catch (error) {
-      console.error('Error deleting campaign:', error);
     }
   };
 

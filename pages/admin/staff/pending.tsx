@@ -32,7 +32,6 @@ export default function PendingStaff() {
       const data = await res.json();
       setPendingUsers(data);
     } catch (error) {
-      console.error('Error fetching pending users:', error);
     } finally {
       setLoading(false);
     }
@@ -57,7 +56,6 @@ export default function PendingStaff() {
         alert(data.error || 'Failed to approve user');
       }
     } catch (error) {
-      console.error('Error approving user:', error);
       alert('Failed to approve user');
     } finally {
       setProcessing(false);
@@ -81,7 +79,6 @@ export default function PendingStaff() {
         alert(data.error || 'Failed to reject user');
       }
     } catch (error) {
-      console.error('Error rejecting user:', error);
       alert('Failed to reject user');
     }
   };

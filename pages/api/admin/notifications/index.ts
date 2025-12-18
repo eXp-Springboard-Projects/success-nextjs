@@ -29,7 +29,6 @@ export default async function handler(
 
       return res.status(200).json(notifications);
     } catch (error) {
-      console.error('Error fetching notifications:', error);
       return res.status(500).json({ message: 'Failed to fetch notifications' });
     }
   }
@@ -60,7 +59,6 @@ export default async function handler(
 
       return res.status(201).json(notification);
     } catch (error) {
-      console.error('Error creating notification:', error);
       return res.status(500).json({ message: 'Failed to create notification' });
     }
   }

@@ -33,7 +33,6 @@ export default async function handler(
 
     return res.status(200).json(notification);
   } catch (error) {
-    console.error('Error marking notification as read:', error);
     return res.status(500).json({ message: 'Failed to mark notification as read' });
   }
 }

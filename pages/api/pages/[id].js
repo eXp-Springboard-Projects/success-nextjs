@@ -28,7 +28,6 @@ async function getPage(req, res, id) {
 
     return res.status(200).json(page);
   } catch (error) {
-    console.error('Error fetching page:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -52,7 +51,6 @@ async function updatePage(req, res, id) {
 
     return res.status(200).json(page);
   } catch (error) {
-    console.error('Error updating page:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -65,7 +63,6 @@ async function deletePage(req, res, id) {
 
     return res.status(200).json({ message: 'Page deleted successfully' });
   } catch (error) {
-    console.error('Error deleting page:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

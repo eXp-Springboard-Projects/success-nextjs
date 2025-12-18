@@ -41,15 +41,13 @@ export function withPasswordChange<P extends object>(
 
             // If user hasn't changed default password, redirect
             if (!data.user.hasChangedDefaultPassword) {
-              console.log('User must change password, redirecting...');
-              router.push('/admin/change-password');
+router.push('/admin/change-password');
               return;
             }
           }
 
           setIsCheckingPassword(false);
         } catch (error) {
-          console.error('Error checking password status:', error);
           setIsCheckingPassword(false);
         }
       };

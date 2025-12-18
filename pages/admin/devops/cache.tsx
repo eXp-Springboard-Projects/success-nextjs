@@ -30,7 +30,6 @@ export default function CacheManagementPage() {
         setCacheStats(data);
       }
     } catch (error) {
-      console.error('Error fetching cache stats:', error);
     } finally {
       setLoading(false);
     }
@@ -47,7 +46,6 @@ export default function CacheManagementPage() {
         alert('✗ Failed to clear cache');
       }
     } catch (error) {
-      console.error('Error clearing cache:', error);
       alert('✗ Failed to clear cache');
     } finally {
       setClearing(false);

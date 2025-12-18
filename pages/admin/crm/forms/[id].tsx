@@ -68,7 +68,6 @@ export default function FormBuilder() {
       setTags(data.tags || []);
       setNotifyEmails(data.notifyEmails || []);
     } catch (error) {
-      console.error('Error fetching form:', error);
     } finally {
       setLoading(false);
     }
@@ -80,7 +79,6 @@ export default function FormBuilder() {
       const data = await res.json();
       setLists(data.lists || []);
     } catch (error) {
-      console.error('Error fetching lists:', error);
     }
   };
 
@@ -162,7 +160,6 @@ export default function FormBuilder() {
         alert('Failed to save form');
       }
     } catch (error) {
-      console.error('Error saving form:', error);
       alert('Error saving form');
     } finally {
       setSaving(false);

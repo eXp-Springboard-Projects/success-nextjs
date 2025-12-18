@@ -41,7 +41,6 @@ async function getPromotion(id: string, res: NextApiResponse) {
 
     return res.status(200).json(promotion[0]);
   } catch (error) {
-    console.error('Error fetching promotion:', error);
     return res.status(500).json({ error: 'Failed to fetch promotion' });
   }
 }
@@ -82,7 +81,6 @@ async function updatePromotion(id: string, req: NextApiRequest, res: NextApiResp
 
     return res.status(200).json(promotion[0]);
   } catch (error: any) {
-    console.error('Error updating promotion:', error);
     if (error?.code === '23505') {
       return res.status(400).json({ error: 'Promotion code already exists' });
     }
@@ -98,7 +96,6 @@ async function deletePromotion(id: string, res: NextApiResponse) {
 
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Error deleting promotion:', error);
     return res.status(500).json({ error: 'Failed to delete promotion' });
   }
 }

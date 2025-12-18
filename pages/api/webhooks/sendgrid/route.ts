@@ -28,7 +28,6 @@ export default async function handler(
         const eventType = event.event;
 
         if (!emailAddress || !eventType) {
-          console.warn('Missing email or event type in webhook', event);
           continue;
         }
 
@@ -38,7 +37,6 @@ export default async function handler(
         });
 
         if (!contact) {
-          console.warn(`Contact not found for email: ${emailAddress}`);
           continue;
         }
 
@@ -46,7 +44,6 @@ export default async function handler(
         const campaignId = event.campaignId || event['sg_campaign_id'];
 
         if (!campaignId) {
-          console.warn('No campaign ID in webhook event');
           continue;
         }
 
@@ -114,14 +111,12 @@ export default async function handler(
           });
         }
       } catch (error) {
-        console.error('Error processing SendGrid webhook event:', error);
         // Continue processing other events
       }
     }
 
     return res.status(200).json({ received: true });
   } catch (error: any) {
-    console.error('SendGrid webhook error:', error);
     return res.status(500).json({ error: error.message });
   }
 }

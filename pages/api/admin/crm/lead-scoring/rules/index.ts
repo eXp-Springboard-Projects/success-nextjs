@@ -13,7 +13,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({ rules });
     } catch (error) {
-      console.error('Error fetching scoring rules:', error);
       return res.status(500).json({ error: 'Failed to fetch scoring rules' });
     }
   }
@@ -34,7 +33,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(201).json(rule);
     } catch (error) {
-      console.error('Error creating scoring rule:', error);
       return res.status(500).json({ error: 'Failed to create scoring rule' });
     }
   }

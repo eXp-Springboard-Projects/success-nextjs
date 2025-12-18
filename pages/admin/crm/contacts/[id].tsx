@@ -99,7 +99,6 @@ export default function ContactDetailPage() {
       });
       setCustomFields(data.custom_fields || {});
     } catch (error) {
-      console.error('Error fetching contact:', error);
     } finally {
       setLoading(false);
     }
@@ -118,7 +117,6 @@ export default function ContactDetailPage() {
         fetchContact();
       }
     } catch (error) {
-      console.error('Error updating contact:', error);
     }
   };
 
@@ -137,7 +135,6 @@ export default function ContactDetailPage() {
         fetchContact();
       }
     } catch (error) {
-      console.error('Error adding tag:', error);
     }
   };
 
@@ -151,7 +148,6 @@ export default function ContactDetailPage() {
         fetchContact();
       }
     } catch (error) {
-      console.error('Error removing tag:', error);
     }
   };
 
@@ -170,7 +166,6 @@ export default function ContactDetailPage() {
         fetchContact();
       }
     } catch (error) {
-      console.error('Error adding note:', error);
     }
   };
 

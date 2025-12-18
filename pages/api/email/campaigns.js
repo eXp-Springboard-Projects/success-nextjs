@@ -10,7 +10,6 @@ export default async function handler(req, res) {
 
     res.status(200).json(campaigns);
   } catch (error) {
-    console.error('Error fetching campaigns:', error);
     res.status(500).json({ message: 'Failed to fetch campaigns' });
   }
 }

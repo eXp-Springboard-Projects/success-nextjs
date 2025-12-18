@@ -114,7 +114,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({ count });
     } catch (error) {
-      console.error('Error previewing filters:', error);
       return res.status(500).json({ error: 'Failed to preview filters' });
     }
   }

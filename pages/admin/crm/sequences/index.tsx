@@ -32,7 +32,6 @@ export default function SequencesPage() {
       const data = await res.json();
       setSequences(data.sequences || []);
     } catch (error) {
-      console.error('Error fetching sequences:', error);
     } finally {
       setLoading(false);
     }
@@ -51,7 +50,6 @@ export default function SequencesPage() {
         fetchSequences();
       }
     } catch (error) {
-      console.error('Error duplicating sequence:', error);
     }
   };
 
@@ -67,7 +65,6 @@ export default function SequencesPage() {
       });
       fetchSequences();
     } catch (error) {
-      console.error('Error updating sequence:', error);
     }
   };
 
@@ -81,7 +78,6 @@ export default function SequencesPage() {
       });
       fetchSequences();
     } catch (error) {
-      console.error('Error deleting sequence:', error);
     }
   };
 

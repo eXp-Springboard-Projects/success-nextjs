@@ -34,7 +34,6 @@ export default async function handler(
 
       return res.status(200).json(subscriber);
     } catch (error) {
-      console.error('Error fetching subscriber:', error);
       return res.status(500).json({ message: 'Failed to fetch subscriber' });
     }
   }
@@ -67,7 +66,6 @@ export default async function handler(
 
       return res.status(200).json(subscriber);
     } catch (error) {
-      console.error('Error updating subscriber:', error);
       return res.status(500).json({ message: 'Failed to update subscriber' });
     }
   }
@@ -80,7 +78,6 @@ export default async function handler(
 
       return res.status(200).json({ message: 'Subscriber deleted' });
     } catch (error) {
-      console.error('Error deleting subscriber:', error);
       return res.status(500).json({ message: 'Failed to delete subscriber' });
     }
   }

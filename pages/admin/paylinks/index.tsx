@@ -70,7 +70,6 @@ export default function AdminPayLinks() {
         setPaylinks(data);
       }
     } catch (error) {
-      console.error('Error fetching paylinks:', error);
     } finally {
       setLoading(false);
     }
@@ -133,7 +132,6 @@ export default function AdminPayLinks() {
         alert(error.error || 'Failed to create payment link');
       }
     } catch (error) {
-      console.error('Error creating paylink:', error);
       alert('Failed to create payment link');
     } finally {
       setSaving(false);
@@ -151,7 +149,6 @@ export default function AdminPayLinks() {
         alert('Failed to delete payment link');
       }
     } catch (error) {
-      console.error('Error deleting paylink:', error);
       alert('Failed to delete payment link');
     }
   };
@@ -170,7 +167,6 @@ export default function AdminPayLinks() {
         fetchPayLinks();
       }
     } catch (error) {
-      console.error('Error updating paylink:', error);
     }
   };
 

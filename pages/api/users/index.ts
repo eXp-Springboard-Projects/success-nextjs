@@ -47,7 +47,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(transformedUsers);
     } catch (error: any) {
-      console.error('Error fetching users:', error);
       return res.status(500).json({ error: 'Failed to fetch users', message: error.message });
     }
   }
@@ -93,7 +92,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(201).json(userWithoutPassword);
     } catch (error: any) {
-      console.error('Error creating user:', error);
       return res.status(500).json({ error: 'Failed to create user', message: error.message });
     }
   }

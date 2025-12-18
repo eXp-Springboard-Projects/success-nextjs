@@ -56,7 +56,6 @@ export default function EditorialCalendar() {
         setItems(data);
       }
     } catch (error) {
-      console.error('Error fetching editorial items:', error);
     } finally {
       setLoading(false);
     }
@@ -84,7 +83,6 @@ export default function EditorialCalendar() {
         fetchEditorialItems();
       }
     } catch (error) {
-      console.error('Error adding item:', error);
     }
   };
 
@@ -100,7 +98,6 @@ export default function EditorialCalendar() {
         fetchEditorialItems();
       }
     } catch (error) {
-      console.error('Error updating status:', error);
     }
   };
 
@@ -116,7 +113,6 @@ export default function EditorialCalendar() {
         fetchEditorialItems();
       }
     } catch (error) {
-      console.error('Error updating date:', error);
     }
   };
 

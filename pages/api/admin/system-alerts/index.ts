@@ -50,7 +50,6 @@ export default async function handler(
 
       return res.status(200).json(alerts);
     } catch (error) {
-      console.error('Error fetching system alerts:', error);
       return res.status(500).json({ message: 'Failed to fetch system alerts' });
     }
   }

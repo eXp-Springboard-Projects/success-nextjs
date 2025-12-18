@@ -36,7 +36,6 @@ export default async function handler(
 
       return res.status(200).json(progress);
     } catch (error) {
-      console.error('Error fetching reading progress:', error);
       return res.status(500).json({ error: 'Failed to fetch reading progress' });
     }
   }
@@ -109,7 +108,6 @@ export default async function handler(
 
       return res.status(200).json(readingProgress);
     } catch (error) {
-      console.error('Error updating reading progress:', error);
       return res.status(500).json({ error: 'Failed to update reading progress' });
     }
   }

@@ -35,7 +35,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(formatted);
     } catch (error) {
-      console.error('Error fetching unsubscribes:', error);
       return res.status(500).json({ error: 'Failed to fetch unsubscribes' });
     }
   }

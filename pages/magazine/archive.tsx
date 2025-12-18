@@ -67,7 +67,6 @@ export async function getServerSideProps() {
       }
     };
   } catch (error) {
-    console.error('Error fetching magazines:', error);
     return {
       props: {
         magazines: [],

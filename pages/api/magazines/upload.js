@@ -12,21 +12,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  console.log('📤 Magazine upload started');
-
-  try {
+try {
     const form = formidable({
       maxFileSize: 50 * 1024 * 1024, // 50MB for PDFs
       keepExtensions: true,
       multiples: false,
     });
 
-    console.log('📝 Parsing form data...');
-    const [fields, files] = await form.parse(req);
-    console.log('✅ Form parsed successfully', {
-      fieldKeys: Object.keys(fields),
-      fileKeys: Object.keys(files)
-    });
+const [fields, files] = await form.parse(req);
 
     const pdfFile = files.pdf?.[0];
     const coverImageFile = files.coverImage?.[0];
@@ -44,18 +37,12 @@ export default async function handler(req, res) {
     }
 
     // Upload PDF to blob storage
-    console.log('📄 Reading PDF file...', {
-      originalFilename: pdfFile.originalFilename,
-      size: pdfFile.size,
-      mimetype: pdfFile.mimetype
-    });
-    const pdfBuffer = await readFile(pdfFile.filepath);
+const pdfBuffer = await readFile(pdfFile.filepath);
     let pdfUrl;
     let coverUrl = null;
 
     if (process.env.BLOB_READ_WRITE_TOKEN) {
-      console.log('☁️ Uploading PDF to Vercel Blob...');
-      const pdfBlob = await put(
+const pdfBlob = await put(
         `magazines/${Date.now()}-${pdfFile.originalFilename || pdfFile.newFilename}`,
         pdfBuffer,
         {
@@ -64,12 +51,9 @@ export default async function handler(req, res) {
         }
       );
       pdfUrl = pdfBlob.url;
-      console.log('✅ PDF uploaded to blob storage:', pdfUrl);
-
-      // Upload cover image if provided
+// Upload cover image if provided
       if (coverImageFile) {
-        console.log('🖼️ Uploading cover image to Vercel Blob...');
-        const coverBuffer = await readFile(coverImageFile.filepath);
+const coverBuffer = await readFile(coverImageFile.filepath);
         const coverBlob = await put(
           `magazines/covers/${Date.now()}-${coverImageFile.originalFilename || coverImageFile.newFilename}`,
           coverBuffer,
@@ -79,24 +63,20 @@ export default async function handler(req, res) {
           }
         );
         coverUrl = coverBlob.url;
-        console.log('✅ Cover image uploaded:', coverUrl);
-      }
+}
     } else {
       // Development mode - use placeholder URLs
       pdfUrl = `/uploads/magazines/${pdfFile.originalFilename || pdfFile.newFilename}`;
       if (coverImageFile) {
         coverUrl = `/uploads/magazines/covers/${coverImageFile.originalFilename || coverImageFile.newFilename}`;
       }
-      console.warn('BLOB_READ_WRITE_TOKEN not configured. Using placeholder URLs for development.');
     }
 
     // Generate unique ID for the magazine
     const magazineId = `mag_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
-    console.log('💾 Storing magazine in database...', { id: magazineId, slug });
-
-    // Store magazine metadata in database
+// Store magazine metadata in database
     const magazine = await prisma.magazines.create({
       data: {
         id: magazineId,
@@ -112,14 +92,11 @@ export default async function handler(req, res) {
       },
     });
 
-    console.log('✅ Magazine uploaded successfully!', { id: magazine.id, title: magazine.title });
-
-    return res.status(201).json({
+return res.status(201).json({
       message: 'Magazine uploaded successfully',
       magazine,
     });
   } catch (error) {
-    console.error('Error uploading magazine:', error);
 
     // Provide more detailed error messages
     let errorMessage = 'Upload failed';

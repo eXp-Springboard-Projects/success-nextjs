@@ -31,7 +31,6 @@ export default function LandingPagesPage() {
       const data = await res.json();
       setPages(data.pages || []);
     } catch (error) {
-      console.error('Error fetching landing pages:', error);
     } finally {
       setLoading(false);
     }
@@ -50,7 +49,6 @@ export default function LandingPagesPage() {
         fetchPages();
       }
     } catch (error) {
-      console.error('Error duplicating landing page:', error);
     }
   };
 
@@ -64,7 +62,6 @@ export default function LandingPagesPage() {
       });
       fetchPages();
     } catch (error) {
-      console.error('Error deleting landing page:', error);
     }
   };
 

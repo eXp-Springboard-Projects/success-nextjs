@@ -136,10 +136,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
       if (!emailRes.ok) {
-        console.error('Failed to send claim email');
       }
     } catch (emailError) {
-      console.error('Email send error:', emailError);
       // Continue even if email fails - they can contact support
     }
 
@@ -148,7 +146,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: 'Claim link sent to your email',
     });
   } catch (error) {
-    console.error('Claim account error:', error);
     return res.status(500).json({
       error: 'Failed to process claim request. Please try again or contact support.',
     });

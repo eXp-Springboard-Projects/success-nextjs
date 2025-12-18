@@ -60,7 +60,6 @@ async function getPodcasts(req, res) {
 
     return res.status(200).json(transformedPodcasts);
   } catch (error) {
-    console.error('Error fetching podcasts:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -92,7 +91,6 @@ async function createPodcast(req, res) {
 
     return res.status(201).json(podcast);
   } catch (error) {
-    console.error('Error creating podcast:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

@@ -75,7 +75,6 @@ export default function StaffInvite() {
         setInvites(data.invites || []);
       }
     } catch (err) {
-      console.error('Error fetching invites:', err);
     } finally {
       setLoadingInvites(false);
     }

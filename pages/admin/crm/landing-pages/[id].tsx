@@ -58,7 +58,6 @@ export default function LandingPageEditor() {
         content: data.content || [],
       });
     } catch (error) {
-      console.error('Error fetching page:', error);
     } finally {
       setLoading(false);
     }
@@ -70,7 +69,6 @@ export default function LandingPageEditor() {
       const data = await res.json();
       setForms(data.forms || []);
     } catch (error) {
-      console.error('Error fetching forms:', error);
     }
   };
 
@@ -113,7 +111,6 @@ export default function LandingPageEditor() {
         alert(data.error || 'Failed to save page');
       }
     } catch (error) {
-      console.error('Error saving page:', error);
       alert('Failed to save page');
     } finally {
       setSaving(false);

@@ -53,7 +53,6 @@ export default function RefundsPage() {
         setRefunds(data);
       }
     } catch (error) {
-      console.error('Error fetching refunds:', error);
     } finally {
       setLoading(false);
     }
@@ -77,7 +76,6 @@ export default function RefundsPage() {
         fetchRefunds();
       }
     } catch (error) {
-      console.error('Error updating refund:', error);
     }
   };
 

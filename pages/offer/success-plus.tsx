@@ -24,7 +24,6 @@ export default function SuccessPlusOffer() {
         window.location.href = url;
       }
     } catch (error) {
-      console.error('Checkout error:', error);
       alert('There was an error processing your request. Please try again.');
     }
   };

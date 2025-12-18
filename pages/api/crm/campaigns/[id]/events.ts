@@ -44,7 +44,6 @@ export default async function handler(
 
     return res.status(200).json(events);
   } catch (error: any) {
-    console.error('Error fetching campaign events:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }

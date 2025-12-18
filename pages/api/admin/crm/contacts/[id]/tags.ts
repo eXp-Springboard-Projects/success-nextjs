@@ -49,7 +49,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(201).json(tag[0]);
   } catch (error) {
-    console.error('Error adding tag:', error);
     return res.status(500).json({ error: 'Failed to add tag' });
   }
 }

@@ -47,7 +47,6 @@ export default function AdminCategories() {
       const data = await res.json();
       setCategories(data);
     } catch (error) {
-      console.error('Error fetching categories:', error);
     } finally {
       setLoading(false);
     }
@@ -100,7 +99,6 @@ export default function AdminCategories() {
         throw new Error('Failed to save category');
       }
     } catch (error) {
-      console.error('Error saving category:', error);
       alert('Failed to save category');
     } finally {
       setSaving(false);
@@ -126,7 +124,6 @@ export default function AdminCategories() {
         throw new Error('Failed to delete category');
       }
     } catch (error) {
-      console.error('Error deleting category:', error);
       alert('Failed to delete category');
     }
   };

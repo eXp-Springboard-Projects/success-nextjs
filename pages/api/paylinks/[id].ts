@@ -51,7 +51,6 @@ async function getPayLink(id: string, res: NextApiResponse) {
 
     return res.status(200).json(paylink);
   } catch (error) {
-    console.error('Error fetching paylink:', error);
     return res.status(500).json({ error: 'Failed to fetch paylink' });
   }
 }
@@ -106,7 +105,6 @@ async function updatePayLink(id: string, req: NextApiRequest, res: NextApiRespon
           });
         }
       } catch (stripeError) {
-        console.error('Stripe error:', stripeError);
       }
     }
 
@@ -150,7 +148,6 @@ async function updatePayLink(id: string, req: NextApiRequest, res: NextApiRespon
 
     return res.status(200).json(updatedPaylink);
   } catch (error) {
-    console.error('Error updating paylink:', error);
     return res.status(500).json({ error: 'Failed to update paylink' });
   }
 }
@@ -173,7 +170,6 @@ async function deletePayLink(id: string, res: NextApiResponse, session: any) {
           active: false,
         });
       } catch (stripeError) {
-        console.error('Stripe error:', stripeError);
       }
     }
 
@@ -196,7 +192,6 @@ async function deletePayLink(id: string, res: NextApiResponse, session: any) {
 
     return res.status(200).json({ success: true, message: 'Paylink deleted successfully' });
   } catch (error) {
-    console.error('Error deleting paylink:', error);
     return res.status(500).json({ error: 'Failed to delete paylink' });
   }
 }

@@ -92,7 +92,6 @@ export default function SettingsPage() {
       });
       setInterestsData(data.interests || []);
     } catch (error) {
-      console.error('Error fetching settings:', error);
     } finally {
       setLoading(false);
     }
@@ -117,7 +116,6 @@ export default function SettingsPage() {
         setMessage('Failed to update profile');
       }
     } catch (error) {
-      console.error('Error saving profile:', error);
       setMessage('Error updating profile');
     } finally {
       setSaving(false);
@@ -142,7 +140,6 @@ export default function SettingsPage() {
         setMessage('Failed to update interests');
       }
     } catch (error) {
-      console.error('Error saving interests:', error);
       setMessage('Error updating interests');
     } finally {
       setSaving(false);
@@ -183,7 +180,6 @@ export default function SettingsPage() {
         setMessage(result.error || 'Failed to update password');
       }
     } catch (error) {
-      console.error('Error changing password:', error);
       setMessage('Error updating password');
     } finally {
       setSaving(false);

@@ -120,7 +120,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       url: checkoutSession.url,
     });
   } catch (error) {
-    console.error('Checkout session error:', error);
     return res.status(500).json({
       error: 'Failed to create checkout session',
       details: error instanceof Error ? error.message : 'Unknown error',

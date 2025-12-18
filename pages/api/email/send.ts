@@ -50,17 +50,6 @@ export default async function handler(
     }
 
     // For development: Log email to console instead of sending
-    console.log('📧 EMAIL SEND REQUEST:', {
-      to,
-      from: from || 'noreply@success.com',
-      subject,
-      text: text?.substring(0, 100) + '...',
-      html: html ? 'HTML content provided' : 'No HTML',
-      template,
-      templateData,
-      timestamp: new Date().toISOString(),
-    });
-
     // TODO: Implement actual email sending when ready
     // Example with SendGrid:
     /*
@@ -96,7 +85,6 @@ export default async function handler(
     });
 
   } catch (error) {
-    console.error('Email send error:', error);
     return res.status(500).json({
       error: 'Failed to send email',
       details: error instanceof Error ? error.message : 'Unknown error',

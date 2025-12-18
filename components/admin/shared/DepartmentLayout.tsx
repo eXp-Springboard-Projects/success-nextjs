@@ -3,8 +3,9 @@ import { useRouter } from 'next/router';
 import { ReactNode, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Department, UserRole } from '@prisma/client';
-import {  getDepartmentName, getDepartmentPath, getAccessibleDepartments } from '@/lib/departmentAuth';
+import { getDepartmentName, getDepartmentPath, getAccessibleDepartments } from '@/lib/departmentAuth';
 import styles from './DepartmentLayout.module.css';
+import { Sparkles, Menu } from 'lucide-react';
 
 interface DepartmentLayoutProps {
   children: ReactNode;

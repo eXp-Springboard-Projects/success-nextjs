@@ -36,7 +36,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(comments);
     } catch (error) {
-      console.error('Error fetching comments:', error);
       return res.status(500).json({ error: 'Failed to fetch comments' });
     }
   }
@@ -91,7 +90,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           : 'Your comment has been submitted and is awaiting moderation',
       });
     } catch (error) {
-      console.error('Error creating comment:', error);
       return res.status(500).json({ error: 'Failed to submit comment' });
     }
   }
@@ -102,11 +100,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 // Placeholder for admin notification
 async function sendAdminNotification(comment: any) {
   // TODO: Implement email notification to admin
-  console.log('Admin notification: New comment pending moderation', {
-    postTitle: comment.postTitle,
-    author: comment.author,
-    excerpt: comment.content.substring(0, 100),
-  });
 
   // When implementing email, use SendGrid or Resend:
   // await sendEmail({

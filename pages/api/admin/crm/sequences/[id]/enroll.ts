@@ -63,7 +63,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(201).json(enrollment[0]);
   } catch (error) {
-    console.error('Error enrolling contact:', error);
     return res.status(500).json({ error: 'Failed to enroll contact' });
   }
 }

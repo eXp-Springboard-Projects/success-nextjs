@@ -35,7 +35,6 @@ export default function AnnouncementBanner() {
         }
       }
     } catch (error) {
-      console.error('Failed to fetch announcement:', error);
     }
   };
 
@@ -59,7 +58,7 @@ export default function AnnouncementBanner() {
   return (
     <div className={styles.banner}>
       <div className={styles.content}>
-        <div className={styles.icon}>=â</div>
+        <div className={styles.icon}>=ï¿½</div>
         <div className={styles.message}>
           <div className={styles.title}>{announcement.title}</div>
           <div

@@ -81,8 +81,6 @@ export default function CategoryPage({ category, posts, totalPages, currentPage 
   );
 }
 
-
-
 export async function getServerSideProps({ params }: any) {
   const { slug } = params;
 
@@ -109,7 +107,6 @@ export async function getServerSideProps({ params }: any) {
       }
     };
   } catch (error) {
-    console.error('Error fetching category:', error);
     return { notFound: true };
   }
 }

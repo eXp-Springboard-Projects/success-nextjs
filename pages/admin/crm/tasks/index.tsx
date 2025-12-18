@@ -51,7 +51,6 @@ export default function TasksPage() {
       const data = await res.json();
       setTasks(data.tasks || []);
     } catch (error) {
-      console.error('Error fetching tasks:', error);
     } finally {
       setLoading(false);
     }
@@ -86,7 +85,6 @@ export default function TasksPage() {
       setSelectedTasks([]);
       fetchTasks();
     } catch (error) {
-      console.error('Error completing tasks:', error);
     }
   };
 
@@ -103,7 +101,6 @@ export default function TasksPage() {
       setSelectedTasks([]);
       fetchTasks();
     } catch (error) {
-      console.error('Error deleting tasks:', error);
     }
   };
 
@@ -116,7 +113,6 @@ export default function TasksPage() {
       });
       fetchTasks();
     } catch (error) {
-      console.error('Error completing task:', error);
     }
   };
 

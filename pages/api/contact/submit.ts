@@ -85,21 +85,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Send confirmation email to user
     await sendUserConfirmation(email, firstName);
 
-    // Log submission
-    console.log('Contact form submission:', {
-      contactId: contact.id,
-      email,
-      subject,
-      timestamp: new Date().toISOString()
-    });
-
     return res.status(200).json({
       message: 'Thanks for reaching out! We\'ll get back to you within 24 hours.',
       success: true,
       contactId: contact.id
     });
   } catch (error) {
-    console.error('Contact form error:', error);
     return res.status(500).json({ error: 'Failed to submit form. Please try again.' });
   }
 }
@@ -110,20 +101,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 async function sendAdminNotification(data: any) {
   try {
     // For now, just log. You can integrate with your email service
-    console.log('Admin notification:', {
-      to: process.env.ADMIN_EMAIL || 'admin@success.com',
-      subject: `New Contact Form: ${data.subject}`,
-      body: `
-        Name: ${data.firstName} ${data.lastName}
-        Email: ${data.email}
-        Phone: ${data.phone || 'N/A'}
-        Company: ${data.company || 'N/A'}
-        Subject: ${data.subject}
-        Message: ${data.message}
-      `
-    });
-
-    // Example SendGrid integration:
+// Example SendGrid integration:
     /*
     const sgMail = require('@sendgrid/mail');
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -139,7 +117,6 @@ async function sendAdminNotification(data: any) {
     await sgMail.send(msg);
     */
   } catch (error) {
-    console.error('Admin notification error:', error);
   }
 }
 
@@ -148,9 +125,7 @@ async function sendAdminNotification(data: any) {
  */
 async function sendUserConfirmation(email: string, firstName: string) {
   try {
-    console.log('User confirmation email would be sent to:', email);
-
-    // Example SendGrid integration:
+// Example SendGrid integration:
     /*
     const sgMail = require('@sendgrid/mail');
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -166,6 +141,5 @@ async function sendUserConfirmation(email: string, firstName: string) {
     await sgMail.send(msg);
     */
   } catch (error) {
-    console.error('User confirmation error:', error);
   }
 }

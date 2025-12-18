@@ -64,7 +64,6 @@ export default function TaskDetailPage() {
         reminderAt: data.reminder_at || '',
       });
     } catch (error) {
-      console.error('Error fetching task:', error);
     } finally {
       setLoading(false);
     }
@@ -76,7 +75,6 @@ export default function TaskDetailPage() {
       const data = await res.json();
       setContacts(data.contacts || []);
     } catch (error) {
-      console.error('Error fetching contacts:', error);
     }
   };
 
@@ -86,7 +84,6 @@ export default function TaskDetailPage() {
       const data = await res.json();
       setDeals(data.deals || []);
     } catch (error) {
-      console.error('Error fetching deals:', error);
     }
   };
 
@@ -117,7 +114,6 @@ export default function TaskDetailPage() {
         }
       }
     } catch (error) {
-      console.error('Error saving task:', error);
       alert('Failed to save task');
     } finally {
       setSaving(false);
@@ -133,7 +129,6 @@ export default function TaskDetailPage() {
       });
       router.push('/admin/crm/tasks');
     } catch (error) {
-      console.error('Error completing task:', error);
     }
   };
 
@@ -146,7 +141,6 @@ export default function TaskDetailPage() {
       });
       router.push('/admin/crm/tasks');
     } catch (error) {
-      console.error('Error deleting task:', error);
     }
   };
 

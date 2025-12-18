@@ -45,7 +45,6 @@ export default function ActivityFeed({
       const data = await res.json();
       setActivities(data.activities || []);
     } catch (error) {
-      console.error('Failed to fetch activities:', error);
     } finally {
       setLoading(false);
     }
