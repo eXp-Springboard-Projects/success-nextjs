@@ -64,7 +64,6 @@ async function createCampaign(req: NextApiRequest, res: NextApiResponse, session
     const {
       name,
       subject,
-      content = '',
       scheduledAt,
     } = req.body;
 
@@ -77,7 +76,6 @@ async function createCampaign(req: NextApiRequest, res: NextApiResponse, session
         id: nanoid(),
         name,
         subject,
-        content,
         status: scheduledAt ? 'SCHEDULED' : 'DRAFT',
         scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
         sentCount: 0,
