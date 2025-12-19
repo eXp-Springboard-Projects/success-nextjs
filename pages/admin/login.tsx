@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import styles from './AdminLogin.module.css';
@@ -37,8 +37,22 @@ export default function AdminLogin() {
         setError('Invalid email or password');
         setLoading(false);
       } else if (result?.ok) {
-        console.log('Login successful, redirecting...');
-        window.location.href = '/admin';
+        console.log('Login successful, verifying session...');
+        // Wait a moment for the session to be established
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Verify session is set
+        const session = await getSession();
+        console.log('Session after login:', session);
+
+        if (session) {
+          console.log('Session confirmed, redirecting...');
+          window.location.href = '/admin';
+        } else {
+          console.error('Session not established after login');
+          setError('Login succeeded but session not created. Please try again.');
+          setLoading(false);
+        }
       } else {
         setError('Login failed - unexpected response');
         setLoading(false);
