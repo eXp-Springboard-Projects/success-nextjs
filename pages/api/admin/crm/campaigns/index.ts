@@ -24,32 +24,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getCampaigns(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { status = '' } = req.query;
+    const { status: statusFilter = '' } = req.query;
 
-    let whereClause = '';
-    const params: any[] = [];
-    let paramIndex = 1;
+    const whereClause: any = {};
 
-    if (status) {
-      whereClause += ` AND status = $${paramIndex}`;
-      params.push(status);
-      paramIndex++;
+    if (statusFilter && statusFilter !== 'all') {
+      whereClause.status = statusFilter.toString().toUpperCase();
     }
 
-    const campaigns = await prisma.$queryRawUnsafe(`
-      SELECT
-        c.*,
-        t.name as template_name,
-        l.name as list_name
-      FROM email_campaigns c
-      LEFT JOIN email_templates t ON c.template_id = t.id
-      LEFT JOIN contact_lists l ON c.list_id = l.id
-      WHERE 1=1 ${whereClause}
-      ORDER BY c.created_at DESC
-    `, ...params);
+    const campaigns = await prisma.campaigns.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        name: true,
+        subject: true,
+        status: true,
+        sentCount: true,
+        openedCount: true,
+        clickedCount: true,
+        bouncedCount: true,
+        failedCount: true,
+        deliveredCount: true,
+        createdAt: true,
+        sentAt: true,
+        scheduledAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
     return res.status(200).json({ campaigns });
   } catch (error) {
+    console.error('Get campaigns error:', error);
     return res.status(500).json({ error: 'Failed to fetch campaigns' });
   }
 }
@@ -59,37 +64,34 @@ async function createCampaign(req: NextApiRequest, res: NextApiResponse, session
     const {
       name,
       subject,
-      previewText,
-      templateId,
-      listId,
-      segmentFilters = {},
-      fromEmail = 'noreply@success.com',
-      fromName = 'SUCCESS Magazine',
+      content = '',
+      scheduledAt,
     } = req.body;
 
     if (!name || !subject) {
       return res.status(400).json({ error: 'Name and subject are required' });
     }
 
-    const campaignId = nanoid();
+    const campaign = await prisma.campaigns.create({
+      data: {
+        id: nanoid(),
+        name,
+        subject,
+        content,
+        status: scheduledAt ? 'SCHEDULED' : 'DRAFT',
+        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+        sentCount: 0,
+        openedCount: 0,
+        clickedCount: 0,
+        bouncedCount: 0,
+        failedCount: 0,
+        deliveredCount: 0,
+      },
+    });
 
-    await prisma.$executeRaw`
-      INSERT INTO email_campaigns (
-        id, name, subject, preview_text, template_id, list_id, segment_filters,
-        from_email, from_name, status, created_by
-      ) VALUES (
-        ${campaignId}, ${name}, ${subject}, ${previewText || null},
-        ${templateId || null}, ${listId || null}, ${JSON.stringify(segmentFilters)}::jsonb,
-        ${fromEmail}, ${fromName}, 'draft', ${session.user.id}
-      )
-    `;
-
-    const campaign = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM email_campaigns WHERE id = ${campaignId}
-    `;
-
-    return res.status(201).json(campaign[0]);
+    return res.status(201).json(campaign);
   } catch (error) {
+    console.error('Create campaign error:', error);
     return res.status(500).json({ error: 'Failed to create campaign' });
   }
 }

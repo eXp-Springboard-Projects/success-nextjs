@@ -54,7 +54,7 @@ export default function SuccessPlusDashboard() {
       <div className={styles.dashboard}>
         {/* Quick Stats */}
         <div className={styles.statsGrid}>
-          <div className={styles.statCard}>
+          <Link href="/admin/members?status=ACTIVE" className={styles.statCard}>
             <div className={styles.statIcon}>👥</div>
             <div className={styles.statContent}>
               <div className={styles.statLabel}>Active Members</div>
@@ -62,7 +62,7 @@ export default function SuccessPlusDashboard() {
                 {loading ? '...' : stats.activeMembers.toLocaleString()}
               </div>
             </div>
-          </div>
+          </Link>
 
           <div className={styles.statCard}>
             <div className={styles.statIcon}>🆕</div>
