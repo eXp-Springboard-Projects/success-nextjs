@@ -71,7 +71,7 @@ export default async function handler(
           ${content},
           ${imageUrl || null},
           ${linkUrl || null},
-          ARRAY[${platforms.join(',')}]::TEXT[],
+          ${platforms}::TEXT[],
           ${postNow ? 'POSTING' : scheduledAt ? 'SCHEDULED' : 'DRAFT'},
           ${scheduledAt || null}::TIMESTAMP,
           CURRENT_TIMESTAMP,
