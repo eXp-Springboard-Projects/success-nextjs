@@ -69,6 +69,7 @@ html {
   position: relative;
   margin: 0 !important;
   padding: 0 !important;
+  overscroll-behavior: none;
 }
 
 body {
@@ -86,6 +87,7 @@ body {
   position: relative;
   margin: 0 !important;
   padding: 0 !important;
+  overscroll-behavior: none;
 }
 
 /* Exclude admin pages from overflow constraints */

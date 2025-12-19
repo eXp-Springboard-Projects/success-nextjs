@@ -36,13 +36,23 @@
   display: flex;
   flex-direction: column;
   transition: width 0.3s ease;
-  overflow-y: auto;
+  overflow: hidden;
   flex-shrink: 0;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 100;
 }
 
 .sidebarClosed {
   width: 80px;
+}
+
+.sidebarClosed ~ .main,
+.mainShifted {
+  margin-left: 80px;
 }
 
 .sidebarHeader {
@@ -280,6 +290,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  margin-left: 280px;
+  transition: margin-left 0.3s ease;
 }
 
 /* Header */
@@ -340,10 +352,6 @@
 /* Responsive */
 @media (max-width: 768px) {
   .sidebar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
     z-index: 1000;
     transform: translateX(-100%);
   }
@@ -353,6 +361,7 @@
   }
 
   .main {
+    margin-left: 0 !important;
     width: 100%;
   }
 

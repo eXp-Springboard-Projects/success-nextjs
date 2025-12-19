@@ -14,6 +14,25 @@ Based on [Keep a Changelog](https://keepachangelog.com/) • Uses [ISO 8601](htt
 =======================================================
 -->
 
+### [Changed] - 2025-12-19T09:20:00 - Repository Cleanup & Organization
+
+**Organized loose files at repository root into appropriate folders**
+
+- **Why**: Repository root was cluttered with temp files, build artifacts, and misplaced files that should be in subdirectories for better organization.
+- **What**: 
+  - Created `_archive/` folder for temp/artifact files (no longer needed but preserved for reference)
+  - Moved `setup.bat` and `setup.sh` to `scripts/` folder with other scripts
+  - Moved `WATCH_HISTORY_INTEGRATION.md` to `docs/` folder with other documentation
+  - Added `_archive/README.md` to document archived files
+- **Files**: 
+  - Created: `_archive/README.md`
+  - Moved to `_archive/`: `build-output.txt`, `build-test.txt`, `code`, `UsersRachelNeadsuccess-nexttemp-success-page.html`
+  - Moved to `scripts/`: `setup.bat`, `setup.sh`
+  - Moved to `docs/`: `WATCH_HISTORY_INTEGRATION.md`
+- **Impact**: Cleaner repository structure, easier navigation, no functional changes
+
+---
+
 ### [Fixed] - 2025-12-18T23:00:00 - TipTap TextStyle Import Fix (Amplify Build Fix)
 
 **Fixed incorrect default import for @tiptap/extension-text-style**
