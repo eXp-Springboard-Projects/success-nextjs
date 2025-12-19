@@ -108,16 +108,18 @@ async function sendViaResend({ to, subject, html, text }: EmailOptions): Promise
 
     const recipients = Array.isArray(to) ? to : [to];
 
-    await resend.emails.send({
-      from: `SUCCESS Magazine <${process.env.RESEND_FROM_EMAIL || 'noreply@success.com'}>`,
+    const result = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || 'SUCCESS Magazine <noreply@success.com>',
       to: recipients,
       subject,
       html,
       text,
     });
 
-return true;
+    console.log('Resend email sent:', result);
+    return true;
   } catch (error) {
+    console.error('Resend error:', error);
     return false;
   }
 }

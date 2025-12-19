@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Email Analytics
       const [emailStats, campaigns, emailTimeseries] = await Promise.all([
-        // Email stats
+        // Email stats - using email_events table
         prisma.$queryRaw<Array<{
           total_sent: bigint;
           total_opens: bigint;
@@ -22,13 +22,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           total_unsubscribed: bigint;
         }>>`
           SELECT
-            COUNT(*) as total_sent,
-            COUNT(CASE WHEN opened_at IS NOT NULL THEN 1 END) as total_opens,
-            COUNT(CASE WHEN clicked_at IS NOT NULL THEN 1 END) as total_clicks,
-            COUNT(CASE WHEN bounced_at IS NOT NULL THEN 1 END) as total_bounced,
+            COUNT(CASE WHEN event = 'sent' THEN 1 END) as total_sent,
+            COUNT(CASE WHEN event = 'opened' THEN 1 END) as total_opens,
+            COUNT(CASE WHEN event = 'clicked' THEN 1 END) as total_clicks,
+            COUNT(CASE WHEN event = 'bounced' THEN 1 END) as total_bounced,
             0 as total_unsubscribed
-          FROM email_sends
-          WHERE created_at >= ${start} AND created_at <= ${end}
+          FROM email_events
+          WHERE "createdAt" >= ${start} AND "createdAt" <= ${end}
         `,
 
         // Top campaigns
@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           select: {
             id: true,
             name: true,
-            totalSent: true,
+            sentCount: true,
             openedCount: true,
             clickedCount: true,
           },
@@ -50,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           take: 5,
         }),
 
-        // Email timeseries
+        // Email timeseries - using email_events
         prisma.$queryRaw<Array<{
           date: Date;
           sends: bigint;
@@ -58,13 +58,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           clicks: bigint;
         }>>`
           SELECT
-            DATE(created_at) as date,
-            COUNT(*) as sends,
-            COUNT(CASE WHEN opened_at IS NOT NULL THEN 1 END) as opens,
-            COUNT(CASE WHEN clicked_at IS NOT NULL THEN 1 END) as clicks
-          FROM email_sends
-          WHERE created_at >= ${start} AND created_at <= ${end}
-          GROUP BY DATE(created_at)
+            DATE("createdAt") as date,
+            COUNT(CASE WHEN event = 'sent' THEN 1 END) as sends,
+            COUNT(CASE WHEN event = 'opened' THEN 1 END) as opens,
+            COUNT(CASE WHEN event = 'clicked' THEN 1 END) as clicks
+          FROM email_events
+          WHERE "createdAt" >= ${start} AND "createdAt" <= ${end}
+          GROUP BY DATE("createdAt")
           ORDER BY date ASC
         `,
       ]);
@@ -344,10 +344,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           topCampaigns: campaigns.map((c) => ({
             id: c.id,
             name: c.name,
-            sent: c.totalSent,
+            sent: c.sentCount,
             opens: c.openedCount,
             clicks: c.clickedCount,
-            openRate: c.totalSent > 0 ? Math.round((c.openedCount / c.totalSent) * 10000) / 100 : 0,
+            openRate: c.sentCount > 0 ? Math.round((c.openedCount / c.sentCount) * 10000) / 100 : 0,
           })),
         },
         contacts: {

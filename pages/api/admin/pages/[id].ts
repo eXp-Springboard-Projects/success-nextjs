@@ -73,12 +73,20 @@ export default async function handler(
         updatedAt: new Date(),
       };
 
+      // Get current page to check publishedAt
+      const currentPage = await prisma.pages.findUnique({
+        where: { id },
+        select: { publishedAt: true }
+      });
+
       if (title !== undefined) updateData.title = title;
       if (slug !== undefined) updateData.slug = slug;
       if (content !== undefined) updateData.content = content;
       if (status !== undefined) {
-        updateData.status = status.toUpperCase();
-        if (status.toUpperCase() === 'PUBLISHED') {
+        const newStatus = status.toUpperCase();
+        updateData.status = newStatus;
+        // Set publishedAt only if being published and it doesn't already have one
+        if ((newStatus === 'PUBLISHED' || newStatus === 'PUBLISH') && !currentPage?.publishedAt) {
           updateData.publishedAt = new Date();
         }
       }
