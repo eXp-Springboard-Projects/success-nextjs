@@ -44,7 +44,7 @@ export default async function handler(
     }
 
     // Update status to POSTING to prevent duplicate processing
-    const postIds = scheduledPosts.map(p => p.id);
+    const postIds = scheduledPosts.map((p: any) => p.id);
     await prisma.$executeRaw`
       UPDATE social_posts
       SET status = 'POSTING', updated_at = CURRENT_TIMESTAMP

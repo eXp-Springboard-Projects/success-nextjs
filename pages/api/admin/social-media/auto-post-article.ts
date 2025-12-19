@@ -70,7 +70,7 @@ export default async function handler(
           AND is_active = true
       `;
 
-      selectedPlatforms = accounts.map(a => a.platform);
+      selectedPlatforms = accounts.map((a: any) => a.platform);
     }
 
     if (selectedPlatforms.length === 0) {
