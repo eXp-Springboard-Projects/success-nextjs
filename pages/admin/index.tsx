@@ -114,7 +114,7 @@ export default function AdminDashboard() {
                         {new Date(post.date).toLocaleDateString()} • {post.status}
                       </p>
                     </div>
-                    <Link href={`/admin/posts/${post.id}`} className={styles.editButton}>
+                    <Link href={`/admin/posts/${post.id}/edit`} className={styles.editButton}>
                       Edit
                     </Link>
                   </div>

@@ -125,9 +125,15 @@ export default function StaffManagement() {
             )}
             <button
               onClick={() => router.push('/admin/staff/invite')}
+              className={styles.secondaryButton}
+            >
+              📧 Invite One
+            </button>
+            <button
+              onClick={() => router.push('/admin/staff/bulk-invite')}
               className={styles.primaryButton}
             >
-              📧 Invite Staff
+              📬 Bulk Invite
             </button>
           </div>
         </div>
