@@ -17,20 +17,35 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      });
+      console.log('Attempting login...');
+      const result = await Promise.race([
+        signIn('credentials', {
+          email,
+          password,
+          redirect: false,
+          callbackUrl: '/admin',
+        }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Login timeout - please check your connection')), 15000)
+        )
+      ]);
+
+      console.log('Login result:', result);
 
       if (result?.error) {
+        console.error('Login error:', result.error);
         setError('Invalid email or password');
         setLoading(false);
+      } else if (result?.ok) {
+        console.log('Login successful, redirecting...');
+        window.location.href = '/admin';
       } else {
-        router.push('/admin');
+        setError('Login failed - unexpected response');
+        setLoading(false);
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      console.error('Login exception:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred. Please try again.');
       setLoading(false);
     }
   };
