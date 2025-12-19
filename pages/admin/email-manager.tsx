@@ -59,67 +59,40 @@ export default function EmailManager() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch('/api/email/stats');
+      const res = await fetch('/api/admin/crm/dashboard-stats');
       if (res.ok) {
         const data = await res.json();
-        setStats(data);
-      } else {
-        // Mock data
         setStats({
-          totalSubscribers: 12547,
-          activeSubscribers: 11892,
-          totalCampaigns: 45,
-          avgOpenRate: 24.5,
-          avgClickRate: 3.2
+          totalSubscribers: data.totalContacts || 0,
+          activeSubscribers: data.activeContacts || 0,
+          totalCampaigns: data.totalCampaigns || 0,
+          avgOpenRate: data.avgOpenRate || 0,
+          avgClickRate: data.avgClickRate || 0
         });
       }
     } catch (error) {
-      setStats({
-        totalSubscribers: 12547,
-        activeSubscribers: 11892,
-        totalCampaigns: 45,
-        avgOpenRate: 24.5,
-        avgClickRate: 3.2
-      });
+      console.error('Failed to fetch stats:', error);
     }
   };
 
   const fetchSubscribers = async () => {
     try {
-      const res = await fetch('/api/email/subscribers');
+      const res = await fetch('/api/admin/crm/contacts?per_page=100');
       if (res.ok) {
         const data = await res.json();
-        setSubscribers(data);
-      } else {
-        // Mock data
-        setSubscribers([
-          {
-            id: '1',
-            email: 'john.doe@example.com',
-            name: 'John Doe',
-            subscribedAt: '2024-01-15',
-            status: 'active',
-            lists: ['Newsletter', 'Blog Updates']
-          },
-          {
-            id: '2',
-            email: 'jane.smith@example.com',
-            name: 'Jane Smith',
-            subscribedAt: '2024-02-20',
-            status: 'active',
-            lists: ['Newsletter']
-          },
-          {
-            id: '3',
-            email: 'bob.johnson@example.com',
-            name: 'Bob Johnson',
-            subscribedAt: '2024-03-10',
-            status: 'unsubscribed',
-            lists: ['Newsletter']
-          }
-        ]);
+        // Transform CRM contacts to subscriber format
+        const contactsData = data.contacts || [];
+        setSubscribers(contactsData.map((contact: any) => ({
+          id: contact.id,
+          email: contact.email,
+          name: `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || 'Unknown',
+          subscribedAt: contact.createdAt,
+          status: contact.status === 'ACTIVE' ? 'active' : contact.status === 'UNSUBSCRIBED' ? 'unsubscribed' : 'bounced',
+          lists: contact.tags || []
+        })));
       }
     } catch (error) {
+      console.error('Failed to fetch subscribers:', error);
     } finally {
       setLoading(false);
     }
@@ -127,46 +100,24 @@ export default function EmailManager() {
 
   const fetchCampaigns = async () => {
     try {
-      const res = await fetch('/api/email/campaigns');
+      const res = await fetch('/api/admin/crm/campaigns');
       if (res.ok) {
         const data = await res.json();
-        setCampaigns(data);
-      } else {
-        // Mock data
-        setCampaigns([
-          {
-            id: '1',
-            name: 'Weekly Newsletter - Week 42',
-            subject: 'Your Weekly Dose of Success',
-            sentAt: '2024-10-15T10:00:00Z',
-            recipients: 11892,
-            opened: 2914,
-            clicked: 380,
-            status: 'sent'
-          },
-          {
-            id: '2',
-            name: 'New Magazine Release',
-            subject: 'October Magazine is Now Available!',
-            sentAt: '2024-10-01T09:00:00Z',
-            recipients: 11850,
-            opened: 3555,
-            clicked: 425,
-            status: 'sent'
-          },
-          {
-            id: '3',
-            name: 'Special Offer - SUCCESS+',
-            subject: 'Exclusive 30% Off SUCCESS+ Membership',
-            sentAt: '2024-09-25T14:00:00Z',
-            recipients: 11820,
-            opened: 2955,
-            clicked: 591,
-            status: 'sent'
-          }
-        ]);
+        // Transform campaigns data
+        const campaignsData = data.campaigns || [];
+        setCampaigns(campaignsData.map((campaign: any) => ({
+          id: campaign.id,
+          name: campaign.name,
+          subject: campaign.subject,
+          sentAt: campaign.sentAt || campaign.createdAt,
+          recipients: campaign.sentCount || 0,
+          opened: campaign.openedCount || 0,
+          clicked: campaign.clickedCount || 0,
+          status: campaign.status?.toLowerCase() || 'draft'
+        })));
       }
     } catch (error) {
+      console.error('Failed to fetch campaigns:', error);
     }
   };
 
@@ -299,9 +250,14 @@ export default function EmailManager() {
                   className={styles.searchInput}
                 />
               </div>
-              <button onClick={handleExportSubscribers} className={styles.exportButton}>
-                📥 Export CSV
-              </button>
+              <div className={styles.tableActions}>
+                <button onClick={handleExportSubscribers} className={styles.exportButton}>
+                  📥 Export CSV
+                </button>
+                <button onClick={() => router.push('/admin/crm/contacts')} className={styles.exportButton}>
+                  👁️ View All in CRM
+                </button>
+              </div>
             </div>
 
             <div className={styles.tableContainer}>
@@ -318,7 +274,12 @@ export default function EmailManager() {
                 </thead>
                 <tbody>
                   {filteredSubscribers.map(subscriber => (
-                    <tr key={subscriber.id}>
+                    <tr
+                      key={subscriber.id}
+                      onClick={() => router.push(`/admin/crm/contacts/${subscriber.id}`)}
+                      style={{ cursor: 'pointer' }}
+                      className={styles.clickableRow}
+                    >
                       <td>{subscriber.email}</td>
                       <td>{subscriber.name}</td>
                       <td>
@@ -328,14 +289,23 @@ export default function EmailManager() {
                       </td>
                       <td>
                         <div className={styles.lists}>
-                          {subscriber.lists.map((list, index) => (
-                            <span key={index} className={styles.listTag}>{list}</span>
-                          ))}
+                          {subscriber.lists && subscriber.lists.length > 0 ? (
+                            subscriber.lists.map((list, index) => (
+                              <span key={index} className={styles.listTag}>{list}</span>
+                            ))
+                          ) : (
+                            <span style={{ color: '#9ca3af' }}>—</span>
+                          )}
                         </div>
                       </td>
                       <td>{new Date(subscriber.subscribedAt).toLocaleDateString()}</td>
-                      <td>
-                        <button className={styles.actionButton}>Edit</button>
+                      <td onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => router.push(`/admin/crm/contacts/${subscriber.id}`)}
+                          className={styles.actionButton}
+                        >
+                          View
+                        </button>
                       </td>
                     </tr>
                   ))}

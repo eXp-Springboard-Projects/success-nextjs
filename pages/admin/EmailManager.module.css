@@ -97,6 +97,19 @@
   font-weight: 500;
 }
 
+.tableActions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.clickableRow {
+  transition: background 0.2s;
+}
+
+.clickableRow:hover {
+  background: #f9fafb;
+}
+
 .tabs {
   display: flex;
   gap: 0.5rem;
