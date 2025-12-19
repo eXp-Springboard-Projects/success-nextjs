@@ -75,8 +75,20 @@ export default function DynamicPage({ page }: DynamicPageProps) {
 
 export const getStaticPaths: GetStaticPaths = async () => {
   try {
+    // List of reserved slugs that have their own page files
+    const reservedSlugs = [
+      'login', 'register', 'account', 'advertise', 'about',
+      'admin', 'api', 'blog', 'category', 'author', 'lp', 'pay',
+      'press-release', 'dashboard', 'preview', 'success-plus',
+      'signup', 'forgot-password', 'reset-password', 'speakers',
+      'bestsellers', 'coaching', 'press', 'media-kit', 'press-releases'
+    ];
+
     const pages = await prisma.pages.findMany({
-      where: { status: 'PUBLISHED' },
+      where: {
+        status: 'PUBLISHED',
+        slug: { notIn: reservedSlugs }
+      },
       select: { slug: true }
     });
 
