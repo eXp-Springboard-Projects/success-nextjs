@@ -331,7 +331,7 @@ export async function getServerSideProps() {
     });
 
     // Transform posts to match WordPress format
-    const transformedPosts = posts.map(post => ({
+    const transformedPosts = posts.map((post: any) => ({
       id: post.id,
       title: { rendered: post.title },
       excerpt: { rendered: post.excerpt || '' },
