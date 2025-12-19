@@ -33,7 +33,7 @@ export default function DynamicPage({ page }: DynamicPageProps) {
         title={page.seoTitle || page.title}
         description={page.seoDescription || ''}
         url={`https://www.success.com/${page.slug}`}
-        ogImage={page.featuredImage || undefined}
+        image={page.featuredImage || undefined}
       />
 
       <article className={styles.article}>
