@@ -19,7 +19,7 @@
 
 ### 2. WordPress Integration (95% Complete)
 **✅ What's Working:**
-- WordPress REST API connected to https://www.success.com/wp-json/wp/v2
+- WordPress REST API connected to https://successcom.wpenginepowered.com/wp-json/wp/v2
 - Read-only access to all content:
   - Posts (articles) ✅
   - Pages ✅
@@ -182,7 +182,7 @@
 **Estimated Time:** 2-3 hours
 
 **Steps Required:**
-1. Log in to WordPress admin at https://www.success.com/wp-admin
+1. Log in to WordPress admin at https://successcom.wpenginepowered.com/wp-admin
 2. Navigate to Users → Profile
 3. Scroll to "Application Passwords" section
 4. Click "Add New Application Password"
@@ -550,8 +550,8 @@ NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=xxx
 
 # WordPress (Read-only)
-WORDPRESS_API_URL=https://www.success.com/wp-json/wp/v2
-NEXT_PUBLIC_WORDPRESS_API_URL=https://www.success.com/wp-json/wp/v2
+WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
+NEXT_PUBLIC_WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
 
 # Stripe (Partial)
 STRIPE_PUBLIC_KEY=pk_xxx
@@ -661,7 +661,7 @@ REDIS_URL=redis://...
 ### Key Contacts
 - **Deployment:** Vercel Dashboard - https://vercel.com/e-xp-realty-1f730b2e/success-nextjs
 - **GitHub:** https://github.com/eXp-Springboard-Projects/success-nextjs
-- **WordPress API:** https://www.success.com/wp-json/wp/v2
+- **WordPress API:** https://successcom.wpenginepowered.com/wp-json/wp/v2
 
 ---
 

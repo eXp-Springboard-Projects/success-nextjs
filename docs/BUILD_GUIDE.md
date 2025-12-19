@@ -205,7 +205,7 @@ Here are the main tables and what they store:
 - Blog articles, categories, authors, videos, podcasts - all displayed beautifully on the Next.js site
 
 **Behind the scenes:**
-1. Next.js fetches data from `https://www.success.com/wp-json/wp/v2/posts`
+1. Next.js fetches data from `https://successcom.wpenginepowered.com/wp-json/wp/v2/posts`
 2. Data is cached and regenerated every 10 minutes (ISR - Incremental Static Regeneration)
 3. Articles are pre-rendered at build time for speed
 
@@ -384,7 +384,7 @@ if (!user.subscriptions || user.subscriptions.status !== 'active') {
 - **Purpose:** Fetch blog posts, categories, authors from WordPress
 - **Setup:** No authentication needed (public API)
 - **How it works:**
-  1. `GET https://www.success.com/wp-json/wp/v2/posts`
+  1. `GET https://successcom.wpenginepowered.com/wp-json/wp/v2/posts`
   2. Parse JSON response
   3. Display content on Next.js site
 

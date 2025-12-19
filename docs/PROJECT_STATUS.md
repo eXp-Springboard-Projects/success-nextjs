@@ -455,8 +455,8 @@
 
 ### ✅ Configured
 ```bash
-WORDPRESS_API_URL=https://www.success.com/wp-json/wp/v2
-NEXT_PUBLIC_WORDPRESS_API_URL=https://www.success.com/wp-json/wp/v2
+WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
+NEXT_PUBLIC_WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
 DATABASE_URL=postgres://[credentials]
 NEXTAUTH_URL=http://localhost:3000 (needs production URL)
 NEXTAUTH_SECRET=your-super-secret-key-change-this-in-production-12345678901234567890
@@ -485,7 +485,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 NEXT_PUBLIC_MEDIA_CDN_URL=https://media.success.com
 
 # WPGraphQL (optional)
-WPGRAPHQL_URL=https://www.success.com/graphql
+WPGRAPHQL_URL=https://successcom.wpenginepowered.com/graphql
 
 # Production
 NEXTAUTH_URL=https://success-nextjs.vercel.app (or custom domain)

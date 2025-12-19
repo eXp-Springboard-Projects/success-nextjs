@@ -186,7 +186,7 @@ Gap between elements: 2-3rem
 
 **WordPress Endpoint:**
 ```
-GET https://www.success.com/wp-json/wp/v2/magazines?per_page=1&_embed
+GET https://successcom.wpenginepowered.com/wp-json/wp/v2/magazines?per_page=1&_embed
 ```
 
 **Required Query Parameters:**
@@ -381,7 +381,7 @@ lib/
 - Project README: `CLAUDE.md`
 
 **WordPress API:**
-- Endpoint: https://www.success.com/wp-json/wp/v2/magazines
+- Endpoint: https://successcom.wpenginepowered.com/wp-json/wp/v2/magazines
 - Docs: https://developer.wordpress.org/rest-api/
 
 **Next.js Image:**

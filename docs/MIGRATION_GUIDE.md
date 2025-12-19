@@ -44,7 +44,7 @@ Required in `.env.local`:
 
 ```env
 DATABASE_URL="your-postgres-connection-string"
-WORDPRESS_API_URL="https://www.success.com/wp-json/wp/v2"
+WORDPRESS_API_URL="https://successcom.wpenginepowered.com/wp-json/wp/v2"
 ```
 
 ## Migration Scripts

@@ -62,32 +62,32 @@ export const getServerSideProps: GetServerSideProps = async () => {
     {
       id: '1',
       name: 'Grant Cardone',
-      image: 'https://www.success.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1.jpg',
+      image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1.jpg',
     },
     {
       id: '2',
       name: 'Daymond John',
-      image: 'https://www.success.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1s.jpg',
+      image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1s.jpg',
     },
     {
       id: '3',
       name: 'Jenn Lim',
-      image: 'https://www.success.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1d.jpg',
+      image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1d.jpg',
     },
     {
       id: '4',
       name: 'Andrea Navedo',
-      image: 'https://www.success.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1a.jpg',
+      image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1a.jpg',
     },
     {
       id: '5',
       name: 'Mel Robbins',
-      image: 'https://www.success.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1e.jpg',
+      image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1e.jpg',
     },
     {
       id: '6',
       name: 'Nick Santonastasso',
-      image: 'https://www.success.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1w.jpg',
+      image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1w.jpg',
     },
   ];
 

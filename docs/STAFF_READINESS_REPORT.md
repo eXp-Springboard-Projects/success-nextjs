@@ -598,7 +598,7 @@ Why:
 ### ⚠️ **Migration Concerns:**
 
 1. **Images in post content:**
-   - WordPress: `<img src="https://success.com/wp-content/uploads/...">`
+   - WordPress: `<img src="https://successcom.wpenginepowered.com/wp-content/uploads/...">`
    - After migration: Images still point to WordPress
    - **Risk:** If WordPress is shut down, images break
    - **Solution:** Need image URL rewrite during migration

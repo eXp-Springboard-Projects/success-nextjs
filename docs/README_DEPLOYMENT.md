@@ -37,8 +37,8 @@ Add these environment variables:
 DATABASE_URL=postgresql://...  # Your database
 NEXTAUTH_SECRET=<generated-above>
 NEXTAUTH_URL=https://your-site.vercel.app
-WORDPRESS_API_URL=https://www.success.com/wp-json/wp/v2
-NEXT_PUBLIC_WORDPRESS_API_URL=https://www.success.com/wp-json/wp/v2
+WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
+NEXT_PUBLIC_WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
 ```
 
 ### 3. Deploy (2 min)
@@ -194,7 +194,7 @@ VALUES (
 - Clear cookies and try again
 
 ### "WordPress API error"
-- Test API: `curl https://www.success.com/wp-json/wp/v2/posts?per_page=1`
+- Test API: `curl https://successcom.wpenginepowered.com/wp-json/wp/v2/posts?per_page=1`
 - Check `NEXT_PUBLIC_WORDPRESS_API_URL` is set (client-side)
 - Verify WordPress site is accessible
 

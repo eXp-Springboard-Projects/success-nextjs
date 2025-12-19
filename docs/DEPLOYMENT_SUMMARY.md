@@ -94,8 +94,8 @@ Add environment variables in Vercel dashboard:
 DATABASE_URL=postgresql://...
 NEXTAUTH_SECRET=<generated-above>
 NEXTAUTH_URL=https://your-site.vercel.app
-WORDPRESS_API_URL=https://www.success.com/wp-json/wp/v2
-NEXT_PUBLIC_WORDPRESS_API_URL=https://www.success.com/wp-json/wp/v2
+WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
+NEXT_PUBLIC_WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
 ```
 
 ### 4. Deploy (2 min)

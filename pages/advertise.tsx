@@ -111,7 +111,7 @@ export default function AdvertisePage() {
           </p>
           <div className={styles.ctaButtons}>
             <a
-              href="https://www.success.com/wp-content/uploads/2025/02/2025_MEDIA-KIT_Updated_2.25.pdf"
+              href="https://successcom.wpenginepowered.com/wp-content/uploads/2025/02/2025_MEDIA-KIT_Updated_2.25.pdf"
               className={styles.primaryButton}
               target="_blank"
               rel="noopener noreferrer"
@@ -119,7 +119,7 @@ export default function AdvertisePage() {
               Download Media Kit
             </a>
             <a
-              href="https://www.success.com/wp-content/uploads/2025/02/2025_MEDIAKIT-Editorial-Calendar_At-a-Glance.pdf"
+              href="https://successcom.wpenginepowered.com/wp-content/uploads/2025/02/2025_MEDIAKIT-Editorial-Calendar_At-a-Glance.pdf"
               className={styles.secondaryButton}
               target="_blank"
               rel="noopener noreferrer"

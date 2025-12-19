@@ -9,7 +9,7 @@
 
       // Get base URL from script tag or default
       const scripts = document.getElementsByTagName('script');
-      let baseUrl = 'https://www.success.com';
+      let baseUrl = 'https://successcom.wpenginepowered.com';
 
       for (let i = 0; i < scripts.length; i++) {
         if (scripts[i].src && scripts[i].src.includes('form.js')) {

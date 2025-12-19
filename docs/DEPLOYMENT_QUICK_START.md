@@ -33,8 +33,8 @@ NEXTAUTH_SECRET="your-generated-secret-here"
 NEXTAUTH_URL="https://www.success.com"
 
 # WordPress
-WORDPRESS_API_URL="https://www.success.com/wp-json/wp/v2"
-NEXT_PUBLIC_WORDPRESS_API_URL="https://www.success.com/wp-json/wp/v2"
+WORDPRESS_API_URL="https://successcom.wpenginepowered.com/wp-json/wp/v2"
+NEXT_PUBLIC_WORDPRESS_API_URL="https://successcom.wpenginepowered.com/wp-json/wp/v2"
 ```
 
 ---
@@ -196,7 +196,7 @@ openssl rand -base64 32
 ### Issue: WordPress API not loading
 ```bash
 # Solution: Test API directly
-curl -s "https://www.success.com/wp-json/wp/v2/posts?per_page=1"
+curl -s "https://successcom.wpenginepowered.com/wp-json/wp/v2/posts?per_page=1"
 
 # Check environment variable
 echo $NEXT_PUBLIC_WORDPRESS_API_URL

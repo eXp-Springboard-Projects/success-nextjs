@@ -50,8 +50,8 @@ NEXTAUTH_URL=https://staging.success.com
 
 ### WordPress Integration
 ```
-WORDPRESS_API_URL=https://www.success.com/wp-json/wp/v2
-NEXT_PUBLIC_WORDPRESS_API_URL=https://www.success.com/wp-json/wp/v2
+WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
+NEXT_PUBLIC_WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
 ```
 
 ### Stripe (Production Keys)

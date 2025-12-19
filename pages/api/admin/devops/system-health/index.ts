@@ -27,7 +27,7 @@ async function checkDatabase() {
 async function checkWordPressAPI() {
   try {
     const start = Date.now();
-    const apiUrl = process.env.WORDPRESS_API_URL || 'https://www.success.com/wp-json/wp/v2';
+    const apiUrl = process.env.WORDPRESS_API_URL || 'https://successcom.wpenginepowered.com/wp-json/wp/v2';
     const response = await fetch(`${apiUrl}/posts?per_page=1`, {
       method: 'HEAD',
       signal: AbortSignal.timeout(5000)

@@ -68,7 +68,7 @@ NEXTAUTH_URL="https://staging.success.com"
 NEXTAUTH_SECRET="[run: openssl rand -base64 32]"
 
 # WordPress (read-only)
-NEXT_PUBLIC_WORDPRESS_API_URL="https://www.success.com/wp-json/wp/v2"
+NEXT_PUBLIC_WORDPRESS_API_URL="https://successcom.wpenginepowered.com/wp-json/wp/v2"
 
 # Optional - Stripe TEST keys
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."

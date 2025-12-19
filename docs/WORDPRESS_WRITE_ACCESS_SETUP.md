@@ -41,7 +41,7 @@ After setup: **Full write access** (create, edit, delete)
 ### Option B: If You're Using Self-Hosted WordPress
 
 1. **Log in to WP Admin**
-   - Go to: https://www.success.com/wp-admin
+   - Go to: https://successcom.wpenginepowered.com/wp-admin
    - Log in with admin credentials
 
 2. **Go to Your Profile**
@@ -89,7 +89,7 @@ Environment: Production, Preview, Development
 
 ```
 Name: WORDPRESS_API_URL
-Value: https://www.success.com/wp-json/wp/v2
+Value: https://successcom.wpenginepowered.com/wp-json/wp/v2
 Environment: Production, Preview, Development
 ```
 
@@ -105,7 +105,7 @@ Create or update `.env.local`:
 # WordPress Write Access
 WORDPRESS_USERNAME=your-wordpress-admin-username
 WORDPRESS_APP_PASSWORD=xxxx xxxx xxxx xxxx xxxx xxxx
-WORDPRESS_API_URL=https://www.success.com/wp-json/wp/v2
+WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
 ```
 
 **Note:** Never commit this file to git!
@@ -295,7 +295,7 @@ After setup, verify these work:
 https://wordpress.com/me/security/application-passwords
 
 **Self-Hosted WordPress:**
-https://www.success.com/wp-admin/profile.php (scroll to Application Passwords)
+https://successcom.wpenginepowered.com/wp-admin/profile.php (scroll to Application Passwords)
 
 **Vercel Environment Variables:**
 https://vercel.com/rns-projects-2b157598/success-nextjs/settings/environment-variables

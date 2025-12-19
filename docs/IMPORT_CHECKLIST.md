@@ -201,7 +201,7 @@ LINES TERMINATED BY '\n';
 
 Use the existing WordPress API:
 ```bash
-curl "https://www.success.com/wp-json/wp/v2/posts?per_page=100&_embed" > posts.json
+curl "https://successcom.wpenginepowered.com/wp-json/wp/v2/posts?per_page=100&_embed" > posts.json
 ```
 
 ---

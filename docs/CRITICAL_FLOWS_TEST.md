@@ -602,7 +602,7 @@ LIMIT 20;
 
 **2. Verify WordPress API Access**
 - [ ] Open new tab
-- [ ] Visit: `https://www.success.com/wp-json/wp/v2/posts?per_page=5`
+- [ ] Visit: `https://successcom.wpenginepowered.com/wp-json/wp/v2/posts?per_page=5`
 - [ ] **SUCCESS:** JSON data loads with recent posts
 - [ ] **FAILURE:** Check CORS, API availability
 

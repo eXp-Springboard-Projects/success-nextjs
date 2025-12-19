@@ -58,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               description: tier === 'collective'
                 ? '100+ training courses, digital magazine, mobile app access'
                 : 'Everything in Collective plus print magazine, exclusive content, live Q&A, coaching',
-              images: ['https://www.success.com/wp-content/uploads/2023/success-logo.png'],
+              images: ['https://successcom.wpenginepowered.com/wp-content/uploads/2023/success-logo.png'],
             },
             recurring: {
               interval: billingCycle === 'monthly' ? 'month' : 'year',

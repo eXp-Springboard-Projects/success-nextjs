@@ -22,7 +22,7 @@ The SUCCESS Next.js application is **heavily dependent** on WordPress as a headl
 ### 1. **lib/wordpress.js** - Main API Client
 - **Type:** Core utility function
 - **Purpose:** Centralized WordPress API fetching with caching and retry logic
-- **WordPress Endpoint:** Uses `process.env.WORDPRESS_API_URL` (https://www.success.com/wp-json/wp/v2)
+- **WordPress Endpoint:** Uses `process.env.WORDPRESS_API_URL` (https://successcom.wpenginepowered.com/wp-json/wp/v2)
 - **Key Features:**
   - In-memory cache with 1-minute TTL
   - Retry logic with exponential backoff (5 retries)
@@ -155,12 +155,12 @@ This file needs to be replaced with a new data fetching layer that reads from lo
 ### 14. **pages/admin/wordpress-sync.tsx** - WordPress Sync Dashboard
 - **Type:** Admin interface for WordPress synchronization
 - **WordPress Endpoints Used (Client-Side):**
-  - `https://www.success.com/wp-json/wp/v2/posts?per_page=1` - Get post count
-  - `https://www.success.com/wp-json/wp/v2/pages?per_page=1` - Get page count
-  - `https://www.success.com/wp-json/wp/v2/categories?per_page=1` - Get category count
-  - `https://www.success.com/wp-json/wp/v2/videos?per_page=1` - Get video count
-  - `https://www.success.com/wp-json/wp/v2/podcasts?per_page=1` - Get podcast count
-  - `https://www.success.com/wp-json/wp/v2/magazines?per_page=1` - Get magazine count
+  - `https://successcom.wpenginepowered.com/wp-json/wp/v2/posts?per_page=1` - Get post count
+  - `https://successcom.wpenginepowered.com/wp-json/wp/v2/pages?per_page=1` - Get page count
+  - `https://successcom.wpenginepowered.com/wp-json/wp/v2/categories?per_page=1` - Get category count
+  - `https://successcom.wpenginepowered.com/wp-json/wp/v2/videos?per_page=1` - Get video count
+  - `https://successcom.wpenginepowered.com/wp-json/wp/v2/podcasts?per_page=1` - Get podcast count
+  - `https://successcom.wpenginepowered.com/wp-json/wp/v2/magazines?per_page=1` - Get magazine count
 - **Purpose:** Display content statistics and trigger manual syncs
 - **Features:**
   - Content statistics from WordPress
@@ -328,8 +328,8 @@ This file needs to be replaced with a new data fetching layer that reads from lo
 
 ### Required WordPress Configuration
 ```env
-WORDPRESS_API_URL=https://www.success.com/wp-json/wp/v2
-NEXT_PUBLIC_WORDPRESS_API_URL=https://www.success.com/wp-json/wp/v2
+WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
+NEXT_PUBLIC_WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
 CRON_SECRET=<secret-for-cron-jobs>
 ```
 

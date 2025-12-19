@@ -57,7 +57,7 @@ async function syncWordPressEntity(
   dryRun: boolean,
   userId: string
 ) {
-  const WORDPRESS_API_URL = process.env.WORDPRESS_API_URL || 'https://www.success.com/wp-json/wp/v2';
+  const WORDPRESS_API_URL = process.env.WORDPRESS_API_URL || 'https://successcom.wpenginepowered.com/wp-json/wp/v2';
 
   const result = {
     entity,

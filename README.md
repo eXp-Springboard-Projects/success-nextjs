@@ -151,8 +151,8 @@ NEXTAUTH_SECRET=<generate-with-openssl>
 NEXTAUTH_URL=http://localhost:3000
 
 # WordPress
-WORDPRESS_API_URL=https://www.success.com/wp-json/wp/v2
-NEXT_PUBLIC_WORDPRESS_API_URL=https://www.success.com/wp-json/wp/v2
+WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
+NEXT_PUBLIC_WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
 ```
 
 ---

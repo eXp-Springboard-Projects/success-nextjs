@@ -45,7 +45,7 @@ export default function MagazineManager() {
   const fetchMagazines = async () => {
     setLoading(true);
     try {
-      const wpApiUrl = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || 'https://www.success.com/wp-json/wp/v2';
+      const wpApiUrl = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || 'https://successcom.wpenginepowered.com/wp-json/wp/v2';
       const res = await fetch(`${wpApiUrl}/magazines?per_page=50&_embed`);
       const data = await res.json();
 
@@ -453,7 +453,7 @@ setMagazines([demoIssue]);
               </div>
 
               <div className={styles.notice}>
-                <strong>ℹ️ Note:</strong> This editor allows you to preview changes. To publish updates, please edit the magazine in <a href="https://www.success.com/wp-admin/" target="_blank" rel="noopener noreferrer">WordPress Admin</a>.
+                <strong>ℹ️ Note:</strong> This editor allows you to preview changes. To publish updates, please edit the magazine in <a href="https://successcom.wpenginepowered.com/wp-admin/" target="_blank" rel="noopener noreferrer">WordPress Admin</a>.
               </div>
             </div>
           </div>

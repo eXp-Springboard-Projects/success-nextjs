@@ -32,7 +32,7 @@ settings = null;
           instagramUrl: '',
           linkedinUrl: '',
           youtubeUrl: '',
-          wordpressApiUrl: 'https://www.success.com/wp-json/wp/v2',
+          wordpressApiUrl: 'https://successcom.wpenginepowered.com/wp-json/wp/v2',
           wordpressApiKey: '',
           defaultMetaTitle: 'SUCCESS Magazine',
           defaultMetaDescription: '',

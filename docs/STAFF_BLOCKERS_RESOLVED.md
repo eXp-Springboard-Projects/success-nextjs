@@ -390,10 +390,10 @@ The current implementation uses read-only WordPress API calls. For full CRUD ope
 
 ### Current API Calls
 ```
-GET  https://www.success.com/wp-json/wp/v2/posts
-GET  https://www.success.com/wp-json/wp/v2/users
-GET  https://www.success.com/wp-json/wp/v2/categories
-GET  https://www.success.com/wp-json/wp/v2/media
+GET  https://successcom.wpenginepowered.com/wp-json/wp/v2/posts
+GET  https://successcom.wpenginepowered.com/wp-json/wp/v2/users
+GET  https://successcom.wpenginepowered.com/wp-json/wp/v2/categories
+GET  https://successcom.wpenginepowered.com/wp-json/wp/v2/media
 ```
 
 ### Needed for Write Operations

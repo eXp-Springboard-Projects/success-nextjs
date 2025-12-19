@@ -295,7 +295,7 @@ export default function Settings() {
                   type="url"
                   value={wordpressApiUrl}
                   onChange={(e) => setWordpressApiUrl(e.target.value)}
-                  placeholder="https://www.success.com/wp-json/wp/v2"
+                  placeholder="https://successcom.wpenginepowered.com/wp-json/wp/v2"
                   className={styles.input}
                 />
                 <small>The base URL for the WordPress REST API</small>

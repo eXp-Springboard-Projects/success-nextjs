@@ -456,7 +456,7 @@ VALUES ('insider@test.com', 'EDITOR', 'ACTIVE');
 DATABASE_URL="postgresql://user:password@host:5432/database?sslmode=require"
 
 # WordPress API (for content migration)
-WORDPRESS_API_URL="https://www.success.com/wp-json/wp/v2"
+WORDPRESS_API_URL="https://successcom.wpenginepowered.com/wp-json/wp/v2"
 
 # Authentication (NextAuth)
 NEXTAUTH_URL="http://localhost:3000"

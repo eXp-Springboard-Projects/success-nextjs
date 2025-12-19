@@ -199,7 +199,7 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
       name: 'SUCCESS',
       logo: {
         '@type': 'ImageObject',
-        url: 'https://www.success.com/wp-content/uploads/2024/03/success-logo.png',
+        url: 'https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/success-logo.png',
       },
     },
     mainEntityOfPage: {

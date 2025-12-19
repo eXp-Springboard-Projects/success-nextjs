@@ -169,7 +169,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     }
 
     // If not in database, try WordPress API
-    const wpApiUrl = process.env.WORDPRESS_API_URL || 'https://www.success.com/wp-json/wp/v2';
+    const wpApiUrl = process.env.WORDPRESS_API_URL || 'https://successcom.wpenginepowered.com/wp-json/wp/v2';
     const wpRes = await fetch(`${wpApiUrl}/posts/${id}?_embed=true`);
 
     if (wpRes.ok) {

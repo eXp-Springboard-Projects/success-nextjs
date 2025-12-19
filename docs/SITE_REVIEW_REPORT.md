@@ -257,7 +257,7 @@ The Next.js site successfully mirrors SUCCESS.com with **52 pages** and **16 com
 - **Database:** PostgreSQL + Prisma ORM
 
 ### Data Flow
-- **Primary Source:** WordPress REST API (https://www.success.com/wp-json/wp/v2)
+- **Primary Source:** WordPress REST API (https://successcom.wpenginepowered.com/wp-json/wp/v2)
 - **Caching Strategy:** ISR with 24-hour revalidation
 - **Static Generation:** Pre-rendered at build + on-demand
 - **Fallback:** Enabled for all dynamic routes
@@ -294,7 +294,7 @@ The Next.js site successfully mirrors SUCCESS.com with **52 pages** and **16 com
 8. **Media** - Featured images via `_embed` parameter
 
 ### WordPress API Usage
-- **Endpoint:** `https://www.success.com/wp-json/wp/v2`
+- **Endpoint:** `https://successcom.wpenginepowered.com/wp-json/wp/v2`
 - **Auth:** None required (public API)
 - **Rate Limiting:** Not implemented (consider if needed)
 - **Data Freshness:** 24-hour refresh cycle

@@ -160,7 +160,7 @@ All pages use Next.js ISR (Incremental Static Regeneration) with a 24-hour reval
 - **Database:** PostgreSQL (for admin features)
 
 ### WordPress API Integration
-Base URL: `https://www.success.com/wp-json/wp/v2`
+Base URL: `https://successcom.wpenginepowered.com/wp-json/wp/v2`
 
 Endpoints used:
 - `/posts` - Blog posts

@@ -22,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Fetch WordPress content stats (get accurate totals from headers)
       // First, get the total counts from WordPress
-      const wpApiUrl = process.env.WORDPRESS_API_URL || 'https://www.success.com/wp-json/wp/v2';
+      const wpApiUrl = process.env.WORDPRESS_API_URL || 'https://successcom.wpenginepowered.com/wp-json/wp/v2';
 
       const [postsResponse, videosResponse, podcastsResponse, categoriesResponse] = await Promise.all([
         fetch(`${wpApiUrl}/posts?per_page=1`, { cache: 'no-store' }),
