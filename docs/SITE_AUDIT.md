@@ -177,7 +177,7 @@ This matches the description of success.com homepage structure.
 
 ### Data Fetching:
 - Using `fetchWordPressData()` from `/lib/wordpress.js`
-- WordPress REST API: `https://www.success.com/wp-json/wp/v2`
+- WordPress REST API: `https://successcom.wpenginepowered.com/wp-json/wp/v2`
 - ISR with 10-minute revalidation (600 seconds)
 
 ### Routes:

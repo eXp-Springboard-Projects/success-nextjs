@@ -174,7 +174,7 @@ SUCCESS Magazine has years of content in WordPress. Options:
 ### Decision
 
 Use WordPress as headless CMS via REST API:
-- Fetch content from https://www.success.com/wp-json/wp/v2
+- Fetch content from https://successcom.wpenginepowered.com/wp-json/wp/v2
 - Use ISR (Incremental Static Regeneration) with 10-minute revalidation
 - Automated cron jobs sync content daily
 - Plan future migration to Prisma database

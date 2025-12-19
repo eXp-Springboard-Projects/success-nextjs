@@ -99,7 +99,7 @@ The admin dashboard consists of **47 admin pages** managing content, users, memb
 | 24 | `/admin/magazine-manager` | `pages/admin/magazine-manager.tsx` | Magazine management | WP API + local upload | ⚠️ Hybrid source |
 
 **Details**:
-- **wordpress-sync.tsx**: Displays WordPress content stats from `https://www.success.com/wp-json/wp/v2`
+- **wordpress-sync.tsx**: Displays WordPress content stats from `https://successcom.wpenginepowered.com/wp-json/wp/v2`
   - Endpoints: posts, pages, categories, videos, podcasts, magazines
   - Purpose: Monitor WordPress content (read-only)
   - **Not visible in navigation** (removed from menu)
@@ -237,12 +237,12 @@ fetch(`${wpApiUrl}/categories`)
 **File**: `pages/admin/wordpress-sync.tsx`
 ```typescript
 // Direct WordPress API calls:
-https://www.success.com/wp-json/wp/v2/posts
-https://www.success.com/wp-json/wp/v2/pages
-https://www.success.com/wp-json/wp/v2/categories
-https://www.success.com/wp-json/wp/v2/videos
-https://www.success.com/wp-json/wp/v2/podcasts
-https://www.success.com/wp-json/wp/v2/magazines
+https://successcom.wpenginepowered.com/wp-json/wp/v2/posts
+https://successcom.wpenginepowered.com/wp-json/wp/v2/pages
+https://successcom.wpenginepowered.com/wp-json/wp/v2/categories
+https://successcom.wpenginepowered.com/wp-json/wp/v2/videos
+https://successcom.wpenginepowered.com/wp-json/wp/v2/podcasts
+https://successcom.wpenginepowered.com/wp-json/wp/v2/magazines
 ```
 
 **File**: `pages/admin/content-viewer.tsx`

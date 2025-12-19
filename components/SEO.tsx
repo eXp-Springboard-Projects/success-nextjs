@@ -16,7 +16,7 @@ type SEOProps = {
 export default function SEO({
   title = 'SUCCESS - Your Trusted Guide to the Future of Work',
   description = 'SUCCESS is the leading source of inspiration, motivation, and practical advice for entrepreneurs, business leaders, and professionals seeking personal and professional growth.',
-  image = 'https://www.success.com/wp-content/uploads/2024/03/success-logo.png',
+  image = 'https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/success-logo.png',
   url = 'https://www.success.com',
   type = 'website',
   publishedTime,

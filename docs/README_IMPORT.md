@@ -11,7 +11,7 @@ npm install -D @types/node-fetch @types/bcryptjs tsx
 ### 2. Set Environment Variable
 Add to `.env.local`:
 ```bash
-WORDPRESS_API_URL=https://www.success.com/wp-json/wp/v2
+WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
 DATABASE_URL="postgres://YOUR_DATABASE_URL_HERE"
 ```
 
@@ -89,7 +89,7 @@ npm run import:wordpress  # Updates existing + imports new
 ### Step 1: Categories (~30 seconds)
 ```
 === IMPORTING CATEGORIES ===
-Fetching: https://www.success.com/wp-json/wp/v2/categories?page=1&per_page=100
+Fetching: https://successcom.wpenginepowered.com/wp-json/wp/v2/categories?page=1&per_page=100
 ✓ Category: AI & Technology
 ✓ Category: Business & Branding
 ✓ Category: Entrepreneurship
@@ -159,7 +159,7 @@ DATABASE_URL="postgres://YOUR_CONNECTION_STRING"
 ### Error: "WordPress API error: 403"
 The WordPress API is public, but if you get 403:
 - Check that `WORDPRESS_API_URL` is correct
-- Try: `https://www.success.com/wp-json/wp/v2`
+- Try: `https://successcom.wpenginepowered.com/wp-json/wp/v2`
 
 ### Import is Slow
 Normal! Importing 500 posts takes 5-10 minutes due to:
@@ -246,7 +246,7 @@ package.json
 Questions? Check:
 1. Console output for specific errors
 2. Database connection in `.env.local`
-3. WordPress API availability: https://www.success.com/wp-json/wp/v2/posts?per_page=1
+3. WordPress API availability: https://successcom.wpenginepowered.com/wp-json/wp/v2/posts?per_page=1
 
 **Ready to import?** Run:
 ```bash

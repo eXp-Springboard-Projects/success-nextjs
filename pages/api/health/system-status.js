@@ -38,7 +38,7 @@ async function checkDatabase() {
 
 async function checkWordPressAPI() {
   try {
-    const response = await fetch('https://www.success.com/wp-json/wp/v2/posts?per_page=1');
+    const response = await fetch('https://successcom.wpenginepowered.com/wp-json/wp/v2/posts?per_page=1');
     if (response.ok) {
       return {
         status: 'healthy',

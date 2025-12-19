@@ -17,8 +17,8 @@ PRISMA_DATABASE_URL=prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbG
 NEXTAUTH_SECRET=gIi7IGU5xBhP8QHjeG58EIKAN0bpFWZaHPyI0hSQa4I=
 
 # WordPress API
-WORDPRESS_API_URL=https://success.com/wp-json/wp/v2
-NEXT_PUBLIC_WORDPRESS_API_URL=https://success.com/wp-json/wp/v2
+WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
+NEXT_PUBLIC_WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
 
 # Security
 CRON_SECRET=a3f8b2e7c9d4f1a6b5e8c2d7f3a9b1c4e6d8f2a5b7c9d1e3f5a7b9c1d3e5f7a9

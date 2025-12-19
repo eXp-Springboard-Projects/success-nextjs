@@ -319,8 +319,8 @@ Copy `.env.example` to `.env.local` and fill in:
 DATABASE_URL="postgresql://..." # Already configured
 NEXTAUTH_SECRET="$(openssl rand -base64 32)"
 NEXTAUTH_URL="http://localhost:3000"
-WORDPRESS_API_URL="https://www.success.com/wp-json/wp/v2"
-NEXT_PUBLIC_WORDPRESS_API_URL="https://www.success.com/wp-json/wp/v2"
+WORDPRESS_API_URL="https://successcom.wpenginepowered.com/wp-json/wp/v2"
+NEXT_PUBLIC_WORDPRESS_API_URL="https://successcom.wpenginepowered.com/wp-json/wp/v2"
 ```
 
 **HIGH PRIORITY (Needed for full features):**

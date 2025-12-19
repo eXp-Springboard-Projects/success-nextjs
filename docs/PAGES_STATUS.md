@@ -478,7 +478,7 @@ NEXTAUTH_SECRET=...
 NEXTAUTH_URL=http://localhost:3000
 
 # WordPress
-WORDPRESS_API_URL=https://www.success.com/wp-json/wp/v2
+WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
 
 # Stripe (PayLinks)
 STRIPE_SECRET_KEY=sk_test_...

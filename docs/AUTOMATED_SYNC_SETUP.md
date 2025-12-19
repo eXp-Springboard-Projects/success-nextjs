@@ -182,7 +182,7 @@ Future of Work: 14061
 2. Add these variables:
 
 ```
-WORDPRESS_API_URL=https://www.success.com/wp-json/wp/v2
+WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
 CRON_SECRET=[generate with: openssl rand -base64 32]
 NEXTAUTH_SECRET=[generate with: openssl rand -base64 32]
 NEXTAUTH_URL=https://success-nextjs.vercel.app

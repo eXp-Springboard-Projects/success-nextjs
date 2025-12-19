@@ -319,7 +319,7 @@ export default function MemberDashboard() {
             <div className={styles.magazineCard}>
               <div className={styles.magazineCover}>
                 <img
-                  src="https://www.success.com/wp-content/uploads/2025/11/SD25_06_NOV_DIGITAL-ED-_-COVER-_-RORY-VADEN_2048x1082-1.jpg"
+                  src="https://successcom.wpenginepowered.com/wp-content/uploads/2025/11/SD25_06_NOV_DIGITAL-ED-_-COVER-_-RORY-VADEN_2048x1082-1.jpg"
                   alt="SUCCESS Magazine November 2025 - Guide to Philanthropy"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;

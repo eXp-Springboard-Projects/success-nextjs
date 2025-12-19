@@ -204,27 +204,27 @@ function HomePage({ featuredPost, secondaryPosts, trendingPosts, latestPosts, ai
           </p>
           <div className={styles.speakersGrid}>
             <div className={styles.speakerCard}>
-              <img src="https://www.success.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1.jpg" alt="Grant Cardone" className={styles.speakerImage} />
+              <img src="https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1.jpg" alt="Grant Cardone" className={styles.speakerImage} />
               <h3 className={styles.speakerName}>GRANT<br />CARDONE</h3>
             </div>
             <div className={styles.speakerCard}>
-              <img src="https://www.success.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1s.jpg" alt="Daymond John" className={styles.speakerImage} />
+              <img src="https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1s.jpg" alt="Daymond John" className={styles.speakerImage} />
               <h3 className={styles.speakerName}>DAYMOND<br />JOHN</h3>
             </div>
             <div className={styles.speakerCard}>
-              <img src="https://www.success.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1d.jpg" alt="Jenn Lim" className={styles.speakerImage} />
+              <img src="https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1d.jpg" alt="Jenn Lim" className={styles.speakerImage} />
               <h3 className={styles.speakerName}>JENN<br />LIM</h3>
             </div>
             <div className={styles.speakerCard}>
-              <img src="https://www.success.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1a.jpg" alt="Andrea Navedo" className={styles.speakerImage} />
+              <img src="https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1a.jpg" alt="Andrea Navedo" className={styles.speakerImage} />
               <h3 className={styles.speakerName}>ANDREA<br />NAVEDO</h3>
             </div>
             <div className={styles.speakerCard}>
-              <img src="https://www.success.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1e.jpg" alt="Mel Robbins" className={styles.speakerImage} />
+              <img src="https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1e.jpg" alt="Mel Robbins" className={styles.speakerImage} />
               <h3 className={styles.speakerName}>MEL<br />ROBBINS</h3>
             </div>
             <div className={styles.speakerCard}>
-              <img src="https://www.success.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1w.jpg" alt="Nick Santonastasso" className={styles.speakerImage} />
+              <img src="https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1w.jpg" alt="Nick Santonastasso" className={styles.speakerImage} />
               <h3 className={styles.speakerName}>NICK<br />SANTONASTASSO</h3>
             </div>
           </div>

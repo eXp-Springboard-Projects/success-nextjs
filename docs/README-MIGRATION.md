@@ -123,7 +123,7 @@ NEXTAUTH_URL="https://success.com"
 NEXTAUTH_SECRET="generate-random-secret"
 
 # WordPress (for ongoing sync)
-WORDPRESS_API_URL="https://www.success.com/wp-json/wp/v2"
+WORDPRESS_API_URL="https://successcom.wpenginepowered.com/wp-json/wp/v2"
 
 # WooCommerce (optional)
 WC_CONSUMER_KEY="ck_xxx"

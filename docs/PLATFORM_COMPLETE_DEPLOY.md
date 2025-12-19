@@ -170,7 +170,7 @@ DATABASE_URL=postgres://...  ✅ Already set
 NEXTAUTH_SECRET=...          ✅ Already set
 NEXTAUTH_URL=https://success-nextjs.vercel.app  ✅ Already set
 CRON_SECRET=a3f8b2e7c9d4f1a6b5e8c2d7f3a9b1c4e6d8f2a5b7c9d1e3f5a7b9c1d3e5f7a9  ✅ Already set
-WORDPRESS_API_URL=https://success.com/wp-json/wp/v2  ✅ Already set
+WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2  ✅ Already set
 ```
 
 ---

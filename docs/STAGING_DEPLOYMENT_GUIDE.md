@@ -30,8 +30,8 @@ NEXTAUTH_URL="https://staging.success.com"
 NEXTAUTH_SECRET="[Generate 32+ char random string]"
 
 # WordPress API
-NEXT_PUBLIC_WORDPRESS_API_URL="https://www.success.com/wp-json/wp/v2"
-WORDPRESS_API_URL="https://www.success.com/wp-json/wp/v2"
+NEXT_PUBLIC_WORDPRESS_API_URL="https://successcom.wpenginepowered.com/wp-json/wp/v2"
+WORDPRESS_API_URL="https://successcom.wpenginepowered.com/wp-json/wp/v2"
 
 # Stripe (Use TEST keys for staging)
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."

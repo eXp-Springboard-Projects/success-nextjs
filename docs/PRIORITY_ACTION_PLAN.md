@@ -187,7 +187,7 @@ Enable at: https://dashboard.stripe.com/test/settings/billing/portal
 - [x] `DATABASE_URL` - PostgreSQL connection string
 - [x] `NEXTAUTH_SECRET` - Generate with `openssl rand -base64 32`
 - [x] `NEXTAUTH_URL` - Your site URL
-- [x] `WORDPRESS_API_URL` - https://www.success.com/wp-json/wp/v2
+- [x] `WORDPRESS_API_URL` - https://successcom.wpenginepowered.com/wp-json/wp/v2
 
 **Required for Stripe:**
 - [ ] `STRIPE_SECRET_KEY` - From Stripe dashboard

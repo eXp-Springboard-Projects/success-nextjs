@@ -88,7 +88,7 @@ WordPress REST API
 
 1. **Fetch from WordPress**
    ```
-   GET https://www.success.com/wp-json/wp/v2/posts?_embed&per_page=100
+   GET https://successcom.wpenginepowered.com/wp-json/wp/v2/posts?_embed&per_page=100
    ```
 
 2. **Extract Data**

@@ -686,7 +686,7 @@ model seo_settings {
   siteTitle                  String   @default("SUCCESS Magazine")
   siteDescription            String   @default("Your Guide to Personal and Professional Growth")
   siteKeywords               String   @default("success, business, entrepreneurship, leadership, personal development")
-  ogImage                    String   @default("https://www.success.com/og-image.jpg")
+  ogImage                    String   @default("https://successcom.wpenginepowered.com/og-image.jpg")
   ogType                     String   @default("website")
   twitterHandle              String   @default("@successmagazine")
   twitterCardType            String   @default("summary_large_image")

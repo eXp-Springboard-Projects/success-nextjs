@@ -167,7 +167,7 @@
 
 - **Vercel Support**: https://vercel.com/support
 - **Database (Neon)**: https://neon.tech/docs/introduction
-- **WordPress API**: https://www.success.com/wp-json/wp/v2
+- **WordPress API**: https://successcom.wpenginepowered.com/wp-json/wp/v2
 
 ## Rollback Plan
 

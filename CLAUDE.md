@@ -28,7 +28,7 @@ npm run export
 
 - **API Client**: `lib/wordpress.js` contains the `fetchWordPressData(endpoint)` function
 - **API URL**: Configured via `WORDPRESS_API_URL` environment variable in `.env.local`
-- **Data Source**: https://www.success.com/wp-json/wp/v2
+- **Data Source**: https://successcom.wpenginepowered.com/wp-json/wp/v2
 - **Content Types**: Posts, categories, custom post types (videos, podcasts), authors
 
 ### Pages Structure
@@ -103,7 +103,7 @@ Key category IDs used in the homepage:
 Required in `.env.local`:
 
 ```
-WORDPRESS_API_URL=https://www.success.com/wp-json/wp/v2
+WORDPRESS_API_URL=https://successcom.wpenginepowered.com/wp-json/wp/v2
 ```
 
 ## Key Implementation Patterns

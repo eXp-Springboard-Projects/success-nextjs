@@ -42,8 +42,8 @@ Click "Environment Variables" and add these:
 | `DATABASE_URL` | `postgresql://...` | Your PostgreSQL connection string |
 | `NEXTAUTH_SECRET` | Generate new | Run: `openssl rand -base64 32` |
 | `NEXTAUTH_URL` | `https://your-domain.vercel.app` | Your Vercel deployment URL |
-| `WORDPRESS_API_URL` | `https://www.success.com/wp-json/wp/v2` | WordPress REST API |
-| `NEXT_PUBLIC_WORDPRESS_API_URL` | `https://www.success.com/wp-json/wp/v2` | Same as above (client-side) |
+| `WORDPRESS_API_URL` | `https://successcom.wpenginepowered.com/wp-json/wp/v2` | WordPress REST API |
+| `NEXT_PUBLIC_WORDPRESS_API_URL` | `https://successcom.wpenginepowered.com/wp-json/wp/v2` | Same as above (client-side) |
 
 #### Optional Variables (Add Later)
 
@@ -344,7 +344,7 @@ vercel logs [deployment-url]
 **Error:** "Failed to fetch WordPress data"
 
 **Solution:**
-- Test API directly: `curl https://www.success.com/wp-json/wp/v2/posts?per_page=1`
+- Test API directly: `curl https://successcom.wpenginepowered.com/wp-json/wp/v2/posts?per_page=1`
 - Verify `NEXT_PUBLIC_WORDPRESS_API_URL` is set (for client-side)
 - Check CORS if needed
 
