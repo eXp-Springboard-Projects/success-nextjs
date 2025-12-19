@@ -41,7 +41,7 @@ export default async function handler(
       select: { email: true },
     });
 
-    const existingEmails = existingUsers.map(u => u.email);
+    const existingEmails = existingUsers.map((u: { email: string }) => u.email);
     const newEmails = emails.filter(email => !existingEmails.includes(email));
 
     if (newEmails.length === 0) {
