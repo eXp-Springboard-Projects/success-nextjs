@@ -2333,3 +2333,19 @@ enum AnnouncementType {
   ALERT
   MAINTENANCE
 }
+
+model team_members {
+  id           String   @id @default(uuid())
+  name         String
+  title        String
+  bio          String
+  image        String
+  linkedIn     String?
+  displayOrder Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([displayOrder])
+  @@index([isActive])
+}

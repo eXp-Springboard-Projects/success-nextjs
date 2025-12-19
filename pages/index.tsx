@@ -307,7 +307,7 @@ function HomePage({ featuredPost, secondaryPosts, trendingPosts, latestPosts, ai
 
 export async function getServerSideProps() {
   // Use database instead of WordPress API since we're now the main site
-  const { prisma } = await import('../lib/prisma');
+  const { prisma } = await import('../lib/prisma.js');
 
   try {
     // Fetch latest published posts
@@ -336,7 +336,7 @@ export async function getServerSideProps() {
       title: { rendered: post.title },
       excerpt: { rendered: post.excerpt || '' },
       slug: post.slug,
-      date: post.publishedAt,
+      date: post.publishedAt?.toISOString() || new Date().toISOString(),
       _embedded: {
         'wp:featuredmedia': post.featuredImage ? [{
           source_url: post.featuredImage

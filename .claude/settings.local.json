@@ -134,7 +134,12 @@
       "Bash(DATABASE_URL=\"postgres://e731f8c351f1974c788b739203b00113561ca6e26a0a8c0d7d5efcea8cf9b656:sk_LYHdgk8RomZonUpgI9S97@db.prisma.io:5432/postgres?sslmode=require\" npx prisma db pull --print)",
       "Bash(Select-Object -First 100)",
       "Bash(DATABASE_URL=\"postgres://e731f8c351f1974c788b739203b00113561ca6e26a0a8c0d7d5efcea8cf9b656:sk_LYHdgk8RomZonUpgI9S97@db.prisma.io:5432/postgres?sslmode=require\" npx tsx scripts/add-social-media-tables.ts)",
-      "Bash(Select-Object -First 50)"
+      "Bash(Select-Object -First 50)",
+      "Bash(DATABASE_URL=\"postgres://e731f8c351f1974c788b739203b00113561ca6e26a0a8c0d7d5efcea8cf9b656:sk_LYHdgk8RomZonUpgI9S97@db.prisma.io:5432/postgres?sslmode=require\" npx tsx scripts/add-team-members-table.ts)",
+      "Bash(Select-Object -First 5)",
+      "Bash(start http://localhost:3000/about)",
+      "Bash(start http://localhost:3000/admin/about/team-members)",
+      "Bash(DATABASE_URL=\"postgres://e731f8c351f1974c788b739203b00113561ca6e26a0a8c0d7d5efcea8cf9b656:sk_LYHdgk8RomZonUpgI9S97@db.prisma.io:5432/postgres?sslmode=require\" npx tsx scripts/check-rachel-login.ts)"
     ],
     "deny": [],
     "ask": []

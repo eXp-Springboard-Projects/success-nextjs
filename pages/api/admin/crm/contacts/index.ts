@@ -27,94 +27,60 @@ async function getContacts(req: NextApiRequest, res: NextApiResponse) {
     const query = req.query;
     const search = (query.search as string) || '';
     const emailStatus = (query.emailStatus as string) || '';
-    const tagId = (query.tagId as string) || '';
-    const listId = (query.listId as string) || '';
     const source = (query.source as string) || '';
-    const page = (query.page as string) || '1';
-    const limit = (query.limit as string) || '50';
-    const sortBy = (query.sortBy as string) || 'created_at';
+    const page = parseInt((query.page as string) || '1');
+    const limit = parseInt((query.limit as string) || '50');
+    const sortBy = (query.sortBy as string) || 'createdAt';
     const sortOrder = (query.sortOrder as string) || 'desc';
 
-    const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
+    const offset = (page - 1) * limit;
 
-    let whereClause = '';
-    const params: any[] = [];
-    let paramIndex = 1;
+    // Build where clause using Prisma
+    const where: any = {};
 
     if (search) {
-      whereClause += ` AND (
-        c.email ILIKE $${paramIndex} OR
-        c.first_name ILIKE $${paramIndex} OR
-        c.last_name ILIKE $${paramIndex} OR
-        c.company ILIKE $${paramIndex}
-      )`;
-      params.push(`%${search}%`);
-      paramIndex++;
+      where.OR = [
+        { email: { contains: search, mode: 'insensitive' } },
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { company: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
     if (emailStatus) {
-      whereClause += ` AND c.email_status = $${paramIndex}`;
-      params.push(emailStatus);
-      paramIndex++;
-    }
-
-    // Tag filtering temporarily disabled
-    // if (tagId) {
-    //   whereClause += ` AND EXISTS (
-    //     SELECT 1 FROM contact_tag_assignments cta
-    //     WHERE cta.contact_id = c.id AND cta.tag_id = $${paramIndex}
-    //   )`;
-    //   params.push(tagId);
-    //   paramIndex++;
-    // }
-
-    if (listId) {
-      whereClause += ` AND EXISTS (
-        SELECT 1 FROM contact_list_members clm
-        WHERE clm.contact_id = c.id AND clm.list_id = $${paramIndex}
-      )`;
-      params.push(listId);
-      paramIndex++;
+      where.emailStatus = emailStatus;
     }
 
     if (source) {
-      whereClause += ` AND c.source = $${paramIndex}`;
-      params.push(source);
-      paramIndex++;
+      where.source = source;
     }
 
-    const contacts = await prisma.$queryRawUnsafe(`
-      SELECT
-        c.*,
-        '[]'::json as tags,
-        '[]'::json as lists,
-        c.updated_at as last_activity
-      FROM contacts c
-      WHERE 1=1 ${whereClause}
-      ORDER BY c.${sortBy === 'last_activity' ? 'updated_at' : sortBy} ${sortOrder.toUpperCase()}
-      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
-    `, ...params, parseInt(limit as string), offset);
-
-    const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
-      `SELECT COUNT(DISTINCT c.id) as count
-       FROM contacts c
-       WHERE 1=1 ${whereClause}`,
-      ...params
-    );
-
-    const total = Number(countResult[0].count);
+    // Fetch contacts using Prisma
+    const [contacts, total] = await Promise.all([
+      prisma.contacts.findMany({
+        where,
+        orderBy: { [sortBy]: sortOrder },
+        skip: offset,
+        take: limit,
+      }),
+      prisma.contacts.count({ where }),
+    ]);
 
     return res.status(200).json({
       contacts,
       pagination: {
-        page: parseInt(page as string),
-        limit: parseInt(limit as string),
+        page,
+        limit,
         total,
-        totalPages: Math.ceil(total / parseInt(limit as string)),
+        totalPages: Math.ceil(total / limit),
       },
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Failed to fetch contacts' });
+    console.error('Error fetching contacts:', error);
+    return res.status(500).json({
+      error: 'Failed to fetch contacts',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }
 
