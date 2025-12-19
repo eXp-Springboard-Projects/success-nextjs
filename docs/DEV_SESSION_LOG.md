@@ -11,6 +11,69 @@
 =======================================================
 -->
 
+## 2025-12-19T09:20:00 — Repository Cleanup & Organization
+
+**Session Context:**
+- 📚 Docs Loaded: README.md, AGENTS.md, DEV_SESSION_LOG.md (last 3 entries), DECISIONS.md, CHANGELOG.md, package.json
+- 🎯 Objective: Clean up repository by organizing loose files into appropriate folders
+- 🚫 Non-Goals: Deleting files, changing functionality
+- ✅ Done When: Temp files archived, scripts organized, docs consolidated, build passes
+
+### Summary
+
+- **Problem**: Repository root was cluttered with temporary files (`build-output.txt`, `code`, etc.), misplaced setup scripts (`setup.bat`, `setup.sh`), and loose documentation (`WATCH_HISTORY_INTEGRATION.md`). Made the project harder to navigate.
+- **Solution**: Created `_archive/` folder for temp/artifact files that should be kept for reference but not clutter the root. Moved setup scripts to the existing `scripts/` folder. Moved documentation to the existing `docs/` folder.
+- **Result**: Clean repository root with only essential configuration files and standard folders. Build passes successfully. No functional changes.
+
+### Changes Made
+
+| File | Change |
+|------|--------|
+| `_archive/` | Created new folder for archived/temp files |
+| `_archive/README.md` | Created - documents archived file contents |
+| `_archive/build-output.txt` | Moved from root |
+| `_archive/build-test.txt` | Moved from root |
+| `_archive/code` | Moved from root (empty file) |
+| `_archive/UsersRachelNeadsuccess-nexttemp-success-page.html` | Moved from root |
+| `scripts/setup.bat` | Moved from root |
+| `scripts/setup.sh` | Moved from root |
+| `docs/WATCH_HISTORY_INTEGRATION.md` | Moved from root |
+
+### Repository Structure (After Cleanup)
+
+**Root-level files (appropriate):**
+- Config: `package.json`, `tsconfig.json`, `next.config.js`, `vercel.json`, `amplify.yml`, `eslint.config.mjs`, `firebase.json`, `firestore.*`
+- Environment: `.env.example`, `.env.production.example`, `.env.wordpress.example`
+- Documentation: `README.md`, `CHANGELOG.md`, `AGENTS.md`, `CLAUDE.md`
+- Next.js: `next-env.d.ts`, `proxy.js`
+- Lock files: `package-lock.json`, `pnpm-lock.yaml`
+
+**Folders:**
+- `components/` - React components
+- `docs/` - All documentation (99 files)
+- `lib/` - Utility libraries
+- `pages/` - Next.js pages and API routes
+- `prisma/` - Database schema and migrations
+- `public/` - Static assets
+- `scripts/` - CLI scripts and setup files
+- `styles/` - CSS files
+- `tests/` - Test files
+- `types/` - TypeScript type definitions
+- `data/` - Data files
+- `_archive/` - Archived/temp files (new)
+
+### Follow-up Items
+
+- [x] Verified build passes (`npm run build` - success)
+- [ ] User to commit changes with git
+
+### Session Stats
+- Files Moved: 7
+- Files Created: 1 (`_archive/README.md`)
+- Build Status: ✅ PASSING
+
+---
+
 ## 2025-12-18T23:00:00 — TipTap TextStyle Import Fix (Amplify Branch)
 
 **Session Context:**
