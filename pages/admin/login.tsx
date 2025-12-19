@@ -18,7 +18,7 @@ export default function AdminLogin() {
 
     try {
       console.log('Attempting login...');
-      const result = await Promise.race([
+      const result: any = await Promise.race([
         signIn('credentials', {
           email,
           password,
