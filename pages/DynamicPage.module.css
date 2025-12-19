@@ -1,0 +1,168 @@
+.article {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.featuredImage {
+  width: 100%;
+  margin-bottom: 2rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.featuredImg {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+.header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.title {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.content {
+  max-width: 800px;
+  margin: 0 auto;
+  font-size: 1.125rem;
+  line-height: 1.75;
+  color: #374151;
+}
+
+/* Style parsed HTML content */
+.content h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #111827;
+}
+
+.content h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #1f2937;
+}
+
+.content h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: #1f2937;
+}
+
+.content p {
+  margin-bottom: 1.25rem;
+}
+
+.content a {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+.content a:hover {
+  color: #2563eb;
+}
+
+.content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 2rem 0;
+}
+
+.content ul,
+.content ol {
+  margin-bottom: 1.25rem;
+  padding-left: 2rem;
+}
+
+.content li {
+  margin-bottom: 0.5rem;
+}
+
+.content blockquote {
+  border-left: 4px solid #3b82f6;
+  padding-left: 1.5rem;
+  margin: 2rem 0;
+  font-style: italic;
+  color: #4b5563;
+}
+
+.content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2rem 0;
+}
+
+.content table th,
+.content table td {
+  border: 1px solid #e5e7eb;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.content table th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: #111827;
+}
+
+.content table tr:hover {
+  background: #f9fafb;
+}
+
+.footer {
+  max-width: 800px;
+  margin: 3rem auto 0;
+  padding-top: 2rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.updated {
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-align: center;
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .title {
+    font-size: 2rem;
+  }
+
+  .content {
+    font-size: 1rem;
+  }
+
+  .content h1 {
+    font-size: 1.875rem;
+  }
+
+  .content h2 {
+    font-size: 1.5rem;
+  }
+
+  .content h3 {
+    font-size: 1.25rem;
+  }
+
+  .article {
+    padding: 1rem 0.5rem;
+  }
+}
