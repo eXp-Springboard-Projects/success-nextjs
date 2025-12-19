@@ -84,6 +84,8 @@ async function createCampaign(req: NextApiRequest, res: NextApiResponse, session
         bouncedCount: 0,
         failedCount: 0,
         deliveredCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     });
 
