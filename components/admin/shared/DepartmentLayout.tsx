@@ -33,8 +33,23 @@ export default function DepartmentLayout({
 }: DepartmentLayoutProps) {
   const { data: session, status } = useSession() as { data: DepartmentSession | null; status: string };
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Persist sidebar open/closed state in localStorage
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('admin_sidebar_open');
+      return saved !== null ? saved === 'true' : true;
+    }
+    return true;
+  });
   const [notificationCount, setNotificationCount] = useState(0);
+
+  // Save sidebar state when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('admin_sidebar_open', String(sidebarOpen));
+    }
+  }, [sidebarOpen]);
 
   useEffect(() => {
     // Fetch notification count
@@ -110,7 +125,7 @@ export default function DepartmentLayout({
       </aside>
 
       {/* Main Content */}
-      <div className={styles.main}>
+      <div className={`${styles.main} ${!sidebarOpen ? styles.mainShifted : ''}`}>
         {/* Header */}
         <header className={styles.header}>
           <button
