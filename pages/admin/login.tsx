@@ -13,11 +13,14 @@ export default function AdminLogin() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+
+    console.log('Form submitted, preventing default');
     setError('');
     setLoading(true);
 
     try {
-      console.log('Attempting login...');
+      console.log('Attempting login with:', { email, passwordLength: password.length });
       const result: any = await Promise.race([
         signIn('credentials', {
           email,
