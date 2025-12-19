@@ -12,6 +12,8 @@ const TOKEN_URLS = {
   linkedin: 'https://www.linkedin.com/oauth/v2/accessToken',
   facebook: 'https://graph.facebook.com/v18.0/oauth/access_token',
   instagram: 'https://graph.facebook.com/v18.0/oauth/access_token',
+  youtube: 'https://oauth2.googleapis.com/token',
+  tiktok: 'https://open-api.tiktok.com/oauth/access_token/',
 };
 
 export default async function handler(
@@ -93,6 +95,24 @@ export default async function handler(
       const userData = await userResponse.json();
       accountName = userData.name || 'Unknown';
       accountId = userData.id;
+    } else if (platformKey === 'youtube') {
+      const userResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+      const userData = await userResponse.json();
+      if (userData.items && userData.items.length > 0) {
+        accountName = userData.items[0].snippet.title;
+        accountId = userData.items[0].id;
+      }
+    } else if (platformKey === 'tiktok') {
+      const userResponse = await fetch('https://open-api.tiktok.com/user/info/', {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+      const userData = await userResponse.json();
+      if (userData.data && userData.data.user) {
+        accountName = userData.data.user.display_name || userData.data.user.username;
+        accountId = userData.data.user.open_id;
+      }
     }
 
     // Calculate token expiry

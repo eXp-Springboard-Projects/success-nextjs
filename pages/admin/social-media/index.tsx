@@ -49,6 +49,20 @@ const PLATFORMS = [
     color: '#e4405f',
     description: 'Share photos and videos',
   },
+  {
+    id: 'youtube',
+    name: 'YouTube',
+    icon: '📺',
+    color: '#ff0000',
+    description: 'Upload videos and community posts',
+  },
+  {
+    id: 'tiktok',
+    name: 'TikTok',
+    icon: '🎵',
+    color: '#000000',
+    description: 'Post short-form videos',
+  },
 ];
 
 export default function SocialMediaConnections() {

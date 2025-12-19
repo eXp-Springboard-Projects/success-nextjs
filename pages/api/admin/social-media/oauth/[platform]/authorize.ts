@@ -16,6 +16,10 @@ import { authOptions } from '../../../../auth/[...nextauth]';
  * - FACEBOOK_APP_SECRET
  * - INSTAGRAM_APP_ID (uses Facebook Graph API)
  * - INSTAGRAM_APP_SECRET
+ * - YOUTUBE_CLIENT_ID (Google OAuth)
+ * - YOUTUBE_CLIENT_SECRET
+ * - TIKTOK_CLIENT_KEY
+ * - TIKTOK_CLIENT_SECRET
  *
  * OAuth Redirect URI: /api/admin/social-media/oauth/[platform]/callback
  */
@@ -40,6 +44,16 @@ const OAUTH_CONFIGS = {
     authUrl: 'https://www.facebook.com/v18.0/dialog/oauth',
     scope: 'instagram_basic instagram_content_publish',
     clientId: process.env.INSTAGRAM_APP_ID,
+  },
+  youtube: {
+    authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+    scope: 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.force-ssl',
+    clientId: process.env.YOUTUBE_CLIENT_ID,
+  },
+  tiktok: {
+    authUrl: 'https://www.tiktok.com/auth/authorize/',
+    scope: 'user.info.basic video.upload video.publish',
+    clientId: process.env.TIKTOK_CLIENT_KEY,
   },
 };
 

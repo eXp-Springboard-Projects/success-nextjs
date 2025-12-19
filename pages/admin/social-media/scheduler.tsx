@@ -21,6 +21,8 @@ const PLATFORM_LIMITS = {
   linkedin: { chars: 3000, name: 'LinkedIn' },
   facebook: { chars: 63206, name: 'Facebook' },
   instagram: { chars: 2200, name: 'Instagram' },
+  youtube: { chars: 5000, name: 'YouTube' },
+  tiktok: { chars: 2200, name: 'TikTok' },
 };
 
 export default function SocialMediaScheduler() {
