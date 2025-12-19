@@ -69,10 +69,7 @@ html {
   position: relative;
   margin: 0 !important;
   padding: 0 !important;
-  /* Disable overscroll bounce effect */
   overscroll-behavior: none;
-  overscroll-behavior-y: none;
-  background-color: var(--color-white);
 }
 
 body {
@@ -90,9 +87,7 @@ body {
   position: relative;
   margin: 0 !important;
   padding: 0 !important;
-  /* Disable overscroll bounce effect */
   overscroll-behavior: none;
-  overscroll-behavior-y: none;
 }
 
 /* Exclude admin pages from overflow constraints */
