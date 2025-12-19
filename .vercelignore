@@ -1,0 +1,7 @@
+pages/_backups
+scripts
+docs
+_archive
+*.log
+.env.local
+test-db.js
