@@ -13,7 +13,10 @@ export const authOptions: AuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
+        console.log('[NextAuth] Authorize called with email:', credentials?.email);
+
         if (!credentials?.email || !credentials?.password) {
+          console.log('[NextAuth] Missing credentials');
           throw new Error('Email and password required');
         }
 
@@ -28,20 +31,24 @@ export const authOptions: AuthOptions = {
         const user = users[0];
 
         if (!user) {
+          console.log('[NextAuth] User not found:', credentials.email);
           logger.debug('User not found', { email: credentials.email });
           throw new Error('Invalid credentials');
         }
 
+        console.log('[NextAuth] User found, checking password...');
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
           user.password
         );
 
         if (!isPasswordValid) {
+          console.log('[NextAuth] Invalid password for:', credentials.email);
           logger.debug('Invalid password', { email: credentials.email });
           throw new Error('Invalid credentials');
         }
 
+        console.log('[NextAuth] Password valid, user authenticated:', user.email, user.role);
         logger.info('User authenticated', { email: user.email, role: user.role });
 
         // Update last login timestamp with raw query
@@ -51,6 +58,7 @@ export const authOptions: AuthOptions = {
           WHERE id = ${user.id}
         `;
 
+        console.log('[NextAuth] Returning user object:', { id: user.id, email: user.email, role: user.role });
         return {
           id: user.id,
           email: user.email,
@@ -65,25 +73,31 @@ export const authOptions: AuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
+      console.log('[NextAuth] JWT callback called, user:', user ? user.email : 'none');
       if (user) {
         token.id = user.id;
         token.role = user.role;
         token.avatar = user.avatar;
         token.hasChangedDefaultPassword = user.hasChangedDefaultPassword;
         token.membershipTier = user.membershipTier || 'FREE';
+        console.log('[NextAuth] JWT callback - setting role:', user.role);
         logger.debug('JWT callback - setting role', { role: user.role });
       }
+      console.log('[NextAuth] JWT callback returning token with role:', token.role);
       return token;
     },
     async session({ session, token }) {
+      console.log('[NextAuth] Session callback called, token role:', token?.role);
       if (token) {
         session.user.id = token.id;
         session.user.role = token.role;
         session.user.avatar = token.avatar;
         session.user.hasChangedDefaultPassword = token.hasChangedDefaultPassword;
         session.user.membershipTier = token.membershipTier || 'FREE';
+        console.log('[NextAuth] Session callback - setting user role:', token.role);
         logger.debug('Session callback', { role: token.role });
       }
+      console.log('[NextAuth] Session callback returning session for:', session.user?.email);
       return session;
     },
   },
