@@ -53,7 +53,7 @@ export default async function handler(
 
     // Process each post
     const results = await Promise.allSettled(
-      scheduledPosts.map(post =>
+      scheduledPosts.map((post: any) =>
         postToSocialMedia(post.id, post.user_id)
       )
     );
