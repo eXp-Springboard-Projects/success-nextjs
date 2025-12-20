@@ -1,334 +1,187 @@
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0;
-  font-family: Arial, Helvetica, sans-serif;
+.advertise {
+  min-height: 100vh;
 }
 
 .hero {
-  background: linear-gradient(135deg, #000 0%, #333 100%);
-  color: white;
-  padding: 6rem 2rem;
+  background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+  padding: 6rem 2rem 4rem;
   text-align: center;
+  color: white;
 }
 
-.hero h1 {
-  font-size: 4rem;
-  font-weight: 900;
-  margin: 0 0 1.5rem 0;
-  letter-spacing: -2px;
-}
-
-.hero p {
-  font-size: 1.5rem;
-  color: #e0e0e0;
-  max-width: 700px;
+.heroContent {
+  max-width: 900px;
   margin: 0 auto;
-  line-height: 1.6;
+}
+
+.heroTitle {
+  font-family: 'Playfair Display', serif;
+  font-size: 4rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+}
+
+.heroSubtitle {
+  font-size: 1.5rem;
+  opacity: 0.9;
 }
 
 .section {
-  padding: 5rem 2rem;
+  padding: 4rem 2rem;
 }
 
-.sectionAlt {
-  background: #f8f9fa;
-  padding: 5rem 2rem;
+.sectionGray {
+  padding: 4rem 2rem;
+  background: #f8f8f8;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.intro {
+  text-align: center;
+  margin-bottom: 3rem;
 }
 
 .sectionTitle {
+  font-family: 'Playfair Display', serif;
   font-size: 2.5rem;
-  font-weight: 900;
-  text-align: center;
   margin: 0 0 1rem 0;
-  color: #1a1a1a;
 }
 
-.sectionSubtitle {
-  text-align: center;
+.introText {
   font-size: 1.25rem;
   color: #666;
-  max-width: 700px;
-  margin: 0 auto 4rem auto;
-  line-height: 1.6;
-}
-
-/* Stats Grid */
-.statsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 3rem;
-  max-width: 1000px;
+  max-width: 800px;
   margin: 0 auto;
+  line-height: 1.8;
 }
 
-.statCard {
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+  margin: 3rem 0;
+}
+
+.stat {
   text-align: center;
   padding: 2rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .statNumber {
-  font-size: 4rem;
-  font-weight: 900;
+  font-family: 'Playfair Display', serif;
+  font-size: 3rem;
+  font-weight: 700;
   color: #000;
-  margin: 0;
-  line-height: 1;
+  margin-bottom: 0.5rem;
 }
 
 .statLabel {
-  font-size: 1.125rem;
-  color: #666;
-  margin-top: 1rem;
-  font-weight: 600;
-}
-
-/* Audience Grid */
-.audienceGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-.audienceCard {
-  background: white;
-  padding: 2.5rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.audienceCard:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
-}
-
-.audienceCard h3 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0 0 1rem 0;
-  color: #1a1a1a;
-}
-
-.audienceCard p {
   color: #666;
   font-size: 1rem;
-  line-height: 1.7;
-  margin: 0;
 }
 
-/* Opportunities */
-.opportunitiesGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 3rem;
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
-.opportunityCard {
-  background: white;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 3rem;
-  transition: all 0.3s;
-}
-
-.opportunityCard:hover {
-  border-color: #000;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-}
-
-.opportunityCard h3 {
-  font-size: 1.75rem;
-  font-weight: 800;
-  margin: 0 0 1rem 0;
-  color: #1a1a1a;
-}
-
-.opportunityCard ul {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 2rem 0;
-}
-
-.opportunityCard li {
-  padding: 0.75rem 0;
-  color: #333;
-  font-size: 1rem;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.opportunityCard li:last-child {
-  border-bottom: none;
-}
-
-.opportunityCard li::before {
-  content: '✓';
-  color: #28a745;
-  font-weight: 900;
-  margin-right: 0.75rem;
-  font-size: 1.25rem;
-}
-
-/* CTA Section */
 .ctaSection {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #000;
   color: white;
-  padding: 5rem 2rem;
+  padding: 4rem 2rem;
+}
+
+.cta {
   text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
-.ctaSection h2 {
-  font-size: 3rem;
-  font-weight: 900;
-  margin: 0 0 1.5rem 0;
+.cta h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.5rem;
+  margin: 0 0 1rem 0;
 }
 
-.ctaSection p {
+.cta p {
   font-size: 1.25rem;
-  margin: 0 0 2.5rem 0;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
+  opacity: 0.9;
+  margin-bottom: 2rem;
 }
 
 .ctaButtons {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
   justify-content: center;
   flex-wrap: wrap;
-  margin-bottom: 1.5rem;
-}
-
-.contactLink {
-  text-align: center;
-  margin-top: 1.5rem;
-}
-
-.contactLink a {
-  color: white;
-  font-size: 1rem;
-  text-decoration: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
-  padding-bottom: 2px;
-  transition: border-color 0.3s;
-}
-
-.contactLink a:hover {
-  border-bottom-color: white;
-}
-
-.primaryButton, .secondaryButton {
-  padding: 1.25rem 3rem;
-  border-radius: 8px;
-  font-size: 1.125rem;
-  font-weight: 700;
-  text-decoration: none;
-  transition: all 0.3s;
-  display: inline-block;
-  border: 2px solid white;
+  margin: 2rem 0;
 }
 
 .primaryButton {
+  display: inline-block;
   background: white;
-  color: #667eea;
+  color: #000;
+  padding: 1rem 2rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
 }
 
 .primaryButton:hover {
-  background: #f8f9fa;
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
 }
 
 .secondaryButton {
+  display: inline-block;
   background: transparent;
   color: white;
+  padding: 1rem 2rem;
+  border-radius: 4px;
+  border: 2px solid white;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
 }
 
 .secondaryButton:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
-}
-
-/* Contact Section */
-.contactSection {
-  padding: 4rem 2rem;
-  text-align: center;
-  background: #1a1a1a;
-  color: white;
+  background: white;
+  color: #000;
 }
 
 .contactInfo {
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.contactInfo h3 {
-  font-size: 2rem;
-  font-weight: 700;
-  margin: 0 0 1.5rem 0;
-}
-
-.contactInfo a {
-  color: #667eea;
-  font-size: 1.25rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: color 0.3s;
-}
-
-.contactInfo a:hover {
-  color: #5568d3;
-  text-decoration: underline;
-}
-
-.contactDetails {
-  margin-top: 2rem;
+  margin-top: 3rem;
   padding-top: 2rem;
   border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.contactDetails p {
-  margin: 0.75rem 0;
-  color: #ccc;
+.contactInfo p {
+  font-size: 1rem;
+  margin: 0.5rem 0;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .hero h1 {
-    font-size: 2.5rem;
-  }
+.contactInfo a {
+  color: white;
+  text-decoration: underline;
+}
 
-  .hero p {
-    font-size: 1.125rem;
+@media (max-width: 768px) {
+  .heroTitle {
+    font-size: 2.5rem;
   }
 
   .sectionTitle {
     font-size: 2rem;
   }
 
-  .statNumber {
-    font-size: 3rem;
-  }
-
-  .opportunitiesGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .ctaSection h2 {
-    font-size: 2rem;
+  .stats {
+    grid-template-columns: 1fr 1fr;
   }
 
   .ctaButtons {
     flex-direction: column;
-    align-items: stretch;
-  }
-
-  .primaryButton, .secondaryButton {
-    width: 100%;
-    max-width: 300px;
-    margin: 0 auto;
   }
 }
