@@ -362,6 +362,15 @@ export async function getServerSideProps() {
     const healthPosts = transformedPosts.slice(0, 3);
     const entertainmentPosts = transformedPosts.slice(3, 6);
 
+    // Fetch latest magazine from WordPress
+    let latestMagazine = null;
+    try {
+      const magazines = await fetchWordPressData('magazines?_embed&per_page=1&orderby=date&order=desc');
+      latestMagazine = magazines && magazines.length > 0 ? magazines[0] : null;
+    } catch (err) {
+      console.error('Error fetching magazine:', err);
+    }
+
     return {
       props: {
         featuredPost,
@@ -375,7 +384,7 @@ export async function getServerSideProps() {
         futureOfWorkPosts,
         healthPosts,
         entertainmentPosts,
-        latestMagazine: null,
+        latestMagazine,
         bestsellers: [],
       }
     };
