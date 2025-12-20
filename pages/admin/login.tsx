@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -10,6 +10,12 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Log when component mounts
+  useEffect(() => {
+    console.log('AdminLogin component mounted');
+    console.log('React is working');
+  }, []);
 
   const handleSubmit = async (e?: React.MouseEvent<HTMLButtonElement> | React.FormEvent) => {
     if (e) {
@@ -87,6 +93,13 @@ export default function AdminLogin() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    console.log('Enter pressed in email field');
+                    handleSubmit();
+                  }
+                }}
                 required
                 autoComplete="email"
                 className={styles.input}
@@ -100,9 +113,10 @@ export default function AdminLogin() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                onKeyPress={(e) => {
+                onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
+                    console.log('Enter pressed in password field');
                     handleSubmit();
                   }
                 }}
