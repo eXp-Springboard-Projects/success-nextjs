@@ -131,6 +131,10 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
   const author = post._embedded?.author?.[0];
   const featuredImage = post._embedded?.['wp:featuredmedia']?.[0];
 
+  // Fallback for featured image if embed data is missing
+  const featuredImageUrl = featuredImage?.source_url || post.featured_image_src;
+  const featuredImageAlt = featuredImage?.alt_text || post.title.rendered;
+
   // Check if this is premium content and user doesn't have access
   const isPremium = post.isPremium || post.meta?.isPremium || false;
   const requiredTier = (post.requiredTier || post.meta?.requiredTier || 'collective') as 'collective' | 'insider';
@@ -143,7 +147,7 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
           description={decodeHtmlEntities(post.excerpt?.rendered?.replace(/<[^>]*>/g, '') || '')}
           url={`https://www.success.com/blog/${post.slug}`}
           type="article"
-          image={featuredImage?.source_url}
+          image={featuredImageUrl}
         />
         <Paywall
           requiredTier={requiredTier}
@@ -187,7 +191,7 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
     '@type': 'Article',
     headline: decodeHtmlEntities(post.title.rendered),
     description: seoDescription,
-    image: featuredImage?.source_url,
+    image: featuredImageUrl,
     datePublished: post.date,
     dateModified: post.modified,
     author: {
@@ -213,7 +217,7 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
       <SEO
         title={decodeHtmlEntities(post.title.rendered)}
         description={seoDescription}
-        image={featuredImage?.source_url}
+        image={featuredImageUrl}
         url={`https://www.success.com/blog/${post.slug}`}
         type="article"
         publishedTime={post.date}
@@ -254,14 +258,14 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
         </header>
 
         {/* Featured Image */}
-        {featuredImage && (
+        {featuredImageUrl && (
           <div className={styles.featuredImageWrapper}>
             <img
-              src={featuredImage.source_url}
-              alt={featuredImage.alt_text || decodeHtmlEntities(post.title.rendered)}
+              src={featuredImageUrl}
+              alt={featuredImageAlt}
               className={styles.featuredImage}
             />
-            {featuredImage.caption?.rendered && (
+            {featuredImage?.caption?.rendered && (
               <div
                 className={styles.imageCaption}
                 dangerouslySetInnerHTML={{ __html: decodeHtmlContent(featuredImage.caption.rendered) }}
