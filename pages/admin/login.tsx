@@ -20,8 +20,10 @@ export default function AdminLogin() {
     console.log('signIn function available:', typeof signIn);
   }, []);
 
-  const doLogin = async () => {
-    console.log('🔵 Direct button clicked - bypassing form');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    console.log('Login form submitted, starting authentication...');
     console.log('Email:', email, 'Password length:', password.length);
 
     if (!email || !password) {
@@ -33,53 +35,13 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
-      console.log('🔵 Calling signIn...');
+      console.log('Attempting login with:', { email, passwordLength: password.length });
       const result: any = await signIn('credentials', {
         email,
         password,
         redirect: false,
         callbackUrl: '/admin',
       });
-
-      console.log('🔵 Login result:', result);
-
-      if (result?.ok) {
-        console.log('✅ Login successful!');
-        window.location.href = '/admin';
-      } else {
-        console.log('❌ Login failed:', result?.error);
-        setError(result?.error || 'Login failed');
-        setLoading(false);
-      }
-    } catch (err) {
-      console.error('❌ Login exception:', err);
-      setError(String(err));
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    console.log('Login form submitted, starting authentication...');
-    console.log('Email:', email, 'Password length:', password.length);
-    setError('');
-    setLoading(true);
-
-    try {
-      console.log('Attempting login with:', { email, passwordLength: password.length });
-      const result: any = await Promise.race([
-        signIn('credentials', {
-          email,
-          password,
-          redirect: false,
-          callbackUrl: '/admin',
-        }),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Login timeout - please check your connection')), 15000)
-        )
-      ]);
 
       console.log('Login result:', JSON.stringify(result, null, 2));
 
@@ -88,17 +50,9 @@ export default function AdminLogin() {
         setError(`Login failed: ${result.error}`);
         setLoading(false);
       } else if (result?.ok) {
-        console.log('Login successful! Result.ok =', result.ok);
-        console.log('Result.url =', result.url);
-
-        // NextAuth succeeded - redirect immediately
-        if (result.url) {
-          console.log('Redirecting to:', result.url);
-          window.location.href = result.url;
-        } else {
-          console.log('No URL in result, redirecting to /admin');
-          window.location.href = '/admin';
-        }
+        console.log('Login successful! Redirecting to admin...');
+        // Successful login - redirect to admin dashboard
+        window.location.href = '/admin';
       } else {
         console.error('Unexpected result:', result);
         setError('Login failed - unexpected response');
@@ -158,16 +112,6 @@ export default function AdminLogin() {
               className={styles.button}
             >
               {loading ? 'Signing in...' : 'Sign In'}
-            </button>
-
-            <button
-              type="button"
-              onClick={doLogin}
-              disabled={loading}
-              className={styles.button}
-              style={{ marginTop: '10px', background: '#28a745' }}
-            >
-              {loading ? 'Logging in...' : 'TEST LOGIN (Green Button)'}
             </button>
           </form>
 

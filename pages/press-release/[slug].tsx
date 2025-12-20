@@ -106,6 +106,7 @@ export async function getServerSideProps({ params }: any) {
       }
     };
   } catch (error) {
+    console.error(`[Press Release] Error fetching press release "${params.slug}":`, error);
     return {
       notFound: true,
     };

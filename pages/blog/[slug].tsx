@@ -440,6 +440,7 @@ export async function getServerSideProps({ params, req, res }: any) {
       }
     };
   } catch (error) {
+    console.error(`[Blog Post] Error fetching post "${slug}":`, error);
     return { notFound: true };
   }
 }
