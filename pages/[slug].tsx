@@ -99,7 +99,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
       paths: pages.map(p => ({ params: { slug: p.slug } })),
       fallback: 'blocking' // Enable ISR for new pages
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Dynamic Page] Error in getStaticPaths:', error);
     // Check if it's a database connection error
     if (error.code === 'P2024' || error.message?.includes('Can\'t reach database')) {
@@ -156,7 +156,7 @@ export const getStaticProps: GetStaticProps<DynamicPageProps> = async ({ params 
       },
       revalidate: 600 // Revalidate every 10 minutes (ISR)
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error(`[Dynamic Page] Error fetching page "${params?.slug}":`, error);
     // Check if it's a database connection error vs page not found
     if (error.code === 'P2024' || error.message?.includes('Can\'t reach database')) {
