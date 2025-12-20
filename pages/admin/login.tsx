@@ -15,7 +15,48 @@ export default function AdminLogin() {
   useEffect(() => {
     console.log('AdminLogin component mounted');
     console.log('React is working');
+
+    // Test if signIn is available
+    console.log('signIn function available:', typeof signIn);
   }, []);
+
+  const doLogin = async () => {
+    console.log('🔵 Direct button clicked - bypassing form');
+    console.log('Email:', email, 'Password length:', password.length);
+
+    if (!email || !password) {
+      setError('Please enter email and password');
+      return;
+    }
+
+    setError('');
+    setLoading(true);
+
+    try {
+      console.log('🔵 Calling signIn...');
+      const result: any = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+        callbackUrl: '/admin',
+      });
+
+      console.log('🔵 Login result:', result);
+
+      if (result?.ok) {
+        console.log('✅ Login successful!');
+        window.location.href = '/admin';
+      } else {
+        console.log('❌ Login failed:', result?.error);
+        setError(result?.error || 'Login failed');
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error('❌ Login exception:', err);
+      setError(String(err));
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,6 +158,16 @@ export default function AdminLogin() {
               className={styles.button}
             >
               {loading ? 'Signing in...' : 'Sign In'}
+            </button>
+
+            <button
+              type="button"
+              onClick={doLogin}
+              disabled={loading}
+              className={styles.button}
+              style={{ marginTop: '10px', background: '#28a745' }}
+            >
+              {loading ? 'Logging in...' : 'TEST LOGIN (Green Button)'}
             </button>
           </form>
 
