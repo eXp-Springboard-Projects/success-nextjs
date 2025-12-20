@@ -89,7 +89,7 @@ export default function Footer() {
           <div className={styles.column}>
             <h4>Magazine</h4>
             <Link href="/magazine">Current Issue</Link>
-            <Link href="/magazine/archive">Archive</Link>
+            <Link href="/magazine">Past Issues</Link>
             <Link href="/subscribe">Subscribe</Link>
             <Link href="/advertise">Advertise</Link>
           </div>
@@ -107,13 +107,13 @@ export default function Footer() {
             <Link href="/category/business-branding">Business & Branding</Link>
             <Link href="/category/money">Money</Link>
             <Link href="/category/lifestyle">Lifestyle</Link>
-            <Link href="/category/entertainment">Entertainment</Link>
+            <Link href="/category/health-wellness">Health & Wellness</Link>
             <a href="/api/rss" target="_blank" rel="noopener noreferrer">RSS Feed</a>
           </div>
 
           <div className={styles.column}>
             <h4>Company</h4>
-            <Link href="/about-us">About Us</Link>
+            <Link href="/about">About Us</Link>
             <Link href="/contact">Contact</Link>
             <Link href="/press">Press</Link>
             <Link href="/press-releases">Press Releases</Link>

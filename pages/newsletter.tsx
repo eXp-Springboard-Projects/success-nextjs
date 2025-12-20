@@ -5,14 +5,37 @@ import styles from './Newsletter.module.css';
 export default function NewsletterPage() {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-setSubscribed(true);
-    setTimeout(() => {
-      setSubscribed(false);
-      setEmail('');
-    }, 3000);
+    setLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setSubscribed(true);
+        setTimeout(() => {
+          setSubscribed(false);
+          setEmail('');
+        }, 5000);
+      } else {
+        setError(data.message || 'Failed to subscribe. Please try again.');
+      }
+    } catch (err) {
+      setError('Network error. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -53,6 +76,18 @@ setSubscribed(true);
                 ) : (
                   <>
                     <h3 className={styles.formTitle}>Join 100,000+ Subscribers</h3>
+                    {error && (
+                      <div style={{
+                        padding: '0.75rem',
+                        marginBottom: '1rem',
+                        backgroundColor: '#fee',
+                        color: '#c00',
+                        borderRadius: '8px',
+                        fontSize: '0.9rem'
+                      }}>
+                        {error}
+                      </div>
+                    )}
                     <form onSubmit={handleSubmit} className={styles.form}>
                       <input
                         type="email"
@@ -61,9 +96,10 @@ setSubscribed(true);
                         placeholder="Enter your email address"
                         required
                         className={styles.input}
+                        disabled={loading}
                       />
-                      <button type="submit" className={styles.button}>
-                        Subscribe Free
+                      <button type="submit" className={styles.button} disabled={loading}>
+                        {loading ? 'Subscribing...' : 'Subscribe Free'}
                       </button>
                     </form>
                     <p className={styles.privacy}>

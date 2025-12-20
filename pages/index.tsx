@@ -310,7 +310,7 @@ export async function getServerSideProps() {
   const { prisma } = await import('../lib/prisma.js');
 
   try {
-    // Fetch latest published posts
+    // Fetch latest published posts with author and categories
     const posts = await prisma.posts.findMany({
       where: {
         status: 'PUBLISHED',
@@ -327,6 +327,20 @@ export async function getServerSideProps() {
         featuredImage: true,
         publishedAt: true,
         readTime: true,
+        users: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          }
+        },
+        categories: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          }
+        }
       }
     });
 
@@ -343,6 +357,18 @@ export async function getServerSideProps() {
         _embedded: {
           'wp:featuredmedia': post.featuredImage ? [{
             source_url: post.featuredImage
+          }] : [],
+          'wp:term': post.categories && post.categories.length > 0 ? [
+            post.categories.map((cat: any) => ({
+              id: cat.id,
+              name: cat.name,
+              slug: cat.slug
+            }))
+          ] : [[]],
+          'author': post.users ? [{
+            id: post.users.id,
+            name: post.users.name,
+            slug: post.users.email?.split('@')[0] || 'staff'
           }] : []
         }
       };

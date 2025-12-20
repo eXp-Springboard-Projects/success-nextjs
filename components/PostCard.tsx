@@ -53,14 +53,14 @@ export default function PostCard({ post, isFeatured = false }: PostCardProps) {
       <div className={cardClassName}>
         <div className={styles.featuredImageContainer}>
           {featuredImageUrl && (
-            <Link href={`/${slug}`}>
+            <Link href={`/blog/${slug}`}>
               <img src={featuredImageUrl} alt={title} className={styles.image} />
             </Link>
           )}
           <div className={styles.featuredOverlay}>
             <div className={styles.content}>
               <p className={styles.category}>{category}</p>
-              <Link href={`/${slug}`} className={styles.titleLink}>
+              <Link href={`/blog/${slug}`} className={styles.titleLink}>
                 <h2 className={styles.title}>{title}</h2>
               </Link>
               <p className={styles.author}>By {author}</p>
@@ -70,7 +70,7 @@ export default function PostCard({ post, isFeatured = false }: PostCardProps) {
                   dangerouslySetInnerHTML={{ __html: excerpt }}
                 />
               )}
-              <Link href={`/${slug}`} className={styles.readMore}>
+              <Link href={`/blog/${slug}`} className={styles.readMore}>
                 Read More
               </Link>
             </div>
@@ -83,13 +83,13 @@ export default function PostCard({ post, isFeatured = false }: PostCardProps) {
   return (
     <div className={cardClassName}>
       {featuredImageUrl && (
-        <Link href={`/${slug}`}>
+        <Link href={`/blog/${slug}`}>
           <img src={featuredImageUrl} alt={title} className={styles.image} />
         </Link>
       )}
       <div className={styles.content}>
         <p className={styles.category}>{category}</p>
-        <Link href={`/${slug}`} className={styles.titleLink}>
+        <Link href={`/blog/${slug}`} className={styles.titleLink}>
           <h2 className={styles.title}>{title}</h2>
         </Link>
       </div>
