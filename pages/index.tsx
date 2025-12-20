@@ -306,134 +306,46 @@ function HomePage({ featuredPost, secondaryPosts, trendingPosts, latestPosts, ai
 }
 
 export async function getServerSideProps() {
-  // Use database instead of WordPress API since we're now the main site
-  const { prisma } = await import('../lib/prisma.js');
+  const posts = await fetchWordPressData('posts?_embed&per_page=30');
 
-  try {
-    // Fetch latest published posts with author and categories
-    const posts = await prisma.posts.findMany({
-      where: {
-        status: 'PUBLISHED',
-        publishedAt: { not: null }
-      },
-      orderBy: { publishedAt: 'desc' },
-      take: 30,
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        excerpt: true,
-        content: true,
-        featuredImage: true,
-        publishedAt: true,
-        readTime: true,
-        users: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          }
-        },
-        categories: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          }
-        }
-      }
-    });
+  const featuredPost = posts[0];
+  const secondaryPosts = posts.slice(1, 5); // 4 posts for 2x2 grid
+  const trendingPosts = posts.slice(5, 8);
+  const latestPosts = posts.slice(8, 14); // 6 more posts
 
-    // Transform posts to match WordPress format
-    const transformedPosts = posts.map((post: any) => {
-      const dateString = post.publishedAt ? new Date(post.publishedAt).toISOString() : new Date().toISOString();
+  // Fetch category-specific posts
+  const aiTechPosts = await fetchWordPressData('posts?categories=14681&_embed&per_page=3');
+  const businessPosts = await fetchWordPressData('posts?categories=4&_embed&per_page=3');
+  const lifestylePosts = await fetchWordPressData('posts?categories=14056&_embed&per_page=3');
+  const moneyPosts = await fetchWordPressData('posts?categories=14060&_embed&per_page=3');
+  const futureOfWorkPosts = await fetchWordPressData('posts?categories=14061&_embed&per_page=3');
+  const healthPosts = await fetchWordPressData('posts?categories=14059&_embed&per_page=3');
+  const entertainmentPosts = await fetchWordPressData('posts?categories=14382&_embed&per_page=3');
 
-      return {
-        id: post.id,
-        title: { rendered: post.title },
-        excerpt: { rendered: post.excerpt || '' },
-        slug: post.slug,
-        date: dateString,
-        _embedded: {
-          'wp:featuredmedia': post.featuredImage ? [{
-            source_url: post.featuredImage
-          }] : [],
-          'wp:term': post.categories && post.categories.length > 0 ? [
-            post.categories.map((cat: any) => ({
-              id: cat.id,
-              name: cat.name,
-              slug: cat.slug
-            }))
-          ] : [[]],
-          'author': post.users ? [{
-            id: post.users.id,
-            name: post.users.name,
-            slug: post.users.email?.split('@')[0] || 'staff'
-          }] : []
-        }
-      };
-    });
+  // Fetch latest magazine issue
+  const magazines = await fetchWordPressData('magazines?per_page=1&_embed');
+  const latestMagazine = magazines?.[0] || null;
 
-    const featuredPost = transformedPosts[0] || null;
-    const secondaryPosts = transformedPosts.slice(1, 5);
-    const trendingPosts = transformedPosts.slice(5, 8);
-    const latestPosts = transformedPosts.slice(8, 14);
+  // Fetch bestsellers
+  const bestsellers = await fetchWordPressData('bestsellers?per_page=12&_embed');
 
-    // For category posts, just use latest for now (categories not set up yet)
-    const aiTechPosts = transformedPosts.slice(14, 17);
-    const businessPosts = transformedPosts.slice(17, 20);
-    const lifestylePosts = transformedPosts.slice(20, 23);
-    const moneyPosts = transformedPosts.slice(23, 26);
-    const futureOfWorkPosts = transformedPosts.slice(26, 29);
-    const healthPosts = transformedPosts.slice(0, 3);
-    const entertainmentPosts = transformedPosts.slice(3, 6);
-
-    // Fetch latest magazine from WordPress
-    let latestMagazine = null;
-    try {
-      const magazines = await fetchWordPressData('magazines?_embed&per_page=1&orderby=date&order=desc');
-      latestMagazine = magazines && magazines.length > 0 ? magazines[0] : null;
-    } catch (err) {
-      console.error('Error fetching magazine:', err);
+  return {
+    props: {
+      featuredPost,
+      secondaryPosts,
+      trendingPosts,
+      latestPosts,
+      aiTechPosts: aiTechPosts || [],
+      businessPosts,
+      lifestylePosts,
+      moneyPosts,
+      futureOfWorkPosts,
+      healthPosts,
+      entertainmentPosts,
+      latestMagazine,
+      bestsellers: bestsellers || [],
     }
-
-    return {
-      props: {
-        featuredPost,
-        secondaryPosts,
-        trendingPosts,
-        latestPosts,
-        aiTechPosts,
-        businessPosts,
-        lifestylePosts,
-        moneyPosts,
-        futureOfWorkPosts,
-        healthPosts,
-        entertainmentPosts,
-        latestMagazine,
-        bestsellers: [],
-      }
-    };
-  } catch (error) {
-    console.error('Error fetching posts:', error);
-    return {
-      props: {
-        featuredPost: null,
-        secondaryPosts: [],
-        trendingPosts: [],
-        latestPosts: [],
-        aiTechPosts: [],
-        businessPosts: [],
-        lifestylePosts: [],
-        moneyPosts: [],
-        futureOfWorkPosts: [],
-        healthPosts: [],
-        entertainmentPosts: [],
-        latestMagazine: null,
-        bestsellers: [],
-      }
-    };
-  }
+  };
 }
 
 export default HomePage;

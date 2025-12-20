@@ -100,6 +100,7 @@ export async function getServerSideProps({ params }: any) {
       }
     };
   } catch (error) {
+    console.error(`[Author] Error fetching author "${params.slug}":`, error);
     return {
       notFound: true,
     };
