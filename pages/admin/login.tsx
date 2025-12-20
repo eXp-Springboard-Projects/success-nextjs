@@ -17,13 +17,12 @@ export default function AdminLogin() {
     console.log('React is working');
   }, []);
 
-  const handleSubmit = async (e?: React.MouseEvent<HTMLButtonElement> | React.FormEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-    console.log('Login button clicked, starting authentication...');
+    console.log('Login form submitted, starting authentication...');
+    console.log('Email:', email, 'Password length:', password.length);
     setError('');
     setLoading(true);
 
@@ -81,7 +80,7 @@ export default function AdminLogin() {
           <h1 className={styles.logo}>SUCCESS</h1>
           <h2 className={styles.title}>Admin Dashboard</h2>
 
-          <div className={styles.form}>
+          <form onSubmit={handleSubmit} className={styles.form}>
             {error && (
               <div className={styles.error}>{error}</div>
             )}
@@ -93,13 +92,6 @@ export default function AdminLogin() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    console.log('Enter pressed in email field');
-                    handleSubmit();
-                  }
-                }}
                 required
                 autoComplete="email"
                 className={styles.input}
@@ -113,13 +105,6 @@ export default function AdminLogin() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    console.log('Enter pressed in password field');
-                    handleSubmit();
-                  }
-                }}
                 required
                 autoComplete="current-password"
                 className={styles.input}
@@ -127,14 +112,13 @@ export default function AdminLogin() {
             </div>
 
             <button
-              type="button"
+              type="submit"
               disabled={loading}
               className={styles.button}
-              onClick={handleSubmit}
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
-          </div>
+          </form>
 
           <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
             <p style={{ color: '#666', fontSize: '0.9rem' }}>
