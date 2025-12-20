@@ -11,11 +11,13 @@ export default function AdminLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleSubmit = async (e?: React.MouseEvent<HTMLButtonElement> | React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
 
-    console.log('Form submitted, preventing default');
+    console.log('Login button clicked, starting authentication...');
     setError('');
     setLoading(true);
 
@@ -33,30 +35,26 @@ export default function AdminLogin() {
         )
       ]);
 
-      console.log('Login result:', result);
+      console.log('Login result:', JSON.stringify(result, null, 2));
 
       if (result?.error) {
         console.error('Login error:', result.error);
-        setError('Invalid email or password');
+        setError(`Login failed: ${result.error}`);
         setLoading(false);
       } else if (result?.ok) {
-        console.log('Login successful, verifying session...');
-        // Wait a moment for the session to be established
-        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log('Login successful! Result.ok =', result.ok);
+        console.log('Result.url =', result.url);
 
-        // Verify session is set
-        const session = await getSession();
-        console.log('Session after login:', session);
-
-        if (session) {
-          console.log('Session confirmed, redirecting...');
-          window.location.href = '/admin';
+        // NextAuth succeeded - redirect immediately
+        if (result.url) {
+          console.log('Redirecting to:', result.url);
+          window.location.href = result.url;
         } else {
-          console.error('Session not established after login');
-          setError('Login succeeded but session not created. Please try again.');
-          setLoading(false);
+          console.log('No URL in result, redirecting to /admin');
+          window.location.href = '/admin';
         }
       } else {
+        console.error('Unexpected result:', result);
         setError('Login failed - unexpected response');
         setLoading(false);
       }
@@ -77,7 +75,7 @@ export default function AdminLogin() {
           <h1 className={styles.logo}>SUCCESS</h1>
           <h2 className={styles.title}>Admin Dashboard</h2>
 
-          <form onSubmit={handleSubmit} className={styles.form}>
+          <div className={styles.form}>
             {error && (
               <div className={styles.error}>{error}</div>
             )}
@@ -102,6 +100,12 @@ export default function AdminLogin() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSubmit();
+                  }
+                }}
                 required
                 autoComplete="current-password"
                 className={styles.input}
@@ -109,13 +113,14 @@ export default function AdminLogin() {
             </div>
 
             <button
-              type="submit"
+              type="button"
               disabled={loading}
               className={styles.button}
+              onClick={handleSubmit}
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
-          </form>
+          </div>
 
           <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
             <p style={{ color: '#666', fontSize: '0.9rem' }}>
