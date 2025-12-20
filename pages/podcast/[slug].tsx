@@ -296,7 +296,7 @@ export async function getServerSideProps({ params, req, res }: any) {
 
     // Check access for premium content
     const { getServerSession } = await import('next-auth/next');
-    const { authOptions } = await import('../api/auth/[...nextauth]');
+    const { authOptions } = await import('../../api/auth/[...nextauth]');
     const session = await getServerSession(req, res, authOptions);
 
     const isPremium = podcast.isPremium || podcast.meta?.isPremium || false;
