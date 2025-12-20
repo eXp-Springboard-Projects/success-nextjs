@@ -5,6 +5,7 @@ import AboutHistory from '../components/AboutHistory';
 import TeamMember from '../components/TeamMember';
 import styles from './About.module.css';
 import { GetServerSideProps } from 'next';
+import { prisma } from '../lib/prisma';
 
 interface TeamMember {
   id: string;
@@ -74,26 +75,31 @@ export default function AboutPage({ teamMembers }: AboutPageProps) {
 
 export const getServerSideProps: GetServerSideProps = async () => {
   try {
-    // Fetch team members from API
-    const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-    const host = process.env.VERCEL_URL || 'localhost:3000';
-    const baseUrl = `${protocol}://${host}`;
+    // Fetch team members directly from database
+    const teamMembers = await prisma.team_members.findMany({
+      where: { isActive: true },
+      orderBy: { displayOrder: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        title: true,
+        bio: true,
+        image: true,
+        linkedIn: true,
+        displayOrder: true,
+      },
+    });
 
-    const res = await fetch(`${baseUrl}/api/team-members`);
-
-    if (!res.ok) {
-      throw new Error('Failed to fetch team members');
-    }
-
-    const teamMembers = await res.json();
+    await prisma.$disconnect();
 
     return {
       props: {
-        teamMembers,
+        teamMembers: JSON.parse(JSON.stringify(teamMembers)), // Serialize for Next.js
       },
     };
   } catch (error) {
     console.error('Error fetching team members:', error);
+    await prisma.$disconnect();
 
     // Return empty array if fetch fails
     return {
