@@ -100,7 +100,11 @@ export const getStaticPaths: GetStaticPaths = async () => {
       fallback: 'blocking' // Enable ISR for new pages
     };
   } catch (error) {
-    console.error('Error in getStaticPaths:', error);
+    console.error('[Dynamic Page] Error in getStaticPaths:', error);
+    // Check if it's a database connection error
+    if (error.code === 'P2024' || error.message?.includes('Can\'t reach database')) {
+      console.error('[Dynamic Page] Database connection error in getStaticPaths - may need to check DATABASE_URL');
+    }
     return {
       paths: [],
       fallback: 'blocking'
@@ -153,7 +157,11 @@ export const getStaticProps: GetStaticProps<DynamicPageProps> = async ({ params 
       revalidate: 600 // Revalidate every 10 minutes (ISR)
     };
   } catch (error) {
-    console.error('Error in getStaticProps:', error);
+    console.error(`[Dynamic Page] Error fetching page "${params?.slug}":`, error);
+    // Check if it's a database connection error vs page not found
+    if (error.code === 'P2024' || error.message?.includes('Can\'t reach database')) {
+      console.error('[Dynamic Page] Database connection error - may need to check DATABASE_URL');
+    }
     return {
       notFound: true,
     };
