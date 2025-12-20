@@ -102,7 +102,7 @@ export default function ArticleDisplay({
   }
 
   function handleShare(platform: string) {
-    const url = `${window.location.origin}/blog/${article.slug}`;
+    const url = `${window.location.origin}/${article.slug}`;
     const text = article.title;
 
     const shareUrls: Record<string, string> = {
@@ -259,7 +259,7 @@ export default function ArticleDisplay({
             {relatedPosts.map((post) => (
               <Link
                 key={post.slug}
-                href={`/blog/${post.slug}`}
+                href={`/${post.slug}`}
                 className={styles.relatedCard}
               >
                 {post.featuredImage && (
@@ -286,7 +286,7 @@ export default function ArticleDisplay({
       <PaywallGate
         articleId={article.id}
         articleTitle={article.title}
-        articleUrl={`/blog/${article.slug}`}
+        articleUrl={`/${article.slug}`}
       >
         {articleContent}
       </PaywallGate>
