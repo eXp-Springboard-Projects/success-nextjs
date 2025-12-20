@@ -1,32 +1,44 @@
-import { prisma } from '../lib/prisma';
+﻿import { PrismaClient } from '@prisma/client';
 
-async function deleteTestPages() {
+const prisma = new PrismaClient();
+
+async function findAndDeleteTestPosts() {
   try {
-    // Delete the test pages
-    const result = await prisma.$executeRaw`
-      DELETE FROM pages
-      WHERE id IN ('cmgmsgq2y0000k004rrmdjava', 'page_1765997054142_uwv30f6ty')
-    `;
+    const testPosts = await prisma.posts.findMany({
+      where: {
+        title: {
+          contains: 'test',
+          mode: 'insensitive'
+        }
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        status: true
+      }
+    });
 
-    console.log(`✅ Deleted ${result} test pages`);
+    console.log('Test posts found:', JSON.stringify(testPosts, null, 2));
 
-    // Verify deletion
-    const remaining = await prisma.$queryRaw<any[]>`
-      SELECT id, slug, title
-      FROM pages
-      WHERE slug LIKE '%test%' OR slug LIKE '%TEST%'
-         OR title LIKE '%test%' OR title LIKE '%TEST%'
-    `;
-
-    console.log(`Remaining test pages: ${remaining.length}`);
-    if (remaining.length > 0) {
-      console.log(JSON.stringify(remaining, null, 2));
+    if (testPosts.length > 0) {
+      const result = await prisma.posts.deleteMany({
+        where: {
+          title: {
+            contains: 'test',
+            mode: 'insensitive'
+          }
+        }
+      });
+      console.log('Deleted ' + result.count + ' test posts');
+    } else {
+      console.log('No test posts to delete');
     }
   } catch (error) {
     console.error('Error:', error);
   } finally {
-    await prisma.$disconnect();
+    await prisma.disconnect();
   }
 }
 
-deleteTestPages();
+findAndDeleteTestPosts();
