@@ -81,7 +81,8 @@ export const getStaticPaths: GetStaticPaths = async () => {
       'admin', 'api', 'blog', 'category', 'author', 'lp', 'pay',
       'press-release', 'dashboard', 'preview', 'success-plus',
       'signup', 'forgot-password', 'reset-password', 'speakers',
-      'bestsellers', 'coaching', 'press', 'media-kit', 'press-releases'
+      'bestsellers', 'coaching', 'press', 'media-kit', 'press-releases',
+      'magazine', 'subscribe', 'newsletter'
     ];
 
     const pages = await prisma.pages.findMany({
