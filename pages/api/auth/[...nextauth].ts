@@ -101,9 +101,9 @@ export const authOptions: AuthOptions = {
       return session;
     },
   },
-  // pages: {
-  //   signIn: '/admin/login',
-  // },
+  pages: {
+    signIn: '/admin/login',
+  },
   session: {
     strategy: 'jwt' as const,
     maxAge: 8 * 60 * 60, // 🔒 SECURITY: 8 hours - session expires
