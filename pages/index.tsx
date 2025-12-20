@@ -331,18 +331,22 @@ export async function getServerSideProps() {
     });
 
     // Transform posts to match WordPress format
-    const transformedPosts = posts.map((post: any) => ({
-      id: post.id,
-      title: { rendered: post.title },
-      excerpt: { rendered: post.excerpt || '' },
-      slug: post.slug,
-      date: post.publishedAt?.toISOString() || new Date().toISOString(),
-      _embedded: {
-        'wp:featuredmedia': post.featuredImage ? [{
-          source_url: post.featuredImage
-        }] : []
-      }
-    }));
+    const transformedPosts = posts.map((post: any) => {
+      const dateString = post.publishedAt ? new Date(post.publishedAt).toISOString() : new Date().toISOString();
+
+      return {
+        id: post.id,
+        title: { rendered: post.title },
+        excerpt: { rendered: post.excerpt || '' },
+        slug: post.slug,
+        date: dateString,
+        _embedded: {
+          'wp:featuredmedia': post.featuredImage ? [{
+            source_url: post.featuredImage
+          }] : []
+        }
+      };
+    });
 
     const featuredPost = transformedPosts[0] || null;
     const secondaryPosts = transformedPosts.slice(1, 5);
