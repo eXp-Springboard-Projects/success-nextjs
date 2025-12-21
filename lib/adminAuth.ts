@@ -19,7 +19,7 @@ export async function requireAdminAuth(context: GetServerSidePropsContext) {
     };
   }
 
-  if (!['ADMIN', 'SUPER_ADMIN', 'EDITOR'].includes(session.user.role)) {
+  if (!['ADMIN', 'SUPER_ADMIN', 'EDITOR', 'AUTHOR'].includes(session.user.role)) {
     return {
       redirect: {
         destination: '/dashboard',
