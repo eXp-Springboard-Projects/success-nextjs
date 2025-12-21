@@ -19,12 +19,15 @@ type HomePageProps = {
   moneyPosts: any[];
   futureOfWorkPosts: any[];
   healthPosts: any[];
+  leadershipPosts: any[];
+  cultureWorkplacePosts: any[];
+  entrepreneurshipPosts: any[];
   entertainmentPosts: any[];
   latestMagazine: any;
   bestsellers: any[];
 };
 
-function HomePage({ featuredPost, secondaryPosts, trendingPosts, latestPosts, aiTechPosts, businessPosts, lifestylePosts, moneyPosts, futureOfWorkPosts, healthPosts, entertainmentPosts, latestMagazine, bestsellers }: HomePageProps) {
+function HomePage({ featuredPost, secondaryPosts, trendingPosts, latestPosts, aiTechPosts, businessPosts, lifestylePosts, moneyPosts, futureOfWorkPosts, healthPosts, leadershipPosts, cultureWorkplacePosts, entrepreneurshipPosts, entertainmentPosts, latestMagazine, bestsellers }: HomePageProps) {
   if (!featuredPost) {
     return <Layout><p>Loading...</p></Layout>;
   }
@@ -155,12 +158,12 @@ function HomePage({ featuredPost, secondaryPosts, trendingPosts, latestPosts, ai
         </div>
       </section>
 
-      {/* Health & Wellness Section */}
+      {/* Longevity & Performance Section */}
       <section className={styles.categorySectionGray}>
         <div className={styles.sectionContainer}>
           <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>Health & Wellness</h2>
-            <a href="/category/health" className={styles.viewAllLink}>View All →</a>
+            <h2 className={styles.sectionTitle}>Longevity & Performance</h2>
+            <a href="/category/longevity-performance" className={styles.viewAllLink}>View All →</a>
           </div>
           <div className={styles.postsGrid}>
             {healthPosts.map((post: any) => (
@@ -230,6 +233,51 @@ function HomePage({ featuredPost, secondaryPosts, trendingPosts, latestPosts, ai
           </div>
           <div className={styles.viewMoreWrapper}>
             <a href="/speakers" className={styles.viewMore}>Learn More</a>
+          </div>
+        </div>
+      </section>
+
+      {/* Leadership Section */}
+      <section className={styles.categorySection}>
+        <div className={styles.sectionContainer}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Leadership</h2>
+            <a href="/category/leadership" className={styles.viewAllLink}>View All →</a>
+          </div>
+          <div className={styles.postsGrid}>
+            {leadershipPosts.map((post: any) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Culture & Workplace Section */}
+      <section className={styles.categorySectionGray}>
+        <div className={styles.sectionContainer}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Culture & Workplace</h2>
+            <a href="/category/culture-workplace" className={styles.viewAllLink}>View All →</a>
+          </div>
+          <div className={styles.postsGrid}>
+            {cultureWorkplacePosts.map((post: any) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Entrepreneurship Section */}
+      <section className={styles.categorySection}>
+        <div className={styles.sectionContainer}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Entrepreneurship</h2>
+            <a href="/category/entrepreneurship" className={styles.viewAllLink}>View All →</a>
+          </div>
+          <div className={styles.postsGrid}>
+            {entrepreneurshipPosts.map((post: any) => (
+              <PostCard key={post.id} post={post} />
+            ))}
           </div>
         </div>
       </section>
@@ -320,6 +368,9 @@ export async function getServerSideProps() {
   const moneyPosts = await fetchWordPressData('posts?categories=14060&_embed&per_page=3');
   const futureOfWorkPosts = await fetchWordPressData('posts?categories=14061&_embed&per_page=3');
   const healthPosts = await fetchWordPressData('posts?categories=14059&_embed&per_page=3');
+  const leadershipPosts = await fetchWordPressData('posts?categories=14675&_embed&per_page=3');
+  const cultureWorkplacePosts = await fetchWordPressData('posts?categories=14677&_embed&per_page=3');
+  const entrepreneurshipPosts = await fetchWordPressData('posts?categories=14680&_embed&per_page=3');
   const entertainmentPosts = await fetchWordPressData('posts?categories=14382&_embed&per_page=3');
 
   // Fetch latest magazine issue
@@ -341,6 +392,9 @@ export async function getServerSideProps() {
       moneyPosts,
       futureOfWorkPosts,
       healthPosts,
+      leadershipPosts: leadershipPosts || [],
+      cultureWorkplacePosts: cultureWorkplacePosts || [],
+      entrepreneurshipPosts: entrepreneurshipPosts || [],
       entertainmentPosts,
       latestMagazine,
       bestsellers: bestsellers || [],
