@@ -22,26 +22,26 @@ export default function AdminLogin() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
 
     console.log('Login form submitted, starting authentication...');
     console.log('Email:', email, 'Password length:', password.length);
-
-    if (!email || !password) {
-      setError('Please enter email and password');
-      return;
-    }
-
     setError('');
     setLoading(true);
 
     try {
       console.log('Attempting login with:', { email, passwordLength: password.length });
-      const result: any = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-        callbackUrl: '/admin',
-      });
+      const result: any = await Promise.race([
+        signIn('credentials', {
+          email,
+          password,
+          redirect: false,
+          callbackUrl: '/admin',
+        }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Login timeout - please check your connection')), 15000)
+        )
+      ]);
 
       console.log('Login result:', JSON.stringify(result, null, 2));
 
@@ -50,9 +50,17 @@ export default function AdminLogin() {
         setError(`Login failed: ${result.error}`);
         setLoading(false);
       } else if (result?.ok) {
-        console.log('Login successful! Redirecting to admin...');
-        // Successful login - redirect to admin dashboard
-        window.location.href = '/admin';
+        console.log('Login successful! Result.ok =', result.ok);
+        console.log('Result.url =', result.url);
+
+        // NextAuth succeeded - redirect immediately
+        if (result.url) {
+          console.log('Redirecting to:', result.url);
+          window.location.href = result.url;
+        } else {
+          console.log('No URL in result, redirecting to /admin');
+          window.location.href = '/admin';
+        }
       } else {
         console.error('Unexpected result:', result);
         setError('Login failed - unexpected response');
