@@ -1,0 +1,37 @@
+# Build output
+.next/
+out/
+build/
+
+# Dependencies
+node_modules/
+
+# Git worktrees
+success-admin-fixes/
+success-plus-work/
+
+# Backup files
+pages/_backups/
+
+# Scripts (not part of app)
+scripts/
+
+# Documentation
+docs/
+
+# Archive
+_archive/
+
+# Logs
+*.log
+
+# Test files
+test-db.js
+
+# Temp env files
+.env.vercel
+.env.production.vercel
+.env.prod.check
+.env.verify
+.env.check-prod
+.env.production-check

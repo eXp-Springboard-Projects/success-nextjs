@@ -11,6 +11,8 @@
     "seed": "node prisma/seed.js",
     "postinstall": "prisma generate",
     "vercel-build": "next build",
+    "validate": "tsc --noEmit",
+    "prebuild": "npm run validate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "import:wordpress": "tsx scripts/import-wordpress.ts",

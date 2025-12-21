@@ -9,6 +9,12 @@
 # Local environment variables
 .env*.local
 .env
+.env.vercel
+.env.production.vercel
+.env.prod.check
+.env.verify
+.env.check-prod
+.env.production-check
 
 # Database
 prisma/*.db

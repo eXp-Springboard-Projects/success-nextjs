@@ -4,6 +4,12 @@ docs
 _archive
 *.log
 .env.local
+.env.vercel
+.env.production.vercel
+.env.prod.check
+.env.verify
+.env.check-prod
+.env.production-check
 test-db.js
 success-admin-fixes
 success-plus-work
