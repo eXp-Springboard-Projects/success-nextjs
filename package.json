@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint . --max-warnings=1500",
     "export": "next build && next export",
     "seed": "node prisma/seed.js",
     "postinstall": "prisma generate",
@@ -88,8 +88,13 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "eslint": "^8.57.0",
-    "eslint-config-next": "^16.0.10"
+    "@eslint/js": "^9.39.2",
+    "@typescript-eslint/eslint-plugin": "^8.50.0",
+    "@typescript-eslint/parser": "^8.50.0",
+    "eslint": "^9.39.2",
+    "eslint-config-next": "^16.0.10",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
