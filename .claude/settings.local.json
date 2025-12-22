@@ -31,7 +31,8 @@
       "WebFetch(domain:success-nextjs-7vxa-bz4vn9g29-rns-projects-2b157598.vercel.app)",
       "Bash(nslookup:*)",
       "Bash(git log:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "WebFetch(domain:supabase.com)"
     ],
     "deny": [],
     "ask": []
