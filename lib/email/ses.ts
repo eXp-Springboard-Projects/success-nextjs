@@ -1,8 +1,6 @@
 import { SESClient, SendEmailCommand, SendTemplatedEmailCommand } from '@aws-sdk/client-ses';
-import { PrismaClient } from '@prisma/client';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
+import { prisma } from '../prisma';
 
 const sesClient = new SESClient({
   region: process.env.AWS_REGION || 'us-east-1',

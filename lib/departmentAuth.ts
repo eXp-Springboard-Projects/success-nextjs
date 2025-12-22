@@ -174,8 +174,7 @@ export async function logDepartmentAccess(
   userAgent?: string
 ): Promise<void> {
   try {
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
+    const { prisma } = await import('./prisma');
 
     await prisma.department_access_log.create({
       data: {

@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
 import { NextApiRequest } from 'next';
-
-const prisma = new PrismaClient();
+import { prisma } from './prisma';
 
 export interface AuditLogData {
   userId?: string;
