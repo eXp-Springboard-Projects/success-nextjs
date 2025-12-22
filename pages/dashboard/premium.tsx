@@ -210,7 +210,7 @@ export default function PremiumContentPage() {
               <div className={styles.premiumGrid}>
                 {content.posts.map((post) => (
                   <article key={post.id} className={styles.premiumCard}>
-                    <Link href={`/blog/${post.slug}`} className={styles.cardLink}>
+                    <Link href={`/${post.slug}`} className={styles.cardLink}>
                       <div className={styles.cardImage}>
                         {post.featuredImage ? (
                           <img

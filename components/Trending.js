@@ -14,7 +14,7 @@ export default function Trending({ posts }) {
 
           return (
             <li key={post.id}>
-              <Link href={`/blog/${post.slug}`} className={styles.link}>
+              <Link href={`/${post.slug}`} className={styles.link}>
                 <span className={styles.number}>{String(index + 1).padStart(2, '0')}</span>
                 <div className={styles.content}>
                   <span className={styles.category}>{category}</span>

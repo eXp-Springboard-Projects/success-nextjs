@@ -498,7 +498,7 @@ export default function PostsListWithFilters() {
                         Quick Edit
                       </button>
                       <span className={styles.separator}>|</span>
-                      <a href={`/blog/${post.slug}`} target="_blank" rel="noopener noreferrer">
+                      <a href={`/${post.slug}`} target="_blank" rel="noopener noreferrer">
                         View
                       </a>
                     </div>

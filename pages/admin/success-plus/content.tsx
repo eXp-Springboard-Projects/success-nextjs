@@ -209,7 +209,7 @@ export default function SuccessPlusContent() {
                           Edit
                         </Link>
                         <Link
-                          href={`/blog/${post.slug}`}
+                          href={`/${post.slug}`}
                           target="_blank"
                           className={styles.actionButton}
                         >

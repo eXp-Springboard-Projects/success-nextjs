@@ -40,7 +40,7 @@ function generateSiteMap(posts: any[], categories: any[], authors: any[]) {
        .map((post) => {
          return `
        <url>
-           <loc>https://www.success.com/blog/${post.slug}</loc>
+           <loc>https://www.success.com/${post.slug}</loc>
            <lastmod>${new Date(post.modified).toISOString()}</lastmod>
            <changefreq>monthly</changefreq>
            <priority>0.6</priority>

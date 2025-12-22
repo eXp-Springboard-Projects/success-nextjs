@@ -145,7 +145,7 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
         <SEO
           title={decodeHtmlEntities(post.title.rendered)}
           description={decodeHtmlEntities(post.excerpt?.rendered?.replace(/<[^>]*>/g, '') || '')}
-          url={`https://www.success.com/blog/${post.slug}`}
+          url={`https://www.success.com/${post.slug}`}
           type="article"
           image={featuredImageUrl}
         />
@@ -208,7 +208,7 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
-      '@id': `https://www.success.com/blog/${post.slug}`,
+      '@id': `https://www.success.com/${post.slug}`,
     },
   };
 
@@ -218,7 +218,7 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
         title={decodeHtmlEntities(post.title.rendered)}
         description={seoDescription}
         image={featuredImageUrl}
-        url={`https://www.success.com/blog/${post.slug}`}
+        url={`https://www.success.com/${post.slug}`}
         type="article"
         publishedTime={post.date}
         modifiedTime={post.modified}
@@ -370,7 +370,7 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
                 const relatedCategory = relatedPost._embedded?.['wp:term']?.[0]?.[0];
 
                 return (
-                  <a key={relatedPost.id} href={`/blog/${relatedPost.slug}`} className={styles.relatedCard}>
+                  <a key={relatedPost.id} href={`/${relatedPost.slug}`} className={styles.relatedCard}>
                     {relatedImage && (
                       <img
                         src={relatedImage.source_url}
