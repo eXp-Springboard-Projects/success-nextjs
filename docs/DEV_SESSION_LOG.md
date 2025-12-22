@@ -11,6 +11,70 @@
 =======================================================
 -->
 
+## 2025-12-22T10:00:00 — Critical Admin Login Fix & Build Repair
+
+**Session Context:**
+- 📚 Docs Loaded: README.md, AGENTS.md, DEV_SESSION_LOG.md, DECISIONS.md, CHANGELOG.md, package.json, proxy.ts, proxy.js, lib/stripe.ts, lib/resend-email.ts
+- 🎯 Objective: Fix admin login issues, clean up Resend email config, link Stripe payment APIs
+- 🚫 Non-Goals: Creating new environment variables (all are in .env.production)
+- ✅ Done When: Admin login works, build passes, documentation updated
+
+### Summary
+
+- **Problem**: Admin login was not working. Investigation revealed THREE critical issues:
+  1. **Next.js 16 proxy naming**: Project had both `proxy.ts` (exporting `middleware`) and `proxy.js` (exporting `proxy`). Next.js 16 requires the function to be named `proxy`, not `middleware`. Since TS takes priority, the wrong export name was being used.
+  2. **Build failure**: `pages/_backups/` folder was inside the pages directory, causing build failures with module resolution errors.
+  3. **TypeScript exclusion**: `_archive/` folder was not excluded from TypeScript compilation.
+
+- **Solution**: 
+  1. Fixed `proxy.ts` to export function named `proxy` instead of `middleware` (Next.js 16 convention)
+  2. Deleted duplicate `proxy.js` file
+  3. Moved `pages/_backups/` to `_archive/pages_backups/`
+  4. Added `_archive/**/*` to tsconfig.json exclude list
+
+- **Result**: Build passes successfully. Proxy middleware is now recognized (shown as `ƒ Proxy (Middleware)` in build output). Admin authentication will now properly redirect unauthenticated users to login.
+
+### Changes Made
+
+| File | Change |
+|------|--------|
+| `proxy.ts` | Changed export from `middleware` to `proxy` (Next.js 16 convention) |
+| `proxy.js` | Deleted (duplicate file with conflicting exports) |
+| `tsconfig.json` | Added `_archive/**/*` to exclude list |
+| `_archive/pages_backups/` | Moved from `pages/_backups/` |
+
+### Environment Variables Checklist (in .env.production)
+
+**For Admin Login to Work:**
+- `NEXTAUTH_SECRET` - Required for JWT signing
+- `NEXTAUTH_URL` - Your site URL (e.g., https://success.com)
+- `DATABASE_URL` - PostgreSQL connection string
+
+**For Resend Email:**
+- `RESEND_API_KEY` - Get from https://resend.com
+- `RESEND_FROM_EMAIL` - Must be a verified domain email (e.g., `noreply@success.com`)
+
+**For Stripe Payments:**
+- `STRIPE_SECRET_KEY` - From Stripe Dashboard
+- `STRIPE_WEBHOOK_SECRET` - From webhook setup
+- `STRIPE_PRICE_MONTHLY` - Price ID for monthly plan
+- `STRIPE_PRICE_YEARLY` - Price ID for yearly plan
+
+### Follow-up Items
+
+- [ ] Deploy to production and verify admin login works
+- [ ] Verify Resend domain is verified in Resend dashboard
+- [ ] Create Stripe products/prices and add IDs to env vars
+- [ ] Test full checkout flow with test card (4242 4242 4242 4242)
+
+### Session Stats
+- Files Modified: 2 (proxy.ts, tsconfig.json)
+- Files Deleted: 1 (proxy.js)
+- Files Moved: 6 (pages/_backups/* → _archive/pages_backups/)
+- Build Status: ✅ PASSING
+
+---
+
 ## 2025-12-19T09:20:00 — Repository Cleanup & Organization
 
 **Session Context:**
