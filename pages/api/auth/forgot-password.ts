@@ -3,17 +3,18 @@ import { PrismaClient } from '@prisma/client';
 import { sendPasswordResetEmail } from '../../../lib/resend-email';
 import crypto from 'crypto';
 
-const prisma = new PrismaClient();
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const prisma = new PrismaClient();
+
   try {
     const { email } = req.body;
 
     if (!email || !email.includes('@')) {
+      await prisma.$disconnect();
       return res.status(400).json({ error: 'Valid email is required' });
     }
 
@@ -24,6 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Always return success to prevent email enumeration
     if (!user) {
+      await prisma.$disconnect();
       return res.status(200).json({
         success: true,
         message: 'If an account exists with that email, a password reset link has been sent.',
@@ -48,7 +50,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const emailResult = await sendPasswordResetEmail(user.email, user.name || 'User', resetUrl);
 
+    await prisma.$disconnect();
+
     if (!emailResult.success) {
+      console.error('[Forgot Password] Failed to send email:', emailResult.error);
       // Don't fail the request - user doesn't know if email exists anyway
     }
 
@@ -56,7 +61,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       success: true,
       message: 'If an account exists with that email, a password reset link has been sent.',
     });
-  } catch (error) {
+  } catch (error: any) {
+    console.error('[Forgot Password] Error:', error);
+    await prisma.$disconnect();
     return res.status(500).json({ error: 'Failed to process request' });
   }
 }

@@ -1,6 +1,5 @@
-import { PrismaClient, Department } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Department } from '@prisma/client';
+import { prisma } from './prisma';
 
 export interface ActivityLog {
   userId?: string;

@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../prisma';
 
 export type ScoringEvent =
   | 'email_opened'
@@ -196,7 +194,7 @@ export async function getScoreDistribution() {
         END
     `;
 
-    return distribution.map(d => ({
+    return distribution.map((d: { range: string; count: bigint }) => ({
       range: d.range,
       count: Number(d.count),
     }));

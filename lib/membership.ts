@@ -4,9 +4,8 @@
  * Handles COLLECTIVE vs INSIDER tier logic and content gating
  */
 
-import { PrismaClient, SubscriptionStatus } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { SubscriptionStatus } from '@prisma/client';
+import { prisma } from './prisma';
 
 // Membership tier definitions
 export enum MembershipTier {
