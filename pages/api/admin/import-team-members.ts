@@ -1,11 +1,14 @@
-import { prisma } from '../lib/prisma';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../auth/[...nextauth]';
+import { prisma } from '../../../lib/prisma';
 import { v4 as uuidv4 } from 'uuid';
 
 const teamMembers = [
   {
     name: 'Glenn Sanford',
     title: 'Managing Director & Publisher',
-    bio: 'Glenn Sanford is reimagining SUCCESS as a next-gen platform for personal growth, leadership, and high performance. By fusing its legacy with modern innovation, he is turning SUCCESS into a catalyst for transformation-where timeless principles meet the tools of the AI era.',
+    bio: 'Glenn Sanford is reimagining SUCCESS as a next-gen platform for personal growth, leadership, and high performance. By fusing its legacy with modern innovation, he is turning SUCCESS into a catalyst for transformation where timeless principles meet the tools of the AI era.',
     linkedIn: 'https://www.linkedin.com/in/glenndsanford/',
     image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/01/SUCCESS_Glenn-Sanford_Headshot_Square.jpg',
     displayOrder: 1,
@@ -21,7 +24,7 @@ const teamMembers = [
   {
     name: 'Courtland Warren',
     title: 'Founding Faculty & Program Lead, SUCCESS Coaching',
-    bio: 'A global strategist and transformational coach, Courtland Warren blends behavioral science with human potential. As the founding faculty of SUCCESS Coaching, he guides leaders through identity-first transformation-helping them think deeper, lead stronger, and live with purpose.',
+    bio: 'A global strategist and transformational coach, Courtland Warren blends behavioral science with human potential. As the founding faculty of SUCCESS Coaching, he guides leaders through identity-first transformation helping them think deeper, lead stronger, and live with purpose.',
     linkedIn: 'https://www.linkedin.com/in/courtlandwarren/',
     image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/01/SUCCESS_Courtland-Warren_Headshot_Square.jpg',
     displayOrder: 3,
@@ -53,7 +56,7 @@ const teamMembers = [
   {
     name: 'Tyler Clayton',
     title: 'Platform Steward - Digital Content Ecosystem',
-    bio: 'Tyler has over 10 years of marketing and content experience, spanning roles from strategist and producer to writer and creative lead. As Platform Steward at SUCCESS, he drives the digital content ecosystem-scaling personal growth through AI innovation and collective impact.',
+    bio: 'Tyler has over 10 years of marketing and content experience, spanning roles from strategist and producer to writer and creative lead. As Platform Steward at SUCCESS, he drives the digital content ecosystem scaling personal growth through AI innovation and collective impact.',
     linkedIn: 'https://www.linkedin.com/in/tyler-clayton-09848a8/',
     image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/01/SUCCESS_Tyler-Clayton_Headshot_Square.jpg',
     displayOrder: 7,
@@ -77,7 +80,7 @@ const teamMembers = [
   {
     name: 'Harmony Heslop',
     title: 'Departmental Support Specialist',
-    bio: 'Harmony is a certified life coach and content operations specialist supporting course development, coaching coordination, and cross-departmental projects at SUCCESS. She bridges structure and strategy-helping align people, systems, and ideas to deliver programs that inspire growth and lasting transformation.',
+    bio: 'Harmony is a certified life coach and content operations specialist supporting course development, coaching coordination, and cross-departmental projects at SUCCESS. She bridges structure and strategy helping align people, systems, and ideas to deliver programs that inspire growth and lasting transformation.',
     linkedIn: 'https://www.linkedin.com/in/harmony-heslop-b91a361/',
     image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/01/SUCCESS_Harmony-Heslop_Headshot_Square.jpg',
     displayOrder: 10,
@@ -101,7 +104,7 @@ const teamMembers = [
   {
     name: 'Sarah Kuta',
     title: 'Copy Editor/Fact-Checker',
-    bio: 'Sarah Kuta is a freelance writer and editor based in Longmont, Colorado. Her work has appeared in National Geographic, Condé Nast Traveler, Smithsonian magazine, AFAR, Travel+Leisure, NBC News, Food & Wine, Robb Report, and many other publications. She studied journalism at Northwestern University.',
+    bio: 'Sarah Kuta is a freelance writer and editor based in Longmont, Colorado. Her work has appeared in National Geographic, Conde Nast Traveler, Smithsonian magazine, AFAR, Travel+Leisure, NBC News, Food & Wine, Robb Report, and many other publications. She studied journalism at Northwestern University.',
     linkedIn: 'https://www.linkedin.com/in/sarah-kuta-74316614/',
     image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2024/04/Sarah-Kuta-headshot-square.jpg',
     displayOrder: 13,
@@ -109,7 +112,7 @@ const teamMembers = [
   {
     name: 'Virginia Le',
     title: 'Senior Production Manager',
-    bio: 'Virginia is a detail-oriented individual responsible for overseeing numerous aspects, both significant and minor, in her role. Joining SUCCESS magazine's print production team in 2018, she ensures the Editorial Team stays on track, coordinates with printers, bulk customers, advertisers, vendors, and consultants to ensure timely magazine production.',
+    bio: 'Virginia is a detail-oriented individual responsible for overseeing numerous aspects, both significant and minor, in her role. Joining SUCCESS magazine print production team in 2018, she ensures the Editorial Team stays on track, coordinates with printers, bulk customers, advertisers, vendors, and consultants to ensure timely magazine production.',
     linkedIn: 'https://www.linkedin.com/in/virginia-le-848313193/',
     image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2023/04/Virginia_Le_headshot_square.jpg',
     displayOrder: 14,
@@ -125,7 +128,7 @@ const teamMembers = [
   {
     name: 'Jamie Lyons',
     title: 'Executive & Team Assistant',
-    bio: 'Jamie has a wealth of experience in executive support, operations, and project management with a strong background in startup environments, where she's worn many hats beyond the traditional executive assistant role.',
+    bio: 'Jamie has a wealth of experience in executive support, operations, and project management with a strong background in startup environments, where she has worn many hats beyond the traditional executive assistant role.',
     linkedIn: 'https://www.linkedin.com/in/jamielyons11/',
     image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/01/SUCCESS_Jamie-Lyons_Headshot_Square.jpg',
     displayOrder: 16,
@@ -163,7 +166,7 @@ const teamMembers = [
     displayOrder: 20,
   },
   {
-    name: "Emily O'Brien",
+    name: 'Emily OBrien',
     title: 'Print Managing Editor',
     bio: 'Emily is the associate editor of SUCCESS magazine. She has contributed to more than 30 print and digital publications, focusing on architecture, wellness, travel, and lifestyle topics. She resides in Raleigh, North Carolina.',
     linkedIn: 'https://www.linkedin.com/in/emilyobrien/',
@@ -181,7 +184,7 @@ const teamMembers = [
   {
     name: 'Staci Parks',
     title: 'Copy Editor/Fact-Checker',
-    bio: 'Staci is SUCCESS magazine's copy editor and fact-checker. She's edited regional magazines, taught at the university level, and even did a stint as a small-town crime reporter at a Louisiana newspaper. She lives in Dallas, Texas, with her husband and two very adorable, very spoiled dogs.',
+    bio: 'Staci is SUCCESS magazine copy editor and fact-checker. She has edited regional magazines, taught at the university level, and even did a stint as a small-town crime reporter at a Louisiana newspaper. She lives in Dallas, Texas, with her husband and two very adorable, very spoiled dogs.',
     linkedIn: 'https://www.linkedin.com/in/staci-parks/',
     image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2023/04/Staci-Parks-headshot-square.jpg',
     displayOrder: 23,
@@ -189,7 +192,7 @@ const teamMembers = [
   {
     name: 'Jazzlyn Torres',
     title: 'Communications Coordinator',
-    bio: 'Jazzlyn is a New England based communications and marketing enthusiast who blends strategy and creativity together to bring SUCCESS to life. With a background in psychology and digital marketing, she crafts messages that engage, inspire and connect audiences-always curious, always learning, and always thinking about the next great story to tell.',
+    bio: 'Jazzlyn is a New England based communications and marketing enthusiast who blends strategy and creativity together to bring SUCCESS to life. With a background in psychology and digital marketing, she crafts messages that engage, inspire and connect audiences always curious, always learning, and always thinking about the next great story to tell.',
     linkedIn: 'https://www.linkedin.com/in/jazzlyn-sky-torres/',
     image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/01/SUCCESS_Jazzlyn-Torres_Headshot_Square.jpg',
     displayOrder: 24,
@@ -197,49 +200,61 @@ const teamMembers = [
   {
     name: 'Emily Tvelia',
     title: 'Marketing Operations Specialist',
-    bio: 'Emily has diverse marketing and project management knowledge with experience using various platforms to build brands, improve engagement, and optimize marketing technology. She's passionate about learning something new every day and eager to help solve problems that increase marketing efficiency.',
+    bio: 'Emily has diverse marketing and project management knowledge with experience using various platforms to build brands, improve engagement, and optimize marketing technology. She is passionate about learning something new every day and eager to help solve problems that increase marketing efficiency.',
     linkedIn: 'https://www.linkedin.com/in/emily-tvelia/',
     image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/01/SUCCESS_Emily-Tvelia_Headshot_Square.jpg',
     displayOrder: 25,
   },
 ];
 
-// NOTE: Run this with: DATABASE_URL="<your-supabase-url>" npx tsx scripts/import-team-members-from-wp.ts
-// Or run the SQL directly in Supabase SQL Editor
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
-async function importTeamMembers() {
-  console.log('🚀 Starting team member import...\n');
+  const session = await getServerSession(req, res, authOptions);
+
+  if (!session || !session.user) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  // Only SUPER_ADMIN can import team members
+  const user = await prisma.users.findUnique({
+    where: { email: session.user.email as string },
+  });
+
+  if (!user || user.role !== 'SUPER_ADMIN') {
+    return res.status(403).json({ error: 'Forbidden - SUPER_ADMIN only' });
+  }
 
   try {
     // Clear existing team members
-    console.log('🗑️  Clearing existing team members...');
     await prisma.team_members.deleteMany({});
-    console.log('✅ Cleared existing team members\n');
 
     // Import new team members
-    console.log('📥 Importing 25 team members...\n');
+    const created = [];
     for (const member of teamMembers) {
-      await prisma.team_members.create({
+      const teamMember = await prisma.team_members.create({
         data: {
           id: uuidv4(),
           ...member,
           isActive: true,
         },
       });
-      console.log(`✅ Imported: ${member.name} - ${member.title}`);
+      created.push(teamMember);
     }
 
-    console.log('\n🎉 Successfully imported all 25 team members!');
-
-    // Verify
-    const count = await prisma.team_members.count();
-    console.log(`\n📊 Total team members in database: ${count}`);
+    return res.status(200).json({
+      success: true,
+      message: `Successfully imported ${created.length} team members`,
+      count: created.length,
+      teamMembers: created,
+    });
   } catch (error) {
-    console.error('❌ Error importing team members:', error);
-    throw error;
-  } finally {
-    await prisma.$disconnect();
+    console.error('Error importing team members:', error);
+    return res.status(500).json({ error: 'Failed to import team members' });
   }
 }
-
-importTeamMembers();
