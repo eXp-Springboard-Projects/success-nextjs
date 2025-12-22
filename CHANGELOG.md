@@ -14,6 +14,21 @@ Based on [Keep a Changelog](https://keepachangelog.com/) • Uses [ISO 8601](htt
 =======================================================
 -->
 
+### [Fixed] - 2025-12-22T10:00:00 - Critical Admin Login & Build Fix
+
+**Fixed admin authentication and build failures**
+
+- **Why**: Admin login was not working because `proxy.ts` was exporting function `middleware` instead of `proxy` (Next.js 16 renamed middleware to proxy). Build was also failing due to backup files in pages folder.
+- **What**: 
+  - Changed `proxy.ts` to export `proxy` function (Next.js 16 requirement)
+  - Deleted duplicate `proxy.js` file
+  - Moved `pages/_backups/` to `_archive/pages_backups/`
+  - Added `_archive/**/*` to tsconfig.json exclude list
+- **Files**: `proxy.ts`, `proxy.js` (deleted), `tsconfig.json`
+- **Impact**: Admin login will now work correctly - unauthenticated users are redirected to `/admin/login`. Build passes with 350+ routes.
+
+---
+
 ### [Changed] - 2025-12-19T09:20:00 - Repository Cleanup & Organization
 
 **Organized loose files at repository root into appropriate folders**
