@@ -194,7 +194,7 @@ export async function getScoreDistribution() {
         END
     `;
 
-    return distribution.map(d => ({
+    return distribution.map((d: { range: string; count: bigint }) => ({
       range: d.range,
       count: Number(d.count),
     }));
