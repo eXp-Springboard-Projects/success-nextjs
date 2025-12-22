@@ -43,7 +43,8 @@ Everything is configured and ready to deploy. See the deployment guide for step-
 
 ### Technical
 - ✅ Next.js 14 with Pages Router
-- ✅ PostgreSQL with Prisma ORM
+- ✅ PostgreSQL with Prisma ORM + Supabase (Hybrid)
+- ✅ Real-time capabilities with Supabase
 - ✅ ISR (Incremental Static Regeneration)
 - ✅ Stripe payment infrastructure (ready to connect)
 - ✅ Security headers and middleware
@@ -64,6 +65,12 @@ Everything is configured and ready to deploy. See the deployment guide for step-
 ### Development
 - **[CLAUDE.md](CLAUDE.md)** - Project structure and patterns
 - **[.env.production.example](.env.production.example)** - Environment variables
+
+### Database & Supabase (NEW! 🎉)
+- **[SUPABASE_CHECKLIST.md](SUPABASE_CHECKLIST.md)** - Quick setup checklist 👈 Start here!
+- **[docs/SUPABASE_QUICK_START.md](docs/SUPABASE_QUICK_START.md)** - 5-minute quick start
+- **[docs/SUPABASE_MIGRATION_GUIDE.md](docs/SUPABASE_MIGRATION_GUIDE.md)** - Complete guide
+- **[SUPABASE_MIGRATION_SUMMARY.md](SUPABASE_MIGRATION_SUMMARY.md)** - Migration summary
 
 ---
 
@@ -109,6 +116,14 @@ Open [http://localhost:3000](http://localhost:3000) to see the site.
 
 ## 🗄️ Database Setup
 
+### Supabase + Prisma (Hybrid Approach)
+
+This project uses **both** Prisma ORM and Supabase:
+- **Prisma**: Primary ORM for type-safe queries and migrations
+- **Supabase**: Real-time features, storage, and edge capabilities
+
+See **[SUPABASE_CHECKLIST.md](SUPABASE_CHECKLIST.md)** for setup instructions.
+
 ### Run Migrations
 ```bash
 # Development
@@ -116,6 +131,9 @@ npx prisma migrate dev
 
 # Production
 npx prisma migrate deploy
+
+# Test Supabase connection
+npx tsx scripts/test-supabase-connection.ts
 ```
 
 ### Create Admin User
