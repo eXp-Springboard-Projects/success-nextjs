@@ -40,6 +40,7 @@
     "tests/**/*",
     "success-admin-fixes/**/*",
     "success-plus-work/**/*",
-    "pages/_backups/**/*"
+    "pages/_backups/**/*",
+    "_archive/**/*"
   ]
 }
