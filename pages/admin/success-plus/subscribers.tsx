@@ -86,7 +86,7 @@ export default function SuccessPlusSubscribers() {
     } else if (filter === 'canceled') {
       matchesFilter = subscriber.membershipStatus === 'CANCELED';
     } else if (filter === 'trial') {
-      matchesFilter = subscriber.trialEndsAt && new Date(subscriber.trialEndsAt) > new Date();
+      matchesFilter = !!(subscriber.trialEndsAt && new Date(subscriber.trialEndsAt) > new Date());
     }
 
     // Apply search filter
