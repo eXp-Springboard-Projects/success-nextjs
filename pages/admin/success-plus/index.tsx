@@ -117,11 +117,11 @@ export default function SuccessPlusDashboard() {
               </div>
             </Link>
 
-            <Link href="/admin/members" className={styles.actionCard}>
+            <Link href="/admin/success-plus/subscribers" className={styles.actionCard}>
               <div className={styles.actionIcon}>👥</div>
-              <div className={styles.actionTitle}>View All Members</div>
+              <div className={styles.actionTitle}>SUCCESS+ Subscribers</div>
               <div className={styles.actionDescription}>
-                Manage member accounts and subscriptions
+                View and manage all SUCCESS+ members
               </div>
             </Link>
 

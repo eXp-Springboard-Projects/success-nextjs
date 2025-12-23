@@ -257,6 +257,21 @@
   box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.1);
 }
 
+.searchInput {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: white;
+  min-width: 250px;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #d32f2f;
+  box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.1);
+}
+
 .createButton {
   padding: 0.75rem 1.5rem;
   background: #d32f2f;
