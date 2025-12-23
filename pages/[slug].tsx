@@ -87,46 +87,7 @@ export default function DynamicPage({ page, post, relatedPosts, hasAccess, isPos
   );
 }
 
-export const getStaticPaths: GetStaticPaths = async () => {
-  try {
-    // List of reserved slugs that have their own page files
-    const reservedSlugs = [
-      'login', 'register', 'account', 'advertise', 'about',
-      'admin', 'api', 'blog', 'category', 'author', 'lp', 'pay',
-      'press-release', 'dashboard', 'preview', 'success-plus',
-      'signup', 'forgot-password', 'reset-password', 'speakers',
-      'bestsellers', 'coaching', 'press', 'media-kit', 'press-releases',
-      'magazine', 'subscribe', 'newsletter'
-    ];
-
-    const pages = await prisma.pages.findMany({
-      where: {
-        status: 'PUBLISHED',
-        slug: { notIn: reservedSlugs }
-      },
-      select: { slug: true }
-    });
-
-    await prisma.$disconnect();
-
-    return {
-      paths: pages.map(p => ({ params: { slug: p.slug } })),
-      fallback: 'blocking' // Enable ISR for new pages
-    };
-  } catch (error: any) {
-    console.error('[Dynamic Page] Error in getStaticPaths:', error);
-    // Check if it's a database connection error
-    if (error.code === 'P2024' || error.message?.includes('Can\'t reach database')) {
-      console.error('[Dynamic Page] Database connection error in getStaticPaths - may need to check DATABASE_URL');
-    }
-    return {
-      paths: [],
-      fallback: 'blocking'
-    };
-  }
-};
-
-export const getStaticProps: GetStaticProps<DynamicPageProps> = async ({ params }) => {
+export async function getServerSideProps({ params, req, res }: any) {
   const slug = params?.slug as string;
 
   try {
@@ -164,8 +125,7 @@ export const getStaticProps: GetStaticProps<DynamicPageProps> = async ({ params 
         props: {
           page: serializedPage,
           isPost: false
-        },
-        revalidate: 600 // Revalidate every 10 minutes (ISR)
+        }
       };
     }
 
@@ -205,8 +165,7 @@ export const getStaticProps: GetStaticProps<DynamicPageProps> = async ({ params 
         relatedPosts,
         hasAccess,
         isPost: true
-      },
-      revalidate: 600
+      }
     };
   } catch (error: any) {
     console.error(`[Dynamic Page] Error fetching "${slug}":`, error);
@@ -237,8 +196,7 @@ export const getStaticProps: GetStaticProps<DynamicPageProps> = async ({ params 
               relatedPosts,
               hasAccess: true,
               isPost: true
-            },
-            revalidate: 600
+            }
           };
         }
       } catch (wpError) {
