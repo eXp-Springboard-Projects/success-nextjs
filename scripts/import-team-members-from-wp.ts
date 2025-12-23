@@ -101,7 +101,7 @@ const teamMembers = [
   {
     name: 'Sarah Kuta',
     title: 'Copy Editor/Fact-Checker',
-    bio: 'Sarah Kuta is a freelance writer and editor based in Longmont, Colorado. Her work has appeared in National Geographic, Condé Nast Traveler, Smithsonian magazine, AFAR, Travel+Leisure, NBC News, Food & Wine, Robb Report, and many other publications. She studied journalism at Northwestern University.',
+    bio: 'Sarah Kuta is a freelance writer and editor based in Longmont, Colorado. Her work has appeared in National Geographic, Conde Nast Traveler, Smithsonian magazine, AFAR, Travel+Leisure, NBC News, Food & Wine, Robb Report, and many other publications. She studied journalism at Northwestern University.',
     linkedIn: 'https://www.linkedin.com/in/sarah-kuta-74316614/',
     image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2024/04/Sarah-Kuta-headshot-square.jpg',
     displayOrder: 13,
@@ -109,7 +109,7 @@ const teamMembers = [
   {
     name: 'Virginia Le',
     title: 'Senior Production Manager',
-    bio: 'Virginia is a detail-oriented individual responsible for overseeing numerous aspects, both significant and minor, in her role. Joining SUCCESS magazine's print production team in 2018, she ensures the Editorial Team stays on track, coordinates with printers, bulk customers, advertisers, vendors, and consultants to ensure timely magazine production.',
+    bio: 'Virginia is a detail-oriented individual responsible for overseeing numerous aspects, both significant and minor, in her role. Joining SUCCESS magazine\'s print production team in 2018, she ensures the Editorial Team stays on track, coordinates with printers, bulk customers, advertisers, vendors, and consultants to ensure timely magazine production.',
     linkedIn: 'https://www.linkedin.com/in/virginia-le-848313193/',
     image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2023/04/Virginia_Le_headshot_square.jpg',
     displayOrder: 14,
@@ -125,7 +125,7 @@ const teamMembers = [
   {
     name: 'Jamie Lyons',
     title: 'Executive & Team Assistant',
-    bio: 'Jamie has a wealth of experience in executive support, operations, and project management with a strong background in startup environments, where she's worn many hats beyond the traditional executive assistant role.',
+    bio: 'Jamie has a wealth of experience in executive support, operations, and project management with a strong background in startup environments, where she\'s worn many hats beyond the traditional executive assistant role.',
     linkedIn: 'https://www.linkedin.com/in/jamielyons11/',
     image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/01/SUCCESS_Jamie-Lyons_Headshot_Square.jpg',
     displayOrder: 16,
@@ -181,7 +181,7 @@ const teamMembers = [
   {
     name: 'Staci Parks',
     title: 'Copy Editor/Fact-Checker',
-    bio: 'Staci is SUCCESS magazine's copy editor and fact-checker. She's edited regional magazines, taught at the university level, and even did a stint as a small-town crime reporter at a Louisiana newspaper. She lives in Dallas, Texas, with her husband and two very adorable, very spoiled dogs.',
+    bio: 'Staci is SUCCESS magazine\'s copy editor and fact-checker. She\'s edited regional magazines, taught at the university level, and even did a stint as a small-town crime reporter at a Louisiana newspaper. She lives in Dallas, Texas, with her husband and two very adorable, very spoiled dogs.',
     linkedIn: 'https://www.linkedin.com/in/staci-parks/',
     image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2023/04/Staci-Parks-headshot-square.jpg',
     displayOrder: 23,
@@ -197,7 +197,7 @@ const teamMembers = [
   {
     name: 'Emily Tvelia',
     title: 'Marketing Operations Specialist',
-    bio: 'Emily has diverse marketing and project management knowledge with experience using various platforms to build brands, improve engagement, and optimize marketing technology. She's passionate about learning something new every day and eager to help solve problems that increase marketing efficiency.',
+    bio: 'Emily has diverse marketing and project management knowledge with experience using various platforms to build brands, improve engagement, and optimize marketing technology. She\'s passionate about learning something new every day and eager to help solve problems that increase marketing efficiency.',
     linkedIn: 'https://www.linkedin.com/in/emily-tvelia/',
     image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/01/SUCCESS_Emily-Tvelia_Headshot_Square.jpg',
     displayOrder: 25,

@@ -32,7 +32,8 @@
       "Bash(nslookup:*)",
       "Bash(git log:*)",
       "Bash(npx tsx:*)",
-      "WebFetch(domain:supabase.com)"
+      "WebFetch(domain:supabase.com)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

@@ -145,7 +145,7 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
         <SEO
           title={decodeHtmlEntities(post.title.rendered)}
           description={decodeHtmlEntities(post.excerpt?.rendered?.replace(/<[^>]*>/g, '') || '')}
-          url={`https://www.success.com/blog/${post.slug}`}
+          url={`https://www.success.com/${post.slug}`}
           type="article"
           image={featuredImageUrl}
         />
@@ -208,7 +208,7 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
-      '@id': `https://www.success.com/blog/${post.slug}`,
+      '@id': `https://www.success.com/${post.slug}`,
     },
   };
 
@@ -218,7 +218,7 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
         title={decodeHtmlEntities(post.title.rendered)}
         description={seoDescription}
         image={featuredImageUrl}
-        url={`https://www.success.com/blog/${post.slug}`}
+        url={`https://www.success.com/${post.slug}`}
         type="article"
         publishedTime={post.date}
         modifiedTime={post.modified}
@@ -370,7 +370,7 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
                 const relatedCategory = relatedPost._embedded?.['wp:term']?.[0]?.[0];
 
                 return (
-                  <a key={relatedPost.id} href={`/blog/${relatedPost.slug}`} className={styles.relatedCard}>
+                  <a key={relatedPost.id} href={`/${relatedPost.slug}`} className={styles.relatedCard}>
                     {relatedImage && (
                       <img
                         src={relatedImage.source_url}
@@ -395,56 +395,15 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
   );
 }
 
-export async function getServerSideProps({ params, req, res }: any) {
+export async function getServerSideProps({ params, res }: any) {
   const { slug } = params;
 
-  try {
-    const posts = await fetchWordPressData(`posts?slug=${slug}&_embed`);
-    const post = posts[0];
+  // Redirect /blog/{slug} to /{slug} to maintain backward compatibility
+  // This ensures old links with /blog/ prefix still work
+  res.setHeader('Location', `/${slug}`);
+  res.statusCode = 301; // Permanent redirect
 
-    if (!post) {
-      return { notFound: true };
-    }
-
-    // Fetch related posts from the same category
-    const categoryId = post._embedded?.['wp:term']?.[0]?.[0]?.id;
-    let relatedPosts = [];
-
-    if (categoryId) {
-      const related = await fetchWordPressData(
-        `posts?categories=${categoryId}&_embed&per_page=3&exclude=${post.id}`
-      );
-      relatedPosts = related;
-    }
-
-    // Check access for premium content
-    const { getServerSession } = await import('next-auth/next');
-    const { authOptions } = await import('../api/auth/[...nextauth]');
-    const session = await getServerSession(req, res, authOptions);
-
-    const isPremium = post.isPremium || post.meta?.isPremium || false;
-    const requiredTier = post.requiredTier || post.meta?.requiredTier || 'collective';
-
-    let hasAccess = true; // Default to true for free content
-
-    if (isPremium && session?.user && session.user.email) {
-      hasAccess = await canAccessContent(
-        { id: session.user.id, email: session.user.email, membershipTier: session.user.membershipTier },
-        { isPremium: true, requiredTier: requiredTier as 'collective' | 'insider' }
-      );
-    } else if (isPremium) {
-      hasAccess = false; // Not logged in, can't access premium
-    }
-
-    return {
-      props: {
-        post,
-        relatedPosts,
-        hasAccess,
-      }
-    };
-  } catch (error) {
-    console.error(`[Blog Post] Error fetching post "${slug}":`, error);
-    return { notFound: true };
-  }
+  return {
+    props: {}
+  };
 }

@@ -80,7 +80,7 @@ async function generateSitemap(): Promise<string> {
   // Blog posts
   posts.forEach(post => {
     const lastmod = post.updatedAt || post.publishedAt || new Date();
-    urls.push(createUrlEntry(`/blog/${post.slug}`, lastmod, '0.7', 'weekly'));
+    urls.push(createUrlEntry(`/${post.slug}`, lastmod, '0.7', 'weekly'));
   });
 
   // Pages
