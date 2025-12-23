@@ -35,24 +35,19 @@
   color: white;
   display: flex;
   flex-direction: column;
-  transition: width 0.3s ease;
+  transition: width 0.3s ease, transform 0.3s ease;
   overflow: hidden;
   flex-shrink: 0;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-  position: fixed;
+  position: sticky;
   left: 0;
   top: 0;
-  bottom: 0;
+  height: 100vh;
   z-index: 100;
 }
 
 .sidebarClosed {
   width: 80px;
-}
-
-.sidebarClosed ~ .main,
-.mainShifted {
-  margin-left: 80px;
 }
 
 .sidebarHeader {
@@ -104,7 +99,27 @@
 .navContainer {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 0.5rem 0;
+  scroll-behavior: smooth;
+}
+
+.navContainer::-webkit-scrollbar {
+  width: 6px;
+}
+
+.navContainer::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.navContainer::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  transition: background 0.3s ease;
+}
+
+.navContainer::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .navSection {
@@ -290,7 +305,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  margin-left: 280px;
+  margin-left: 0;
   transition: margin-left 0.3s ease;
 }
 
