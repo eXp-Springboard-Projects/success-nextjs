@@ -55,12 +55,15 @@ export default function StaffSignup() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to create account');
+        const errorMessage = data.error || 'Failed to create account';
+        const details = data.details ? ` Details: ${data.details}` : '';
+        throw new Error(errorMessage + details);
       }
 
       setSuccess(true);
     } catch (err: any) {
-      setError(err.message);
+      console.error('Signup error:', err);
+      setError(err.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

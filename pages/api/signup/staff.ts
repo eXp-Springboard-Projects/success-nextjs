@@ -56,7 +56,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: 'Account created successfully. Pending admin approval.',
       userId,
     });
-  } catch (error) {
-    return res.status(500).json({ error: 'Failed to create account' });
+  } catch (error: any) {
+    console.error('Staff signup error:', error);
+
+    // Check for specific database errors
+    if (error.code === 'P2002') {
+      return res.status(400).json({ error: 'An account with this email already exists' });
+    }
+
+    if (error.message?.includes('column') || error.message?.includes('does not exist')) {
+      return res.status(500).json({ error: 'Database schema error. Please contact support.' });
+    }
+
+    return res.status(500).json({
+      error: 'Failed to create account. Please try again or contact support.',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 }
