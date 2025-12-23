@@ -15,10 +15,18 @@ export default async function handler(
   }
 
   try {
-    const { email, name, role, inviteCode } = req.body;
+    const { email, name, password, role, inviteCode } = req.body;
 
     if (!email || !name) {
       return res.status(400).json({ error: 'Email and name are required' });
+    }
+
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required' });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters long' });
     }
 
     // Check if email is @success.com OR valid invite code is provided
@@ -55,10 +63,10 @@ export default async function handler(
     const validRoles = ['EDITOR', 'AUTHOR', 'ADMIN', 'SUPER_ADMIN'];
     const userRole = inviteRole && validRoles.includes(inviteRole) ? inviteRole : 'EDITOR';
 
-    // Hash default password
-    const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+    // Hash user's chosen password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user with default password
+    // Create user with their chosen password
     const userId = uuidv4();
     const user = await prisma.users.create({
       data: {
@@ -68,7 +76,7 @@ export default async function handler(
         password: hashedPassword,
         role: userRole,
         emailVerified: isSuccessStaff, // Auto-verify @success.com emails
-        hasChangedDefaultPassword: false,
+        hasChangedDefaultPassword: true, // They set their own password
         inviteCode: inviteCode || null,
         membershipTier: 'FREE',
         createdAt: new Date(),
@@ -85,9 +93,9 @@ export default async function handler(
       }
     }
 
-    // Send welcome email
+    // Send welcome email (without password since they created their own)
     try {
-      const emailResult = await sendStaffWelcomeEmail(user.email, user.name, DEFAULT_PASSWORD);
+      const emailResult = await sendStaffWelcomeEmail(user.email, user.name, '');
       if (!emailResult.success) {
         // Don't fail registration if email fails
       }
@@ -103,8 +111,7 @@ export default async function handler(
         email: user.email,
         name: user.name,
         role: user.role
-      },
-      instructions: `Your account has been created. Login with password: ${DEFAULT_PASSWORD} and change it immediately.`
+      }
     });
 
   } catch (error) {

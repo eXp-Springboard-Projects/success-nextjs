@@ -11,6 +11,8 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({
     email: '',
     name: '',
+    password: '',
+    confirmPassword: '',
     role: 'EDITOR',
     inviteCode: ''
   });
@@ -35,6 +37,22 @@ export default function RegisterPage() {
     // Validation
     if (!formData.email || !formData.name) {
       setError('Email and name are required');
+      return;
+    }
+
+    // Validate password
+    if (!formData.password) {
+      setError('Password is required');
+      return;
+    }
+
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
       return;
     }
 
@@ -90,10 +108,7 @@ export default function RegisterPage() {
             <p style={{ marginTop: '12px' }}>
               <strong>Login Credentials:</strong><br />
               Email: {formData.email}<br />
-              Password: <code style={{ background: '#f7fafc', padding: '2px 6px', borderRadius: '4px' }}>{DEFAULT_PASSWORD}</code>
-            </p>
-            <p style={{ marginTop: '12px', fontSize: '13px' }}>
-              You will be required to change your password on first login for security.
+              Password: Use the password you created
             </p>
             <p style={{ marginTop: '12px', fontSize: '13px', color: '#22543d' }}>
               Redirecting to login page...
@@ -146,6 +161,34 @@ export default function RegisterPage() {
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="John Doe"
+              disabled={loading}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label htmlFor="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              placeholder="At least 8 characters"
+              disabled={loading}
+              minLength={8}
+            />
+            <small className={styles.helpText}>
+              At least 8 characters
+            </small>
+          </div>
+
+          <div className={styles.formGroup}>
+            <label htmlFor="confirmPassword">Confirm Password</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+              placeholder="Re-enter your password"
               disabled={loading}
             />
           </div>
