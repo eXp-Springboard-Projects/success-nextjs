@@ -36,6 +36,13 @@ export const authOptions: AuthOptions = {
           throw new Error('Invalid credentials');
         }
 
+        // Block PENDING users from logging in
+        if (user.role === 'PENDING') {
+          console.log('[NextAuth] User account is pending approval:', credentials.email);
+          logger.debug('User account pending approval', { email: credentials.email });
+          throw new Error('Your account is pending approval. Please wait for admin confirmation.');
+        }
+
         console.log('[NextAuth] User found, checking password...');
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
