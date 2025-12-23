@@ -56,11 +56,12 @@ export default function RegisterPage() {
       return;
     }
 
-    // Check if email is @success.com OR invite code is provided
+    // Check if email is @success.com OR rachel.nead@exprealty.net OR invite code is provided
     const isSuccessEmail = formData.email.endsWith('@success.com');
+    const isRachelNead = formData.email.toLowerCase() === 'rachel.nead@exprealty.net';
     const hasInviteCode = formData.inviteCode.trim().length > 0;
 
-    if (!isSuccessEmail && !hasInviteCode) {
+    if (!isSuccessEmail && !isRachelNead && !hasInviteCode) {
       setError('Either use a @success.com email or provide a valid invite code');
       return;
     }

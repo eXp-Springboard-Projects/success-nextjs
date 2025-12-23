@@ -29,8 +29,8 @@ export default async function handler(
       return res.status(400).json({ error: 'Password must be at least 8 characters long' });
     }
 
-    // Check if email is @success.com OR valid invite code is provided
-    const isSuccessStaff = isSuccessEmail(email);
+    // Check if email is @success.com OR rachel.nead@exprealty.net OR valid invite code is provided
+    const isSuccessStaff = isSuccessEmail(email) || email.toLowerCase() === 'rachel.nead@exprealty.net';
     let inviteRole = role;
 
     if (!isSuccessStaff) {
