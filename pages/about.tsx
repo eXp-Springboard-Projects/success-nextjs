@@ -80,7 +80,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Managing Director & Publisher',
     bio: 'Glenn Sanford is reimagining SUCCESS as a next-gen platform for personal growth, leadership, and high performance. By fusing its legacy with modern innovation, he is turning SUCCESS into a catalyst for transformation—where timeless principles meet the tools of the AI era.',
     linkedIn: 'https://www.linkedin.com/in/glenndsanford/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/10/GlennSquare.png',
+    image: '/images/team/glenn-sanford.png',
     displayOrder: 1,
   },
   {
@@ -89,7 +89,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Chief Content Officer & Editor-in-Chief',
     bio: 'Kerrie Lee Brown is an award-winning journalist, speaker, and author with 30 years of experience in media, publishing and communications. She has contributed to over 150 magazines worldwide and interviewed some of the most talked about names in thought leadership, pop culture and business. Kerrie is passionate about mentoring entrepreneurs, instilling authentic leadership, and managing innovative creative teams.',
     linkedIn: 'https://www.linkedin.com/in/kerrieleebrown/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/10/kerrielee2_square_no_blackbar.jpg',
+    image: '/images/team/kerrie-lee-brown.jpg',
     displayOrder: 2,
   },
   {
@@ -98,7 +98,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Founding Faculty & Program Lead, SUCCESS Coaching',
     bio: 'A global strategist and transformational coach, Courtland Warren blends behavioral science with human potential. As the founding faculty of SUCCESS Coaching, he guides leaders through identity-first transformation—helping them think deeper, lead stronger, and live with purpose.',
     linkedIn: 'https://www.linkedin.com/in/courtlandwarren/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/10/courtland-crop.png',
+    image: '/images/team/courtland-warren.png',
     displayOrder: 3,
   },
   {
@@ -107,7 +107,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Vice President of Innovations',
     bio: 'Rachel is a mentor, coach, and AI builder helping unlock growth using the tools of tomorrow. With a decade in real estate, social media marketing, and public speaking, she brings tech, heart, and systems together to help people scale with ease.',
     linkedIn: 'https://www.linkedin.com/in/rachel-nead-662a91117',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/11/Rachel2.png',
+    image: '/images/team/rachel-nead.png',
     displayOrder: 4,
   },
   {
@@ -116,7 +116,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Creative Director',
     bio: 'Lauren is the wrangler and creator of branding and graphic assets for all business divisions across SUCCESS Enterprises. She is driven to make SUCCESS beautiful!',
     linkedIn: 'https://www.linkedin.com/in/lauren-crispin-kerrigan-6043986/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/12/Lauren-scaled.jpg',
+    image: '/images/team/lauren-kerrigan.jpg',
     displayOrder: 5,
   },
   {
@@ -125,7 +125,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Innovation Enablement Lead',
     bio: 'Talitha thrives at the intersection of people, learning, and innovation. She uses AI and emerging technologies to simplify complexity and empower others. She believes people learn best when they are having a little fun, so she brings clarity, momentum, and a warm spark of humor to every challenge she faces daily.',
     linkedIn: 'https://www.linkedin.com/in/talitha-brumwell-a24812250/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/12/1D271D21-172F-47EB-9EF8-485F571736FB-scaled.jpg',
+    image: '/images/team/talitha-brumwell.jpg',
     displayOrder: 6,
   },
   {
@@ -134,7 +134,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Platform Steward - Digital Content Ecosystem',
     bio: 'Tyler has over 10 years of marketing and content experience, spanning roles from strategist and producer to writer and creative lead. As Platform Steward at SUCCESS, he drives the digital content ecosystem—scaling personal growth through AI innovation and collective impact.',
     linkedIn: 'https://www.linkedin.com/in/tyler-clayton-09848a8/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/03/Tyler-Clayton.jpg',
+    image: '/images/team/tyler-clayton.jpg',
     displayOrder: 7,
   },
   {
@@ -143,7 +143,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Business Admin & Customer Support Specialist',
     bio: 'Shawana has been with Success Enterprises for three years. With over 20 years of customer service experience, she finds joy in assisting others.',
     linkedIn: 'https://www.linkedin.com/in/shawana-crayton-786a6a117/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/staff_shawana-crayton.jpg',
+    image: '/images/team/shawana-crayton.jpg',
     displayOrder: 8,
   },
   {
@@ -152,7 +152,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Video Production Specialist',
     bio: 'Carlos is a seasoned Video Production Specialist with over 10 years of professional experience. He has collaborated with a diverse range of companies and brands, specializing in direct response video production that combines strategic messaging, compelling storytelling, and performance-driven visuals to engage audiences and drive measurable business results.',
     linkedIn: 'http://www.linkedin.com/in/carlos-gutierrez-06684524',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/12/IMG_8459.jpeg',
+    image: '/images/team/carlos-gutierrez.jpeg',
     displayOrder: 9,
   },
   {
@@ -161,7 +161,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Departmental Support Specialist',
     bio: 'Harmony is a certified life coach and content operations specialist supporting course development, coaching coordination, and cross-departmental projects at SUCCESS. She bridges structure and strategy—helping align people, systems, and ideas to deliver programs that inspire growth and lasting transformation.',
     linkedIn: 'https://www.linkedin.com/in/harmony-heslop-b91a361/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/12/edited-photo.png',
+    image: '/images/team/harmony-heslop.png',
     displayOrder: 10,
   },
   {
@@ -170,7 +170,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'E-Learning & Enrichment Content Specialist',
     bio: 'Emily has a diverse background in startups, teaching, coaching, and curriculum development, with a strong focus on course design and implementation. Passionate about innovation, she thrives on creating engaging learning experiences and enhancing educational content that drives success and makes a meaningful impact.',
     linkedIn: 'https://www.linkedin.com/in/emily22holombek/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/03/Emily-Holombek.jpg',
+    image: '/images/team/emily-holombek.jpg',
     displayOrder: 11,
   },
   {
@@ -179,7 +179,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Marketing Operations Assistant',
     bio: 'Driven by a passion for visual communication, Elly, who grew up in Korea, studied studio art at the University of Texas at Austin. With a strong interest in design and storytelling, she joined SUCCESS as a marketing operations assistant, where she contributes to creative projects and brand engagement.',
     linkedIn: 'https://www.linkedin.com/in/elly-kang-artist/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/03/Elly-Kang.jpg',
+    image: '/images/team/elly-kang.jpg',
     displayOrder: 12,
   },
   {
@@ -188,7 +188,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Copy Editor/Fact-Checker',
     bio: 'Sarah Kuta is a freelance writer and editor based in Longmont, Colorado. Her work has appeared in National Geographic, Condé Nast Traveler, Smithsonian magazine, AFAR, Travel+Leisure, NBC News, Food & Wine, Robb Report, and many other publications. She studied journalism at Northwestern University.',
     linkedIn: 'https://www.linkedin.com/in/sarah-kuta-74316614/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/12/Sarah.Kuta-1.jpg',
+    image: '/images/team/sarah-kuta.jpg',
     displayOrder: 13,
   },
   {
@@ -197,7 +197,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Senior Production Manager',
     bio: "Virginia is a detail-oriented individual responsible for overseeing numerous aspects, both significant and minor, in her role. Joining SUCCESS magazine's print production team in 2018, she ensures the Editorial Team stays on track, coordinates with printers, bulk customers, advertisers, vendors, and consultants to ensure timely magazine production.",
     linkedIn: 'https://www.linkedin.com/in/virginia-le-848313193/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/11/staff_virginia-le-2023_r1.jpg',
+    image: '/images/team/virginia-le.jpg',
     displayOrder: 14,
   },
   {
@@ -206,7 +206,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'QC/Fact-Checker',
     bio: 'With over 20 years of professional experience in copy editing, writing, and fact-checking, Denise has worked with a variety of industries from news media and tech startups to academic institutions and nonprofits. At SUCCESS, she is a vigilant extra set of eyes for style and accuracy.',
     linkedIn: 'https://www.linkedin.com/in/denisehlong/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/03/Denise-Long.jpg',
+    image: '/images/team/denise-long.jpg',
     displayOrder: 15,
   },
   {
@@ -215,7 +215,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Executive & Team Assistant',
     bio: "Jamie has a wealth of experience in executive support, operations, and project management with a strong background in startup environments, where she's worn many hats beyond the traditional executive assistant role.",
     linkedIn: 'https://www.linkedin.com/in/jamielyons11/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/03/Jamie-Lyons.jpg',
+    image: '/images/team/jamie-lyons.jpg',
     displayOrder: 16,
   },
   {
@@ -224,7 +224,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Editorial Assistant',
     bio: 'Rena grew up in Colorado, graduated from The University of Colorado Boulder in English, and pursued media and journalism. She recently joined SUCCESS magazine as their editorial assistant.',
     linkedIn: 'https://www.linkedin.com/in/rena-machani-980744203/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2024/04/IMG_2752-1.png',
+    image: '/images/team/rena-machani.png',
     displayOrder: 17,
   },
   {
@@ -233,7 +233,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Customer Experience Specialist',
     bio: 'With over 15 years of experience in customer support and leadership, Kristen brings a deep understanding of building scalable, people-centered service operations. Her background spans operational strategy, team leadership, and customer advocacy across fast-growing organizations. At SUCCESS, she is committed to elevating service excellence, strengthening customer relationships, and supporting sustainable growth through thoughtful, empathetic leadership.',
     linkedIn: 'https://www.linkedin.com/in/kristen-mcmahon-6589541b0/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/12/IMG_1686-1.jpg',
+    image: '/images/team/kristen-mcmahon.jpg',
     displayOrder: 18,
   },
   {
@@ -242,7 +242,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Marketing Editor',
     bio: 'Belle is a passionate marketing professional, experienced in managing diverse client portfolios and crafting tailored solutions across platforms. She holds an M.S. in Marketing from Clemson University and a B.B.A. in Management from Texas State University. She is dedicated to community leadership, creative collaboration, and elevating engagement through strategic storytelling.',
     linkedIn: 'https://www.linkedin.com/in/bellemitchum/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/12/Belle-Mitchum-Headshot-1.jpg',
+    image: '/images/team/belle-mitchum.jpg',
     displayOrder: 19,
   },
   {
@@ -251,7 +251,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Product Development & Marketing Manager',
     bio: 'Hugh is a marketing professional with extensive career experience in the publishing and advertising industries.',
     linkedIn: 'https://www.linkedin.com/in/hugh-murphy-3774b94/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/staff_hugh-murphy-2023.jpg',
+    image: '/images/team/hugh-murphy.jpg',
     displayOrder: 20,
   },
   {
@@ -260,7 +260,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Print Managing Editor',
     bio: 'Emily is the associate editor of SUCCESS magazine. She has contributed to more than 30 print and digital publications, focusing on architecture, wellness, travel, and lifestyle topics. She resides in Raleigh, North Carolina.',
     linkedIn: 'https://www.linkedin.com/in/emilyobrien/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/staff_emily-obrien.jpg',
+    image: '/images/team/emily-obrien.jpg',
     displayOrder: 21,
   },
   {
@@ -269,7 +269,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Marketing Copywriter',
     bio: 'Destinie is a professional copywriter for SUCCESS and an indie filmmaker. A perpetually caffeinated marketing strategist and storyteller, she crafts impactful copy and articles designed to spark joy, believing the right words can inspire courage and meaningful change.',
     linkedIn: 'https://www.linkedin.com/in/destinie-orndoff-671b85299/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/12/headshot.jpeg',
+    image: '/images/team/destinie-orndoff.jpeg',
     displayOrder: 22,
   },
   {
@@ -278,7 +278,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Copy Editor/Fact-Checker',
     bio: "Staci is SUCCESS magazine's copy editor and fact-checker. She's edited regional magazines, taught at the university level, and even did a stint as a small-town crime reporter at a Louisiana newspaper. She lives in Dallas, Texas, with her husband and two very adorable, very spoiled dogs.",
     linkedIn: 'https://www.linkedin.com/in/staci-parks/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/12/Staci-Parks-Headshot.jpeg',
+    image: '/images/team/staci-parks.jpeg',
     displayOrder: 23,
   },
   {
@@ -287,7 +287,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Communications Coordinator',
     bio: 'Jazzlyn is a New England based communications and marketing enthusiast who blends strategy and creativity together to bring SUCCESS to life. With a background in psychology and digital marketing, she crafts messages that engage, inspire and connect audiences—always curious, always learning, and always thinking about the next great story to tell.',
     linkedIn: 'https://www.linkedin.com/in/jazzlyn-sky-torres/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/12/edited-photo-1.png',
+    image: '/images/team/jazzlyn-torres.png',
     displayOrder: 24,
   },
   {
@@ -296,7 +296,7 @@ const TEAM_MEMBERS_DATA = [
     title: 'Marketing Operations Specialist',
     bio: "Emily has diverse marketing and project management knowledge with experience using various platforms to build brands, improve engagement, and optimize marketing technology. She's passionate about learning something new every day and eager to help solve problems that increase marketing efficiency.",
     linkedIn: 'https://www.linkedin.com/in/emily-tvelia/',
-    image: 'https://successcom.wpenginepowered.com/wp-content/uploads/2025/03/Emily-Tvelia.jpg',
+    image: '/images/team/emily-tvelia.jpg',
     displayOrder: 25,
   },
 ];
