@@ -203,21 +203,6 @@ export default function RegisterPage() {
           </div>
         </form>
 
-        <div style={{
-          marginTop: '24px',
-          padding: '16px',
-          background: '#f7fafc',
-          borderRadius: '8px',
-          fontSize: '13px',
-          color: '#4a5568'
-        }}>
-          <strong>After registration:</strong>
-          <ul style={{ marginTop: '8px', paddingLeft: '20px' }}>
-            <li>You'll receive temporary credentials</li>
-            <li>Login with password: <code style={{ background: 'white', padding: '2px 6px', borderRadius: '4px' }}>{DEFAULT_PASSWORD}</code></li>
-            <li>You'll be required to change your password immediately</li>
-          </ul>
-        </div>
       </div>
     </div>
   );
