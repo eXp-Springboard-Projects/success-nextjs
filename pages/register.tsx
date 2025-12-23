@@ -150,23 +150,6 @@ export default function RegisterPage() {
             />
           </div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="role">Role</label>
-            <select
-              id="role"
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              disabled={loading}
-            >
-              <option value="EDITOR">Editor</option>
-              <option value="AUTHOR">Author</option>
-              <option value="ADMIN">Admin</option>
-            </select>
-            <small className={styles.helpText}>
-              Select your role (can be updated later by an admin)
-            </small>
-          </div>
-
           {!formData.email.endsWith('@success.com') && (
             <div className={styles.formGroup}>
               <label htmlFor="inviteCode">
