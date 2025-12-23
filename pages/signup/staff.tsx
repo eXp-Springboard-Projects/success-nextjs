@@ -73,9 +73,12 @@ export default function StaffSignup() {
           <div className={styles.successIcon}>✓</div>
           <h1 className={styles.successTitle}>Account Created!</h1>
           <p className={styles.successMessage}>
-            Your account is pending admin approval.
+            Your account is pending Super Admin approval.
             <br />
-            You will receive an email once your account has been approved.
+            You will be assigned the Editor role by default and given access to the appropriate departments.
+            <br />
+            <br />
+            You will receive an email once your account has been approved and you can log in.
           </p>
           <Link href="/login" className={styles.loginLink}>
             Return to Login

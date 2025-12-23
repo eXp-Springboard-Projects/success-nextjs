@@ -23,10 +23,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { id } = req.query;
-    const { role, department } = req.body;
+    // Default to EDITOR role if not specified
+    const { role = 'EDITOR', department } = req.body;
 
-    if (!role || !department) {
-      return res.status(400).json({ error: 'Role and department are required' });
+    if (!department) {
+      return res.status(400).json({ error: 'Department is required' });
     }
 
     // Validate role
