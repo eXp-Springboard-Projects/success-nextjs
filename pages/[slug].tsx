@@ -4,6 +4,10 @@ import Layout from '../components/Layout';
 import SEO from '../components/SEO';
 import parse from 'html-react-parser';
 import styles from './DynamicPage.module.css';
+import { fetchWordPressData } from '../lib/wordpress';
+import { canAccessContent } from '../lib/access-control';
+// Import blog post component
+import PostPage from './blog/[slug]';
 
 const prisma = new PrismaClient();
 
@@ -20,9 +24,19 @@ interface DynamicPageProps {
     publishedAt: string;
     updatedAt: string;
   } | null;
+  post?: any;
+  relatedPosts?: any[];
+  hasAccess?: boolean;
+  isPost?: boolean;
 }
 
-export default function DynamicPage({ page }: DynamicPageProps) {
+export default function DynamicPage({ page, post, relatedPosts, hasAccess, isPost }: DynamicPageProps) {
+  // If this is a blog post, render the blog post component
+  if (isPost && post) {
+    return <PostPage post={post} relatedPosts={relatedPosts || []} hasAccess={hasAccess || true} />;
+  }
+
+  // Otherwise render as a page
   if (!page) {
     return null;
   }
@@ -113,9 +127,10 @@ export const getStaticPaths: GetStaticPaths = async () => {
 };
 
 export const getStaticProps: GetStaticProps<DynamicPageProps> = async ({ params }) => {
-  try {
-    const slug = params?.slug as string;
+  const slug = params?.slug as string;
 
+  try {
+    // First, try to find a Page in the database
     const page = await prisma.pages.findFirst({
       where: {
         slug: slug,
@@ -137,30 +152,98 @@ export const getStaticProps: GetStaticProps<DynamicPageProps> = async ({ params 
 
     await prisma.$disconnect();
 
-    if (!page) {
+    if (page) {
+      // Serialize dates
+      const serializedPage = {
+        ...page,
+        publishedAt: page.publishedAt?.toISOString() || new Date().toISOString(),
+        updatedAt: page.updatedAt?.toISOString() || new Date().toISOString(),
+      };
+
       return {
-        notFound: true,
+        props: {
+          page: serializedPage,
+          isPost: false
+        },
+        revalidate: 600 // Revalidate every 10 minutes (ISR)
       };
     }
 
-    // Serialize dates
-    const serializedPage = {
-      ...page,
-      publishedAt: page.publishedAt?.toISOString() || new Date().toISOString(),
-      updatedAt: page.updatedAt?.toISOString() || new Date().toISOString(),
-    };
+    // If no Page found, try to fetch from WordPress as a blog post
+    const posts = await fetchWordPressData(`posts?slug=${slug}&_embed`);
+    const post = posts[0];
+
+    if (!post) {
+      return { notFound: true };
+    }
+
+    // Fetch related posts from the same category
+    const categoryId = post._embedded?.['wp:term']?.[0]?.[0]?.id;
+    let relatedPosts = [];
+
+    if (categoryId) {
+      const related = await fetchWordPressData(
+        `posts?categories=${categoryId}&_embed&per_page=3&exclude=${post.id}`
+      );
+      relatedPosts = related;
+    }
+
+    // Check access for premium content (using server-side session check)
+    let hasAccess = true;
+    const isPremium = post.isPremium || post.meta?.isPremium || false;
+
+    if (isPremium) {
+      // For SSG, we can't check session here, so we default to false
+      // The client-side component will handle the actual access check
+      hasAccess = false;
+    }
 
     return {
       props: {
-        page: serializedPage
+        page: null,
+        post,
+        relatedPosts,
+        hasAccess,
+        isPost: true
       },
-      revalidate: 600 // Revalidate every 10 minutes (ISR)
+      revalidate: 600
     };
   } catch (error: any) {
-    console.error(`[Dynamic Page] Error fetching page "${params?.slug}":`, error);
-    // Check if it's a database connection error vs page not found
+    console.error(`[Dynamic Page] Error fetching "${slug}":`, error);
+    // Check if it's a database connection error
     if (error.code === 'P2024' || error.message?.includes('Can\'t reach database')) {
       console.error('[Dynamic Page] Database connection error - may need to check DATABASE_URL');
+
+      // If database is down, try WordPress as fallback
+      try {
+        const posts = await fetchWordPressData(`posts?slug=${slug}&_embed`);
+        const post = posts[0];
+
+        if (post) {
+          const categoryId = post._embedded?.['wp:term']?.[0]?.[0]?.id;
+          let relatedPosts = [];
+
+          if (categoryId) {
+            const related = await fetchWordPressData(
+              `posts?categories=${categoryId}&_embed&per_page=3&exclude=${post.id}`
+            );
+            relatedPosts = related;
+          }
+
+          return {
+            props: {
+              page: null,
+              post,
+              relatedPosts,
+              hasAccess: true,
+              isPost: true
+            },
+            revalidate: 600
+          };
+        }
+      } catch (wpError) {
+        console.error('[Dynamic Page] WordPress fetch also failed:', wpError);
+      }
     }
     return {
       notFound: true,
