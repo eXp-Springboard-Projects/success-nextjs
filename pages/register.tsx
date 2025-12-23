@@ -74,7 +74,15 @@ export default function RegisterPage() {
         body: JSON.stringify(formData)
       });
 
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        setError('Server error - please try again later');
+        setLoading(false);
+        return;
+      }
 
       if (!res.ok) {
         const errorMessage = data.error || 'Failed to create account';
