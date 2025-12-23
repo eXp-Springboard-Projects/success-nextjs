@@ -40,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const fullName = `${firstName} ${lastName}`;
     await prisma.$executeRaw`
       INSERT INTO users (
-        id, email, password, name, role, created_at, updated_at
+        id, email, password, name, role, "createdAt", "updatedAt"
       ) VALUES (
         ${userId},
         ${email.toLowerCase()},
