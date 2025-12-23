@@ -1,6 +1,14 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY!);
+// Lazy initialization to avoid errors when API key is missing
+let resend: Resend | null = null;
+
+function getResendClient() {
+  if (!resend && process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
 
 interface EmailOptions {
   to: string;
@@ -21,14 +29,19 @@ export async function sendMail(to: string, subject: string, html: string) {
   }
 
   try {
-    const result = await resend.emails.send({
+    const client = getResendClient();
+    if (!client) {
+      return { success: false, error: 'Email client not initialized' };
+    }
+
+    const result = await client.emails.send({
       from: process.env.RESEND_FROM_EMAIL!,
       to,
       subject,
       html,
     });
 
-return { success: true, data: result.data };
+    return { success: true, data: result.data };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
