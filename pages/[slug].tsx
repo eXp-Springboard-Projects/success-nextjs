@@ -1,5 +1,5 @@
 import { GetStaticPaths, GetStaticProps } from 'next';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../lib/supabase';
 import Layout from '../components/Layout';
 import SEO from '../components/SEO';
 import parse from 'html-react-parser';
@@ -8,8 +8,6 @@ import { fetchWordPressData } from '../lib/wordpress';
 import { canAccessContent } from '../lib/access-control';
 // Import blog post component
 import PostPage from './blog/[slug]';
-
-const prisma = new PrismaClient();
 
 interface DynamicPageProps {
   page: {
@@ -93,26 +91,20 @@ export async function getServerSideProps({ params, req, res }: any) {
 
   // Try to find a Page in the database (but don't fail if database is down)
   try {
-    page = await prisma.pages.findFirst({
-      where: {
-        slug: slug,
-        status: 'PUBLISHED'
-      },
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        slug: true,
-        seoTitle: true,
-        seoDescription: true,
-        featuredImage: true,
-        featuredImageAlt: true,
-        publishedAt: true,
-        updatedAt: true,
-      }
-    });
+    const supabase = supabaseAdmin();
+    const { data, error } = await supabase
+      .from('pages')
+      .select('id, title, content, slug, seoTitle, seoDescription, featuredImage, featuredImageAlt, publishedAt, updatedAt')
+      .eq('slug', slug)
+      .eq('status', 'PUBLISHED')
+      .single();
 
-    await prisma.$disconnect();
+    if (error) {
+      console.log(`[Dynamic Page] Database error for "${slug}", will try WordPress:`, error.message);
+      page = null;
+    } else {
+      page = data;
+    }
   } catch (dbError: any) {
     console.log(`[Dynamic Page] Database error for "${slug}", will try WordPress:`, dbError.message);
     // If database fails, we'll fall through to WordPress fetch below
@@ -121,16 +113,10 @@ export async function getServerSideProps({ params, req, res }: any) {
 
   try {
     if (page) {
-      // Serialize dates
-      const serializedPage = {
-        ...page,
-        publishedAt: page.publishedAt?.toISOString() || new Date().toISOString(),
-        updatedAt: page.updatedAt?.toISOString() || new Date().toISOString(),
-      };
-
+      // Dates from Supabase are already in ISO string format
       return {
         props: {
-          page: serializedPage,
+          page: page,
           isPost: false
         }
       };
