@@ -1,6 +1,6 @@
 import NextAuth, { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { prisma } from '../../../lib/prisma';
+import { supabaseAdmin } from '../../../lib/supabase';
 import bcrypt from 'bcryptjs';
 import { logger } from '../../../lib/logger';
 
@@ -20,15 +20,21 @@ export const authOptions: AuthOptions = {
           throw new Error('Email and password required');
         }
 
-        // Use raw query to avoid schema mismatch
-        const users = await prisma.$queryRaw<any[]>`
-          SELECT id, email, name, password, role, avatar,
-                 "hasChangedDefaultPassword", "lastLoginAt"
-          FROM users
-          WHERE email = ${credentials.email}
-        `;
+        // Use Supabase to query users
+        const supabase = supabaseAdmin();
+        const { data: users, error } = await supabase
+          .from('users')
+          .select('id, email, name, password, role, avatar, hasChangedDefaultPassword, lastLoginAt')
+          .eq('email', credentials.email)
+          .limit(1);
 
-        const user = users[0];
+        if (error) {
+          console.log('[NextAuth] Database error:', error);
+          logger.error('Database error during login', { error: error.message });
+          throw new Error('Database error');
+        }
+
+        const user = users?.[0];
 
         if (!user) {
           console.log('[NextAuth] User not found:', credentials.email);
@@ -58,12 +64,14 @@ export const authOptions: AuthOptions = {
         console.log('[NextAuth] Password valid, user authenticated:', user.email, user.role);
         logger.info('User authenticated', { email: user.email, role: user.role });
 
-        // Update last login timestamp with raw query
-        await prisma.$executeRaw`
-          UPDATE users
-          SET "lastLoginAt" = ${new Date()}, "updatedAt" = ${new Date()}
-          WHERE id = ${user.id}
-        `;
+        // Update last login timestamp with Supabase
+        await supabase
+          .from('users')
+          .update({
+            lastLoginAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          })
+          .eq('id', user.id);
 
         console.log('[NextAuth] Returning user object:', { id: user.id, email: user.email, role: user.role });
         return {
