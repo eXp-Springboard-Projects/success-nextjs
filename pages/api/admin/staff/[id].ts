@@ -142,34 +142,37 @@ async function deactivateStaffMember(
   res: NextApiResponse,
   session: any
 ) {
-  // Check if trying to deactivate a SUPER_ADMIN
+  // Only SUPER_ADMIN can delete staff
+  if (session.user.role !== 'SUPER_ADMIN') {
+    return res.status(403).json({
+      error: 'Only Super Admins can delete staff members',
+    });
+  }
+
+  // Check if trying to delete a SUPER_ADMIN
   const user = await prisma.users.findUnique({
     where: { id },
-    select: { role: true },
+    select: { role: true, email: true },
   });
 
-  if (user?.role === 'SUPER_ADMIN' && session.user.role !== 'SUPER_ADMIN') {
-    return res.status(403).json({
-      error: 'Only Super Admins can deactivate Super Admin accounts',
-    });
+  if (!user) {
+    return res.status(404).json({ error: 'Staff member not found' });
   }
 
-  // Prevent self-deactivation
+  // Prevent self-deletion
   if (id === session.user.id) {
     return res.status(400).json({
-      error: 'Cannot deactivate your own account',
+      error: 'Cannot delete your own account',
     });
   }
 
-  // Deactivate by setting emailVerified to false
-  await prisma.users.update({
+  // Delete the staff member (CASCADE will handle related records)
+  await prisma.users.delete({
     where: { id },
-    data: {
-      emailVerified: false,
-    },
   });
 
   return res.status(200).json({
-    message: 'Staff member deactivated successfully',
+    message: 'Staff member deleted successfully',
+    deletedEmail: user.email,
   });
 }

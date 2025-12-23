@@ -35,17 +35,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create pending staff account
+    // Create pending staff account (PENDING status - requires admin approval)
     const userId = nanoid();
+    const fullName = `${firstName} ${lastName}`;
     await prisma.$executeRaw`
       INSERT INTO users (
-        id, email, password, first_name, last_name, role, created_at, updated_at
+        id, email, password, name, role, created_at, updated_at
       ) VALUES (
         ${userId},
         ${email.toLowerCase()},
         ${hashedPassword},
-        ${firstName},
-        ${lastName},
+        ${fullName},
         'PENDING',
         CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP

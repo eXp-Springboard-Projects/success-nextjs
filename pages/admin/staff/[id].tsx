@@ -37,6 +37,9 @@ export default function StaffDetail() {
   const [emailMessage, setEmailMessage] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
+  const [showDepartmentModal, setShowDepartmentModal] = useState(false);
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
+  const [savingDepartments, setSavingDepartments] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -69,6 +72,7 @@ export default function StaffDetail() {
         if (deptRes.ok) {
           const deptData = await deptRes.json();
           data.departments = deptData.departments;
+          setSelectedDepartments(deptData.departments || []);
         }
       } catch (err) {
       }
@@ -152,6 +156,79 @@ export default function StaffDetail() {
       setResettingPassword(false);
     }
   };
+
+  const handleSaveDepartments = async () => {
+    setSavingDepartments(true);
+    try {
+      const res = await fetch(`/api/admin/departments/assign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: id,
+          departments: selectedDepartments,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert('✓ Departments updated successfully');
+        setShowDepartmentModal(false);
+        fetchStaffMember(); // Refresh data
+      } else {
+        alert(`✗ Failed to update departments: ${data.error}`);
+      }
+    } catch (error) {
+      alert('✗ Failed to update departments');
+    } finally {
+      setSavingDepartments(false);
+    }
+  };
+
+  const handleDeleteStaff = async () => {
+    if (!confirm(`Are you sure you want to delete ${staff?.name}? This action cannot be undone.`)) {
+      return;
+    }
+
+    if (!confirm('⚠️ FINAL WARNING: This will permanently delete this staff member and all their data. Continue?')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/staff/${id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert('✓ Staff member deleted successfully');
+        router.push('/admin/staff');
+      } else {
+        alert(`✗ Failed to delete staff member: ${data.error}`);
+      }
+    } catch (error) {
+      alert('✗ Failed to delete staff member');
+    }
+  };
+
+  const toggleDepartment = (dept: string) => {
+    if (selectedDepartments.includes(dept)) {
+      setSelectedDepartments(selectedDepartments.filter(d => d !== dept));
+    } else {
+      setSelectedDepartments([...selectedDepartments, dept]);
+    }
+  };
+
+  const availableDepartments = [
+    'SUPER_ADMIN',
+    'CUSTOMER_SERVICE',
+    'EDITORIAL',
+    'SUCCESS_PLUS',
+    'DEV',
+    'MARKETING',
+    'COACHING',
+  ];
 
   if (status === 'loading' || loading) {
     return (
@@ -274,6 +351,16 @@ export default function StaffDetail() {
             <button className={styles.actionButton} onClick={handleResetPassword} disabled={resettingPassword}>
               🔐 {resettingPassword ? 'Sending...' : 'Reset Password'}
             </button>
+            {session?.user?.role === 'SUPER_ADMIN' && (
+              <>
+                <button className={styles.actionButton} onClick={() => setShowDepartmentModal(true)}>
+                  🏢 Assign Departments
+                </button>
+                <button className={`${styles.actionButton} ${styles.dangerButton}`} onClick={handleDeleteStaff}>
+                  🗑️ Delete Staff Member
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -325,6 +412,54 @@ export default function StaffDetail() {
                   disabled={sendingEmail}
                 >
                   {sendingEmail ? 'Sending...' : '📧 Send Email'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Department Assignment Modal */}
+        {showDepartmentModal && session?.user?.role === 'SUPER_ADMIN' && (
+          <div className={styles.modal}>
+            <div className={styles.modalContent}>
+              <div className={styles.modalHeader}>
+                <h2>Assign Departments to {staff.name}</h2>
+                <button className={styles.closeButton} onClick={() => setShowDepartmentModal(false)}>
+                  ✕
+                </button>
+              </div>
+              <div className={styles.modalBody}>
+                <p style={{ marginBottom: '1rem', color: '#666' }}>
+                  Select which departments this staff member should have access to:
+                </p>
+                <div className={styles.departmentCheckboxes}>
+                  {availableDepartments.map((dept) => (
+                    <label key={dept} className={styles.checkboxLabel}>
+                      <input
+                        type="checkbox"
+                        checked={selectedDepartments.includes(dept)}
+                        onChange={() => toggleDepartment(dept)}
+                        className={styles.checkbox}
+                      />
+                      <span>{dept.replace(/_/g, ' ')}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className={styles.modalFooter}>
+                <button
+                  className={styles.cancelButton}
+                  onClick={() => setShowDepartmentModal(false)}
+                  disabled={savingDepartments}
+                >
+                  Cancel
+                </button>
+                <button
+                  className={styles.sendButton}
+                  onClick={handleSaveDepartments}
+                  disabled={savingDepartments}
+                >
+                  {savingDepartments ? 'Saving...' : '💾 Save Departments'}
                 </button>
               </div>
             </div>

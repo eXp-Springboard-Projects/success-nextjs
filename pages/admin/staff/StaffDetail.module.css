@@ -459,3 +459,45 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.dangerButton {
+  background: #d32f2f !important;
+}
+
+.dangerButton:hover {
+  background: #b71c1c !important;
+}
+
+.departmentCheckboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.checkboxLabel:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.checkboxLabel span {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #374151;
+}
