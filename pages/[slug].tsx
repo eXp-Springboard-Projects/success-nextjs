@@ -89,10 +89,11 @@ export default function DynamicPage({ page, post, relatedPosts, hasAccess, isPos
 
 export async function getServerSideProps({ params, req, res }: any) {
   const slug = params?.slug as string;
+  let page = null;
 
+  // Try to find a Page in the database (but don't fail if database is down)
   try {
-    // First, try to find a Page in the database
-    const page = await prisma.pages.findFirst({
+    page = await prisma.pages.findFirst({
       where: {
         slug: slug,
         status: 'PUBLISHED'
@@ -112,7 +113,13 @@ export async function getServerSideProps({ params, req, res }: any) {
     });
 
     await prisma.$disconnect();
+  } catch (dbError: any) {
+    console.log(`[Dynamic Page] Database error for "${slug}", will try WordPress:`, dbError.message);
+    // If database fails, we'll fall through to WordPress fetch below
+    page = null;
+  }
 
+  try {
     if (page) {
       // Serialize dates
       const serializedPage = {
@@ -169,40 +176,6 @@ export async function getServerSideProps({ params, req, res }: any) {
     };
   } catch (error: any) {
     console.error(`[Dynamic Page] Error fetching "${slug}":`, error);
-    // Check if it's a database connection error
-    if (error.code === 'P2024' || error.message?.includes('Can\'t reach database')) {
-      console.error('[Dynamic Page] Database connection error - may need to check DATABASE_URL');
-
-      // If database is down, try WordPress as fallback
-      try {
-        const posts = await fetchWordPressData(`posts?slug=${slug}&_embed`);
-        const post = posts[0];
-
-        if (post) {
-          const categoryId = post._embedded?.['wp:term']?.[0]?.[0]?.id;
-          let relatedPosts = [];
-
-          if (categoryId) {
-            const related = await fetchWordPressData(
-              `posts?categories=${categoryId}&_embed&per_page=3&exclude=${post.id}`
-            );
-            relatedPosts = related;
-          }
-
-          return {
-            props: {
-              page: null,
-              post,
-              relatedPosts,
-              hasAccess: true,
-              isPost: true
-            }
-          };
-        }
-      } catch (wpError) {
-        console.error('[Dynamic Page] WordPress fetch also failed:', wpError);
-      }
-    }
     return {
       notFound: true,
     };
