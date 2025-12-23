@@ -77,7 +77,9 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Failed to create account');
+        const errorMessage = data.error || 'Failed to create account';
+        const details = data.details ? ` Details: ${data.details}` : '';
+        setError(errorMessage + details);
         setLoading(false);
         return;
       }
@@ -90,8 +92,9 @@ export default function RegisterPage() {
         router.push('/admin/login');
       }, 3000);
 
-    } catch (err) {
-      setError('An error occurred. Please try again.');
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      setError(err.message || 'An error occurred. Please try again.');
       setLoading(false);
     }
   };
