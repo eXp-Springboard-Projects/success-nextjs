@@ -78,9 +78,9 @@ export default async function handler(
         emailVerified: isSuccessStaff, // Auto-verify @success.com emails
         hasChangedDefaultPassword: true, // They set their own password
         inviteCode: inviteCode || null,
-        membershipTier: 'FREE',
-        createdAt: new Date(),
-        updatedAt: new Date()
+        interests: [], // Required array field
+        isActive: true,
+        onboardingCompleted: false
       }
     });
 
