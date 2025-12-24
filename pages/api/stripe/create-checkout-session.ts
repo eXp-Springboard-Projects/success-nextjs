@@ -95,7 +95,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Log activity
     if (member) {
-      await supabase
+      void supabase
         .from('user_activities')
         .insert({
           id: require('nanoid').nanoid(),
@@ -109,10 +109,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             isTrialConversion,
             trialPeriodDays,
           }),
-        })
-        .then(() => {})
-        .catch(() => {
-          // Ignore activity logging errors
         });
     }
 

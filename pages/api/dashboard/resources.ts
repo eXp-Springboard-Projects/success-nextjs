@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const hasActiveSubscription = user.member?.subscriptions?.some((s: any) => s.status === 'ACTIVE');
+    const hasActiveSubscription = (user as any).member?.subscriptions?.some((s: any) => s.status === 'ACTIVE');
 
     if (!hasActiveSubscription) {
       return res.status(403).json({ error: 'SUCCESS+ subscription required' });

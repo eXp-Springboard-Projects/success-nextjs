@@ -186,7 +186,7 @@ async function handleSubscriptionCreated(event: any) {
 
   // Find or create member for subscription
   let member;
-  if (user.memberId) {
+  if (user && user.memberId) {
     const { data: existingMember } = await supabase
       .from('members')
       .select('*')
@@ -195,7 +195,7 @@ async function handleSubscriptionCreated(event: any) {
     member = existingMember;
   }
 
-  if (!member) {
+  if (!member && user) {
     const memberId = generateId();
     const { data: newMember } = await supabase
       .from('members')
@@ -216,10 +216,12 @@ async function handleSubscriptionCreated(event: any) {
     member = newMember;
 
     // Link member to user
-    await supabase
-      .from('users')
-      .update({ memberId: member.id })
-      .eq('id', user.id);
+    if (member) {
+      await supabase
+        .from('users')
+        .update({ memberId: member.id })
+        .eq('id', user.id);
+    }
   }
 
   // Create subscription record - use paykickstartSubscriptionId for unique lookup
@@ -278,22 +280,23 @@ async function handleSubscriptionCreated(event: any) {
     .eq('id', member.id);
 
   // Log activity
-  await supabase
-    .from('activity_logs')
-    .insert({
-      id: generateId(),
-      userId: user.id,
-      action: 'SUBSCRIPTION_CREATED',
-      entity: 'subscription',
-      entityId: subscription.id,
-      details: JSON.stringify({
-        provider: 'paykickstart',
-        subscriptionId,
-        tier: subscription.tier,
+  if (user) {
+    await supabase
+      .from('activity_logs')
+      .insert({
+        id: generateId(),
+        userId: user.id,
+        action: 'SUBSCRIPTION_CREATED',
+        entity: 'subscription',
+        entityId: subscription.id,
+        details: JSON.stringify({
+          provider: 'paykickstart',
+          subscriptionId,
+          tier: subscription.tier,
         status,
       }),
     });
-
+  }
 }
 
 async function handleSubscriptionUpdated(event: any) {

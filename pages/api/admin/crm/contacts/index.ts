@@ -135,7 +135,7 @@ async function createContact(req: NextApiRequest, res: NextApiResponse) {
 
     // Insert tag assignments
     if (tagIds.length > 0) {
-      const tagAssignments = tagIds.map((tagId) => ({
+      const tagAssignments = tagIds.map((tagId: string) => ({
         contact_id: contactId,
         tag_id: tagId,
       }));
@@ -144,7 +144,7 @@ async function createContact(req: NextApiRequest, res: NextApiResponse) {
 
     // Insert list memberships
     if (listIds.length > 0) {
-      const listMemberships = listIds.map((listId) => ({
+      const listMemberships = listIds.map((listId: string) => ({
         contact_id: contactId,
         list_id: listId,
       }));

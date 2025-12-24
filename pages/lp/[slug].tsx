@@ -201,12 +201,9 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       return { notFound: true };
     }
 
-    // Track view
-    await supabase
-      .rpc('increment_landing_page_views', { page_slug: slug })
-      .catch(() => {
-        // Ignore tracking errors
-      });
+    // Track view (ignore errors)
+    void supabase
+      .rpc('increment_landing_page_views', { page_slug: slug });
 
     return {
       props: {

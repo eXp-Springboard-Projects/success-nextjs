@@ -178,8 +178,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    // Log activity
-    await supabase
+    // Log activity (ignore errors)
+    void supabase
       .from('user_activities')
       .insert({
         id: nanoid(),
@@ -191,9 +191,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           membershipTier,
           hasStripeCustomer: !!stripeCustomerId,
         }),
-      })
-      .catch(() => {
-        // Ignore activity logging errors
       });
 
     return res.status(200).json({

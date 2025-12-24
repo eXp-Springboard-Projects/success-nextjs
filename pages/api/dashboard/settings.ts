@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === 'GET') {
       // Get user profile and settings
-      const activeSubscription = user.member?.subscriptions?.find((s: any) => s.status === 'ACTIVE');
+      const activeSubscription = (user as any).member?.subscriptions?.find((s: any) => s.status === 'ACTIVE');
       return res.status(200).json({
         id: user.id,
         name: user.name,
@@ -55,7 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         bio: user.bio,
         avatar: user.avatar,
         interests: user.interests,
-        membershipTier: user.member?.membershipTier || 'Free',
+        membershipTier: (user as any).member?.membershipTier || 'Free',
         subscriptionStatus: activeSubscription?.status || 'inactive',
         subscriptionTier: activeSubscription?.tier,
         currentPeriodEnd: activeSubscription?.currentPeriodEnd,

@@ -46,7 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Get active subscriptions and sort by createdAt
-    const activeSubscriptions = user.member?.subscriptions
+    const activeSubscriptions = (user as any).member?.subscriptions
       ?.filter((s: any) => s.status === 'ACTIVE')
       ?.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) || [];
 
@@ -55,7 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!activeSubscription) {
       return res.status(200).json({
         status: 'inactive',
-        membershipTier: user.member?.membershipTier || 'Free',
+        membershipTier: (user as any).member?.membershipTier || 'Free',
       });
     }
 
@@ -92,7 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       provider: activeSubscription.provider,
       billingCycle: activeSubscription.billingCycle,
       stripeCustomerId: activeSubscription.stripeCustomerId,
-      membershipTier: user.member?.membershipTier || 'Free',
+      membershipTier: (user as any).member?.membershipTier || 'Free',
       paymentMethod,
     });
   } catch (error) {

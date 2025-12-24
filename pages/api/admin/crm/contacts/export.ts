@@ -140,7 +140,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         new Date(c.created_at).toISOString(),
       ]);
 
-      const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+      const csv = [headers.join(','), ...rows.map((r: any[]) => r.join(','))].join('\n');
 
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', `attachment; filename=contacts-${Date.now()}.csv`);

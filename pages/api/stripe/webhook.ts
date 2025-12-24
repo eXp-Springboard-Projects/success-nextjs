@@ -216,10 +216,6 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
           customerId,
           tier: 'SUCCESS_PLUS',
         }),
-      })
-      .then(() => {})
-      .catch(() => {
-        // Ignore activity logging errors
       });
   }
 
@@ -366,7 +362,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const member = existingSubscription.members;
   const platformUser = member?.users;
   if (platformUser) {
-    await supabase
+    void supabase
       .from('user_activities')
       .insert({
         id: nanoid(),
@@ -378,10 +374,6 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
           subscriptionId,
           canceledAt: new Date().toISOString(),
         }),
-      })
-      .then(() => {})
-      .catch(() => {
-        // Ignore activity logging errors
       });
   }
 
@@ -460,7 +452,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
     const member = subscription.members;
     const platformUser = member?.users;
     if (platformUser) {
-      await supabase
+      void supabase
         .from('user_activities')
         .insert({
           id: nanoid(),
@@ -472,10 +464,6 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
             subscriptionId,
             invoiceId: invoice.id,
           }),
-        })
-        .then(() => {})
-        .catch(() => {
-          // Ignore activity logging errors
         });
     }
 

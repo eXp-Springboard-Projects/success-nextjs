@@ -36,8 +36,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (contactsLastMonthError) throw contactsLastMonthError;
 
-    const totalContacts = totalContactsData || 0;
-    const contactsLastMonth = contactsLastMonthData || 0;
+    const totalContacts = Number(totalContactsData) || 0;
+    const contactsLastMonth = Number(contactsLastMonthData) || 0;
     const contactsTrend = totalContacts - contactsLastMonth;
 
     // Active deals

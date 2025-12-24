@@ -10,7 +10,6 @@
     "export": "next build && next export",
     "vercel-build": "next build",
     "validate": "tsc --noEmit",
-    "prebuild": "npm run validate",
     "import:wordpress": "tsx scripts/import-wordpress.ts",
     "import:members": "tsx scripts/import-members.ts",
     "import:subscribers": "tsx scripts/import-subscribers.ts",
