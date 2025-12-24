@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getSession } from 'next-auth/react';
+import { Department } from '@/lib/types';
 import { PrismaClient } from '@prisma/client';
 import { hasDepartmentAccess } from '@/lib/departmentAuth';
 
@@ -17,7 +18,7 @@ export default async function handler(
     }
 
     // Check department access
-    if (!hasDepartmentAccess(session.user.role, session.user.primaryDepartment, 'CUSTOMER_SERVICE')) {
+    if (!hasDepartmentAccess(session.user.role, session.user.primaryDepartment, Department.CUSTOMER_SERVICE)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -91,7 +92,7 @@ export default async function handler(
             : 'Added notes to refund',
           entityType: 'refund',
           entityId: id as string,
-          department: 'CUSTOMER_SERVICE',
+          department: Department.CUSTOMER_SERVICE,
         },
       });
 

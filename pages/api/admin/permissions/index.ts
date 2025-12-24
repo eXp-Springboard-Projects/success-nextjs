@@ -5,12 +5,14 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const supabase = supabaseAdmin();
+
   const session = await getServerSession(req, res, authOptions);
 
   if (!session || !session.user) {
@@ -25,7 +27,7 @@ export default async function handler(
   try {
     switch (req.method) {
       case 'GET':
-        return await getAllPermissions(res);
+        return await getAllPermissions(supabase, res);
       default:
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -34,20 +36,23 @@ export default async function handler(
   }
 }
 
-async function getAllPermissions(res: NextApiResponse) {
-  const permissions = await prisma.page_permissions.findMany({
-    include: {
-      role_permissions: true,
-      department_permissions: true,
-    },
-    orderBy: [
-      { category: 'asc' },
-      { displayName: 'asc' },
-    ],
-  });
+async function getAllPermissions(supabase: any, res: NextApiResponse) {
+  const { data: permissions, error } = await supabase
+    .from('page_permissions')
+    .select(`
+      *,
+      role_permissions (*),
+      department_permissions (*)
+    `)
+    .order('category', { ascending: true })
+    .order('displayName', { ascending: true });
+
+  if (error) {
+    throw error;
+  }
 
   // Group by category
-  const grouped = permissions.reduce((acc: any, perm: any) => {
+  const grouped = (permissions || []).reduce((acc: any, perm: any) => {
     if (!acc[perm.category]) {
       acc[perm.category] = [];
     }
@@ -56,7 +61,7 @@ async function getAllPermissions(res: NextApiResponse) {
   }, {});
 
   return res.status(200).json({
-    permissions,
+    permissions: permissions || [],
     grouped,
   });
 }

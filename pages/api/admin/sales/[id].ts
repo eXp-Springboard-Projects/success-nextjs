@@ -5,7 +5,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -32,22 +32,16 @@ export default async function handler(
   }
 
   try {
-    // Try to find as subscription first
-    const subscription = await prisma.subscriptions.findUnique({
-      where: { id },
-      include: {
-        users: {
-          select: {
-            name: true,
-            email: true,
-            id: true,
-          },
-        },
-        magazine_subscriptions: true,
-      },
-    });
+    const supabase = supabaseAdmin();
 
-    if (subscription) {
+    // Try to find as subscription first
+    const { data: subscription, error: subsError } = await supabase
+      .from('subscriptions')
+      .select('*, users(name, email, id), magazine_subscriptions(*)')
+      .eq('id', id)
+      .single();
+
+    if (subscription && !subsError) {
       const isMagazine = !!subscription.magazine_subscriptions;
       const amount = isMagazine ? 19.99 : 9.99; // TODO: Get actual price from tier
 
@@ -72,14 +66,13 @@ export default async function handler(
     }
 
     // Try to find as order
-    const order = await prisma.orders.findUnique({
-      where: { id },
-      include: {
-        order_items: true,
-      },
-    });
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('*, order_items(*)')
+      .eq('id', id)
+      .single();
 
-    if (order) {
+    if (order && !orderError) {
       return res.status(200).json({
         id: order.id,
         type: 'order',

@@ -5,12 +5,14 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const supabase = supabaseAdmin();
+
   const session = await getServerSession(req, res, authOptions);
 
   if (!session || !session.user) {
@@ -35,13 +37,19 @@ export default async function handler(
         return res.status(400).json({ error: 'Status is required' });
       }
 
-      const order = await prisma.orders.update({
-        where: { id },
-        data: {
+      const { data: order, error } = await supabase
+        .from('orders')
+        .update({
           status: status.toUpperCase(),
-          updatedAt: new Date(),
-        },
-      });
+          updatedAt: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
 
       return res.status(200).json(order);
     } catch (error: any) {

@@ -6,12 +6,14 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const supabase = supabaseAdmin();
+
   const session = await getServerSession(req, res, authOptions);
 
   if (!session || !session.user) {
@@ -36,73 +38,62 @@ export default async function handler(
       const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
       const take = parseInt(limit as string);
 
-      // Build where clause
-      const where: any = {};
+      // Build query
+      let query = supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (
+            *,
+            products (*)
+          ),
+          member:members (
+            id,
+            firstName,
+            lastName,
+            email,
+            phone
+          )
+        `, { count: 'exact' });
 
+      // Apply filters
       if (status && status !== 'all') {
-        where.status = status;
+        query = query.eq('status', status);
       }
 
       if (orderSource && orderSource !== 'all') {
-        where.orderSource = orderSource;
+        query = query.eq('orderSource', orderSource);
       }
 
       if (fulfillmentStatus && fulfillmentStatus !== 'all') {
-        where.fulfillmentStatus = fulfillmentStatus;
+        query = query.eq('fulfillmentStatus', fulfillmentStatus);
       }
 
       if (search) {
-        where.OR = [
-          { orderNumber: { contains: search as string, mode: 'insensitive' } },
-          { userName: { contains: search as string, mode: 'insensitive' } },
-          { userEmail: { contains: search as string, mode: 'insensitive' } },
-          { trackingNumber: { contains: search as string, mode: 'insensitive' } },
-        ];
+        query = query.or(`orderNumber.ilike.%${search}%,userName.ilike.%${search}%,userEmail.ilike.%${search}%,trackingNumber.ilike.%${search}%`);
       }
 
-      // Get orders
-      const orders = await prisma.orders.findMany({
-        where,
-        skip,
-        take,
-        include: {
-          order_items: {
-            include: {
-              products: true,
-            },
-          },
-          member: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-              phone: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
+      // Apply pagination and ordering
+      const { data: orders, error, count } = await query
+        .order('createdAt', { ascending: false })
+        .range(skip, skip + take - 1);
 
-      // Get total count for pagination
-      const total = await prisma.orders.count({ where });
+      if (error) {
+        throw error;
+      }
 
-      // Transform data
-      type OrderWithItems = typeof orders[number];
-      type OrderItem = OrderWithItems['order_items'][number];
-      const transformedOrders = orders.map((order: OrderWithItems) => ({
+      // Transform data - convert Decimal fields to numbers
+      const transformedOrders = (orders || []).map((order: any) => ({
         ...order,
-        total: order.total.toNumber(),
-        subtotal: order.subtotal.toNumber(),
-        tax: order.tax.toNumber(),
-        shipping: order.shipping.toNumber(),
-        discount: order.discount.toNumber(),
-        order_items: order.order_items.map((item: OrderItem) => ({
+        total: order.total || 0,
+        subtotal: order.subtotal || 0,
+        tax: order.tax || 0,
+        shipping: order.shipping || 0,
+        discount: order.discount || 0,
+        order_items: (order.order_items || []).map((item: any) => ({
           ...item,
-          price: item.price.toNumber(),
-          total: item.total.toNumber(),
+          price: item.price || 0,
+          total: item.total || 0,
         })),
       }));
 
@@ -111,8 +102,8 @@ export default async function handler(
         pagination: {
           page: parseInt(page as string),
           limit: parseInt(limit as string),
-          total,
-          totalPages: Math.ceil(total / parseInt(limit as string)),
+          total: count || 0,
+          totalPages: Math.ceil((count || 0) / parseInt(limit as string)),
         },
       });
     } catch (error: any) {

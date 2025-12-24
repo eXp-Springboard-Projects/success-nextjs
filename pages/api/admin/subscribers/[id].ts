@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -18,15 +18,20 @@ export default async function handler(
   }
 
   const { id } = req.query;
+  const supabase = supabaseAdmin();
 
   if (req.method === 'GET') {
     try {
-      const subscriber = await prisma.subscribers.findUnique({
-        where: { id: id as string },
-        include: {
-          member: true,
-        },
-      });
+      const { data: subscriber, error } = await supabase
+        .from('subscribers')
+        .select(`
+          *,
+          member:members(*)
+        `)
+        .eq('id', id as string)
+        .single();
+
+      if (error) throw error;
 
       if (!subscriber) {
         return res.status(404).json({ message: 'Subscriber not found' });
@@ -50,19 +55,29 @@ export default async function handler(
         status,
       } = req.body;
 
-      const subscriber = await prisma.subscribers.update({
-        where: { id: id as string },
-        data: {
-          email,
-          firstName,
-          lastName,
-          type,
-          recipientType,
-          isComplimentary,
-          status,
-          ...(status === 'UNSUBSCRIBED' && { unsubscribedAt: new Date() }),
-        },
-      });
+      const updateData: any = {
+        email,
+        firstName,
+        lastName,
+        type,
+        recipientType,
+        isComplimentary,
+        status,
+        updatedAt: new Date().toISOString(),
+      };
+
+      if (status === 'UNSUBSCRIBED') {
+        updateData.unsubscribedAt = new Date().toISOString();
+      }
+
+      const { data: subscriber, error } = await supabase
+        .from('subscribers')
+        .update(updateData)
+        .eq('id', id as string)
+        .select()
+        .single();
+
+      if (error) throw error;
 
       return res.status(200).json(subscriber);
     } catch (error) {
@@ -72,9 +87,12 @@ export default async function handler(
 
   if (req.method === 'DELETE') {
     try {
-      await prisma.subscribers.delete({
-        where: { id: id as string },
-      });
+      const { error } = await supabase
+        .from('subscribers')
+        .delete()
+        .eq('id', id as string);
+
+      if (error) throw error;
 
       return res.status(200).json({ message: 'Subscriber deleted' });
     } catch (error) {

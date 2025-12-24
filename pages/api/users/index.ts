@@ -1,12 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '@/lib/supabase';
 import * as bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const supabase = supabaseAdmin();
   const session = await getServerSession(req, res, authOptions);
 
   if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
@@ -15,35 +14,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'GET') {
     try {
-      const users = await prisma.users.findMany({
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          avatar: true,
-          createdAt: true,
-          lastLoginAt: true,
-          memberId: true,
-          member: {
-            select: {
-              membershipTier: true,
-              membershipStatus: true,
-              totalSpent: true,
-            },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-      });
+      const { data: users, error } = await supabase
+        .from('users')
+        .select(`
+          id,
+          name,
+          email,
+          role,
+          avatar,
+          createdAt,
+          lastLoginAt,
+          memberId,
+          members!inner(
+            membershipTier,
+            membershipStatus,
+            totalSpent
+          )
+        `)
+        .order('createdAt', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
 
       // Transform member data to include membership tier
-      const transformedUsers = users.map((user) => ({
+      const transformedUsers = users?.map((user: any) => ({
         ...user,
-        membershipTier: user.member?.membershipTier || null,
-        membershipStatus: user.member?.membershipStatus || null,
-        totalSpent: user.member?.totalSpent ? user.member.totalSpent.toNumber() : 0,
-        member: undefined, // Remove the nested member object
-      }));
+        membershipTier: user.members?.membershipTier || null,
+        membershipStatus: user.members?.membershipStatus || null,
+        totalSpent: user.members?.totalSpent || 0,
+        members: undefined, // Remove the nested member object
+      })) || [];
 
       return res.status(200).json(transformedUsers);
     } catch (error: any) {
@@ -60,7 +61,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Check if user already exists
-      const existingUser = await prisma.users.findUnique({ where: { email } });
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .single();
+
       if (existingUser) {
         return res.status(400).json({ error: 'User with this email already exists' });
       }
@@ -72,8 +78,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const id = `usr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
       // Create user
-      const newUser = await prisma.users.create({
-        data: {
+      const { data: newUser, error } = await supabase
+        .from('users')
+        .insert({
           id,
           name,
           email,
@@ -83,9 +90,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           avatar: avatar || null,
           emailVerified: false,
           hasChangedDefaultPassword: false,
-          updatedAt: new Date(),
-        },
-      });
+          updatedAt: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
 
       // Don't return password
       const { password: _, ...userWithoutPassword } = newUser;

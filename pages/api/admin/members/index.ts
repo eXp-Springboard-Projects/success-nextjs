@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -20,68 +20,63 @@ export default async function handler(
   }
 
   if (req.method === 'GET') {
+    const supabase = supabaseAdmin();
+
     try {
       // Fetch all members with subscriptions and platform user info
       // FILTER: Only show members who have actually made purchases or subscriptions
-      const members = await prisma.members.findMany({
-        where: {
-          OR: [
-            { totalSpent: { gt: 0 } },
-            { membershipTier: { not: 'Free' } },
-            {
-              subscriptions: {
-                some: {},
-              },
-            },
-          ],
-        },
-        include: {
-          subscriptions: {
-            select: {
-              status: true,
-              currentPeriodStart: true,
-              currentPeriodEnd: true,
-              stripePriceId: true,
-              provider: true,
-              tier: true,
-            },
-            take: 1,
-            orderBy: {
-              createdAt: 'desc',
-            },
-          },
-          platformUser: {
-            select: {
-              id: true,
-              role: true,
-              name: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
+      const { data: members, error } = await supabase
+        .from('members')
+        .select(`
+          *,
+          subscriptions(
+            status,
+            currentPeriodStart,
+            currentPeriodEnd,
+            stripePriceId,
+            provider,
+            tier,
+            createdAt
+          ),
+          users!members_linkedMemberId_fkey(
+            id,
+            role,
+            name
+          )
+        `)
+        .or('totalSpent.gt.0,membershipTier.neq.Free')
+        .order('createdAt', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
 
       // Transform data for frontend
-      type Member = typeof members[number];
-      const transformedMembers = members.map((member: Member) => ({
-        id: member.id,
-        name: `${member.firstName} ${member.lastName}`.trim(),
-        firstName: member.firstName,
-        lastName: member.lastName,
-        email: member.email,
-        phone: member.phone,
-        membershipTier: member.membershipTier,
-        membershipStatus: member.membershipStatus,
-        totalSpent: member.totalSpent.toNumber(),
-        lifetimeValue: member.lifetimeValue.toNumber(),
-        createdAt: member.createdAt,
-        joinDate: member.joinDate,
-        subscription: member.subscriptions?.[0] || null,
-        platformRole: member.platformUser?.role || null,
-        isPlatformUser: !!member.platformUser,
-      }));
+      const transformedMembers = (members || []).map((member: any) => {
+        // Sort subscriptions by createdAt and get the most recent
+        const sortedSubscriptions = (member.subscriptions || []).sort((a: any, b: any) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        const latestSubscription = sortedSubscriptions[0] || null;
+
+        return {
+          id: member.id,
+          name: `${member.firstName} ${member.lastName}`.trim(),
+          firstName: member.firstName,
+          lastName: member.lastName,
+          email: member.email,
+          phone: member.phone,
+          membershipTier: member.membershipTier,
+          membershipStatus: member.membershipStatus,
+          totalSpent: member.totalSpent || 0,
+          lifetimeValue: member.lifetimeValue || 0,
+          createdAt: member.createdAt,
+          joinDate: member.joinDate,
+          subscription: latestSubscription,
+          platformRole: member.users?.role || null,
+          isPlatformUser: !!member.users,
+        };
+      });
 
       return res.status(200).json(transformedMembers);
     } catch (error) {

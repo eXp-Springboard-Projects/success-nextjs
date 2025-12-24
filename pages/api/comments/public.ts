@@ -1,12 +1,12 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '@/lib/supabase';
 import { randomUUID } from 'crypto';
 
-const prisma = new PrismaClient();
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const supabase = supabaseAdmin();
+
   if (req.method === 'GET') {
     // Public endpoint: Get approved comments for a post
     try {
@@ -16,25 +16,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: 'postId is required' });
       }
 
-      const comments = await prisma.comments.findMany({
-        where: {
-          postId,
-          status: status as any,
-        },
-        orderBy: {
-          createdAt: 'asc',
-        },
-        select: {
-          id: true,
-          author: true,
-          authorEmail: true,
-          content: true,
-          status: true,
-          createdAt: true,
-        },
-      });
+      const { data: comments, error } = await supabase
+        .from('comments')
+        .select('id, author, authorEmail, content, status, createdAt')
+        .eq('postId', postId)
+        .eq('status', status)
+        .order('createdAt', { ascending: true });
 
-      return res.status(200).json(comments);
+      if (error) {
+        throw error;
+      }
+
+      return res.status(200).json(comments || []);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch comments' });
     }
@@ -63,8 +56,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const isAdmin = session.user.role === 'ADMIN';
       const commentStatus = isAdmin ? 'APPROVED' : 'PENDING';
 
-      const comment = await prisma.comments.create({
-        data: {
+      const { data: comment, error } = await supabase
+        .from('comments')
+        .insert({
           id: randomUUID(),
           postId,
           postTitle,
@@ -74,9 +68,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           status: commentStatus,
           ipAddress: req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || '',
           userAgent: req.headers['user-agent'] || '',
-          updatedAt: new Date(),
-        },
-      });
+          updatedAt: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
 
       // Send admin notification for pending comments
       if (commentStatus === 'PENDING') {

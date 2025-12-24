@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { prisma } from '../../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import { auditLog } from '../../../../../lib/audit-middleware';
 
 export default async function handler(
@@ -22,16 +22,21 @@ export default async function handler(
   }
 
   const { id } = req.query;
+  const supabase = supabaseAdmin();
 
   try {
-    const alert = await prisma.system_alerts.update({
-      where: { id: id as string },
-      data: {
+    const { data: alert, error } = await supabase
+      .from('system_alerts')
+      .update({
         isResolved: true,
         resolvedBy: session.user.id,
-        resolvedAt: new Date(),
-      },
-    });
+        resolvedAt: new Date().toISOString(),
+      })
+      .eq('id', id as string)
+      .select()
+      .single();
+
+    if (error) throw error;
 
     // Audit log
     await auditLog(

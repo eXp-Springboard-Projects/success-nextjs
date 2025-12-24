@@ -1,4 +1,4 @@
-import { prisma } from './prisma';
+import { supabaseAdmin } from './supabase';
 
 /**
  * Membership tier hierarchy (higher = more access)
@@ -55,58 +55,57 @@ export interface SubscriptionStatus {
  */
 export async function getActiveSubscription(userId: string): Promise<SubscriptionStatus> {
   try {
-    // Check for active Stripe subscription
-    const stripeSubscriptions = await prisma.$queryRaw<any[]>`
-      SELECT
-        id,
-        tier,
-        "stripeSubscriptionId" as "subscriptionId",
-        "currentPeriodEnd",
-        "cancelAtPeriodEnd",
-        status
-      FROM subscriptions
-      WHERE "userId" = ${userId}
-        AND status IN ('active', 'trialing')
-        AND "currentPeriodEnd" > NOW()
-      ORDER BY "currentPeriodEnd" DESC
-      LIMIT 1
-    `;
+    const supabase = supabaseAdmin();
 
-    if (stripeSubscriptions.length > 0) {
+    // Check for active Stripe subscription
+    const { data: stripeSubscriptions, error: stripeError } = await supabase
+      .from('subscriptions')
+      .select('id, tier, stripeSubscriptionId, currentPeriodEnd, cancelAtPeriodEnd, status')
+      .eq('userId', userId)
+      .in('status', ['active', 'trialing'])
+      .gt('currentPeriodEnd', new Date().toISOString())
+      .order('currentPeriodEnd', { ascending: false })
+      .limit(1);
+
+    if (!stripeError && stripeSubscriptions && stripeSubscriptions.length > 0) {
       const sub = stripeSubscriptions[0];
       return {
         hasActiveSubscription: true,
         tier: sub.tier.toLowerCase(),
         provider: 'stripe',
-        subscriptionId: sub.subscriptionId,
-        currentPeriodEnd: sub.currentPeriodEnd,
+        subscriptionId: sub.stripeSubscriptionId,
+        currentPeriodEnd: new Date(sub.currentPeriodEnd),
         cancelAtPeriodEnd: sub.cancelAtPeriodEnd || false,
       };
     }
 
     // Check for active PayKickstart subscription
-    // PayKickstart subscriptions are tracked via members.paykickstartCustomerId
-    const member = await prisma.$queryRaw<any[]>`
-      SELECT
-        "membershipTier",
-        "membershipStatus",
-        "paykickstartCustomerId"
-      FROM members
-      WHERE id = (SELECT "memberId" FROM users WHERE id = ${userId})
-        AND "membershipStatus" = 'Active'
-        AND "paykickstartCustomerId" IS NOT NULL
-      LIMIT 1
-    `;
+    // First get the user's memberId
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('memberId')
+      .eq('id', userId)
+      .single();
 
-    if (member.length > 0 && member[0].paykickstartCustomerId) {
-      return {
-        hasActiveSubscription: true,
-        tier: member[0].membershipTier.toLowerCase(),
-        provider: 'paykickstart',
-        subscriptionId: member[0].paykickstartCustomerId,
-        currentPeriodEnd: null, // PayKickstart doesn't expose period end
-        cancelAtPeriodEnd: false,
-      };
+    if (!userError && userData?.memberId) {
+      const { data: memberData, error: memberError } = await supabase
+        .from('members')
+        .select('membershipTier, membershipStatus, paykickstartCustomerId')
+        .eq('id', userData.memberId)
+        .eq('membershipStatus', 'Active')
+        .not('paykickstartCustomerId', 'is', null)
+        .single();
+
+      if (!memberError && memberData && memberData.paykickstartCustomerId) {
+        return {
+          hasActiveSubscription: true,
+          tier: memberData.membershipTier.toLowerCase(),
+          provider: 'paykickstart',
+          subscriptionId: memberData.paykickstartCustomerId,
+          currentPeriodEnd: null, // PayKickstart doesn't expose period end
+          cancelAtPeriodEnd: false,
+        };
+      }
     }
 
     // No active subscription found

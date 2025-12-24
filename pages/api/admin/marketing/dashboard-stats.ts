@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getSession } from 'next-auth/react';
+import { Department } from '@/lib/types';
 import { hasDepartmentAccess } from '@/lib/departmentAuth';
 import { PrismaClient } from '@prisma/client';
 
@@ -21,7 +22,7 @@ export default async function handler(
     }
 
     // Check department access
-    if (!hasDepartmentAccess(session.user.role, session.user.primaryDepartment, 'MARKETING')) {
+    if (!hasDepartmentAccess(session.user.role, session.user.primaryDepartment, Department.MARKETING)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 

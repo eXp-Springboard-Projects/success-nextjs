@@ -1,15 +1,16 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '@/lib/supabase';
 import Stripe from 'stripe';
 
-const prisma = new PrismaClient();
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-09-30.clover' })
   : null;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const supabase = supabaseAdmin();
+
   try {
     const session = await getServerSession(req, res, authOptions);
 
@@ -30,23 +31,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // GET - Get subscription details
     if (req.method === 'GET') {
-      const subscription = await prisma.subscriptions.findUnique({
-        where: { id },
-        include: {
-          member: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-              membershipTier: true,
-              membershipStatus: true,
-            },
-          },
-        },
-      });
+      const { data: subscription, error } = await supabase
+        .from('subscriptions')
+        .select(`
+          *,
+          members!inner(
+            id,
+            firstName,
+            lastName,
+            email,
+            membershipTier,
+            membershipStatus
+          )
+        `)
+        .eq('id', id)
+        .single();
 
-      if (!subscription) {
+      if (error || !subscription) {
         return res.status(404).json({ error: 'Subscription not found' });
       }
 
@@ -57,11 +58,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === 'PATCH') {
       const { action } = req.body;
 
-      const subscription = await prisma.subscriptions.findUnique({
-        where: { id },
-      });
+      const { data: subscription, error: fetchError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-      if (!subscription) {
+      if (fetchError || !subscription) {
         return res.status(404).json({ error: 'Subscription not found' });
       }
 
@@ -82,13 +85,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             },
           });
 
-          await prisma.subscriptions.update({
-            where: { id },
-            data: {
+          const { error: updateError } = await supabase
+            .from('subscriptions')
+            .update({
               status: 'PAUSED',
-              updatedAt: new Date(),
-            },
-          });
+              updatedAt: new Date().toISOString(),
+            })
+            .eq('id', id);
+
+          if (updateError) {
+            throw updateError;
+          }
 
           return res.status(200).json({
             message: 'Subscription paused. Customer will not be charged at next billing cycle.',
@@ -101,13 +108,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             pause_collection: null,
           });
 
-          await prisma.subscriptions.update({
-            where: { id },
-            data: {
+          const { error: updateError } = await supabase
+            .from('subscriptions')
+            .update({
               status: 'ACTIVE',
-              updatedAt: new Date(),
-            },
-          });
+              updatedAt: new Date().toISOString(),
+            })
+            .eq('id', id);
+
+          if (updateError) {
+            throw updateError;
+          }
 
           return res.status(200).json({
             message: 'Subscription resumed. Billing will continue normally.',
@@ -123,11 +134,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // DELETE - Cancel subscription
     if (req.method === 'DELETE') {
-      const subscription = await prisma.subscriptions.findUnique({
-        where: { id },
-      });
+      const { data: subscription, error: fetchError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-      if (!subscription) {
+      if (fetchError || !subscription) {
         return res.status(404).json({ error: 'Subscription not found' });
       }
 
@@ -145,14 +158,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           cancel_at_period_end: true,
         });
 
-        await prisma.subscriptions.update({
-          where: { id },
-          data: {
+        const { error: updateError } = await supabase
+          .from('subscriptions')
+          .update({
             cancelAtPeriodEnd: true,
             status: 'CANCELLING',
-            updatedAt: new Date(),
-          },
-        });
+            updatedAt: new Date().toISOString(),
+          })
+          .eq('id', id);
+
+        if (updateError) {
+          throw updateError;
+        }
 
         return res.status(200).json({
           message: 'Subscription will be cancelled at end of billing period.',
@@ -168,7 +185,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (error) {
     console.error('Subscription API error:', error);
     return res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    await prisma.$disconnect();
   }
 }

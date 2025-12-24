@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { prisma } from '../../../lib/prisma';
+import { supabaseAdmin } from '../../../lib/supabase';
 import { randomUUID } from 'crypto';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -32,20 +32,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getPayLink(id: string, res: NextApiResponse) {
   try {
-    const paylink = await prisma.pay_links.findUnique({
-      where: { id },
-      include: {
-        users: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
+    const supabase = supabaseAdmin();
+    const { data: paylink, error } = await supabase
+      .from('pay_links')
+      .select('*, users(id, name, email)')
+      .eq('id', id)
+      .single();
 
-    if (!paylink) {
+    if (!paylink || error) {
       return res.status(404).json({ error: 'Paylink not found' });
     }
 
@@ -57,6 +51,7 @@ async function getPayLink(id: string, res: NextApiResponse) {
 
 async function updatePayLink(id: string, req: NextApiRequest, res: NextApiResponse, session: any) {
   try {
+    const supabase = supabaseAdmin();
     const {
       title,
       description,
@@ -70,11 +65,13 @@ async function updatePayLink(id: string, req: NextApiRequest, res: NextApiRespon
     } = req.body;
 
     // Check if paylink exists
-    const existingLink = await prisma.pay_links.findUnique({
-      where: { id },
-    });
+    const { data: existingLink, error: findError } = await supabase
+      .from('pay_links')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (!existingLink) {
+    if (!existingLink || findError) {
       return res.status(404).json({ error: 'Paylink not found' });
     }
 
@@ -109,42 +106,37 @@ async function updatePayLink(id: string, req: NextApiRequest, res: NextApiRespon
     }
 
     // Update paylink
-    const updatedPaylink = await prisma.pay_links.update({
-      where: { id },
-      data: {
+    const { data: updatedPaylink, error: updateError } = await supabase
+      .from('pay_links')
+      .update({
         ...(title && { title }),
         ...(description !== undefined && { description }),
         ...(amount && { amount, stripePriceId }),
         ...(status && { status }),
-        ...(expiresAt !== undefined && { expiresAt: expiresAt ? new Date(expiresAt) : null }),
+        ...(expiresAt !== undefined && { expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null }),
         ...(maxUses !== undefined && { maxUses }),
         ...(requiresShipping !== undefined && { requiresShipping }),
         ...(customFields !== undefined && { customFields }),
         ...(metadata !== undefined && { metadata }),
-        updatedAt: new Date(),
-      },
-      include: {
-        users: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select('*, users(id, name, email)')
+      .single();
+
+    if (updateError) throw updateError;
 
     // Log activity
-    await prisma.activity_logs.create({
-      data: {
+    await supabase
+      .from('activity_logs')
+      .insert({
         id: randomUUID(),
         userId: session.user.id,
         action: 'UPDATE_PAYLINK',
         entity: 'pay_link',
         entityId: id,
         details: JSON.stringify({ changes: req.body }),
-      },
-    });
+      });
 
     return res.status(200).json(updatedPaylink);
   } catch (error) {
@@ -154,11 +146,14 @@ async function updatePayLink(id: string, req: NextApiRequest, res: NextApiRespon
 
 async function deletePayLink(id: string, res: NextApiResponse, session: any) {
   try {
-    const paylink = await prisma.pay_links.findUnique({
-      where: { id },
-    });
+    const supabase = supabaseAdmin();
+    const { data: paylink, error: findError } = await supabase
+      .from('pay_links')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (!paylink) {
+    if (!paylink || findError) {
       return res.status(404).json({ error: 'Paylink not found' });
     }
 
@@ -174,21 +169,24 @@ async function deletePayLink(id: string, res: NextApiResponse, session: any) {
     }
 
     // Delete paylink
-    await prisma.pay_links.delete({
-      where: { id },
-    });
+    const { error: deleteError } = await supabase
+      .from('pay_links')
+      .delete()
+      .eq('id', id);
+
+    if (deleteError) throw deleteError;
 
     // Log activity
-    await prisma.activity_logs.create({
-      data: {
+    await supabase
+      .from('activity_logs')
+      .insert({
         id: randomUUID(),
         userId: session.user.id,
         action: 'DELETE_PAYLINK',
         entity: 'pay_link',
         entityId: id,
         details: JSON.stringify({ title: paylink.title, slug: paylink.slug }),
-      },
-    });
+      });
 
     return res.status(200).json({ success: true, message: 'Paylink deleted successfully' });
   } catch (error) {

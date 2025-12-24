@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { prisma } from '../../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -15,16 +15,18 @@ export default async function handler(
 
   if (req.method === 'GET') {
     try {
-      // Get all social media accounts for the user
-      const accounts = await prisma.$queryRaw`
-        SELECT id, user_id, platform, account_name, account_id, is_active,
-               token_expires_at, last_error, created_at
-        FROM social_accounts
-        WHERE user_id = ${session.user.id}
-        ORDER BY created_at DESC
-      `;
+      const supabase = supabaseAdmin();
 
-      return res.status(200).json({ accounts });
+      // Get all social media accounts for the user
+      const { data: accounts, error } = await supabase
+        .from('social_accounts')
+        .select('id, user_id, platform, account_name, account_id, is_active, token_expires_at, last_error, created_at')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return res.status(200).json({ accounts: accounts || [] });
     } catch (error: any) {
       console.error('Error fetching social accounts:', error);
       return res.status(500).json({ error: 'Failed to fetch accounts' });

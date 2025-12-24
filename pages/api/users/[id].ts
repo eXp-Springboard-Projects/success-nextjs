@@ -1,12 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '@/lib/supabase';
 import * as bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const supabase = supabaseAdmin();
   const session = await getServerSession(req, res, authOptions);
 
   if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
@@ -29,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         role,
         bio: bio || null,
         avatar: avatar || null,
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       };
 
       // Only update password if provided
@@ -37,10 +36,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         updateData.password = await bcrypt.hash(password, 10);
       }
 
-      const updatedUser = await prisma.users.update({
-        where: { id },
-        data: updateData,
-      });
+      const { data: updatedUser, error } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
 
       const { password: _, ...userWithoutPassword } = updatedUser;
       return res.status(200).json(userWithoutPassword);
@@ -56,7 +61,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: 'Cannot delete your own account' });
       }
 
-      await prisma.users.delete({ where: { id } });
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
       return res.status(200).json({ message: 'User deleted successfully' });
     } catch (error: any) {
       return res.status(500).json({ error: 'Failed to delete user', message: error.message });

@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getSession } from 'next-auth/react';
 import { hasDepartmentAccess } from '@/lib/departmentAuth';
+import { Department } from '@/lib/types';
 
 export default async function handler(
   req: NextApiRequest,
@@ -18,7 +19,7 @@ export default async function handler(
     }
 
     // Check department access
-    if (!hasDepartmentAccess(session.user.role, session.user.primaryDepartment, 'COACHING')) {
+    if (!hasDepartmentAccess(session.user.role, session.user.primaryDepartment, Department.COACHING)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 

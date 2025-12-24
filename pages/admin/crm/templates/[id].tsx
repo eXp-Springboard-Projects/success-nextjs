@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import DepartmentLayout from '../../../../components/admin/shared/DepartmentLayout';
-import { Department } from '@prisma/client';
+import { Department } from '@/lib/types';
 import EmailBuilder, { EmailBlock, generateHTML } from '../../../../components/admin/crm/EmailBuilder';
 import styles from '../../editorial/Editorial.module.css';
 import { requireAdminAuth } from '@/lib/adminAuth';

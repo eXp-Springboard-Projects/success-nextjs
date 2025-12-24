@@ -1,13 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
-import { prisma } from '../../../lib/prisma';
+import { supabaseAdmin } from '@/lib/supabase';
 import { randomUUID } from 'crypto';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const supabase = supabaseAdmin();
   const session = await getServerSession(req, res, authOptions);
 
   if (!session || !session.user) {
@@ -21,20 +22,26 @@ export default async function handler(
     try {
       const { completed } = req.query;
 
-      const where: any = { userId };
+      let query = supabase
+        .from('reading_progress')
+        .select('*')
+        .eq('userId', userId)
+        .order('lastReadAt', { ascending: false })
+        .limit(20);
+
       if (completed === 'true') {
-        where.completed = true;
+        query = query.eq('completed', true);
       } else if (completed === 'false') {
-        where.completed = false;
+        query = query.eq('completed', false);
       }
 
-      const progress = await prisma.reading_progress.findMany({
-        where,
-        orderBy: { lastReadAt: 'desc' },
-        take: 20,
-      });
+      const { data: progress, error } = await query;
 
-      return res.status(200).json(progress);
+      if (error) {
+        throw error;
+      }
+
+      return res.status(200).json(progress || []);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch reading progress' });
     }
@@ -55,54 +62,75 @@ export default async function handler(
 
       const completed = progress >= 90; // Consider 90%+ as completed
 
-      const readingProgress = await prisma.reading_progress.upsert({
-        where: {
-          userId_articleId: {
+      // Check if reading progress exists
+      const { data: existing } = await supabase
+        .from('reading_progress')
+        .select('id')
+        .eq('userId', userId)
+        .eq('articleId', articleId)
+        .single();
+
+      let readingProgress;
+
+      if (existing) {
+        // Update existing
+        const { data, error } = await supabase
+          .from('reading_progress')
+          .update({
+            progress,
+            completed,
+            lastReadAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          })
+          .eq('userId', userId)
+          .eq('articleId', articleId)
+          .select()
+          .single();
+
+        if (error) throw error;
+        readingProgress = data;
+      } else {
+        // Create new
+        const { data, error } = await supabase
+          .from('reading_progress')
+          .insert({
+            id: randomUUID(),
             userId,
             articleId,
-          },
-        },
-        update: {
-          progress,
-          completed,
-          lastReadAt: new Date(),
-          updatedAt: new Date(),
-        },
-        create: {
-          id: randomUUID(),
-          userId,
-          articleId,
-          articleTitle,
-          articleUrl,
-          progress,
-          completed,
-          updatedAt: new Date(),
-        },
-      });
+            articleTitle,
+            articleUrl,
+            progress,
+            completed,
+            updatedAt: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        readingProgress = data;
+      }
 
       // Create activity log if article was completed
       if (completed && progress >= 90) {
         // Check if we already logged this completion
-        const existingActivity = await prisma.user_activities.findFirst({
-          where: {
-            userId,
-            activityType: 'ARTICLE_READ',
-            metadata: {
-              contains: articleId,
-            },
-          },
-        });
+        const { data: existingActivity } = await supabase
+          .from('user_activities')
+          .select('id')
+          .eq('userId', userId)
+          .eq('activityType', 'ARTICLE_READ')
+          .ilike('metadata', `%${articleId}%`)
+          .single();
 
         if (!existingActivity) {
-          await prisma.user_activities.create({
-            data: {
+          await supabase
+            .from('user_activities')
+            .insert({
               id: randomUUID(),
               userId,
               activityType: 'ARTICLE_READ',
               title: `Read: ${articleTitle}`,
               metadata: JSON.stringify({ articleId, articleUrl }),
-            },
-          });
+            });
         }
       }
 

@@ -6,7 +6,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -46,40 +46,31 @@ export default async function handler(
 }
 
 async function getStaffMember(id: string, res: NextApiResponse) {
-  const user = await prisma.users.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      emailVerified: true,
-      createdAt: true,
-      lastLoginAt: true,
-      bio: true,
-      avatar: true,
-      _count: {
-        select: {
-          posts: true,
-        },
-      },
-    },
-  });
+  const supabase = supabaseAdmin();
 
-  if (!user) {
+  const { data: user, error } = await supabase
+    .from('users')
+    .select(`
+      id, name, email, role, emailVerified, createdAt, lastLoginAt, bio, avatar,
+      posts:posts(count)
+    `)
+    .eq('id', id)
+    .single();
+
+  if (error || !user) {
     return res.status(404).json({ error: 'Staff member not found' });
   }
 
   // Get departments
-  const departments = await prisma.staff_departments.findMany({
-    where: { userId: id },
-    select: { department: true },
-  });
+  const { data: departments } = await supabase
+    .from('staff_departments')
+    .select('department')
+    .eq('userId', id);
 
   return res.status(200).json({
     ...user,
-    postsCount: user._count.posts,
-    departments: departments.map((d: { department: string }) => d.department),
+    postsCount: user.posts?.[0]?.count || 0,
+    departments: (departments || []).map((d: { department: string }) => d.department),
   });
 }
 
@@ -96,11 +87,14 @@ async function updateStaffMember(
     return res.status(400).json({ error: 'Name, email, and role are required' });
   }
 
+  const supabase = supabaseAdmin();
+
   // Only SUPER_ADMIN can change roles to/from SUPER_ADMIN
-  const currentUser = await prisma.users.findUnique({
-    where: { id },
-    select: { role: true },
-  });
+  const { data: currentUser } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', id)
+    .single();
 
   if (
     (currentUser?.role === 'SUPER_ADMIN' || role === 'SUPER_ADMIN') &&
@@ -112,24 +106,22 @@ async function updateStaffMember(
   }
 
   // Update user
-  const updatedUser = await prisma.users.update({
-    where: { id },
-    data: {
+  const { data: updatedUser, error } = await supabase
+    .from('users')
+    .update({
       name,
       email,
       role,
       bio: bio || null,
       avatar: avatar || null,
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      bio: true,
-      avatar: true,
-    },
-  });
+    })
+    .eq('id', id)
+    .select('id, name, email, role, bio, avatar')
+    .single();
+
+  if (error) {
+    return res.status(500).json({ error: 'Failed to update staff member' });
+  }
 
   return res.status(200).json({
     message: 'Staff member updated successfully',
@@ -149,13 +141,16 @@ async function deactivateStaffMember(
     });
   }
 
-  // Check if trying to delete a SUPER_ADMIN
-  const user = await prisma.users.findUnique({
-    where: { id },
-    select: { role: true, email: true },
-  });
+  const supabase = supabaseAdmin();
 
-  if (!user) {
+  // Check if trying to delete a SUPER_ADMIN
+  const { data: user, error: fetchError } = await supabase
+    .from('users')
+    .select('role, email')
+    .eq('id', id)
+    .single();
+
+  if (fetchError || !user) {
     return res.status(404).json({ error: 'Staff member not found' });
   }
 
@@ -167,9 +162,14 @@ async function deactivateStaffMember(
   }
 
   // Delete the staff member (CASCADE will handle related records)
-  await prisma.users.delete({
-    where: { id },
-  });
+  const { error: deleteError } = await supabase
+    .from('users')
+    .delete()
+    .eq('id', id);
+
+  if (deleteError) {
+    return res.status(500).json({ error: 'Failed to delete staff member' });
+  }
 
   return res.status(200).json({
     message: 'Staff member deleted successfully',

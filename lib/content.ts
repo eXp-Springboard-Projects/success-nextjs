@@ -5,8 +5,7 @@
  * instead of WordPress REST API.
  */
 
-import { prisma } from './prisma';
-import { Prisma } from '@prisma/client';
+import { supabaseAdmin } from './supabase';
 
 /**
  * Get published posts with filters and pagination
@@ -32,56 +31,82 @@ export async function getPublishedPosts(options: {
     search
   } = options;
 
-  const where: Prisma.postsWhereInput = {
-    status: 'PUBLISHED',
-    publishedAt: { lte: new Date() },
-    ...(categoryId && {
-      categories: {
-        some: { id: categoryId }
-      }
-    }),
-    ...(categorySlug && {
-      categories: {
-        some: { slug: categorySlug }
-      }
-    }),
-    ...(authorId && { authorId }),
-    ...(tag && {
-      tags: {
-        some: { slug: tag }
-      }
-    }),
-    ...(search && {
-      OR: [
-        { title: { contains: search, mode: 'insensitive' } },
-        { content: { contains: search, mode: 'insensitive' } },
-        { excerpt: { contains: search, mode: 'insensitive' } }
-      ]
-    })
-  };
+  const supabase = supabaseAdmin();
 
-  const posts = await prisma.posts.findMany({
-    where,
-    include: {
-      users: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          bio: true,
-          avatar: true,
-          authorPageSlug: true,
-          jobTitle: true
-        }
-      },
-      categories: true,
-      tags: true
-    },
-    orderBy: {
-      [orderBy]: orderBy === 'title' ? 'asc' : 'desc'
-    },
-    take: limit,
-    skip: offset
+  let query = supabase
+    .from('posts')
+    .select(`
+      *,
+      users!posts_authorId_fkey (
+        id,
+        name,
+        email,
+        bio,
+        avatar,
+        authorPageSlug,
+        jobTitle
+      ),
+      post_categories!inner (
+        categories (*)
+      ),
+      post_tags (
+        tags (*)
+      )
+    `)
+    .eq('status', 'PUBLISHED')
+    .lte('publishedAt', new Date().toISOString());
+
+  // Handle category filtering with junction table
+  if (categoryId || categorySlug) {
+    if (categoryId) {
+      query = query.eq('post_categories.categoryId', categoryId);
+    } else if (categorySlug) {
+      query = query.eq('post_categories.categories.slug', categorySlug);
+    }
+  }
+
+  // Handle tag filtering with junction table
+  if (tag) {
+    query = query.eq('post_tags.tags.slug', tag);
+  }
+
+  // Handle author filtering
+  if (authorId) {
+    query = query.eq('authorId', authorId);
+  }
+
+  // Handle search
+  if (search) {
+    query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%,excerpt.ilike.%${search}%`);
+  }
+
+  // Handle ordering
+  const ascending = orderBy === 'title';
+  query = query.order(orderBy, { ascending });
+
+  // Handle pagination
+  query = query.range(offset, offset + limit - 1);
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error fetching published posts:', error);
+    return [];
+  }
+
+  // Transform the data to match Prisma format
+  const posts = (data || []).map((post: any) => {
+    const categories = post.post_categories?.map((pc: any) => pc.categories).filter(Boolean) || [];
+    const tags = post.post_tags?.map((pt: any) => pt.tags).filter(Boolean) || [];
+
+    // Remove junction table data and add flattened arrays
+    const { post_categories, post_tags, ...postData } = post;
+
+    return {
+      ...postData,
+      categories,
+      tags
+    };
   });
 
   return posts;
@@ -99,94 +124,185 @@ export async function getPublishedPostsCount(options: {
 } = {}) {
   const { categorySlug, categoryId, authorId, tag, search } = options;
 
-  const where: Prisma.postsWhereInput = {
-    status: 'PUBLISHED',
-    publishedAt: { lte: new Date() },
-    ...(categoryId && {
-      categories: {
-        some: { id: categoryId }
-      }
-    }),
-    ...(categorySlug && {
-      categories: {
-        some: { slug: categorySlug }
-      }
-    }),
-    ...(authorId && { authorId }),
-    ...(tag && {
-      tags: {
-        some: { slug: tag }
-      }
-    }),
-    ...(search && {
-      OR: [
-        { title: { contains: search, mode: 'insensitive' } },
-        { content: { contains: search, mode: 'insensitive' } }
-      ]
-    })
-  };
+  const supabase = supabaseAdmin();
 
-  return await prisma.posts.count({ where });
+  let query = supabase
+    .from('posts')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'PUBLISHED')
+    .lte('publishedAt', new Date().toISOString());
+
+  // Handle category filtering
+  if (categoryId || categorySlug) {
+    const categoryQuery = supabase
+      .from('post_categories')
+      .select('postId');
+
+    if (categoryId) {
+      categoryQuery.eq('categoryId', categoryId);
+    } else if (categorySlug) {
+      const { data: categories } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('slug', categorySlug)
+        .single();
+
+      if (categories) {
+        categoryQuery.eq('categoryId', categories.id);
+      }
+    }
+
+    const { data: postIds } = await categoryQuery;
+    if (postIds && postIds.length > 0) {
+      query = query.in('id', postIds.map((p: any) => p.postId));
+    } else {
+      return 0;
+    }
+  }
+
+  // Handle tag filtering
+  if (tag) {
+    const { data: tags } = await supabase
+      .from('tags')
+      .select('id')
+      .eq('slug', tag)
+      .single();
+
+    if (tags) {
+      const { data: postIds } = await supabase
+        .from('post_tags')
+        .select('postId')
+        .eq('tagId', tags.id);
+
+      if (postIds && postIds.length > 0) {
+        query = query.in('id', postIds.map((p: any) => p.postId));
+      } else {
+        return 0;
+      }
+    }
+  }
+
+  // Handle author filtering
+  if (authorId) {
+    query = query.eq('authorId', authorId);
+  }
+
+  // Handle search
+  if (search) {
+    query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%`);
+  }
+
+  const { count, error } = await query;
+
+  if (error) {
+    console.error('Error counting published posts:', error);
+    return 0;
+  }
+
+  return count || 0;
 }
 
 /**
  * Get single post by slug
  */
 export async function getPostBySlug(slug: string) {
-  const post = await prisma.posts.findUnique({
-    where: {
-      slug,
-      status: 'PUBLISHED',
-      publishedAt: { lte: new Date() }
-    },
-    include: {
-      users: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          bio: true,
-          avatar: true,
-          authorPageSlug: true,
-          jobTitle: true,
-          socialTwitter: true,
-          socialLinkedin: true,
-          socialFacebook: true,
-          website: true
-        }
-      },
-      categories: true,
-      tags: true
-    }
-  });
+  const supabase = supabaseAdmin();
 
-  // Increment view count
-  if (post) {
-    await prisma.posts.update({
-      where: { id: post.id },
-      data: { views: { increment: 1 } }
-    });
+  const { data: post, error } = await supabase
+    .from('posts')
+    .select(`
+      *,
+      users!posts_authorId_fkey (
+        id,
+        name,
+        email,
+        bio,
+        avatar,
+        authorPageSlug,
+        jobTitle,
+        socialTwitter,
+        socialLinkedin,
+        socialFacebook,
+        website
+      ),
+      post_categories (
+        categories (*)
+      ),
+      post_tags (
+        tags (*)
+      )
+    `)
+    .eq('slug', slug)
+    .eq('status', 'PUBLISHED')
+    .lte('publishedAt', new Date().toISOString())
+    .single();
+
+  if (error || !post) {
+    return null;
   }
 
-  return post;
+  // Increment view count
+  await supabase
+    .from('posts')
+    .update({ views: (post.views || 0) + 1 })
+    .eq('id', post.id);
+
+  // Transform the data to match Prisma format
+  const categories = post.post_categories?.map((pc: any) => pc.categories).filter(Boolean) || [];
+  const tags = post.post_tags?.map((pt: any) => pt.tags).filter(Boolean) || [];
+
+  const { post_categories, post_tags, ...postData } = post;
+
+  return {
+    ...postData,
+    categories,
+    tags
+  };
 }
 
 /**
  * Get post by ID (for admin/preview)
  */
 export async function getPostById(id: string) {
-  return await prisma.posts.findUnique({
-    where: { id },
-    include: {
-      users: true,
-      categories: true,
-      tags: true,
-      post_revisions: {
-        orderBy: { createdAt: 'desc' },
-        take: 10
-      }
-    }
-  });
+  const supabase = supabaseAdmin();
+
+  const { data: post, error } = await supabase
+    .from('posts')
+    .select(`
+      *,
+      users!posts_authorId_fkey (*),
+      post_categories (
+        categories (*)
+      ),
+      post_tags (
+        tags (*)
+      ),
+      post_revisions (*)
+    `)
+    .eq('id', id)
+    .single();
+
+  if (error || !post) {
+    return null;
+  }
+
+  // Transform the data to match Prisma format
+  const categories = post.post_categories?.map((pc: any) => pc.categories).filter(Boolean) || [];
+  const tags = post.post_tags?.map((pt: any) => pt.tags).filter(Boolean) || [];
+
+  // Sort revisions by createdAt desc and take 10
+  const post_revisions = (post.post_revisions || [])
+    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 10);
+
+  const { post_categories, post_tags, ...postData } = post;
+
+  return {
+    ...postData,
+    categories,
+    tags,
+    post_revisions
+  };
 }
 
 /**
@@ -201,29 +317,58 @@ export async function getRelatedPosts(
     return [];
   }
 
-  return await prisma.posts.findMany({
-    where: {
-      status: 'PUBLISHED',
-      publishedAt: { lte: new Date() },
-      id: { not: postId },
-      categories: {
-        some: {
-          id: { in: categoryIds }
-        }
-      }
-    },
-    include: {
-      users: {
-        select: {
-          id: true,
-          name: true,
-          authorPageSlug: true
-        }
-      },
-      categories: true
-    },
-    take: limit,
-    orderBy: { publishedAt: 'desc' }
+  const supabase = supabaseAdmin();
+
+  // Get post IDs that have any of the given categories
+  const { data: postCategories } = await supabase
+    .from('post_categories')
+    .select('postId')
+    .in('categoryId', categoryIds);
+
+  if (!postCategories || postCategories.length === 0) {
+    return [];
+  }
+
+  const relatedPostIds = postCategories
+    .map((pc: any) => pc.postId)
+    .filter((id: string) => id !== postId);
+
+  if (relatedPostIds.length === 0) {
+    return [];
+  }
+
+  const { data: posts, error } = await supabase
+    .from('posts')
+    .select(`
+      *,
+      users!posts_authorId_fkey (
+        id,
+        name,
+        authorPageSlug
+      ),
+      post_categories (
+        categories (*)
+      )
+    `)
+    .in('id', relatedPostIds)
+    .eq('status', 'PUBLISHED')
+    .lte('publishedAt', new Date().toISOString())
+    .order('publishedAt', { ascending: false })
+    .limit(limit);
+
+  if (error || !posts) {
+    return [];
+  }
+
+  // Transform the data to match Prisma format
+  return posts.map((post: any) => {
+    const categories = post.post_categories?.map((pc: any) => pc.categories).filter(Boolean) || [];
+    const { post_categories, ...postData } = post;
+
+    return {
+      ...postData,
+      categories
+    };
   });
 }
 
@@ -231,30 +376,40 @@ export async function getRelatedPosts(
  * Get category by slug
  */
 export async function getCategoryBySlug(slug: string, includeCount = false) {
-  const category = await prisma.categories.findUnique({
-    where: { slug },
-    include: {
-      parent: true,
-      children: true
-    }
-  });
+  const supabase = supabaseAdmin();
 
-  if (!category) {
+  const { data: category, error } = await supabase
+    .from('categories')
+    .select(`
+      *,
+      parent:categories!categories_parentId_fkey (*),
+      children:categories!categories_parentId_fkey (*)
+    `)
+    .eq('slug', slug)
+    .single();
+
+  if (error || !category) {
     return null;
   }
 
   // Get post count if needed
   let postCount = 0;
   if (includeCount) {
-    postCount = await prisma.posts.count({
-      where: {
-        status: 'PUBLISHED',
-        publishedAt: { lte: new Date() },
-        categories: {
-          some: { id: category.id }
-        }
-      }
-    });
+    const { data: postCategories } = await supabase
+      .from('post_categories')
+      .select('postId')
+      .eq('categoryId', category.id);
+
+    if (postCategories && postCategories.length > 0) {
+      const { count } = await supabase
+        .from('posts')
+        .select('id', { count: 'exact', head: true })
+        .in('id', postCategories.map((pc: any) => pc.postId))
+        .eq('status', 'PUBLISHED')
+        .lte('publishedAt', new Date().toISOString());
+
+      postCount = count || 0;
+    }
   }
 
   return {
@@ -267,15 +422,20 @@ export async function getCategoryBySlug(slug: string, includeCount = false) {
  * Get all categories
  */
 export async function getAllCategories(includeCount = false) {
-  const categories = await prisma.categories.findMany({
-    orderBy: [
-      { order: 'asc' },
-      { name: 'asc' }
-    ],
-    include: {
-      parent: true
-    }
-  });
+  const supabase = supabaseAdmin();
+
+  const { data: categories, error } = await supabase
+    .from('categories')
+    .select(`
+      *,
+      parent:categories!categories_parentId_fkey (*)
+    `)
+    .order('order', { ascending: true })
+    .order('name', { ascending: true });
+
+  if (error || !categories) {
+    return [];
+  }
 
   if (!includeCount) {
     return categories;
@@ -284,15 +444,23 @@ export async function getAllCategories(includeCount = false) {
   // Add post counts
   const categoriesWithCounts = await Promise.all(
     categories.map(async (category: any) => {
-      const count = await prisma.posts.count({
-        where: {
-          status: 'PUBLISHED',
-          publishedAt: { lte: new Date() },
-          categories: {
-            some: { id: category.id }
-          }
-        }
-      });
+      const { data: postCategories } = await supabase
+        .from('post_categories')
+        .select('postId')
+        .eq('categoryId', category.id);
+
+      let count = 0;
+      if (postCategories && postCategories.length > 0) {
+        const { count: postCount } = await supabase
+          .from('posts')
+          .select('id', { count: 'exact', head: true })
+          .in('id', postCategories.map((pc: any) => pc.postId))
+          .eq('status', 'PUBLISHED')
+          .lte('publishedAt', new Date().toISOString());
+
+        count = postCount || 0;
+      }
+
       return { ...category, count };
     })
   );
@@ -304,244 +472,367 @@ export async function getAllCategories(includeCount = false) {
  * Get author/user by slug
  */
 export async function getAuthorBySlug(slug: string) {
-  // Try to find by authorPageSlug first, then by email-based slug
-  let author = await prisma.users.findFirst({
-    where: { authorPageSlug: slug },
-    include: {
-      posts: {
-        where: {
-          status: 'PUBLISHED',
-          publishedAt: { lte: new Date() }
-        },
-        include: {
-          categories: true
-        },
-        orderBy: { publishedAt: 'desc' },
-        take: 50
-      }
-    }
-  });
+  const supabase = supabaseAdmin();
+
+  // Try to find by authorPageSlug first
+  let { data: author, error } = await supabase
+    .from('users')
+    .select(`
+      *,
+      posts!posts_authorId_fkey (
+        *,
+        post_categories (
+          categories (*)
+        )
+      )
+    `)
+    .eq('authorPageSlug', slug)
+    .single();
 
   // Fallback: try to match email username
-  if (!author) {
-    author = await prisma.users.findFirst({
-      where: {
-        email: {
-          startsWith: slug,
-          mode: 'insensitive'
-        }
-      },
-      include: {
-        posts: {
-          where: {
-            status: 'PUBLISHED',
-            publishedAt: { lte: new Date() }
-          },
-          include: {
-            categories: true
-          },
-          orderBy: { publishedAt: 'desc' },
-          take: 50
-        }
-      }
-    });
+  if (error || !author) {
+    const { data: authorByEmail } = await supabase
+      .from('users')
+      .select(`
+        *,
+        posts!posts_authorId_fkey (
+          *,
+          post_categories (
+            categories (*)
+          )
+        )
+      `)
+      .ilike('email', `${slug}%`)
+      .single();
+
+    author = authorByEmail;
   }
 
-  return author;
+  if (!author) {
+    return null;
+  }
+
+  // Filter and transform posts
+  const posts = (author.posts || [])
+    .filter((post: any) =>
+      post.status === 'PUBLISHED' &&
+      new Date(post.publishedAt) <= new Date()
+    )
+    .map((post: any) => {
+      const categories = post.post_categories?.map((pc: any) => pc.categories).filter(Boolean) || [];
+      const { post_categories, ...postData } = post;
+      return {
+        ...postData,
+        categories
+      };
+    })
+    .sort((a: any, b: any) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+    .slice(0, 50);
+
+  return {
+    ...author,
+    posts
+  };
 }
 
 /**
  * Get all authors who have published posts
  */
 export async function getAllAuthors() {
-  return await prisma.users.findMany({
-    where: {
-      posts: {
-        some: {
-          status: 'PUBLISHED',
-          publishedAt: { lte: new Date() }
-        }
-      }
-    },
-    include: {
+  const supabase = supabaseAdmin();
+
+  // Get all published posts with authors
+  const { data: posts } = await supabase
+    .from('posts')
+    .select('authorId')
+    .eq('status', 'PUBLISHED')
+    .lte('publishedAt', new Date().toISOString());
+
+  if (!posts || posts.length === 0) {
+    return [];
+  }
+
+  // Get unique author IDs
+  const authorIds = [...new Set(posts.map((p: any) => p.authorId))];
+
+  // Get authors
+  const { data: authors, error } = await supabase
+    .from('users')
+    .select('*')
+    .in('id', authorIds)
+    .order('name', { ascending: true });
+
+  if (error || !authors) {
+    return [];
+  }
+
+  // Add post count for each author
+  const authorsWithCount = authors.map((author: any) => {
+    const postCount = posts.filter((p: any) => p.authorId === author.id).length;
+
+    return {
+      ...author,
       _count: {
-        select: {
-          posts: {
-            where: {
-              status: 'PUBLISHED',
-              publishedAt: { lte: new Date() }
-            }
-          }
-        }
+        posts: postCount
       }
-    },
-    orderBy: { name: 'asc' }
+    };
   });
+
+  return authorsWithCount;
 }
 
 /**
  * Get page by slug
  */
 export async function getPageBySlug(slug: string) {
-  return await prisma.pages.findUnique({
-    where: {
-      slug,
-      status: 'PUBLISHED'
-    }
-  });
+  const supabase = supabaseAdmin();
+
+  const { data, error } = await supabase
+    .from('pages')
+    .select('*')
+    .eq('slug', slug)
+    .eq('status', 'PUBLISHED')
+    .single();
+
+  return error ? null : data;
 }
 
 /**
  * Get all published pages
  */
 export async function getAllPages() {
-  return await prisma.pages.findMany({
-    where: { status: 'PUBLISHED' },
-    orderBy: { order: 'asc' }
-  });
+  const supabase = supabaseAdmin();
+
+  const { data, error } = await supabase
+    .from('pages')
+    .select('*')
+    .eq('status', 'PUBLISHED')
+    .order('order', { ascending: true });
+
+  return error ? [] : data;
 }
 
 /**
  * Get all magazines
  */
 export async function getAllMagazines(limit?: number) {
-  return await prisma.magazines.findMany({
-    orderBy: { createdAt: 'desc' },
-    ...(limit && { take: limit })
-  });
+  const supabase = supabaseAdmin();
+
+  let query = supabase
+    .from('magazines')
+    .select('*')
+    .order('createdAt', { ascending: false });
+
+  if (limit) {
+    query = query.limit(limit);
+  }
+
+  const { data, error } = await query;
+
+  return error ? [] : data;
 }
 
 /**
  * Get magazine by slug
  */
 export async function getMagazineBySlug(slug: string) {
-  return await prisma.magazines.findUnique({
-    where: { slug }
-  });
+  const supabase = supabaseAdmin();
+
+  const { data, error } = await supabase
+    .from('magazines')
+    .select('*')
+    .eq('slug', slug)
+    .single();
+
+  return error ? null : data;
 }
 
 /**
  * Get latest magazine
  */
 export async function getLatestMagazine() {
-  return await prisma.magazines.findFirst({
-    orderBy: { createdAt: 'desc' }
-  });
+  const supabase = supabaseAdmin();
+
+  const { data, error } = await supabase
+    .from('magazines')
+    .select('*')
+    .order('createdAt', { ascending: false })
+    .limit(1)
+    .single();
+
+  return error ? null : data;
 }
 
 /**
  * Get all press releases
  */
 export async function getAllPressReleases(limit = 50) {
-  return await prisma.press_releases.findMany({
-    where: {
-      status: 'PUBLISHED',
-      publishedAt: { lte: new Date() }
-    },
-    orderBy: { publishedAt: 'desc' },
-    take: limit
-  });
+  const supabase = supabaseAdmin();
+
+  const { data, error } = await supabase
+    .from('press_releases')
+    .select('*')
+    .eq('status', 'PUBLISHED')
+    .lte('publishedAt', new Date().toISOString())
+    .order('publishedAt', { ascending: false })
+    .limit(limit);
+
+  return error ? [] : data;
 }
 
 /**
  * Get press release by slug
  */
 export async function getPressReleaseBySlug(slug: string) {
-  return await prisma.press_releases.findUnique({
-    where: {
-      slug,
-      status: 'PUBLISHED',
-      publishedAt: { lte: new Date() }
-    }
-  });
+  const supabase = supabaseAdmin();
+
+  const { data, error } = await supabase
+    .from('press_releases')
+    .select('*')
+    .eq('slug', slug)
+    .eq('status', 'PUBLISHED')
+    .lte('publishedAt', new Date().toISOString())
+    .single();
+
+  return error ? null : data;
 }
 
 /**
  * Get all tags
  */
 export async function getAllTags() {
-  return await prisma.tags.findMany({
-    orderBy: { name: 'asc' }
-  });
+  const supabase = supabaseAdmin();
+
+  const { data, error } = await supabase
+    .from('tags')
+    .select('*')
+    .order('name', { ascending: true });
+
+  return error ? [] : data;
 }
 
 /**
  * Get tag by slug with posts
  */
 export async function getTagBySlug(slug: string, limit = 20) {
-  const tag = await prisma.tags.findUnique({
-    where: { slug },
-    include: {
-      posts: {
-        where: {
-          status: 'PUBLISHED',
-          publishedAt: { lte: new Date() }
-        },
-        include: {
-          users: {
-            select: {
-              id: true,
-              name: true,
-              authorPageSlug: true
-            }
-          },
-          categories: true
-        },
-        orderBy: { publishedAt: 'desc' },
-        take: limit
-      }
-    }
+  const supabase = supabaseAdmin();
+
+  const { data: tag, error } = await supabase
+    .from('tags')
+    .select('*')
+    .eq('slug', slug)
+    .single();
+
+  if (error || !tag) {
+    return null;
+  }
+
+  // Get posts for this tag
+  const { data: postTags } = await supabase
+    .from('post_tags')
+    .select('postId')
+    .eq('tagId', tag.id);
+
+  if (!postTags || postTags.length === 0) {
+    return {
+      ...tag,
+      posts: []
+    };
+  }
+
+  const postIds = postTags.map((pt: any) => pt.postId);
+
+  const { data: posts } = await supabase
+    .from('posts')
+    .select(`
+      *,
+      users!posts_authorId_fkey (
+        id,
+        name,
+        authorPageSlug
+      ),
+      post_categories (
+        categories (*)
+      )
+    `)
+    .in('id', postIds)
+    .eq('status', 'PUBLISHED')
+    .lte('publishedAt', new Date().toISOString())
+    .order('publishedAt', { ascending: false })
+    .limit(limit);
+
+  // Transform posts
+  const transformedPosts = (posts || []).map((post: any) => {
+    const categories = post.post_categories?.map((pc: any) => pc.categories).filter(Boolean) || [];
+    const { post_categories, ...postData } = post;
+
+    return {
+      ...postData,
+      categories
+    };
   });
 
-  return tag;
+  return {
+    ...tag,
+    posts: transformedPosts
+  };
 }
 
 /**
  * Search content across posts, pages, and press releases
  */
 export async function searchContent(query: string, limit = 20) {
-  const [posts, pages, pressReleases] = await Promise.all([
-    prisma.posts.findMany({
-      where: {
-        status: 'PUBLISHED',
-        publishedAt: { lte: new Date() },
-        OR: [
-          { title: { contains: query, mode: 'insensitive' } },
-          { content: { contains: query, mode: 'insensitive' } },
-          { excerpt: { contains: query, mode: 'insensitive' } }
-        ]
-      },
-      include: {
-        users: {
-          select: { id: true, name: true, authorPageSlug: true }
-        },
-        categories: true
-      },
-      take: limit,
-      orderBy: { publishedAt: 'desc' }
-    }),
-    prisma.pages.findMany({
-      where: {
-        status: 'PUBLISHED',
-        OR: [
-          { title: { contains: query, mode: 'insensitive' } },
-          { content: { contains: query, mode: 'insensitive' } }
-        ]
-      },
-      take: 5
-    }),
-    prisma.press_releases.findMany({
-      where: {
-        status: 'PUBLISHED',
-        publishedAt: { lte: new Date() },
-        OR: [
-          { title: { contains: query, mode: 'insensitive' } },
-          { content: { contains: query, mode: 'insensitive' } }
-        ]
-      },
-      take: 5
-    })
+  const supabase = supabaseAdmin();
+
+  const [postsResult, pagesResult, pressReleasesResult] = await Promise.all([
+    supabase
+      .from('posts')
+      .select(`
+        *,
+        users!posts_authorId_fkey (
+          id,
+          name,
+          authorPageSlug
+        ),
+        post_categories (
+          categories (*)
+        )
+      `)
+      .eq('status', 'PUBLISHED')
+      .lte('publishedAt', new Date().toISOString())
+      .or(`title.ilike.%${query}%,content.ilike.%${query}%,excerpt.ilike.%${query}%`)
+      .order('publishedAt', { ascending: false })
+      .limit(limit),
+
+    supabase
+      .from('pages')
+      .select('*')
+      .eq('status', 'PUBLISHED')
+      .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
+      .limit(5),
+
+    supabase
+      .from('press_releases')
+      .select('*')
+      .eq('status', 'PUBLISHED')
+      .lte('publishedAt', new Date().toISOString())
+      .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
+      .limit(5)
   ]);
+
+  // Transform posts
+  const posts = (postsResult.data || []).map((post: any) => {
+    const categories = post.post_categories?.map((pc: any) => pc.categories).filter(Boolean) || [];
+    const { post_categories, ...postData } = post;
+
+    return {
+      ...postData,
+      categories
+    };
+  });
+
+  const pages = pagesResult.data || [];
+  const pressReleases = pressReleasesResult.data || [];
 
   return {
     posts,
@@ -555,29 +846,43 @@ export async function searchContent(query: string, limit = 20) {
  * Get trending/popular posts by view count
  */
 export async function getTrendingPosts(limit = 10, days = 30) {
-  // For now, just get by view count
-  // In the future, could factor in recent views from page_views table
-  return await prisma.posts.findMany({
-    where: {
-      status: 'PUBLISHED',
-      publishedAt: {
-        lte: new Date(),
-        // Only posts from last X days
-        gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-      }
-    },
-    include: {
-      users: {
-        select: {
-          id: true,
-          name: true,
-          authorPageSlug: true
-        }
-      },
-      categories: true
-    },
-    orderBy: { views: 'desc' },
-    take: limit
+  const supabase = supabaseAdmin();
+
+  // Calculate date threshold
+  const dateThreshold = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: posts, error } = await supabase
+    .from('posts')
+    .select(`
+      *,
+      users!posts_authorId_fkey (
+        id,
+        name,
+        authorPageSlug
+      ),
+      post_categories (
+        categories (*)
+      )
+    `)
+    .eq('status', 'PUBLISHED')
+    .lte('publishedAt', new Date().toISOString())
+    .gte('publishedAt', dateThreshold)
+    .order('views', { ascending: false })
+    .limit(limit);
+
+  if (error || !posts) {
+    return [];
+  }
+
+  // Transform posts
+  return posts.map((post: any) => {
+    const categories = post.post_categories?.map((pc: any) => pc.categories).filter(Boolean) || [];
+    const { post_categories, ...postData } = post;
+
+    return {
+      ...postData,
+      categories
+    };
   });
 }
 
@@ -585,29 +890,28 @@ export async function getTrendingPosts(limit = 10, days = 30) {
  * Get posts for sitemap
  */
 export async function getAllPostsForSitemap() {
-  return await prisma.posts.findMany({
-    where: {
-      status: 'PUBLISHED',
-      publishedAt: { lte: new Date() }
-    },
-    select: {
-      slug: true,
-      updatedAt: true,
-      publishedAt: true
-    },
-    orderBy: { publishedAt: 'desc' }
-  });
+  const supabase = supabaseAdmin();
+
+  const { data, error } = await supabase
+    .from('posts')
+    .select('slug, updatedAt, publishedAt')
+    .eq('status', 'PUBLISHED')
+    .lte('publishedAt', new Date().toISOString())
+    .order('publishedAt', { ascending: false });
+
+  return error ? [] : data;
 }
 
 /**
  * Get categories for sitemap
  */
 export async function getAllCategoriesForSitemap() {
-  return await prisma.categories.findMany({
-    select: {
-      slug: true,
-      updatedAt: true
-    },
-    orderBy: { name: 'asc' }
-  });
+  const supabase = supabaseAdmin();
+
+  const { data, error } = await supabase
+    .from('categories')
+    .select('slug, updatedAt')
+    .order('name', { ascending: true });
+
+  return error ? [] : data;
 }

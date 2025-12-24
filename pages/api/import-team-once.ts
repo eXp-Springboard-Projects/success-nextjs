@@ -1,6 +1,6 @@
 // TEMPORARY: One-time import endpoint - DELETE AFTER USE
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '../../lib/prisma';
+import { supabaseAdmin } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
 const teamMembers = [
@@ -214,25 +214,33 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  try {
-    await prisma.team_members.deleteMany({});
+  const supabase = supabaseAdmin();
 
-    const created = [];
-    for (const member of teamMembers) {
-      const teamMember = await prisma.team_members.create({
-        data: {
-          id: uuidv4(),
-          ...member,
-          isActive: true,
-        },
-      });
-      created.push(teamMember);
+  try {
+    // Delete all existing team members
+    await supabase.from('team_members').delete().neq('id', '');
+
+    // Prepare data for bulk insert
+    const membersToInsert = teamMembers.map(member => ({
+      id: uuidv4(),
+      ...member,
+      isActive: true,
+    }));
+
+    // Bulk insert all team members
+    const { data: created, error } = await supabase
+      .from('team_members')
+      .insert(membersToInsert)
+      .select();
+
+    if (error) {
+      throw error;
     }
 
     return res.status(200).json({
       success: true,
-      message: `Successfully imported ${created.length} team members`,
-      count: created.length,
+      message: `Successfully imported ${created?.length || 0} team members`,
+      count: created?.length || 0,
     });
   } catch (error) {
     console.error('Error importing team members:', error);

@@ -1,9 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { prisma } from '../../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const supabase = supabaseAdmin();
+
   const session = await getServerSession(req, res, authOptions);
   if (!session || session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'ADMIN') {
     return res.status(403).json({ error: 'Forbidden' });
@@ -12,36 +14,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'GET') {
     try {
       // Fetch real error logs from system_alerts table
-      const alerts = await prisma.$queryRaw<any[]>`
-        SELECT
-          id,
-          "createdAt" as timestamp,
-          CASE
-            WHEN severity >= 4 THEN 'critical'
-            WHEN severity = 3 THEN 'high'
-            WHEN severity = 2 THEN 'medium'
-            ELSE 'low'
-          END as severity,
-          message,
-          title as page,
-          metadata->>'userAgent' as "userAgent",
-          "stackTrace" as stack
-        FROM system_alerts
-        WHERE type IN ('ERROR', 'CRITICAL')
-        ORDER BY "createdAt" DESC
-        LIMIT 100
-      `;
+      const { data: alerts, error } = await supabase
+        .from('system_alerts')
+        .select('id, createdAt, severity, message, title, metadata, stackTrace')
+        .in('type', ['ERROR', 'CRITICAL'])
+        .order('createdAt', { ascending: false })
+        .limit(100);
 
-      type AlertRow = { id: string; timestamp: string; severity: string; message: string; page?: string; userAgent?: string; stack?: string };
-      const logs = alerts.map((alert: AlertRow) => ({
-        id: alert.id,
-        timestamp: alert.timestamp,
-        severity: alert.severity,
-        message: alert.message,
-        page: alert.page || 'Unknown',
-        userAgent: alert.userAgent || 'Unknown',
-        stack: alert.stack
-      }));
+      if (error) {
+        throw error;
+      }
+
+      const logs = (alerts || []).map((alert: any) => {
+        let severityLevel = 'low';
+        if (alert.severity >= 4) severityLevel = 'critical';
+        else if (alert.severity === 3) severityLevel = 'high';
+        else if (alert.severity === 2) severityLevel = 'medium';
+
+        return {
+          id: alert.id,
+          timestamp: alert.createdAt,
+          severity: severityLevel,
+          message: alert.message,
+          page: alert.title || 'Unknown',
+          userAgent: alert.metadata?.userAgent || 'Unknown',
+          stack: alert.stackTrace
+        };
+      });
 
       return res.status(200).json({ logs });
     } catch (error) {

@@ -1,11 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '@/lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const supabase = supabaseAdmin();
+
   try {
     const session = await getServerSession(req, res, authOptions);
 
@@ -25,42 +25,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const limitNumber = parseInt(limit as string);
       const skip = (pageNumber - 1) * limitNumber;
 
-      // Build filter
-      const where: any = {};
+      // Build query
+      let query = supabase
+        .from('subscriptions')
+        .select(`
+          *,
+          members!inner(
+            id,
+            firstName,
+            lastName,
+            email,
+            membershipTier,
+            membershipStatus
+          )
+        `, { count: 'exact' })
+        .range(skip, skip + limitNumber - 1)
+        .order('createdAt', { ascending: false });
+
       if (status && status !== 'all') {
-        where.status = status;
+        query = query.eq('status', status);
       }
 
-      // Get subscriptions with member data
-      const [subscriptions, total] = await Promise.all([
-        prisma.subscriptions.findMany({
-          where,
-          skip,
-          take: limitNumber,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            member: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true,
-                membershipTier: true,
-                membershipStatus: true,
-              },
-            },
-          },
-        }),
-        prisma.subscriptions.count({ where }),
-      ]);
+      const { data: subscriptions, error, count } = await query;
+
+      if (error) {
+        throw error;
+      }
 
       return res.status(200).json({
-        subscriptions,
+        subscriptions: subscriptions || [],
         pagination: {
           page: pageNumber,
           limit: limitNumber,
-          total,
-          totalPages: Math.ceil(total / limitNumber),
+          total: count || 0,
+          totalPages: Math.ceil((count || 0) / limitNumber),
         },
       });
     }
@@ -69,7 +67,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (error) {
     console.error('Subscriptions API error:', error);
     return res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    await prisma.$disconnect();
   }
 }

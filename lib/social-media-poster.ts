@@ -4,7 +4,7 @@
  * Helper functions for posting to various social media platforms.
  */
 
-import { prisma } from './prisma';
+import { supabaseAdmin } from './supabase';
 
 interface PostContent {
   content: string;
@@ -257,38 +257,31 @@ export async function postToSocialMedia(
   userId: string
 ): Promise<void> {
   try {
-    // Get post details
-    const posts = await prisma.$queryRaw<Array<{
-      content: string;
-      image_url: string | null;
-      link_url: string | null;
-      platforms: string[];
-    }>>`
-      SELECT content, image_url, link_url, platforms
-      FROM social_posts
-      WHERE id = ${postId} AND user_id = ${userId}
-    `;
+    const supabase = supabaseAdmin();
 
-    if (!posts || posts.length === 0) {
+    // Get post details
+    const { data: posts, error: postError } = await supabase
+      .from('social_posts')
+      .select('content, image_url, link_url, platforms')
+      .eq('id', postId)
+      .eq('user_id', userId)
+      .limit(1);
+
+    if (postError || !posts || posts.length === 0) {
       throw new Error('Post not found');
     }
 
     const post = posts[0];
 
     // Get connected accounts for the platforms
-    const accounts = await prisma.$queryRaw<Array<{
-      platform: string;
-      account_id: string;
-      access_token: string;
-    }>>`
-      SELECT platform, account_id, access_token
-      FROM social_accounts
-      WHERE user_id = ${userId}
-        AND platform = ANY(ARRAY[${post.platforms.join(',')}]::TEXT[])
-        AND is_active = true
-    `;
+    const { data: accounts, error: accountsError } = await supabase
+      .from('social_accounts')
+      .select('platform, account_id, access_token')
+      .eq('user_id', userId)
+      .in('platform', post.platforms)
+      .eq('is_active', true);
 
-    if (accounts.length === 0) {
+    if (accountsError || !accounts || accounts.length === 0) {
       throw new Error('No active accounts found for selected platforms');
     }
 
@@ -328,45 +321,42 @@ export async function postToSocialMedia(
       results.push(result);
 
       // Save result to database
-      await prisma.$executeRaw`
-        INSERT INTO social_post_results (
-          id, post_id, platform, success, error_message,
-          platform_post_id, platform_post_url, created_at
-        ) VALUES (
-          gen_random_uuid()::TEXT,
-          ${postId},
-          ${result.platform},
-          ${result.success},
-          ${result.errorMessage || null},
-          ${result.platformPostId || null},
-          ${result.platformPostUrl || null},
-          CURRENT_TIMESTAMP
-        )
-      `;
+      await supabase.from('social_post_results').insert({
+        post_id: postId,
+        platform: result.platform,
+        success: result.success,
+        error_message: result.errorMessage || null,
+        platform_post_id: result.platformPostId || null,
+        platform_post_url: result.platformPostUrl || null,
+      });
     }
 
     // Update post status
     const allSuccessful = results.every(r => r.success);
     const allFailed = results.every(r => !r.success);
 
-    await prisma.$executeRaw`
-      UPDATE social_posts
-      SET
-        status = ${allSuccessful ? 'POSTED' : allFailed ? 'FAILED' : 'POSTED'}::TEXT,
-        posted_at = CURRENT_TIMESTAMP,
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = ${postId}
-    `;
+    await supabase
+      .from('social_posts')
+      .update({
+        status: allSuccessful ? 'POSTED' : allFailed ? 'FAILED' : 'POSTED',
+        posted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', postId);
 
   } catch (error: any) {
     console.error('Error posting to social media:', error);
 
+    const supabase = supabaseAdmin();
+
     // Mark post as failed
-    await prisma.$executeRaw`
-      UPDATE social_posts
-      SET status = 'FAILED', updated_at = CURRENT_TIMESTAMP
-      WHERE id = ${postId}
-    `;
+    await supabase
+      .from('social_posts')
+      .update({
+        status: 'FAILED',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', postId);
 
     throw error;
   }

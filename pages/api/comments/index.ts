@@ -1,12 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '@/lib/supabase';
 import { randomUUID } from 'crypto';
 
-const prisma = new PrismaClient();
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const supabase = supabaseAdmin();
   const session = await getServerSession(req, res, authOptions);
 
   if (!session || session.user.role !== 'ADMIN') {
@@ -16,31 +15,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'GET') {
     try {
       const { page = '1', perPage = '100', status = 'PENDING' } = req.query;
-      const skip = (parseInt(page as string) - 1) * parseInt(perPage as string);
+      const pageNum = parseInt(page as string);
+      const perPageNum = parseInt(perPage as string);
+      const skip = (pageNum - 1) * perPageNum;
 
-      const where: any = {};
+      let query = supabase
+        .from('comments')
+        .select('*', { count: 'exact' })
+        .range(skip, skip + perPageNum - 1)
+        .order('createdAt', { ascending: false });
+
       if (status && status !== 'all') {
-        where.status = status;
+        query = query.eq('status', status);
       }
 
-      const [comments, total] = await Promise.all([
-        prisma.comments.findMany({
-          where,
-          orderBy: {
-            createdAt: 'desc',
-          },
-          skip,
-          take: parseInt(perPage as string),
-        }),
-        prisma.comments.count({ where }),
-      ]);
+      const { data: comments, error, count } = await query;
+
+      if (error) {
+        throw error;
+      }
 
       return res.status(200).json({
-        comments,
-        total,
-        page: parseInt(page as string),
-        perPage: parseInt(perPage as string),
-        totalPages: Math.ceil(total / parseInt(perPage as string)),
+        comments: comments || [],
+        total: count || 0,
+        page: pageNum,
+        perPage: perPageNum,
+        totalPages: Math.ceil((count || 0) / perPageNum),
       });
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch comments' });
@@ -60,8 +60,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         userAgent,
       } = req.body;
 
-      const comment = await prisma.comments.create({
-        data: {
+      const { data: comment, error } = await supabase
+        .from('comments')
+        .insert({
           id: randomUUID(),
           postId,
           postTitle,
@@ -72,9 +73,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           status: 'PENDING',
           ipAddress,
           userAgent,
-          updatedAt: new Date(),
-        },
-      });
+          updatedAt: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
 
       return res.status(201).json(comment);
     } catch (error) {

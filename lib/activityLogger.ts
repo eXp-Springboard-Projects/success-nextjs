@@ -1,5 +1,5 @@
-import { Department } from '@prisma/client';
-import { prisma } from './prisma';
+import { Department } from '@/lib/types';
+import { supabaseAdmin } from './supabase';
 
 export interface ActivityLog {
   userId?: string;
@@ -20,21 +20,25 @@ export interface ActivityLog {
  */
 export async function logActivity(activity: ActivityLog): Promise<void> {
   try {
-    await prisma.staff_activity_feed.create({
-      data: {
-        id: `activity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        userId: activity.userId,
-        userEmail: activity.userEmail,
-        userName: activity.userName,
-        department: activity.department,
-        action: activity.action,
-        entityType: activity.entityType,
-        entityId: activity.entityId,
-        entityName: activity.entityName,
-        description: activity.description,
-        metadata: activity.metadata ? JSON.parse(JSON.stringify(activity.metadata)) : undefined,
-      },
+    const supabase = supabaseAdmin();
+    const { error } = await supabase.from('staff_activity_feed').insert({
+      id: `activity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      userId: activity.userId,
+      userEmail: activity.userEmail,
+      userName: activity.userName,
+      department: activity.department,
+      action: activity.action,
+      entityType: activity.entityType,
+      entityId: activity.entityId,
+      entityName: activity.entityName,
+      description: activity.description,
+      metadata: activity.metadata ? JSON.parse(JSON.stringify(activity.metadata)) : undefined,
+      createdAt: new Date().toISOString(),
     });
+
+    if (error) {
+      console.error('Activity logging error:', error);
+    }
   } catch (error) {
     // Don't throw - logging failure shouldn't break the app
   }
@@ -48,15 +52,25 @@ export async function getRecentActivity(
   department?: Department
 ): Promise<any[]> {
   try {
-    const where = department ? { department } : {};
+    const supabase = supabaseAdmin();
+    let query = supabase
+      .from('staff_activity_feed')
+      .select('*')
+      .order('createdAt', { ascending: false })
+      .limit(limit);
 
-    const activities = await prisma.staff_activity_feed.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-    });
+    if (department) {
+      query = query.eq('department', department);
+    }
 
-    return activities;
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Get recent activity error:', error);
+      return [];
+    }
+
+    return data || [];
   } catch (error) {
     return [];
   }
@@ -70,13 +84,20 @@ export async function getUserActivity(
   limit: number = 50
 ): Promise<any[]> {
   try {
-    const activities = await prisma.staff_activity_feed.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-    });
+    const supabase = supabaseAdmin();
+    const { data, error } = await supabase
+      .from('staff_activity_feed')
+      .select('*')
+      .eq('userId', userId)
+      .order('createdAt', { ascending: false })
+      .limit(limit);
 
-    return activities;
+    if (error) {
+      console.error('Get user activity error:', error);
+      return [];
+    }
+
+    return data || [];
   } catch (error) {
     return [];
   }

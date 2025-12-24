@@ -1,12 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const supabase = supabaseAdmin();
+
   const session = await getServerSession(req, res, authOptions);
 
   if (!session || !session.user) {
@@ -29,32 +31,32 @@ export default async function handler(
       const skip = (parseInt(page as string) - 1) * parseInt(per_page as string);
       const take = parseInt(per_page as string);
 
-      const where: any = {};
+      // Build query
+      let query = supabase
+        .from('videos')
+        .select('*', { count: 'exact' });
 
+      // Apply filters
       if (status && status !== 'all') {
-        where.status = status.toString().toUpperCase();
+        query = query.eq('status', status.toString().toUpperCase());
       }
 
       if (search) {
-        where.OR = [
-          { title: { contains: search as string, mode: 'insensitive' } },
-          { description: { contains: search as string, mode: 'insensitive' } },
-        ];
+        query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
       }
 
-      const videos = await prisma.videos.findMany({
-        where,
-        skip,
-        take,
-        orderBy: { createdAt: 'desc' },
-      });
+      const { data: videos, error, count } = await query
+        .order('createdAt', { ascending: false })
+        .range(skip, skip + take - 1);
 
-      const total = await prisma.videos.count({ where });
+      if (error) {
+        throw error;
+      }
 
-      res.setHeader('X-Total-Count', total.toString());
-      res.setHeader('X-Total-Pages', Math.ceil(total / take).toString());
+      res.setHeader('X-Total-Count', (count || 0).toString());
+      res.setHeader('X-Total-Pages', Math.ceil((count || 0) / take).toString());
 
-      return res.status(200).json(videos);
+      return res.status(200).json(videos || []);
     } catch (error: any) {
       return res.status(500).json({ error: error.message || 'Internal server error' });
     }
@@ -81,16 +83,19 @@ export default async function handler(
       }
 
       // Check for duplicate slug
-      const existing = await prisma.videos.findUnique({
-        where: { slug },
-      });
+      const { data: existing } = await supabase
+        .from('videos')
+        .select('id')
+        .eq('slug', slug)
+        .single();
 
       if (existing) {
         return res.status(409).json({ error: 'Video with this slug already exists' });
       }
 
-      const video = await prisma.videos.create({
-        data: {
+      const { data: video, error } = await supabase
+        .from('videos')
+        .insert({
           id: `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           title,
           slug,
@@ -99,25 +104,30 @@ export default async function handler(
           duration: duration || null,
           thumbnail: thumbnail || null,
           status: status.toUpperCase(),
-          publishedAt: status.toUpperCase() === 'PUBLISHED' ? new Date() : null,
+          publishedAt: status.toUpperCase() === 'PUBLISHED' ? new Date().toISOString() : null,
           seoTitle: seoTitle || null,
           seoDescription: seoDescription || null,
           featuredImage: featuredImage || null,
           featuredImageAlt: featuredImageAlt || null,
-        },
-      });
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
 
       // Log activity
-      await prisma.activity_logs.create({
-        data: {
+      await supabase
+        .from('activity_logs')
+        .insert({
           id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           userId: session.user.id,
           action: 'CREATE',
           entity: 'video',
           entityId: video.id,
           details: JSON.stringify({ title: video.title, slug: video.slug }),
-        },
-      });
+        });
 
       return res.status(201).json(video);
     } catch (error: any) {

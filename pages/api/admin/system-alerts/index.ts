@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -21,32 +21,33 @@ export default async function handler(
   if (req.method === 'GET') {
     try {
       const { resolved, category, severity, limit = 50 } = req.query;
+      const supabase = supabaseAdmin();
 
-      const where: any = {};
+      let query = supabase
+        .from('system_alerts')
+        .select('*');
 
       if (resolved === 'false') {
-        where.isResolved = false;
+        query = query.eq('isResolved', false);
       } else if (resolved === 'true') {
-        where.isResolved = true;
+        query = query.eq('isResolved', true);
       }
 
       if (category) {
-        where.category = category;
+        query = query.eq('category', category as string);
       }
 
       if (severity) {
-        where.severity = parseInt(severity as string);
+        query = query.eq('severity', parseInt(severity as string));
       }
 
-      const alerts = await prisma.system_alerts.findMany({
-        where,
-        orderBy: [
-          { isResolved: 'asc' }, // Unresolved first
-          { severity: 'desc' }, // Highest severity first
-          { createdAt: 'desc' },
-        ],
-        take: parseInt(limit as string),
-      });
+      const { data: alerts, error } = await query
+        .order('isResolved', { ascending: true })
+        .order('severity', { ascending: false })
+        .order('createdAt', { ascending: false })
+        .limit(parseInt(limit as string));
+
+      if (error) throw error;
 
       return res.status(200).json(alerts);
     } catch (error) {

@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../lib/supabase';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
 
@@ -8,33 +8,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const prisma = new PrismaClient();
+  const supabase = supabaseAdmin();
 
   try {
     const { token, password } = req.body;
 
     if (!token || !password) {
-      await prisma.$disconnect();
       return res.status(400).json({ error: 'Token and password are required' });
     }
 
     if (password.length < 8) {
-      await prisma.$disconnect();
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
     }
 
     // Find user with valid token
-    const user = await prisma.users.findFirst({
-      where: {
-        resetToken: token,
-        resetTokenExpiry: {
-          gt: new Date(),
-        },
-      },
-    });
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('resetToken', token)
+      .gt('resetTokenExpiry', new Date().toISOString())
+      .single();
 
-    if (!user) {
-      await prisma.$disconnect();
+    if (userError || !user) {
       return res.status(400).json({ error: 'Invalid or expired reset token' });
     }
 
@@ -42,28 +37,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Update user
-    await prisma.users.update({
-      where: { id: user.id },
-      data: {
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
         password: hashedPassword,
         resetToken: null,
         resetTokenExpiry: null,
-      },
-    });
+      })
+      .eq('id', user.id);
+
+    if (updateError) {
+      throw updateError;
+    }
 
     // Log activity
-    await prisma.activity_logs.create({
-      data: {
+    const { error: logError } = await supabase
+      .from('activity_logs')
+      .insert({
         id: randomUUID(),
         userId: user.id,
         action: 'PASSWORD_RESET',
         entity: 'user',
         entityId: user.id,
         details: JSON.stringify({ method: 'reset_token' }),
-      },
-    });
+      });
 
-    await prisma.$disconnect();
+    if (logError) {
+      console.error('[Reset Password] Failed to log activity:', logError);
+    }
 
     return res.status(200).json({
       success: true,
@@ -71,7 +72,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (error: any) {
     console.error('[Reset Password] Error:', error);
-    await prisma.$disconnect();
     return res.status(500).json({ error: 'Failed to reset password' });
   }
 }

@@ -5,7 +5,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
-import { prisma } from '../../../lib/prisma';
+import { supabaseAdmin } from '../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -27,38 +27,33 @@ export default async function handler(
   }
 
   try {
+    const supabase = supabaseAdmin();
+
     const { filter = 'all', days = '30' } = req.query;
     const daysInt = parseInt(days as string);
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - daysInt);
 
     // Get subscriptions (SUCCESS+ and Magazine)
-    const subscriptions = await prisma.subscriptions.findMany({
-      where: {
-        createdAt: { gte: startDate },
-      },
-      include: {
-        users: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-        magazine_subscriptions: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { data: subscriptions, error: subsError } = await supabase
+      .from('subscriptions')
+      .select('*, users(name, email), magazine_subscriptions(*)')
+      .gte('createdAt', startDate.toISOString())
+      .order('createdAt', { ascending: false });
+
+    if (subsError) throw new Error(subsError.message);
 
     // Get store orders
-    const orders = await prisma.orders.findMany({
-      where: {
-        createdAt: { gte: startDate },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { data: orders, error: ordersError } = await supabase
+      .from('orders')
+      .select('*')
+      .gte('createdAt', startDate.toISOString())
+      .order('createdAt', { ascending: false });
+
+    if (ordersError) throw new Error(ordersError.message);
 
     // Transform subscriptions into transactions
-    const subscriptionTransactions = subscriptions.map((sub: any) => {
+    const subscriptionTransactions = (subscriptions || []).map((sub: any) => {
       const isMagazine = !!sub.magazine_subscriptions;
       const amount = isMagazine ? 19.99 : 9.99; // Default prices (should come from tier/plan)
 
@@ -76,7 +71,7 @@ export default async function handler(
     });
 
     // Transform orders into transactions
-    const orderTransactions = orders.map((order: any) => ({
+    const orderTransactions = (orders || []).map((order: any) => ({
       id: order.id,
       type: 'order' as const,
       productName: `Order #${order.orderNumber}`,
@@ -114,26 +109,26 @@ export default async function handler(
       .filter(t => new Date(t.createdAt) >= monthAgo)
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const activeSubscriptions = subscriptions.filter(
+    const activeSubscriptions = (subscriptions || []).filter(
       (sub: any) => sub.status === 'active'
     ).length;
 
-    const totalOrders = orders.length;
+    const totalOrders = orders?.length || 0;
 
     const averageOrderValue = totalOrders > 0
       ? orderTransactions.reduce((sum: number, t: { amount: number }) => sum + t.amount, 0) / totalOrders
       : 0;
 
     // Calculate revenue by type
-    const successPlusRevenue = subscriptions
+    const successPlusRevenue = (subscriptions || [])
       .filter((sub: any) => !sub.magazine_subscriptions && sub.status === 'active')
       .reduce((sum: number) => sum + 9.99, 0); // TODO: Get actual price from tier
 
-    const magazineRevenue = subscriptions
+    const magazineRevenue = (subscriptions || [])
       .filter((sub: any) => sub.magazine_subscriptions && sub.status === 'active')
       .reduce((sum: number) => sum + 19.99, 0); // TODO: Get actual price
 
-    const storeRevenue = orders
+    const storeRevenue = (orders || [])
       .filter((order: any) => order.status === 'COMPLETED')
       .reduce((sum: number, order: any) => sum + parseFloat(order.total.toString()), 0);
 

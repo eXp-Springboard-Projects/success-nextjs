@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -23,24 +21,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { id } = req.query;
+    const supabase = supabaseAdmin();
 
     // Check if user exists and is pending
-    const user = await prisma.$queryRaw<Array<{ role: string; email: string }>>`
-      SELECT role, email FROM users WHERE id = ${id}
-    `;
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('role, email')
+      .eq('id', id as string)
+      .single();
 
-    if (user.length === 0) {
+    if (userError || !user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    if (user[0].role !== 'PENDING') {
+    if (user.role !== 'PENDING') {
       return res.status(400).json({ error: 'User is not pending approval' });
     }
 
     // Delete the pending user
-    await prisma.$executeRaw`
-      DELETE FROM users WHERE id = ${id}
-    `;
+    const { error: deleteError } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', id as string);
+
+    if (deleteError) throw deleteError;
 
     // TODO: Send rejection email to user
 

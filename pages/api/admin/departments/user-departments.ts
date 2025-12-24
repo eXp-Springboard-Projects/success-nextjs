@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '@/lib/prisma';
+import { supabaseAdmin } from '@/lib/supabase';
 import { getUserDepartments } from '@/lib/auth/departmentAccess';
 
 /**
@@ -23,18 +23,20 @@ export default async function handler(
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    const supabase = supabaseAdmin();
     const { userId } = req.query;
 
     // If no userId provided, get current user's departments
     const targetUserId = (userId as string) || session.user.id;
 
     // Check if user is Super Admin or requesting their own departments
-    const currentUser = await prisma.users.findUnique({
-      where: { id: session.user.id },
-      select: { role: true },
-    });
+    const { data: currentUser, error: userError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', session.user.id)
+      .single();
 
-    if (currentUser?.role !== 'SUPER_ADMIN' && targetUserId !== session.user.id) {
+    if (userError || (currentUser?.role !== 'SUPER_ADMIN' && targetUserId !== session.user.id)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 

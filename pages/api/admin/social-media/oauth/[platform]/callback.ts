@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '../../../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 
 /**
  * OAuth Callback Endpoint
@@ -117,37 +117,30 @@ export default async function handler(
 
     // Calculate token expiry
     const tokenExpiresAt = expires_in
-      ? new Date(Date.now() + expires_in * 1000)
+      ? new Date(Date.now() + expires_in * 1000).toISOString()
       : null;
 
-    // Save to database
-    await prisma.$executeRaw`
-      INSERT INTO social_accounts (
-        id, user_id, platform, account_name, account_id,
-        access_token, refresh_token, token_expires_at,
-        is_active, created_at, updated_at
-      ) VALUES (
-        gen_random_uuid()::TEXT,
-        ${userId},
-        ${platformKey},
-        ${accountName},
-        ${accountId},
-        ${access_token},
-        ${refresh_token || null},
-        ${tokenExpiresAt}::TIMESTAMP,
-        true,
-        CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-      )
-      ON CONFLICT (user_id, platform, account_id)
-      DO UPDATE SET
-        access_token = EXCLUDED.access_token,
-        refresh_token = EXCLUDED.refresh_token,
-        token_expires_at = EXCLUDED.token_expires_at,
-        is_active = true,
-        last_error = NULL,
-        updated_at = CURRENT_TIMESTAMP
-    `;
+    const supabase = supabaseAdmin();
+
+    // Save to database - upsert (insert or update)
+    const { error: upsertError } = await supabase
+      .from('social_accounts')
+      .upsert({
+        user_id: userId,
+        platform: platformKey,
+        account_name: accountName,
+        account_id: accountId,
+        access_token: access_token,
+        refresh_token: refresh_token || null,
+        token_expires_at: tokenExpiresAt,
+        is_active: true,
+        last_error: null,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id,platform,account_id'
+      });
+
+    if (upsertError) throw upsertError;
 
     return res.redirect('/admin/social-media?success=Account connected successfully');
   } catch (error: any) {

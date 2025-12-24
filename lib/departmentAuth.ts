@@ -1,6 +1,6 @@
 import { GetServerSidePropsContext, GetServerSidePropsResult } from 'next';
 import { getSession } from 'next-auth/react';
-import { Department, UserRole } from '@prisma/client';
+import { Department, UserRole } from '@/lib/types';
 
 export interface DepartmentSession {
   user: {
@@ -14,13 +14,13 @@ export interface DepartmentSession {
 
 // Permission matrix mapping departments to allowed roles
 const DEPARTMENT_PERMISSIONS: Record<Department, UserRole[]> = {
-  SUPER_ADMIN: ['SUPER_ADMIN'],
-  CUSTOMER_SERVICE: ['SUPER_ADMIN', 'ADMIN'],
-  EDITORIAL: ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR'],
-  SUCCESS_PLUS: ['SUPER_ADMIN', 'ADMIN'],
-  DEV: ['SUPER_ADMIN', 'ADMIN'],
-  MARKETING: ['SUPER_ADMIN', 'ADMIN'],
-  COACHING: ['SUPER_ADMIN', 'ADMIN'],
+  [Department.SUPER_ADMIN]: [UserRole.SUPER_ADMIN],
+  [Department.CUSTOMER_SERVICE]: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+  [Department.EDITORIAL]: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR, UserRole.AUTHOR],
+  [Department.SUCCESS_PLUS]: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+  [Department.DEV]: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+  [Department.MARKETING]: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+  [Department.COACHING]: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
 };
 
 // Pages that Super Admin can always access
@@ -35,7 +35,7 @@ export function hasDepartmentAccess(
   targetDepartment: Department
 ): boolean {
   // Super Admin has access to all departments
-  if (userRole === 'SUPER_ADMIN') {
+  if (userRole === UserRole.SUPER_ADMIN) {
     return true;
   }
 
@@ -112,13 +112,13 @@ export function getAccessibleDepartments(
   primaryDepartment: Department | null | undefined
 ): Department[] {
   // Super Admin can access all departments
-  if (userRole === 'SUPER_ADMIN') {
+  if (userRole === UserRole.SUPER_ADMIN) {
     return Object.values(Department);
   }
 
   // Admin can access most departments
-  if (userRole === 'ADMIN') {
-    return Object.values(Department).filter(dept => dept !== 'SUPER_ADMIN');
+  if (userRole === UserRole.ADMIN) {
+    return Object.values(Department).filter(dept => dept !== Department.SUPER_ADMIN);
   }
 
   // Other roles can only access their assigned department
@@ -174,10 +174,12 @@ export async function logDepartmentAccess(
   userAgent?: string
 ): Promise<void> {
   try {
-    const { prisma } = await import('./prisma');
+    const { supabaseAdmin } = await import('./supabase');
+    const supabase = supabaseAdmin();
 
-    await prisma.department_access_log.create({
-      data: {
+    await supabase
+      .from('department_access_log')
+      .insert({
         id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         userId,
         userEmail,
@@ -186,10 +188,7 @@ export async function logDepartmentAccess(
         action,
         ipAddress,
         userAgent,
-      },
-    });
-
-    await prisma.$disconnect();
+      });
   } catch (error) {
     // Don't throw - logging failure shouldn't break the app
   }

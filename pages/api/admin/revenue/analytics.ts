@@ -1,15 +1,12 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
-import { Prisma } from '@prisma/client';
+import { supabaseAdmin } from '../../../../lib/supabase';
 
-// Type definitions for Prisma results
-type Transaction = Prisma.transactionsGetPayload<{ include: { member: true } }>;
-type TransactionSimple = Prisma.transactionsGetPayload<{}>;
-type Order = Prisma.ordersGetPayload<{ include: { member: true; order_items: { include: { products: true } } } }>;
-type OrderSimple = Prisma.ordersGetPayload<{}>;
-type HistoricalItem = { memberId: string; createdAt: Date };
+// Type definitions for results
+type TransactionSimple = { id: string; memberId: string; amount: number; createdAt: string; type?: string; status?: string; provider?: string };
+type OrderSimple = { id: string; memberId: string; total: number; createdAt: string; status?: string; orderSource?: string };
+type HistoricalItem = { memberId: string; createdAt: string };
 
 /**
  * Comprehensive Revenue Analytics API
@@ -35,6 +32,8 @@ export default async function handler(
   }
 
   try {
+    const supabase = supabaseAdmin();
+
     const {
       startDate: startDateParam,
       endDate: endDateParam,
@@ -57,127 +56,111 @@ export default async function handler(
     // ==========================================
     // 1. TRANSACTIONS DATA (All Payments)
     // ==========================================
-    const transactions = await prisma.transactions.findMany({
-      where: {
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
-        },
-        status: { in: ['succeeded', 'completed'] },
-      },
-      include: {
-        member: true,
-      },
-    });
+    const { data: transactions, error: transactionsError } = await supabase
+      .from('transactions')
+      .select('*, member:members(*)')
+      .gte('createdAt', startDate.toISOString())
+      .lte('createdAt', endDate.toISOString())
+      .in('status', ['succeeded', 'completed']);
 
-    const prevTransactions = compareWithPrevious === 'true' ? await prisma.transactions.findMany({
-      where: {
-        createdAt: {
-          gte: prevStartDate,
-          lt: prevEndDate,
-        },
-        status: { in: ['succeeded', 'completed'] },
-      },
-    }) : [];
+    if (transactionsError) throw new Error(transactionsError.message);
+
+    const { data: prevTransactions, error: prevTransactionsError } = compareWithPrevious === 'true'
+      ? await supabase
+          .from('transactions')
+          .select('*')
+          .gte('createdAt', prevStartDate.toISOString())
+          .lt('createdAt', prevEndDate.toISOString())
+          .in('status', ['succeeded', 'completed'])
+      : { data: [], error: null };
+
+    if (prevTransactionsError) throw new Error(prevTransactionsError.message);
 
     // ==========================================
     // 2. ORDERS DATA (WooCommerce, Stripe, InHouse)
     // ==========================================
-    const orders = await prisma.orders.findMany({
-      where: {
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
-        },
-        status: { in: ['COMPLETED', 'PROCESSING'] },
-      },
-      include: {
-        member: true,
-        order_items: {
-          include: {
-            products: true,
-          },
-        },
-      },
-    });
+    const { data: orders, error: ordersError } = await supabase
+      .from('orders')
+      .select('*, member:members(*), order_items(*, products(*))')
+      .gte('createdAt', startDate.toISOString())
+      .lte('createdAt', endDate.toISOString())
+      .in('status', ['COMPLETED', 'PROCESSING']);
 
-    const prevOrders = compareWithPrevious === 'true' ? await prisma.orders.findMany({
-      where: {
-        createdAt: {
-          gte: prevStartDate,
-          lt: prevEndDate,
-        },
-        status: { in: ['COMPLETED', 'PROCESSING'] },
-      },
-    }) : [];
+    if (ordersError) throw new Error(ordersError.message);
+
+    const { data: prevOrders, error: prevOrdersError } = compareWithPrevious === 'true'
+      ? await supabase
+          .from('orders')
+          .select('*')
+          .gte('createdAt', prevStartDate.toISOString())
+          .lt('createdAt', prevEndDate.toISOString())
+          .in('status', ['COMPLETED', 'PROCESSING'])
+      : { data: [], error: null };
+
+    if (prevOrdersError) throw new Error(prevOrdersError.message);
 
     // ==========================================
     // 3. SUBSCRIPTIONS DATA (SUCCESS+)
     // ==========================================
-    const activeSubscriptions = await prisma.subscriptions.count({
-      where: {
-        status: 'ACTIVE',
-      },
-    });
+    const { count: activeSubscriptions, error: activeSubsError } = await supabase
+      .from('subscriptions')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'ACTIVE');
 
-    const newSubscriptions = await prisma.subscriptions.count({
-      where: {
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-    });
+    if (activeSubsError) throw new Error(activeSubsError.message);
 
-    const prevNewSubscriptions = compareWithPrevious === 'true' ? await prisma.subscriptions.count({
-      where: {
-        createdAt: {
-          gte: prevStartDate,
-          lt: prevEndDate,
-        },
-      },
-    }) : 0;
+    const { count: newSubscriptions, error: newSubsError } = await supabase
+      .from('subscriptions')
+      .select('*', { count: 'exact', head: true })
+      .gte('createdAt', startDate.toISOString())
+      .lte('createdAt', endDate.toISOString());
+
+    if (newSubsError) throw new Error(newSubsError.message);
+
+    const { count: prevNewSubscriptions, error: prevNewSubsError } = compareWithPrevious === 'true'
+      ? await supabase
+          .from('subscriptions')
+          .select('*', { count: 'exact', head: true })
+          .gte('createdAt', prevStartDate.toISOString())
+          .lt('createdAt', prevEndDate.toISOString())
+      : { count: 0, error: null };
+
+    if (prevNewSubsError) throw new Error(prevNewSubsError.message);
 
     // ==========================================
     // 4. REFUNDS & DISPUTES
     // ==========================================
-    const refunds = await prisma.transactions.findMany({
-      where: {
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
-        },
-        OR: [
-          { status: 'refunded' },
-          { type: 'refund' },
-        ],
-      },
-    });
+    const { data: refunds, error: refundsError } = await supabase
+      .from('transactions')
+      .select('*')
+      .gte('createdAt', startDate.toISOString())
+      .lte('createdAt', endDate.toISOString())
+      .or('status.eq.refunded,type.eq.refund');
 
-    const prevRefunds = compareWithPrevious === 'true' ? await prisma.transactions.findMany({
-      where: {
-        createdAt: {
-          gte: prevStartDate,
-          lt: prevEndDate,
-        },
-        OR: [
-          { status: 'refunded' },
-          { type: 'refund' },
-        ],
-      },
-    }) : [];
+    if (refundsError) throw new Error(refundsError.message);
+
+    const { data: prevRefunds, error: prevRefundsError } = compareWithPrevious === 'true'
+      ? await supabase
+          .from('transactions')
+          .select('*')
+          .gte('createdAt', prevStartDate.toISOString())
+          .lt('createdAt', prevEndDate.toISOString())
+          .or('status.eq.refunded,type.eq.refund')
+      : { data: [], error: null };
+
+    if (prevRefundsError) throw new Error(prevRefundsError.message);
 
     // ==========================================
     // CALCULATE METRICS
     // ==========================================
 
     // Total Revenue
-    const transactionRevenue = transactions.reduce((sum: number, t: Transaction) => sum + parseFloat(t.amount.toString()), 0);
-    const orderRevenue = orders.reduce((sum: number, o: Order) => sum + parseFloat(o.total.toString()), 0);
+    const transactionRevenue = (transactions || []).reduce((sum: number, t: any) => sum + parseFloat(t.amount.toString()), 0);
+    const orderRevenue = (orders || []).reduce((sum: number, o: any) => sum + parseFloat(o.total.toString()), 0);
     const totalRevenue = transactionRevenue + orderRevenue;
 
-    const prevTransactionRevenue = prevTransactions.reduce((sum: number, t: TransactionSimple) => sum + parseFloat(t.amount.toString()), 0);
-    const prevOrderRevenue = prevOrders.reduce((sum: number, o: OrderSimple) => sum + parseFloat(o.total.toString()), 0);
+    const prevTransactionRevenue = (prevTransactions || []).reduce((sum: number, t: any) => sum + parseFloat(t.amount.toString()), 0);
+    const prevOrderRevenue = (prevOrders || []).reduce((sum: number, o: any) => sum + parseFloat(o.total.toString()), 0);
     const prevTotalRevenue = prevTransactionRevenue + prevOrderRevenue;
 
     const revenueGrowth = prevTotalRevenue > 0
@@ -185,8 +168,8 @@ export default async function handler(
       : 0;
 
     // Total Transactions
-    const totalTransactions = transactions.length + orders.length;
-    const prevTotalTransactions = prevTransactions.length + prevOrders.length;
+    const totalTransactions = (transactions?.length || 0) + (orders?.length || 0);
+    const prevTotalTransactions = (prevTransactions?.length || 0) + (prevOrders?.length || 0);
     const transactionsGrowth = prevTotalTransactions > 0
       ? ((totalTransactions - prevTotalTransactions) / prevTotalTransactions) * 100
       : 0;
@@ -200,11 +183,11 @@ export default async function handler(
 
     // Monthly Recurring Revenue (from active subscriptions)
     const subscriptionPrice = 9.99; // TODO: Get from products table
-    const mrr = activeSubscriptions * subscriptionPrice;
+    const mrr = (activeSubscriptions || 0) * subscriptionPrice;
 
     // Refund amounts
-    const refundAmount = refunds.reduce((sum: number, r: TransactionSimple) => sum + Math.abs(parseFloat(r.amount.toString())), 0);
-    const prevRefundAmount = prevRefunds.reduce((sum: number, r: TransactionSimple) => sum + Math.abs(parseFloat(r.amount.toString())), 0);
+    const refundAmount = (refunds || []).reduce((sum: number, r: any) => sum + Math.abs(parseFloat(r.amount.toString())), 0);
+    const prevRefundAmount = (prevRefunds || []).reduce((sum: number, r: any) => sum + Math.abs(parseFloat(r.amount.toString())), 0);
 
     // Refund Rate
     const refundRate = totalRevenue > 0 ? (refundAmount / totalRevenue) * 100 : 0;
@@ -223,7 +206,7 @@ export default async function handler(
       Other: 0,
     };
 
-    transactions.forEach((t: Transaction) => {
+    (transactions || []).forEach((t: any) => {
       const provider = t.provider || 'Other';
       const key = provider === 'stripe' ? 'Stripe'
                 : provider === 'paykickstart' ? 'PayKickstart'
@@ -232,7 +215,7 @@ export default async function handler(
       revenueByProvider[key] += parseFloat(t.amount.toString());
     });
 
-    orders.forEach((o: Order) => {
+    (orders || []).forEach((o: any) => {
       const source = o.orderSource || 'InHouse';
       const key = source === 'WooCommerce' ? 'WooCommerce'
                 : source === 'Stripe' ? 'Stripe'
@@ -252,21 +235,21 @@ export default async function handler(
     };
 
     // Subscriptions are SUCCESS+
-    const successPlusRevenue = transactions
-      .filter((t: Transaction) => t.type === 'subscription')
-      .reduce((sum: number, t: Transaction) => sum + parseFloat(t.amount.toString()), 0);
+    const successPlusRevenue = (transactions || [])
+      .filter((t: any) => t.type === 'subscription')
+      .reduce((sum: number, t: any) => sum + parseFloat(t.amount.toString()), 0);
     revenueByProductType['SUCCESS+'] = successPlusRevenue;
 
     // Orders from WooCommerce store
-    const storeRevenue = orders
-      .filter((o: Order) => o.orderSource === 'WooCommerce')
-      .reduce((sum: number, o: Order) => sum + parseFloat(o.total.toString()), 0);
+    const storeRevenue = (orders || [])
+      .filter((o: any) => o.orderSource === 'WooCommerce')
+      .reduce((sum: number, o: any) => sum + parseFloat(o.total.toString()), 0);
     revenueByProductType['Store'] = storeRevenue;
 
     // Other transactions
-    const otherRevenue = transactions
-      .filter((t: Transaction) => t.type !== 'subscription')
-      .reduce((sum: number, t: Transaction) => sum + parseFloat(t.amount.toString()), 0);
+    const otherRevenue = (transactions || [])
+      .filter((t: any) => t.type !== 'subscription')
+      .reduce((sum: number, t: any) => sum + parseFloat(t.amount.toString()), 0);
     revenueByProductType['Other'] = otherRevenue;
 
     // ==========================================
@@ -275,29 +258,33 @@ export default async function handler(
     const customerFirstPurchase = new Map<string, Date>();
 
     // Get all historical transactions/orders to determine first purchase date
-    const allHistoricalTransactions = await prisma.transactions.findMany({
-      where: { status: { in: ['succeeded', 'completed'] } },
-      select: { memberId: true, createdAt: true },
-      orderBy: { createdAt: 'asc' },
-    });
+    const { data: allHistoricalTransactions, error: histTransError } = await supabase
+      .from('transactions')
+      .select('memberId, createdAt')
+      .in('status', ['succeeded', 'completed'])
+      .order('createdAt', { ascending: true });
 
-    const allHistoricalOrders = await prisma.orders.findMany({
-      where: { status: { in: ['COMPLETED', 'PROCESSING'] } },
-      select: { memberId: true, createdAt: true },
-      orderBy: { createdAt: 'asc' },
-    });
+    if (histTransError) throw new Error(histTransError.message);
+
+    const { data: allHistoricalOrders, error: histOrdersError } = await supabase
+      .from('orders')
+      .select('memberId, createdAt')
+      .in('status', ['COMPLETED', 'PROCESSING'])
+      .order('createdAt', { ascending: true });
+
+    if (histOrdersError) throw new Error(histOrdersError.message);
 
     // Build map of first purchase dates
-    [...allHistoricalTransactions, ...allHistoricalOrders].forEach((item: HistoricalItem) => {
+    [...(allHistoricalTransactions || []), ...(allHistoricalOrders || [])].forEach((item: any) => {
       if (!customerFirstPurchase.has(item.memberId)) {
-        customerFirstPurchase.set(item.memberId, item.createdAt);
+        customerFirstPurchase.set(item.memberId, new Date(item.createdAt));
       }
     });
 
     let newCustomerRevenue = 0;
     let returningCustomerRevenue = 0;
 
-    transactions.forEach((t: Transaction) => {
+    (transactions || []).forEach((t: any) => {
       const firstPurchase = customerFirstPurchase.get(t.memberId);
       const isNew = firstPurchase && firstPurchase >= startDate && firstPurchase <= endDate;
       const amount = parseFloat(t.amount.toString());
@@ -308,7 +295,7 @@ export default async function handler(
       }
     });
 
-    orders.forEach((o: Order) => {
+    (orders || []).forEach((o: any) => {
       const firstPurchase = customerFirstPurchase.get(o.memberId);
       const isNew = firstPurchase && firstPurchase >= startDate && firstPurchase <= endDate;
       const amount = parseFloat(o.total.toString());
@@ -323,27 +310,31 @@ export default async function handler(
     // CUSTOMER LIFETIME VALUE (CLV)
     // ==========================================
     const memberIds = new Set([
-      ...transactions.map((t: Transaction) => t.memberId),
-      ...orders.map((o: Order) => o.memberId),
+      ...(transactions || []).map((t: any) => t.memberId),
+      ...(orders || []).map((o: any) => o.memberId),
     ]);
 
     const memberLifetimeValues = await Promise.all(
       Array.from(memberIds).map(async (memberId) => {
-        const memberTransactions = await prisma.transactions.findMany({
-          where: {
-            memberId,
-            status: { in: ['succeeded', 'completed'] },
-          },
-        });
-        const memberOrders = await prisma.orders.findMany({
-          where: {
-            memberId,
-            status: { in: ['COMPLETED', 'PROCESSING'] },
-          },
-        });
+        const { data: memberTransactions, error: mtError } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('memberId', memberId)
+          .in('status', ['succeeded', 'completed']);
+
+        if (mtError) throw new Error(mtError.message);
+
+        const { data: memberOrders, error: moError } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('memberId', memberId)
+          .in('status', ['COMPLETED', 'PROCESSING']);
+
+        if (moError) throw new Error(moError.message);
+
         const totalValue =
-          memberTransactions.reduce((sum: number, t: TransactionSimple) => sum + parseFloat(t.amount.toString()), 0) +
-          memberOrders.reduce((sum: number, o: OrderSimple) => sum + parseFloat(o.total.toString()), 0);
+          (memberTransactions || []).reduce((sum: number, t: any) => sum + parseFloat(t.amount.toString()), 0) +
+          (memberOrders || []).reduce((sum: number, o: any) => sum + parseFloat(o.total.toString()), 0);
         return totalValue;
       })
     );
@@ -364,20 +355,20 @@ export default async function handler(
       const dayEnd = new Date(currentDate);
       dayEnd.setHours(23, 59, 59, 999);
 
-      const dayTransactions = transactions.filter(
-        (t: Transaction) => t.createdAt >= dayStart && t.createdAt <= dayEnd
+      const dayTransactions = (transactions || []).filter(
+        (t: any) => new Date(t.createdAt) >= dayStart && new Date(t.createdAt) <= dayEnd
       );
-      const dayOrders = orders.filter(
-        (o: Order) => o.createdAt >= dayStart && o.createdAt <= dayEnd
+      const dayOrders = (orders || []).filter(
+        (o: any) => new Date(o.createdAt) >= dayStart && new Date(o.createdAt) <= dayEnd
       );
-      const dayRefunds = refunds.filter(
-        (r: TransactionSimple) => r.createdAt >= dayStart && r.createdAt <= dayEnd
+      const dayRefunds = (refunds || []).filter(
+        (r: any) => new Date(r.createdAt) >= dayStart && new Date(r.createdAt) <= dayEnd
       );
 
       const dayRevenue =
-        dayTransactions.reduce((sum: number, t: Transaction) => sum + parseFloat(t.amount.toString()), 0) +
-        dayOrders.reduce((sum: number, o: Order) => sum + parseFloat(o.total.toString()), 0);
-      const dayRefundAmount = dayRefunds.reduce((sum: number, r: TransactionSimple) => sum + Math.abs(parseFloat(r.amount.toString())), 0);
+        dayTransactions.reduce((sum: number, t: any) => sum + parseFloat(t.amount.toString()), 0) +
+        dayOrders.reduce((sum: number, o: any) => sum + parseFloat(o.total.toString()), 0);
+      const dayRefundAmount = dayRefunds.reduce((sum: number, r: any) => sum + Math.abs(parseFloat(r.amount.toString())), 0);
 
       dailyRevenue.push({
         date: currentDate.toISOString().split('T')[0],
@@ -422,17 +413,17 @@ export default async function handler(
       },
 
       // Subscriptions
-      activeSubscriptions,
-      newSubscriptions,
-      newSubscriptionsGrowth: prevNewSubscriptions > 0
-        ? ((newSubscriptions - prevNewSubscriptions) / prevNewSubscriptions) * 100
+      activeSubscriptions: activeSubscriptions || 0,
+      newSubscriptions: newSubscriptions || 0,
+      newSubscriptionsGrowth: (prevNewSubscriptions || 0) > 0
+        ? (((newSubscriptions || 0) - (prevNewSubscriptions || 0)) / (prevNewSubscriptions || 0)) * 100
         : 0,
 
       // Trends
       dailyRevenue,
 
       // Counts
-      refundCount: refunds.length,
+      refundCount: refunds?.length || 0,
       refundAmount,
     });
   } catch (error: unknown) {

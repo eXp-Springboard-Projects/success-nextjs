@@ -6,8 +6,7 @@
  */
 
 import { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '@/lib/prisma';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -17,69 +16,69 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  try {
-    // Example 1: Fetch recent posts using Prisma (recommended for complex queries)
-    const prismaRecentPosts = await prisma.posts.findMany({
-      where: { status: 'PUBLISHED' },
-      include: {
-        users: {
-          select: { name: true, email: true },
-        },
-        categories: {
-          select: { name: true, slug: true },
-        },
-      },
-      orderBy: { publishedAt: 'desc' },
-      take: 5,
-    });
+  const supabase = supabaseAdmin();
 
-    // Example 2: Same query using Supabase (simpler for basic queries)
-    const { data: supabaseRecentPosts, error: supabaseError } = await supabase
+  try {
+    // Example 1: Fetch recent posts using Supabase with relations
+    const { data: supabaseRecentPosts, error: postsError } = await supabase
       .from('posts')
-      .select('id, title, slug, status, publishedAt')
+      .select(`
+        id,
+        title,
+        slug,
+        status,
+        publishedAt,
+        users (
+          name,
+          email
+        ),
+        categories (
+          name,
+          slug
+        )
+      `)
       .eq('status', 'PUBLISHED')
       .order('publishedAt', { ascending: false })
       .limit(5);
 
-    if (supabaseError) {
-      console.error('Supabase query error:', supabaseError);
+    if (postsError) {
+      console.error('Supabase query error:', postsError);
     }
 
-    // Example 3: Get stats using Prisma
+    // Example 2: Get stats using Supabase
+    const [
+      { count: totalPosts },
+      { count: publishedPosts },
+      { count: totalUsers },
+      { count: activeSubscriptions },
+    ] = await Promise.all([
+      supabase.from('posts').select('*', { count: 'exact', head: true }),
+      supabase.from('posts').select('*', { count: 'exact', head: true }).eq('status', 'PUBLISHED'),
+      supabase.from('users').select('*', { count: 'exact', head: true }),
+      supabase.from('subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+    ]);
+
     const stats = {
-      totalPosts: await prisma.posts.count(),
-      publishedPosts: await prisma.posts.count({
-        where: { status: 'PUBLISHED' },
-      }),
-      totalUsers: await prisma.users.count(),
-      activeSubscriptions: await prisma.subscriptions.count({
-        where: { status: 'active' },
-      }),
+      totalPosts: totalPosts || 0,
+      publishedPosts: publishedPosts || 0,
+      totalUsers: totalUsers || 0,
+      activeSubscriptions: activeSubscriptions || 0,
     };
 
     return res.status(200).json({
-      message: 'Both Prisma and Supabase are working!',
+      message: 'Supabase is working!',
       examples: {
-        prismaQuery: {
-          description: 'Complex query with relations using Prisma',
-          count: prismaRecentPosts.length,
-          data: prismaRecentPosts,
-        },
-        supabaseQuery: {
-          description: 'Simple query using Supabase',
+        recentPosts: {
+          description: 'Query with relations using Supabase',
           count: supabaseRecentPosts?.length || 0,
           data: supabaseRecentPosts,
         },
         stats,
       },
       usage: {
-        prisma: {
-          strength: 'Complex queries with relations and type safety',
-          example: 'Use for joins, transactions, migrations',
-        },
         supabase: {
-          strength: 'Real-time subscriptions and simple CRUD',
-          example: 'Use for live updates, file storage, RLS',
+          strength: 'Real-time subscriptions, simple CRUD, and complex queries',
+          example: 'Use for live updates, file storage, RLS, and relations',
         },
       },
       nextSteps: [

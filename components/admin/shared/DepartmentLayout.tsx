@@ -2,7 +2,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { ReactNode, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Department, UserRole } from '@prisma/client';
+import { Department, UserRole } from '@/lib/types';
 import { getDepartmentName, getDepartmentPath, getAccessibleDepartments } from '@/lib/departmentAuth';
 import styles from './DepartmentLayout.module.css';
 import { Sparkles, Menu } from 'lucide-react';

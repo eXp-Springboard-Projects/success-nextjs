@@ -1,4 +1,4 @@
-import { prisma } from './prisma';
+import { supabaseAdmin } from './supabase';
 
 export interface SEOSettings {
   siteTitle: string;
@@ -33,38 +33,69 @@ export async function getSEOSettings(): Promise<SEOSettings> {
   }
 
   try {
-    let settings = await prisma.seo_settings.findFirst();
+    const supabase = supabaseAdmin();
 
-    if (!settings) {
+    const { data: settings, error } = await supabase
+      .from('seo_settings')
+      .select('*')
+      .limit(1)
+      .single();
+
+    if (error || !settings) {
       // Create default settings if none exist
-      settings = await prisma.seo_settings.create({
-        data: {
+      const { data: newSettings, error: createError } = await supabase
+        .from('seo_settings')
+        .insert({
           id: 'default',
-          updatedAt: new Date(),
-        },
-      });
-    }
+          updatedAt: new Date().toISOString(),
+        })
+        .select()
+        .single();
 
-    cachedSEOSettings = {
-      siteTitle: settings.siteTitle,
-      siteDescription: settings.siteDescription,
-      siteKeywords: settings.siteKeywords,
-      ogImage: settings.ogImage,
-      ogType: settings.ogType,
-      twitterHandle: settings.twitterHandle,
-      twitterCardType: settings.twitterCardType,
-      googleAnalyticsId: settings.googleAnalyticsId,
-      googleSearchConsoleCode: settings.googleSearchConsoleCode,
-      bingWebmasterCode: settings.bingWebmasterCode,
-      facebookDomainVerification: settings.facebookDomainVerification,
-      sitemapUrl: settings.sitemapUrl,
-      robotsTxt: settings.robotsTxt,
-      canonicalUrl: settings.canonicalUrl,
-      headerScripts: settings.headerScripts,
-      footerScripts: settings.footerScripts,
-      faviconUrl: settings.faviconUrl,
-      appleTouchIconUrl: settings.appleTouchIconUrl,
-    };
+      if (createError) throw createError;
+
+      cachedSEOSettings = {
+        siteTitle: newSettings.siteTitle,
+        siteDescription: newSettings.siteDescription,
+        siteKeywords: newSettings.siteKeywords,
+        ogImage: newSettings.ogImage,
+        ogType: newSettings.ogType,
+        twitterHandle: newSettings.twitterHandle,
+        twitterCardType: newSettings.twitterCardType,
+        googleAnalyticsId: newSettings.googleAnalyticsId,
+        googleSearchConsoleCode: newSettings.googleSearchConsoleCode,
+        bingWebmasterCode: newSettings.bingWebmasterCode,
+        facebookDomainVerification: newSettings.facebookDomainVerification,
+        sitemapUrl: newSettings.sitemapUrl,
+        robotsTxt: newSettings.robotsTxt,
+        canonicalUrl: newSettings.canonicalUrl,
+        headerScripts: newSettings.headerScripts,
+        footerScripts: newSettings.footerScripts,
+        faviconUrl: newSettings.faviconUrl,
+        appleTouchIconUrl: newSettings.appleTouchIconUrl,
+      };
+    } else {
+      cachedSEOSettings = {
+        siteTitle: settings.siteTitle,
+        siteDescription: settings.siteDescription,
+        siteKeywords: settings.siteKeywords,
+        ogImage: settings.ogImage,
+        ogType: settings.ogType,
+        twitterHandle: settings.twitterHandle,
+        twitterCardType: settings.twitterCardType,
+        googleAnalyticsId: settings.googleAnalyticsId,
+        googleSearchConsoleCode: settings.googleSearchConsoleCode,
+        bingWebmasterCode: settings.bingWebmasterCode,
+        facebookDomainVerification: settings.facebookDomainVerification,
+        sitemapUrl: settings.sitemapUrl,
+        robotsTxt: settings.robotsTxt,
+        canonicalUrl: settings.canonicalUrl,
+        headerScripts: settings.headerScripts,
+        footerScripts: settings.footerScripts,
+        faviconUrl: settings.faviconUrl,
+        appleTouchIconUrl: settings.appleTouchIconUrl,
+      };
+    }
 
     lastFetchTime = now;
     return cachedSEOSettings;

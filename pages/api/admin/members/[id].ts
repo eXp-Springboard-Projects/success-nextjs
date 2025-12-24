@@ -1,12 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const supabase = supabaseAdmin();
+
   // Check authentication
   const session = await getServerSession(req, res, authOptions);
 
@@ -28,83 +30,76 @@ export default async function handler(
   if (req.method === 'GET') {
     try {
       // Fetch specific member with subscription details
-      const member = await prisma.members.findUnique({
-        where: {
-          id: id,
-        },
-        include: {
-          subscriptions: {
-            select: {
-              status: true,
-              currentPeriodStart: true,
-              currentPeriodEnd: true,
-              stripePriceId: true,
-              stripeSubscriptionId: true,
-              stripeCustomerId: true,
-              cancelAtPeriodEnd: true,
-              provider: true,
-              tier: true,
-            },
-          },
-          platformUser: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              role: true,
-            },
-          },
-          transactions: {
-            select: {
-              id: true,
-              amount: true,
-              currency: true,
-              status: true,
-              type: true,
-              description: true,
-              provider: true,
-              createdAt: true,
-            },
-            orderBy: {
-              createdAt: 'desc',
-            },
-            take: 10,
-          },
-          orders: {
-            select: {
-              id: true,
-              orderNumber: true,
-              total: true,
-              status: true,
-              createdAt: true,
-            },
-            orderBy: {
-              createdAt: 'desc',
-            },
-            take: 10,
-          },
-        },
-      });
+      const { data: member, error } = await supabase
+        .from('members')
+        .select(`
+          *,
+          subscriptions(
+            status,
+            currentPeriodStart,
+            currentPeriodEnd,
+            stripePriceId,
+            stripeSubscriptionId,
+            stripeCustomerId,
+            cancelAtPeriodEnd,
+            provider,
+            tier
+          ),
+          users!members_linkedMemberId_fkey(
+            id,
+            name,
+            email,
+            role
+          ),
+          transactions(
+            id,
+            amount,
+            currency,
+            status,
+            type,
+            description,
+            provider,
+            createdAt
+          ),
+          orders(
+            id,
+            orderNumber,
+            total,
+            status,
+            createdAt
+          )
+        `)
+        .eq('id', id)
+        .single();
 
-      if (!member) {
+      if (error || !member) {
         return res.status(404).json({ message: 'Member not found' });
       }
 
+      // Sort transactions and orders by createdAt descending, take 10 each
+      const transactions = (member.transactions || [])
+        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 10);
+
+      const orders = (member.orders || [])
+        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 10);
+
       // Transform data for frontend
-      type MemberTransaction = typeof member.transactions[number];
-      type MemberOrder = typeof member.orders[number];
       const transformedMember = {
         ...member,
-        totalSpent: member.totalSpent.toNumber(),
-        lifetimeValue: member.lifetimeValue.toNumber(),
-        transactions: member.transactions.map((t: MemberTransaction) => ({
+        totalSpent: member.totalSpent || 0,
+        lifetimeValue: member.lifetimeValue || 0,
+        transactions: transactions.map((t: any) => ({
           ...t,
-          amount: t.amount.toNumber(),
+          amount: t.amount || 0,
         })),
-        orders: member.orders.map((o: MemberOrder) => ({
+        orders: orders.map((o: any) => ({
           ...o,
-          total: o.total.toNumber(),
+          total: o.total || 0,
         })),
+        platformUser: member.users || null,
+        users: undefined, // Remove the raw users field
       };
 
       return res.status(200).json(transformedMember);
@@ -133,9 +128,11 @@ export default async function handler(
         }
 
         // Check for duplicate email (excluding current member)
-        const existingMember = await prisma.members.findUnique({
-          where: { email },
-        });
+        const { data: existingMember } = await supabase
+          .from('members')
+          .select('id')
+          .eq('email', email)
+          .single();
 
         if (existingMember && existingMember.id !== id) {
           return res.status(409).json({ message: 'Email already in use by another member' });
@@ -148,26 +145,19 @@ export default async function handler(
       }
 
       // Get current member data for audit log
-      const currentMember = await prisma.members.findUnique({
-        where: { id },
-        select: {
-          firstName: true,
-          lastName: true,
-          email: true,
-          phone: true,
-          tags: true,
-          internalNotes: true,
-          priorityLevel: true,
-        },
-      });
+      const { data: currentMember, error: fetchError } = await supabase
+        .from('members')
+        .select('firstName, lastName, email, phone, tags, internalNotes, priorityLevel')
+        .eq('id', id)
+        .single();
 
-      if (!currentMember) {
+      if (fetchError || !currentMember) {
         return res.status(404).json({ message: 'Member not found' });
       }
 
       // Build update data object (only include fields that were provided)
       const updateData: any = {
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       };
 
       if (firstName !== undefined) updateData.firstName = firstName;
@@ -179,14 +169,21 @@ export default async function handler(
       if (priorityLevel !== undefined) updateData.priorityLevel = priorityLevel;
 
       // Update member
-      const updatedMember = await prisma.members.update({
-        where: { id },
-        data: updateData,
-      });
+      const { data: updatedMember, error: updateError } = await supabase
+        .from('members')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (updateError) {
+        throw updateError;
+      }
 
       // Log the change in audit_logs
-      await prisma.audit_logs.create({
-        data: {
+      const { error: auditError } = await supabase
+        .from('audit_logs')
+        .insert({
           id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           userId: session.user.id,
           userEmail: session.user.email,
@@ -211,15 +208,18 @@ export default async function handler(
           requestUrl: req.url || null,
           method: 'PATCH',
           statusCode: 200,
-        },
-      });
+        });
+
+      if (auditError) {
+        console.error('Failed to create audit log:', auditError);
+      }
 
       return res.status(200).json({
         message: 'Member updated successfully',
         member: {
           ...updatedMember,
-          totalSpent: updatedMember.totalSpent.toNumber(),
-          lifetimeValue: updatedMember.lifetimeValue.toNumber(),
+          totalSpent: updatedMember.totalSpent || 0,
+          lifetimeValue: updatedMember.lifetimeValue || 0,
         },
       });
     } catch (error: any) {
@@ -230,15 +230,19 @@ export default async function handler(
   if (req.method === 'DELETE') {
     try {
       // Delete member (cascade will delete subscriptions, transactions, orders)
-      await prisma.members.delete({
-        where: {
-          id: id,
-        },
-      });
+      const { error: deleteError } = await supabase
+        .from('members')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) {
+        throw deleteError;
+      }
 
       // Log the deletion in audit_logs
-      await prisma.audit_logs.create({
-        data: {
+      const { error: auditError } = await supabase
+        .from('audit_logs')
+        .insert({
           id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           userId: session.user.id,
           userEmail: session.user.email,
@@ -251,8 +255,11 @@ export default async function handler(
           requestUrl: req.url || null,
           method: 'DELETE',
           statusCode: 200,
-        },
-      });
+        });
+
+      if (auditError) {
+        console.error('Failed to create audit log:', auditError);
+      }
 
       return res.status(200).json({ message: 'Member deleted successfully' });
     } catch (error) {

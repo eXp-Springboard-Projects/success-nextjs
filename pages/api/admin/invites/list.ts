@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -23,10 +23,15 @@ export default async function handler(
       return res.status(403).json({ error: 'Only admins can view invite codes' });
     }
 
-    const invites = await prisma.invite_codes.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-    });
+    const supabase = supabaseAdmin();
+
+    const { data: invites, error } = await supabase
+      .from('invite_codes')
+      .select('*')
+      .order('createdAt', { ascending: false })
+      .limit(100);
+
+    if (error) throw error;
 
     return res.status(200).json({
       success: true,

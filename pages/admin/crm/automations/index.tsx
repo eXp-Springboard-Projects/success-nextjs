@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import DepartmentLayout from '../../../../components/admin/shared/DepartmentLayout';
-import { Department } from '@prisma/client';
+import { Department } from '@/lib/types';
 import { requireAdminAuth } from '@/lib/adminAuth';
 import styles from '../../editorial/Editorial.module.css';
 import Link from 'next/link';

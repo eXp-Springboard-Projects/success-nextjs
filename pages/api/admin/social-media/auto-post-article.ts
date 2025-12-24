@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 import { generateSocialPostFromArticle } from '../../../../lib/social-media-poster';
 
 /**
@@ -32,24 +32,18 @@ export default async function handler(
       return res.status(400).json({ error: 'Article ID is required' });
     }
 
-    // Get article details
-    const articles = await prisma.posts.findMany({
-      where: { id: articleId },
-      select: {
-        id: true,
-        title: true,
-        excerpt: true,
-        slug: true,
-        featuredImage: true,
-      },
-      take: 1,
-    });
+    const supabase = supabaseAdmin();
 
-    if (!articles || articles.length === 0) {
+    // Get article details
+    const { data: article, error: articleError } = await supabase
+      .from('posts')
+      .select('id, title, excerpt, slug, featuredImage')
+      .eq('id', articleId)
+      .single();
+
+    if (articleError || !article) {
       return res.status(404).json({ error: 'Article not found' });
     }
-
-    const article = articles[0];
 
     // Generate post content
     const postContent = generateSocialPostFromArticle({
@@ -63,17 +57,18 @@ export default async function handler(
     let selectedPlatforms = platforms;
 
     if (!selectedPlatforms || selectedPlatforms.length === 0) {
-      const accounts = await prisma.$queryRaw<Array<{ platform: string }>>`
-        SELECT DISTINCT platform
-        FROM social_accounts
-        WHERE user_id = ${session.user.id}
-          AND is_active = true
-      `;
+      const { data: accounts, error: accountsError } = await supabase
+        .from('social_accounts')
+        .select('platform')
+        .eq('user_id', session.user.id)
+        .eq('is_active', true);
 
-      selectedPlatforms = accounts.map((a: any) => a.platform);
+      if (!accountsError && accounts) {
+        selectedPlatforms = [...new Set(accounts.map((a: any) => a.platform))];
+      }
     }
 
-    if (selectedPlatforms.length === 0) {
+    if (!selectedPlatforms || selectedPlatforms.length === 0) {
       return res.status(400).json({
         error: 'No active social media accounts found',
         message: 'Please connect your social media accounts first',
@@ -81,31 +76,26 @@ export default async function handler(
     }
 
     // Create social media post
-    const result = await prisma.$queryRaw<Array<{ id: string }>>`
-      INSERT INTO social_posts (
-        id, user_id, article_id, content, image_url, link_url,
-        platforms, status, auto_generated, created_at, updated_at
-      ) VALUES (
-        gen_random_uuid()::TEXT,
-        ${session.user.id},
-        ${articleId},
-        ${postContent.content},
-        ${postContent.imageUrl || null},
-        ${postContent.linkUrl || null},
-        ARRAY[${selectedPlatforms.join(',')}]::TEXT[],
-        ${postImmediately ? 'POSTING' : 'DRAFT'}::TEXT,
-        true,
-        CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-      )
-      RETURNING id
-    `;
+    const { data: post, error: postError } = await supabase
+      .from('social_posts')
+      .insert({
+        user_id: session.user.id,
+        article_id: articleId,
+        content: postContent.content,
+        image_url: postContent.imageUrl || null,
+        link_url: postContent.linkUrl || null,
+        platforms: selectedPlatforms,
+        status: postImmediately ? 'POSTING' : 'DRAFT',
+        auto_generated: true,
+      })
+      .select('id')
+      .single();
 
-    const postId = result[0]?.id;
+    if (postError) throw postError;
 
     return res.status(201).json({
       success: true,
-      postId,
+      postId: post.id,
       message: postImmediately
         ? 'Article is being posted to social media'
         : 'Social media post created and queued for review',

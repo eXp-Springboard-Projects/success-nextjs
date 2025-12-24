@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
-import { Department } from '@prisma/client';
+import { Department } from '@/lib/types';
 import ActivityItem from './ActivityItem';
 import styles from './ActivityFeed.module.css';
 

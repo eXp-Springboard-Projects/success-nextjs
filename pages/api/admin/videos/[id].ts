@@ -1,12 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const supabase = supabaseAdmin();
+
   const session = await getServerSession(req, res, authOptions);
 
   if (!session || !session.user) {
@@ -25,11 +27,13 @@ export default async function handler(
 
   if (req.method === 'GET') {
     try {
-      const video = await prisma.videos.findUnique({
-        where: { id },
-      });
+      const { data: video, error } = await supabase
+        .from('videos')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-      if (!video) {
+      if (error || !video) {
         return res.status(404).json({ error: 'Video not found' });
       }
 
@@ -57,12 +61,12 @@ export default async function handler(
 
       // Check if slug is being changed and if it conflicts
       if (slug) {
-        const existing = await prisma.videos.findFirst({
-          where: {
-            slug,
-            NOT: { id },
-          },
-        });
+        const { data: existing } = await supabase
+          .from('videos')
+          .select('id')
+          .eq('slug', slug)
+          .neq('id', id)
+          .single();
 
         if (existing) {
           return res.status(409).json({ error: 'Video with this slug already exists' });
@@ -70,7 +74,7 @@ export default async function handler(
       }
 
       const updateData: any = {
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       };
 
       if (title !== undefined) updateData.title = title;
@@ -82,7 +86,7 @@ export default async function handler(
       if (status !== undefined) {
         updateData.status = status.toUpperCase();
         if (status.toUpperCase() === 'PUBLISHED') {
-          updateData.publishedAt = new Date();
+          updateData.publishedAt = new Date().toISOString();
         }
       }
       if (seoTitle !== undefined) updateData.seoTitle = seoTitle;
@@ -90,22 +94,28 @@ export default async function handler(
       if (featuredImage !== undefined) updateData.featuredImage = featuredImage;
       if (featuredImageAlt !== undefined) updateData.featuredImageAlt = featuredImageAlt;
 
-      const video = await prisma.videos.update({
-        where: { id },
-        data: updateData,
-      });
+      const { data: video, error } = await supabase
+        .from('videos')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
 
       // Log activity
-      await prisma.activity_logs.create({
-        data: {
+      await supabase
+        .from('activity_logs')
+        .insert({
           id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           userId: session.user.id,
           action: 'UPDATE',
           entity: 'video',
           entityId: video.id,
           details: JSON.stringify({ title: video.title, slug: video.slug }),
-        },
-      });
+        });
 
       return res.status(200).json(video);
     } catch (error: any) {
@@ -115,20 +125,25 @@ export default async function handler(
 
   if (req.method === 'DELETE') {
     try {
-      await prisma.videos.delete({
-        where: { id },
-      });
+      const { error } = await supabase
+        .from('videos')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
 
       // Log activity
-      await prisma.activity_logs.create({
-        data: {
+      await supabase
+        .from('activity_logs')
+        .insert({
           id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           userId: session.user.id,
           action: 'DELETE',
           entity: 'video',
           entityId: id,
-        },
-      });
+        });
 
       return res.status(200).json({ message: 'Video deleted successfully' });
     } catch (error: any) {

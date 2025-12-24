@@ -1,9 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { prisma } from '../../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const supabase = supabaseAdmin();
+
   const session = await getServerSession(req, res, authOptions);
   if (!session || session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'ADMIN') {
     return res.status(403).json({ error: 'Forbidden' });
@@ -35,28 +37,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Update the last cleared timestamp in database
-      await prisma.$executeRaw`
-        INSERT INTO system_settings (key, value, "updatedAt", "updatedBy")
-        VALUES ('cache_last_cleared', ${new Date().toISOString()}, ${new Date()}, ${session.user.email})
-        ON CONFLICT (key)
-        DO UPDATE SET
-          value = ${new Date().toISOString()},
-          "updatedAt" = ${new Date()},
-          "updatedBy" = ${session.user.email}
-      `;
+      const timestamp = new Date().toISOString();
+      await supabase
+        .from('system_settings')
+        .upsert({
+          key: 'cache_last_cleared',
+          value: timestamp,
+          updatedAt: timestamp,
+          updatedBy: session.user.email
+        }, { onConflict: 'key' });
 
       // Log this action in audit logs
-      await prisma.$executeRaw`
-        INSERT INTO audit_logs ("userEmail", "userName", action, "entityType", "ipAddress", "createdAt")
-        VALUES (
-          ${session.user.email},
-          ${session.user.name},
-          'cache.cleared',
-          'System',
-          ${req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || 'unknown'},
-          ${new Date()}
-        )
-      `;
+      await supabase
+        .from('audit_logs')
+        .insert({
+          id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          userEmail: session.user.email,
+          userName: session.user.name,
+          action: 'cache.cleared',
+          entityType: 'System',
+          ipAddress: req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || 'unknown',
+          createdAt: timestamp
+        });
 
       return res.status(200).json({
         message: `Cache cleared for ${revalidatedCount}/${pagesToRevalidate.length} pages`,

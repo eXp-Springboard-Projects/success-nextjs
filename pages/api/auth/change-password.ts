@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './[...nextauth]';
-import { prisma } from '../../../lib/prisma';
+import { supabaseAdmin } from '../../../lib/supabase';
 import bcrypt from 'bcryptjs';
 import { validateNewPassword, isDefaultPassword, AUTH_ERRORS } from '../../../lib/auth-validation';
 
@@ -12,6 +12,8 @@ export default async function handler(
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  const supabase = supabaseAdmin();
 
   try {
     // Check if user is authenticated
@@ -28,11 +30,13 @@ export default async function handler(
     }
 
     // Get user from database
-    const user = await prisma.users.findUnique({
-      where: { id: session.user.id }
-    });
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', session.user.id)
+      .single();
 
-    if (!user) {
+    if (userError || !user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
@@ -54,14 +58,18 @@ export default async function handler(
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     // Update user password
-    await prisma.users.update({
-      where: { id: user.id },
-      data: {
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
         password: hashedPassword,
         hasChangedDefaultPassword: true,
-        updatedAt: new Date()
-      }
-    });
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', user.id);
+
+    if (updateError) {
+      throw updateError;
+    }
 
     return res.status(200).json({
       success: true,

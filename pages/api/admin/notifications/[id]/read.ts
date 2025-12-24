@@ -1,12 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { prisma } from '../../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const supabase = supabaseAdmin();
+
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
@@ -20,16 +22,20 @@ export default async function handler(
 
   try {
     // Mark notification as read
-    const notification = await prisma.notifications.update({
-      where: {
-        id: id as string,
-        userId: session.user.id, // Ensure user owns this notification
-      },
-      data: {
+    const { data: notification, error } = await supabase
+      .from('notifications')
+      .update({
         isRead: true,
-        readAt: new Date(),
-      },
-    });
+        readAt: new Date().toISOString(),
+      })
+      .eq('id', id as string)
+      .eq('userId', session.user.id) // Ensure user owns this notification
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
 
     return res.status(200).json(notification);
   } catch (error) {

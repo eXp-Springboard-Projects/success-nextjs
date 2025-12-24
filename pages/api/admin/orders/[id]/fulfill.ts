@@ -5,13 +5,15 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { prisma } from '../../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import woocommerce from '../../../../../lib/woocommerce';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const supabase = supabaseAdmin();
+
   const session = await getServerSession(req, res, authOptions);
 
   if (!session || !session.user) {
@@ -39,20 +41,22 @@ export default async function handler(
       } = req.body;
 
       // Get order
-      const order = await prisma.orders.findUnique({
-        where: { id },
-      });
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-      if (!order) {
+      if (orderError || !order) {
         return res.status(404).json({ error: 'Order not found' });
       }
 
       // Update order in database
-      const updatedOrder = await prisma.orders.update({
-        where: { id },
-        data: {
+      const { data: updatedOrder, error: updateError } = await supabase
+        .from('orders')
+        .update({
           fulfillmentStatus: 'FULFILLED',
-          fulfilledAt: new Date(),
+          fulfilledAt: new Date().toISOString(),
           fulfilledBy: session.user.id,
           trackingNumber: trackingNumber || null,
           trackingCarrier: trackingCarrier || null,
@@ -60,16 +64,22 @@ export default async function handler(
           internalNotes: internalNotes || order.internalNotes,
           customerNotes: customerNotes || order.customerNotes,
           status: 'COMPLETED',
-          updatedAt: new Date(),
-        },
-      });
+          updatedAt: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single();
 
-// If this is a WooCommerce order, sync back to WooCommerce
+      if (updateError) {
+        throw updateError;
+      }
+
+      // If this is a WooCommerce order, sync back to WooCommerce
       if (order.woocommerceOrderId) {
         try {
           // Mark order as completed in WooCommerce
           await woocommerce.completeOrder(order.woocommerceOrderId);
-// Add tracking info if provided
+          // Add tracking info if provided
           if (trackingNumber && trackingCarrier) {
             await woocommerce.addTracking(order.woocommerceOrderId, {
               trackingNumber,
@@ -77,7 +87,7 @@ export default async function handler(
               trackingUrl: trackingUrl || undefined,
               dateShipped: new Date().toISOString(),
             });
-}
+          }
 
           // Add customer note if provided
           if (customerNotes) {
@@ -94,8 +104,9 @@ export default async function handler(
       }
 
       // Log to audit trail
-      await prisma.audit_logs.create({
-        data: {
+      await supabase
+        .from('audit_logs')
+        .insert({
           id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           userId: session.user.id,
           userEmail: session.user.email,
@@ -109,19 +120,18 @@ export default async function handler(
             trackingCarrier,
             fulfilledBy: session.user.name,
           },
-        },
-      });
+        });
 
       return res.status(200).json({
         success: true,
         message: 'Order fulfilled successfully',
         order: {
           ...updatedOrder,
-          total: updatedOrder.total.toNumber(),
-          subtotal: updatedOrder.subtotal.toNumber(),
-          tax: updatedOrder.tax.toNumber(),
-          shipping: updatedOrder.shipping.toNumber(),
-          discount: updatedOrder.discount.toNumber(),
+          total: updatedOrder.total,
+          subtotal: updatedOrder.subtotal,
+          tax: updatedOrder.tax,
+          shipping: updatedOrder.shipping,
+          discount: updatedOrder.discount,
         },
       });
 

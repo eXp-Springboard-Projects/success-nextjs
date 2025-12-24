@@ -5,13 +5,15 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 import woocommerce from '../../../../lib/woocommerce';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const supabase = supabaseAdmin();
+
   const session = await getServerSession(req, res, authOptions);
 
   if (!session || !session.user) {
@@ -38,26 +40,32 @@ export default async function handler(
       // Process each order
       for (const orderId of orderIds) {
         try {
-          const order = await prisma.orders.findUnique({
-            where: { id: orderId },
-          });
+          const { data: order, error: orderError } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('id', orderId)
+            .single();
 
-          if (!order) {
+          if (orderError || !order) {
             results.failed.push({ orderId, error: 'Order not found' });
             continue;
           }
 
           // Update order
-          await prisma.orders.update({
-            where: { id: orderId },
-            data: {
+          const { error: updateError } = await supabase
+            .from('orders')
+            .update({
               fulfillmentStatus: 'FULFILLED',
-              fulfilledAt: new Date(),
+              fulfilledAt: new Date().toISOString(),
               fulfilledBy: session.user.id,
               status: 'COMPLETED',
-              updatedAt: new Date(),
-            },
-          });
+              updatedAt: new Date().toISOString(),
+            })
+            .eq('id', orderId);
+
+          if (updateError) {
+            throw updateError;
+          }
 
           // Sync to WooCommerce if applicable
           if (order.woocommerceOrderId) {
@@ -69,8 +77,9 @@ export default async function handler(
           }
 
           // Log to audit trail
-          await prisma.audit_logs.create({
-            data: {
+          await supabase
+            .from('audit_logs')
+            .insert({
               id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               userId: session.user.id,
               userEmail: session.user.email,
@@ -82,8 +91,7 @@ export default async function handler(
                 orderNumber: order.orderNumber,
                 fulfilledBy: session.user.name,
               },
-            },
-          });
+            });
 
           results.success.push(orderId);
 

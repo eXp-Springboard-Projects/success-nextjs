@@ -1,4 +1,4 @@
-import { prisma } from './prisma';
+import { supabaseAdmin } from './supabase';
 
 export interface TrialAccessResult {
   hasAccess: boolean;
@@ -14,32 +14,26 @@ export interface TrialAccessResult {
  */
 export async function checkTrialAccess(userEmail: string): Promise<TrialAccessResult> {
   try {
-    const user = await prisma.users.findUnique({
-      where: { email: userEmail },
-      include: {
-        member: {
-          select: {
-            membershipTier: true,
-            membershipStatus: true,
-            trialEndsAt: true,
-            subscriptions: {
-              where: {
-                OR: [
-                  { status: 'ACTIVE' },
-                  { status: 'TRIALING' },
-                ],
-              },
-              orderBy: {
-                createdAt: 'desc',
-              },
-              take: 1,
-            },
-          },
-        },
-      },
-    });
+    const supabase = supabaseAdmin();
 
-    if (!user) {
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select(`
+        *,
+        member:members (
+          membershipTier,
+          membershipStatus,
+          trialEndsAt,
+          subscriptions!inner (
+            status,
+            currentPeriodEnd
+          )
+        )
+      `)
+      .eq('email', userEmail)
+      .single();
+
+    if (userError || !user) {
       return {
         hasAccess: false,
         reason: 'no_access',
@@ -49,7 +43,7 @@ export async function checkTrialAccess(userEmail: string): Promise<TrialAccessRe
     const member = user.member;
 
     // Check if user has active paid subscription
-    if (member?.subscriptions && member.subscriptions.length > 0) {
+    if (member?.subscriptions && Array.isArray(member.subscriptions) && member.subscriptions.length > 0) {
       const subscription = member.subscriptions[0];
 
       if (subscription.status === 'ACTIVE') {
@@ -130,7 +124,5 @@ export async function checkTrialAccess(userEmail: string): Promise<TrialAccessRe
       hasAccess: false,
       reason: 'no_access',
     };
-  } finally {
-    await prisma.$disconnect();
   }
 }

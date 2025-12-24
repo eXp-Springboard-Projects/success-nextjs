@@ -1,5 +1,5 @@
-import { prisma } from '@/lib/prisma';
-import { Department } from '@prisma/client';
+import { supabaseAdmin } from '@/lib/supabase';
+import { Department } from '@/lib/types';
 
 /**
  * Check if a user has access to a specific department
@@ -8,57 +8,63 @@ export async function hasDepartmentAccess(
   userId: string,
   department: Department
 ): Promise<boolean> {
-  // Super admins have access to everything
-  const user = await prisma.users.findUnique({
-    where: { id: userId },
-    select: { role: true },
-  });
+  const supabase = supabaseAdmin();
 
-  if (!user) return false;
+  // Super admins have access to everything
+  const { data: user, error } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', userId)
+    .single();
+
+  if (error || !user) return false;
   if (user.role === 'SUPER_ADMIN') return true;
 
   // Check if user is assigned to this department
-  const assignment = await prisma.staff_departments.findUnique({
-    where: {
-      userId_department: {
-        userId,
-        department,
-      },
-    },
-  });
+  const { data: assignment, error: assignError } = await supabase
+    .from('staff_departments')
+    .select('*')
+    .eq('userId', userId)
+    .eq('department', department)
+    .single();
 
-  return !!assignment;
+  return !!assignment && !assignError;
 }
 
 /**
  * Get all departments a user has access to
  */
 export async function getUserDepartments(userId: string): Promise<Department[]> {
-  // Super admins have access to all departments
-  const user = await prisma.users.findUnique({
-    where: { id: userId },
-    select: { role: true },
-  });
+  const supabase = supabaseAdmin();
 
-  if (!user) return [];
+  // Super admins have access to all departments
+  const { data: user, error } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', userId)
+    .single();
+
+  if (error || !user) return [];
 
   if (user.role === 'SUPER_ADMIN') {
     return [
-      'SUPER_ADMIN',
-      'CUSTOMER_SERVICE',
-      'EDITORIAL',
-      'SUCCESS_PLUS',
-      'DEV',
-      'MARKETING',
-      'COACHING',
+      Department.SUPER_ADMIN,
+      Department.CUSTOMER_SERVICE,
+      Department.EDITORIAL,
+      Department.SUCCESS_PLUS,
+      Department.DEV,
+      Department.MARKETING,
+      Department.COACHING,
     ];
   }
 
   // Get assigned departments
-  const assignments = await prisma.staff_departments.findMany({
-    where: { userId },
-    select: { department: true },
-  });
+  const { data: assignments, error: assignError } = await supabase
+    .from('staff_departments')
+    .select('department')
+    .eq('userId', userId);
+
+  if (assignError || !assignments) return [];
 
   return assignments.map((a: { department: Department }) => a.department);
 }
@@ -67,13 +73,13 @@ export async function getUserDepartments(userId: string): Promise<Department[]> 
  * Get department from route path
  */
 export function getDepartmentFromPath(pathname: string): Department | null {
-  if (pathname.startsWith('/admin/super')) return 'SUPER_ADMIN';
-  if (pathname.startsWith('/admin/customer-service')) return 'CUSTOMER_SERVICE';
-  if (pathname.startsWith('/admin/editorial')) return 'EDITORIAL';
-  if (pathname.startsWith('/admin/success-plus')) return 'SUCCESS_PLUS';
-  if (pathname.startsWith('/admin/dev')) return 'DEV';
-  if (pathname.startsWith('/admin/marketing')) return 'MARKETING';
-  if (pathname.startsWith('/admin/coaching')) return 'COACHING';
+  if (pathname.startsWith('/admin/super')) return Department.SUPER_ADMIN;
+  if (pathname.startsWith('/admin/customer-service')) return Department.CUSTOMER_SERVICE;
+  if (pathname.startsWith('/admin/editorial')) return Department.EDITORIAL;
+  if (pathname.startsWith('/admin/success-plus')) return Department.SUCCESS_PLUS;
+  if (pathname.startsWith('/admin/dev')) return Department.DEV;
+  if (pathname.startsWith('/admin/marketing')) return Department.MARKETING;
+  if (pathname.startsWith('/admin/coaching')) return Department.COACHING;
   return null;
 }
 

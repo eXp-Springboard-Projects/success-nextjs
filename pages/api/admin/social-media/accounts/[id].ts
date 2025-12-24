@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { prisma } from '../../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -17,12 +17,16 @@ export default async function handler(
 
   if (req.method === 'DELETE') {
     try {
+      const supabase = supabaseAdmin();
+
       // Delete social media account
-      await prisma.$executeRaw`
-        DELETE FROM social_accounts
-        WHERE id = ${id as string}
-        AND user_id = ${session.user.id}
-      `;
+      const { error } = await supabase
+        .from('social_accounts')
+        .delete()
+        .eq('id', id as string)
+        .eq('user_id', session.user.id);
+
+      if (error) throw error;
 
       return res.status(200).json({ success: true });
     } catch (error: any) {

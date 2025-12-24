@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
 import { createInviteCode } from '../../../../lib/auth-utils';
 import { sendInviteCodeEmail } from '../../../../lib/resend-email';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -31,17 +31,17 @@ export default async function handler(
       return res.status(400).json({ error: 'emails array is required' });
     }
 
-    // Filter out emails that already have accounts
-    const existingUsers = await prisma.users.findMany({
-      where: {
-        email: {
-          in: emails,
-        },
-      },
-      select: { email: true },
-    });
+    const supabase = supabaseAdmin();
 
-    const existingEmails = existingUsers.map((u: { email: string }) => u.email);
+    // Filter out emails that already have accounts
+    const { data: existingUsers, error: usersError } = await supabase
+      .from('users')
+      .select('email')
+      .in('email', emails);
+
+    if (usersError) throw usersError;
+
+    const existingEmails = existingUsers?.map(u => u.email) || [];
     const newEmails = emails.filter(email => !existingEmails.includes(email));
 
     if (newEmails.length === 0) {

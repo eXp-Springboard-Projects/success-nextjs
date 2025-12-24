@@ -1,6 +1,6 @@
 import { SESClient, SendEmailCommand, SendTemplatedEmailCommand } from '@aws-sdk/client-ses';
 import { nanoid } from 'nanoid';
-import { prisma } from '../prisma';
+import { supabaseAdmin } from '../supabase';
 
 const sesClient = new SESClient({
   region: process.env.AWS_REGION || 'us-east-1',
@@ -152,16 +152,17 @@ return { success: false, error: 'Recipient has unsubscribed or email bounced' };
 
 async function checkEmailPermission(email: string): Promise<boolean> {
   try {
-    const prefs = await prisma.$queryRaw<Array<{ unsubscribed: boolean; opt_in_marketing: boolean }>>`
-      SELECT unsubscribed, opt_in_marketing
-      FROM email_preferences
-      WHERE email = ${email}
-    `;
+    const supabase = supabaseAdmin();
 
-    if (prefs.length === 0) return true; // No preferences = subscribed by default
+    const { data: prefs, error } = await supabase
+      .from('email_preferences')
+      .select('unsubscribed, optInMarketing')
+      .eq('email', email)
+      .single();
 
-    const pref = prefs[0];
-    return !pref.unsubscribed && pref.opt_in_marketing;
+    if (error || !prefs) return true; // No preferences = subscribed by default
+
+    return !prefs.unsubscribed && prefs.optInMarketing;
   } catch (error) {
     return false;
   }
@@ -169,24 +170,37 @@ async function checkEmailPermission(email: string): Promise<boolean> {
 
 async function getUnsubscribeToken(email: string): Promise<string> {
   try {
-    const existing = await prisma.$queryRaw<Array<{ unsubscribe_token: string }>>`
-      SELECT unsubscribe_token
-      FROM email_preferences
-      WHERE email = ${email}
-    `;
+    const supabase = supabaseAdmin();
 
-    if (existing.length > 0 && existing[0].unsubscribe_token) {
-      return existing[0].unsubscribe_token;
+    const { data: existing, error } = await supabase
+      .from('email_preferences')
+      .select('unsubscribeToken')
+      .eq('email', email)
+      .single();
+
+    if (!error && existing && existing.unsubscribeToken) {
+      return existing.unsubscribeToken;
     }
 
     // Create new token
     const token = nanoid(32);
-    await prisma.$executeRaw`
-      INSERT INTO email_preferences (id, email, unsubscribe_token)
-      VALUES (${nanoid()}, ${email}, ${token})
-      ON CONFLICT (email)
-      DO UPDATE SET unsubscribe_token = ${token}
-    `;
+
+    // Try to update first
+    const { error: updateError } = await supabase
+      .from('email_preferences')
+      .update({ unsubscribeToken: token })
+      .eq('email', email);
+
+    // If no rows were updated, insert
+    if (updateError) {
+      await supabase
+        .from('email_preferences')
+        .insert({
+          id: nanoid(),
+          email,
+          unsubscribeToken: token,
+        });
+    }
 
     return token;
   } catch (error) {
@@ -212,137 +226,231 @@ async function trackEmailSend({
   messageId,
 }: TrackEmailSendParams): Promise<void> {
   try {
+    const supabase = supabaseAdmin();
+
     const id = nanoid();
-    await prisma.$executeRaw`
-      INSERT INTO email_sends (
-        id, contact_id, recipient_email, subject, template_id, campaign_id, status, metadata
-      ) VALUES (
-        ${id}, ${contactId || null}, ${recipientEmail}, ${subject},
-        ${templateId || null}, ${campaignId || null}, 'sent',
-        ${JSON.stringify({ messageId })}::jsonb
-      )
-    `;
+    await supabase
+      .from('email_sends')
+      .insert({
+        id,
+        contactId: contactId || null,
+        recipientEmail,
+        subject,
+        templateId: templateId || null,
+        campaignId: campaignId || null,
+        status: 'sent',
+        metadata: { messageId },
+      });
 
     // Update contact stats if contactId provided
     if (contactId) {
-      await prisma.$executeRaw`
-        UPDATE crm_contacts
-        SET
-          last_email_sent = CURRENT_TIMESTAMP,
-          total_emails_sent = total_emails_sent + 1
-        WHERE id = ${contactId}
-      `;
+      // Get current contact to increment
+      const { data: contact } = await supabase
+        .from('contacts')
+        .select('totalEmailsSent')
+        .eq('id', contactId)
+        .single();
+
+      const totalEmailsSent = (contact?.totalEmailsSent || 0) + 1;
+
+      await supabase
+        .from('contacts')
+        .update({
+          lastEmailSent: new Date().toISOString(),
+          totalEmailsSent,
+        })
+        .eq('id', contactId);
 
       // Add activity
-      await prisma.$executeRaw`
-        INSERT INTO crm_contact_activities (id, contact_id, type, description, metadata)
-        VALUES (
-          ${nanoid()}, ${contactId}, 'email_sent',
-          'Email sent: ${subject}',
-          ${JSON.stringify({ campaignId, templateId })}::jsonb
-        )
-      `;
+      await supabase
+        .from('crm_contact_activities')
+        .insert({
+          id: nanoid(),
+          contactId,
+          type: 'email_sent',
+          description: `Email sent: ${subject}`,
+          metadata: { campaignId, templateId },
+        });
     }
   } catch (error) {
+    // Silently fail
   }
 }
 
 export async function handleBounce(email: string, bounceType: string): Promise<void> {
   try {
-    // Update contact status
-    await prisma.$executeRaw`
-      UPDATE crm_contacts
-      SET email_status = 'bounced'
-      WHERE email = ${email}
-    `;
+    const supabase = supabaseAdmin();
 
-    // Update email sends
-    await prisma.$executeRaw`
-      UPDATE email_sends
-      SET
-        status = 'bounced',
-        bounced_at = CURRENT_TIMESTAMP
-      WHERE recipient_email = ${email} AND bounced_at IS NULL
-    `;
+    // Update contact status
+    await supabase
+      .from('contacts')
+      .update({ emailStatus: 'bounced' })
+      .eq('email', email);
+
+    // Update email sends - only those not already bounced
+    const { data: emailSends } = await supabase
+      .from('email_sends')
+      .select('id')
+      .eq('recipientEmail', email)
+      .is('bouncedAt', null);
+
+    if (emailSends && emailSends.length > 0) {
+      await supabase
+        .from('email_sends')
+        .update({
+          status: 'bounced',
+          bouncedAt: new Date().toISOString(),
+        })
+        .in('id', emailSends.map((s: any) => s.id));
+    }
   } catch (error) {
+    // Silently fail
   }
 }
 
 export async function handleComplaint(email: string): Promise<void> {
   try {
+    const supabase = supabaseAdmin();
+
     // Update contact status
-    await prisma.$executeRaw`
-      UPDATE crm_contacts
-      SET email_status = 'complained'
-      WHERE email = ${email}
-    `;
+    await supabase
+      .from('contacts')
+      .update({ emailStatus: 'complained' })
+      .eq('email', email);
 
-    // Update email preferences
-    await prisma.$executeRaw`
-      INSERT INTO email_preferences (id, email, unsubscribed, opt_in_marketing)
-      VALUES (${nanoid()}, ${email}, true, false)
-      ON CONFLICT (email)
-      DO UPDATE SET unsubscribed = true, opt_in_marketing = false
-    `;
+    // Update email preferences - upsert
+    const { data: existing } = await supabase
+      .from('email_preferences')
+      .select('id')
+      .eq('email', email)
+      .single();
 
-    // Update email sends
-    await prisma.$executeRaw`
-      UPDATE email_sends
-      SET
-        status = 'complained',
-        complained_at = CURRENT_TIMESTAMP
-      WHERE recipient_email = ${email} AND complained_at IS NULL
-    `;
+    if (existing) {
+      await supabase
+        .from('email_preferences')
+        .update({
+          unsubscribed: true,
+          optInMarketing: false,
+        })
+        .eq('email', email);
+    } else {
+      await supabase
+        .from('email_preferences')
+        .insert({
+          id: nanoid(),
+          email,
+          unsubscribed: true,
+          optInMarketing: false,
+        });
+    }
+
+    // Update email sends - only those not already complained
+    const { data: emailSends } = await supabase
+      .from('email_sends')
+      .select('id')
+      .eq('recipientEmail', email)
+      .is('complainedAt', null);
+
+    if (emailSends && emailSends.length > 0) {
+      await supabase
+        .from('email_sends')
+        .update({
+          status: 'complained',
+          complainedAt: new Date().toISOString(),
+        })
+        .in('id', emailSends.map((s: any) => s.id));
+    }
   } catch (error) {
+    // Silently fail
   }
 }
 
 export async function trackEmailOpen(emailSendId: string, contactId?: string): Promise<void> {
   try {
-    await prisma.$executeRaw`
-      UPDATE email_sends
-      SET opened_at = CURRENT_TIMESTAMP
-      WHERE id = ${emailSendId} AND opened_at IS NULL
-    `;
+    const supabase = supabaseAdmin();
+
+    // Update email send - only if not already opened
+    const { data: emailSend } = await supabase
+      .from('email_sends')
+      .select('openedAt')
+      .eq('id', emailSendId)
+      .single();
+
+    if (emailSend && !emailSend.openedAt) {
+      await supabase
+        .from('email_sends')
+        .update({ openedAt: new Date().toISOString() })
+        .eq('id', emailSendId);
+    }
 
     if (contactId) {
-      await prisma.$executeRaw`
-        UPDATE crm_contacts
-        SET
-          last_email_opened = CURRENT_TIMESTAMP,
-          total_opens = total_opens + 1
-        WHERE id = ${contactId}
-      `;
+      // Get current contact to increment
+      const { data: contact } = await supabase
+        .from('contacts')
+        .select('totalOpens')
+        .eq('id', contactId)
+        .single();
+
+      const totalOpens = (contact?.totalOpens || 0) + 1;
+
+      await supabase
+        .from('contacts')
+        .update({
+          lastEmailOpened: new Date().toISOString(),
+          totalOpens,
+        })
+        .eq('id', contactId);
     }
   } catch (error) {
+    // Silently fail
   }
 }
 
 export async function trackEmailClick(emailSendId: string, contactId?: string, url?: string): Promise<void> {
   try {
-    await prisma.$executeRaw`
-      UPDATE email_sends
-      SET clicked_at = CURRENT_TIMESTAMP
-      WHERE id = ${emailSendId} AND clicked_at IS NULL
-    `;
+    const supabase = supabaseAdmin();
+
+    // Update email send - only if not already clicked
+    const { data: emailSend } = await supabase
+      .from('email_sends')
+      .select('clickedAt')
+      .eq('id', emailSendId)
+      .single();
+
+    if (emailSend && !emailSend.clickedAt) {
+      await supabase
+        .from('email_sends')
+        .update({ clickedAt: new Date().toISOString() })
+        .eq('id', emailSendId);
+    }
 
     if (contactId) {
-      await prisma.$executeRaw`
-        UPDATE crm_contacts
-        SET total_clicks = total_clicks + 1
-        WHERE id = ${contactId}
-      `;
+      // Get current contact to increment
+      const { data: contact } = await supabase
+        .from('contacts')
+        .select('totalClicks')
+        .eq('id', contactId)
+        .single();
+
+      const totalClicks = (contact?.totalClicks || 0) + 1;
+
+      await supabase
+        .from('contacts')
+        .update({ totalClicks })
+        .eq('id', contactId);
 
       // Add activity
-      await prisma.$executeRaw`
-        INSERT INTO crm_contact_activities (id, contact_id, type, description, metadata)
-        VALUES (
-          ${nanoid()}, ${contactId}, 'email_click',
-          'Clicked link in email',
-          ${JSON.stringify({ url })}::jsonb
-        )
-      `;
+      await supabase
+        .from('crm_contact_activities')
+        .insert({
+          id: nanoid(),
+          contactId,
+          type: 'email_click',
+          description: 'Clicked link in email',
+          metadata: { url },
+        });
     }
   } catch (error) {
+    // Silently fail
   }
 }

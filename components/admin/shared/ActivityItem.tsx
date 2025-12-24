@@ -1,4 +1,4 @@
-import { Department } from '@prisma/client';
+import { Department } from '@/lib/types';
 import styles from './ActivityItem.module.css';
 
 interface ActivityItemProps {

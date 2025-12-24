@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '../../../lib/prisma';
+import { supabaseAdmin } from '@/lib/supabase';
 import { stripe } from '../../../lib/stripe';
 import { randomUUID } from 'crypto';
 
@@ -7,6 +7,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  const supabase = supabaseAdmin();
 
   try {
     const { paylinkId, customerName, customerEmail, shippingAddress } = req.body;
@@ -16,9 +18,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Get paylink
-    const paylink = await prisma.pay_links.findUnique({
-      where: { id: paylinkId },
-    });
+    const { data: paylink, error: paylinkError } = await supabase
+      .from('pay_links')
+      .select('*')
+      .eq('id', paylinkId)
+      .single();
+
+    if (paylinkError) {
+      throw paylinkError;
+    }
 
     if (!paylink) {
       return res.status(404).json({ error: 'Payment link not found' });

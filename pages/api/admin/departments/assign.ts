@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '@/lib/prisma';
+import { supabaseAdmin } from '@/lib/supabase';
 import { Department } from '@prisma/client';
 
 /**
@@ -23,13 +23,16 @@ export default async function handler(
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Check if user is Super Admin
-    const currentUser = await prisma.users.findUnique({
-      where: { id: session.user.id },
-      select: { role: true },
-    });
+    const supabase = supabaseAdmin();
 
-    if (currentUser?.role !== 'SUPER_ADMIN') {
+    // Check if user is Super Admin
+    const { data: currentUser, error: userError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', session.user.id)
+      .single();
+
+    if (userError || currentUser?.role !== 'SUPER_ADMIN') {
       return res.status(403).json({ error: 'Only Super Admins can assign departments' });
     }
 
@@ -43,44 +46,46 @@ export default async function handler(
     }
 
     // Verify target user exists
-    const targetUser = await prisma.users.findUnique({
-      where: { id: userId },
-      select: { id: true, email: true, name: true },
-    });
+    const { data: targetUser, error: targetError } = await supabase
+      .from('users')
+      .select('id, email, name')
+      .eq('id', userId)
+      .single();
 
-    if (!targetUser) {
+    if (targetError || !targetUser) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     // Remove all existing department assignments for this user
-    await prisma.staff_departments.deleteMany({
-      where: { userId },
-    });
+    await supabase
+      .from('staff_departments')
+      .delete()
+      .eq('userId', userId);
 
     // Create new department assignments
     if (departments.length > 0) {
-      await prisma.staff_departments.createMany({
-        data: departments.map(department => ({
-          userId,
-          department,
-          assignedBy: session.user.id,
-        })),
-      });
+      await supabase
+        .from('staff_departments')
+        .insert(
+          departments.map(department => ({
+            userId,
+            department,
+            assignedBy: session.user.id,
+          }))
+        );
     }
 
     // Log the action
-    await prisma.activity_logs.create({
-      data: {
-        id: crypto.randomUUID(),
-        userId: session.user.id,
-        action: 'ASSIGN_DEPARTMENTS',
-        entity: 'staff_departments',
-        entityId: userId,
-        details: JSON.stringify({
-          targetUser: targetUser.email,
-          departments,
-        }),
-      },
+    await supabase.from('activity_logs').insert({
+      id: crypto.randomUUID(),
+      userId: session.user.id,
+      action: 'ASSIGN_DEPARTMENTS',
+      entity: 'staff_departments',
+      entityId: userId,
+      details: JSON.stringify({
+        targetUser: targetUser.email,
+        departments,
+      }),
     });
 
     return res.status(200).json({

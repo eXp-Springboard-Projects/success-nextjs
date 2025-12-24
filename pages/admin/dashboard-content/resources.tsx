@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Department } from '@prisma/client';
+import { Department } from '@/lib/types';
 import DepartmentLayout from '@/components/admin/shared/DepartmentLayout';
 import { requireDepartmentAuth } from '@/lib/departmentAuth';
 

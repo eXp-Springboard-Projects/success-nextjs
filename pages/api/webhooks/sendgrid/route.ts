@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 /**
  * SendGrid Webhook Handler
@@ -32,11 +32,13 @@ export default async function handler(
         }
 
         // Find contact by email
-        const contact = await prisma.contacts.findUnique({
-          where: { email: emailAddress },
-        });
+        const { data: contact, error: contactError } = await supabaseAdmin()
+          .from('contacts')
+          .select('*')
+          .eq('email', emailAddress)
+          .single();
 
-        if (!contact) {
+        if (!contact || contactError) {
           continue;
         }
 
@@ -48,23 +50,25 @@ export default async function handler(
         }
 
         // Create email event
-        await prisma.email_events.create({
-          data: {
+        await supabaseAdmin()
+          .from('email_events')
+          .insert({
             id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             campaignId,
             contactId: contact.id,
             emailAddress,
             event: eventType,
             eventData: event,
-          },
-        });
+          });
 
         // Update campaign stats
-        const campaign = await prisma.campaigns.findUnique({
-          where: { id: campaignId },
-        });
+        const { data: campaign, error: campaignError } = await supabaseAdmin()
+          .from('campaigns')
+          .select('*')
+          .eq('id', campaignId)
+          .single();
 
-        if (campaign) {
+        if (campaign && !campaignError) {
           const updateData: any = {};
 
           if (eventType === 'delivered') {
@@ -78,10 +82,10 @@ export default async function handler(
           }
 
           if (Object.keys(updateData).length > 0) {
-            await prisma.campaigns.update({
-              where: { id: campaignId },
-              data: updateData,
-            });
+            await supabaseAdmin()
+              .from('campaigns')
+              .update(updateData)
+              .eq('id', campaignId);
           }
         }
 
@@ -93,22 +97,20 @@ export default async function handler(
         else if (eventType === 'spam_report') scoreChange = -100;
 
         if (scoreChange !== 0) {
-          await prisma.contacts.update({
-            where: { id: contact.id },
-            data: {
+          await supabaseAdmin()
+            .from('contacts')
+            .update({
               emailEngagementScore: (contact.emailEngagementScore || 0) + scoreChange,
-            },
-          });
+            })
+            .eq('id', contact.id);
         }
 
         // Mark contact as unsubscribed if spam_report or unsubscribe
         if (eventType === 'spam_report' || eventType === 'unsubscribe') {
-          await prisma.contacts.update({
-            where: { id: contact.id },
-            data: {
-              status: 'UNSUBSCRIBED',
-            },
-          });
+          await supabaseAdmin()
+            .from('contacts')
+            .update({ status: 'UNSUBSCRIBED' })
+            .eq('id', contact.id);
         }
       } catch (error) {
         // Continue processing other events

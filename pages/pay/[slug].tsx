@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Layout from '../../components/Layout';
-import { prisma } from '../../lib/prisma';
+import { supabaseAdmin } from '../../lib/supabase';
 import styles from './PaymentPage.module.css';
 
 interface PayLinkPageProps {
@@ -289,25 +289,14 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const { slug } = context.params as { slug: string };
 
   try {
-    const paylink = await prisma.pay_links.findUnique({
-      where: { slug },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        amount: true,
-        currency: true,
-        slug: true,
-        status: true,
-        stripePriceId: true,
-        currentUses: true,
-        maxUses: true,
-        expiresAt: true,
-        requiresShipping: true,
-      },
-    });
+    const supabase = supabaseAdmin();
+    const { data: paylink, error } = await supabase
+      .from('pay_links')
+      .select('id, title, description, amount, currency, slug, status, stripePriceId, currentUses, maxUses, expiresAt, requiresShipping')
+      .eq('slug', slug)
+      .single();
 
-    if (!paylink) {
+    if (!paylink || error) {
       return {
         props: {
           paylink: null,

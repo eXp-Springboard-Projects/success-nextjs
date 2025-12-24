@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import DepartmentLayout from '../../../../components/admin/shared/DepartmentLayout';
-import { Department } from '@prisma/client';
+import { Department } from '@/lib/types';
 import styles from '../../editorial/Editorial.module.css';
 
 interface Task {

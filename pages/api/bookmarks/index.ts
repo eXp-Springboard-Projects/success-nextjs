@@ -1,13 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
-import { prisma } from '../../../lib/prisma';
+import { supabaseAdmin } from '@/lib/supabase';
 import { randomUUID } from 'crypto';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const supabase = supabaseAdmin();
   const session = await getServerSession(req, res, authOptions);
 
   if (!session || !session.user) {
@@ -19,12 +20,17 @@ export default async function handler(
   // GET - Fetch user's bookmarks
   if (req.method === 'GET') {
     try {
-      const bookmarks = await prisma.bookmarks.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'desc' },
-      });
+      const { data: bookmarks, error } = await supabase
+        .from('bookmarks')
+        .select('*')
+        .eq('userId', userId)
+        .order('createdAt', { ascending: false });
 
-      return res.status(200).json(bookmarks);
+      if (error) {
+        throw error;
+      }
+
+      return res.status(200).json(bookmarks || []);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch bookmarks' });
     }
@@ -40,40 +46,48 @@ export default async function handler(
       }
 
       // Check if bookmark already exists
-      const existing = await prisma.bookmarks.findUnique({
-        where: {
-          userId_articleId: {
-            userId,
-            articleId,
-          },
-        },
-      });
+      const { data: existing } = await supabase
+        .from('bookmarks')
+        .select('id')
+        .eq('userId', userId)
+        .eq('articleId', articleId)
+        .single();
 
       if (existing) {
         return res.status(409).json({ error: 'Bookmark already exists' });
       }
 
-      const bookmark = await prisma.bookmarks.create({
-        data: {
+      const { data: bookmark, error } = await supabase
+        .from('bookmarks')
+        .insert({
           id: randomUUID(),
           userId,
           articleId,
           articleTitle,
           articleUrl,
           articleImage: articleImage || null,
-        },
-      });
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
 
       // Create activity log
-      await prisma.user_activities.create({
-        data: {
+      const { error: activityError } = await supabase
+        .from('user_activities')
+        .insert({
           id: randomUUID(),
           userId,
           activityType: 'ARTICLE_BOOKMARKED',
           title: `Bookmarked: ${articleTitle}`,
           metadata: JSON.stringify({ articleId, articleUrl }),
-        },
-      });
+        });
+
+      if (activityError) {
+        console.error('Failed to log activity:', activityError);
+      }
 
       return res.status(201).json(bookmark);
     } catch (error) {

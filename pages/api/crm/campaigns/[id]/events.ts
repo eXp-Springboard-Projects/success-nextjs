@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { prisma } from '../../../../../lib/prisma';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -11,6 +11,7 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const supabase = supabaseAdmin();
   const session = await getServerSession(req, res, authOptions);
 
   if (!session || !session.user) {
@@ -28,21 +29,24 @@ export default async function handler(
   }
 
   try {
-    const events = await prisma.email_events.findMany({
-      where: { campaignId: id },
-      include: {
-        contacts: {
-          select: {
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 100, // Limit to last 100 events
-    });
+    const { data: events, error } = await supabase
+      .from('email_events')
+      .select(`
+        *,
+        contacts (
+          firstName,
+          lastName
+        )
+      `)
+      .eq('campaignId', id)
+      .order('createdAt', { ascending: false })
+      .limit(100);
 
-    return res.status(200).json(events);
+    if (error) {
+      throw error;
+    }
+
+    return res.status(200).json(events || []);
   } catch (error: any) {
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }

@@ -1,6 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 import crypto from 'crypto';
+
+const supabase = supabaseAdmin();
 
 /**
  * WooCommerce Webhook Handler
@@ -61,34 +63,47 @@ export default async function handler(
     }
 
     // Find or create member
-    let member = await prisma.members.findUnique({
-      where: { email: customerEmail },
-    });
+    const { data: member, error: findMemberError } = await supabase
+      .from('members')
+      .select('*')
+      .eq('email', customerEmail)
+      .single();
 
-    if (!member) {
-      member = await prisma.members.create({
-        data: {
+    let memberId;
+
+    if (!member || findMemberError) {
+      const { data: newMember, error: createMemberError } = await supabase
+        .from('members')
+        .insert({
           id: `mem_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           email: customerEmail,
           firstName: customerFirstName || null,
           lastName: customerLastName || null,
           role: 'CUSTOMER',
           status: 'ACTIVE',
-        },
-      });
+        })
+        .select()
+        .single();
+
+      if (createMemberError) throw createMemberError;
+      memberId = newMember.id;
+    } else {
+      memberId = member.id;
     }
 
     // Extract line items
     const lineItems = order.line_items || [];
 
     // Check if order already exists
-    const existingOrder = await prisma.orders.findFirst({
-      where: { woocommerceOrderId: wcOrderId },
-    });
+    const { data: existingOrder, error: findOrderError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('woocommerceOrderId', wcOrderId)
+      .single();
 
     const orderData = {
       orderNumber: `WC-${wcOrderId}`,
-      memberId: member.id,
+      memberId,
       userName: customerName,
       userEmail: customerEmail,
       total: parseFloat(order.total || '0'),
@@ -105,42 +120,52 @@ export default async function handler(
       orderSource: 'WooCommerce',
       woocommerceOrderId: wcOrderId,
       fulfillmentStatus: order.status === 'completed' ? 'FULFILLED' : 'UNFULFILLED',
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     };
 
     let savedOrder;
 
-    if (existingOrder) {
+    if (existingOrder && !findOrderError) {
       // Update existing order
-      savedOrder = await prisma.orders.update({
-        where: { id: existingOrder.id },
-        data: orderData,
-      });
+      const { data: updated, error: updateError } = await supabase
+        .from('orders')
+        .update(orderData)
+        .eq('id', existingOrder.id)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+      savedOrder = updated;
     } else {
       // Create new order
-      savedOrder = await prisma.orders.create({
-        data: {
+      const { data: created, error: createError } = await supabase
+        .from('orders')
+        .insert({
           id: `ord_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           ...orderData,
-          createdAt: new Date(order.date_created || Date.now()),
-        },
-      });
+          createdAt: new Date(order.date_created || Date.now()).toISOString(),
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+      savedOrder = created;
 
       // Create order items
       for (const item of lineItems) {
         // Find or create product
-        let product = await prisma.products.findFirst({
-          where: {
-            OR: [
-              { name: item.name },
-              { sku: item.sku }
-            ]
-          },
-        });
+        const { data: products, error: findProductError } = await supabase
+          .from('products')
+          .select('*')
+          .or(`name.eq.${item.name},sku.eq.${item.sku}`)
+          .limit(1);
 
-        if (!product) {
-          product = await prisma.products.create({
-            data: {
+        let productId;
+
+        if (!products || products.length === 0 || findProductError) {
+          const { data: newProduct, error: createError } = await supabase
+            .from('products')
+            .insert({
               id: `prod_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               name: item.name,
               slug: item.name.toLowerCase().replace(/\s+/g, '-'),
@@ -149,45 +174,52 @@ export default async function handler(
               sku: item.sku || null,
               stockQuantity: 0,
               status: 'ACTIVE',
-            },
-          });
+            })
+            .select()
+            .single();
+
+          if (createError) throw createError;
+          productId = newProduct.id;
+        } else {
+          productId = products[0].id;
         }
 
         // Create order item
-        await prisma.order_items.create({
-          data: {
+        await supabase
+          .from('order_items')
+          .insert({
             id: `oi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             orderId: savedOrder.id,
-            productId: product.id,
+            productId,
             productName: item.name,
             quantity: item.quantity,
             price: parseFloat(item.price || '0'),
             total: parseFloat(item.total || '0'),
-          },
-        });
+          });
       }
 
       // Create transaction record
-      await prisma.transactions.create({
-        data: {
+      await supabase
+        .from('transactions')
+        .insert({
           id: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          memberId: member.id,
+          memberId,
           type: 'PURCHASE',
           amount: parseFloat(order.total || '0'),
           status: order.status === 'completed' ? 'COMPLETED' : 'PENDING',
           description: `WooCommerce Order #${wcOrderId}`,
           metadata: JSON.stringify({ woocommerceOrderId: wcOrderId }),
-        },
-      });
+        });
 
       // Update member lifetime value
-      const currentLifetimeValue = parseFloat(member.lifetimeValue?.toString() || '0');
-      await prisma.members.update({
-        where: { id: member.id },
-        data: {
+      const currentMember = member || (await supabase.from('members').select('*').eq('id', memberId).single()).data;
+      const currentLifetimeValue = parseFloat(currentMember?.lifetimeValue?.toString() || '0');
+      await supabase
+        .from('members')
+        .update({
           lifetimeValue: currentLifetimeValue + parseFloat(order.total || '0'),
-        },
-      });
+        })
+        .eq('id', memberId);
     }
 
 return res.status(200).json({ received: true, orderId: savedOrder.id });

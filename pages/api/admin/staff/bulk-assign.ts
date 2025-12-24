@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -36,9 +36,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'action is required' });
     }
 
+    const supabase = supabaseAdmin();
+
     // Create bulk action record
-    const bulkAction = await prisma.bulk_actions.create({
-      data: {
+    const { data: bulkAction, error: bulkActionError } = await supabase
+      .from('bulk_actions')
+      .insert({
         id: uuidv4(),
         userId: session.user.id,
         action,
@@ -48,9 +51,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         totalItems: userIds.length,
         processedItems: 0,
         errors: [],
-        startedAt: new Date(),
-      },
-    });
+        startedAt: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (bulkActionError) throw new Error(bulkActionError.message);
 
     const errors: string[] = [];
     let processedCount = 0;
@@ -65,30 +71,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Assign multiple staff to multiple content items
         for (const userId of userIds) {
           try {
-            const user = await prisma.users.findUnique({ where: { id: userId } });
-            if (!user) {
+            const { data: user, error: userError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', userId)
+              .single();
+
+            if (!user || userError) {
               errors.push(`User ${userId} not found`);
               continue;
             }
 
             for (const contentId of contentIds) {
-              await prisma.editorial_calendar.update({
-                where: { id: contentId },
-                data: { assignedToId: userId },
-              });
+              const { error: updateError } = await supabase
+                .from('editorial_calendar')
+                .update({ assignedToId: userId })
+                .eq('id', contentId);
+
+              if (updateError) throw updateError;
             }
 
             // Log activity
-            await prisma.activity_logs.create({
-              data: {
+            const { error: logError } = await supabase
+              .from('activity_logs')
+              .insert({
                 id: uuidv4(),
                 userId: session.user.id,
                 action: 'BULK_ASSIGN_STAFF',
                 entity: 'editorial_calendar',
                 entityId: userId,
                 details: `Assigned staff to ${contentIds.length} content items`,
-              },
-            });
+              });
+
+            if (logError) throw logError;
 
             processedCount++;
           } catch (error: any) {
@@ -114,40 +129,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         for (const userId of userIds) {
           try {
-            const user = await prisma.users.findUnique({ where: { id: userId } });
-            if (!user) {
+            const { data: user, error: userError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', userId)
+              .single();
+
+            if (!user || userError) {
               errors.push(`User ${userId} not found`);
               continue;
             }
 
             // Prevent removing last SUPER_ADMIN
             if (user.role === 'SUPER_ADMIN' && newRole !== 'SUPER_ADMIN') {
-              const superAdminCount = await prisma.users.count({
-                where: { role: 'SUPER_ADMIN' },
-              });
+              const { count, error: countError } = await supabase
+                .from('users')
+                .select('*', { count: 'exact', head: true })
+                .eq('role', 'SUPER_ADMIN');
 
-              if (superAdminCount <= 1) {
+              if (countError) throw countError;
+
+              if ((count || 0) <= 1) {
                 errors.push(`Cannot change role of last SUPER_ADMIN: ${user.email}`);
                 continue;
               }
             }
 
-            await prisma.users.update({
-              where: { id: userId },
-              data: { role: newRole as any },
-            });
+            const { error: updateError } = await supabase
+              .from('users')
+              .update({ role: newRole as any })
+              .eq('id', userId);
+
+            if (updateError) throw updateError;
 
             // Log activity
-            await prisma.activity_logs.create({
-              data: {
+            const { error: logError } = await supabase
+              .from('activity_logs')
+              .insert({
                 id: uuidv4(),
                 userId: session.user.id,
                 action: 'BULK_UPDATE_ROLE',
                 entity: 'users',
                 entityId: userId,
                 details: `Changed role from ${user.role} to ${newRole}`,
-              },
-            });
+              });
+
+            if (logError) throw logError;
 
             processedCount++;
           } catch (error: any) {
@@ -159,21 +186,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       case 'ACTIVATE':
         for (const userId of userIds) {
           try {
-            await prisma.users.update({
-              where: { id: userId },
-              data: { emailVerified: true },
-            });
+            const { error: updateError } = await supabase
+              .from('users')
+              .update({ emailVerified: true })
+              .eq('id', userId);
 
-            await prisma.activity_logs.create({
-              data: {
+            if (updateError) throw updateError;
+
+            const { error: logError } = await supabase
+              .from('activity_logs')
+              .insert({
                 id: uuidv4(),
                 userId: session.user.id,
                 action: 'BULK_ACTIVATE_STAFF',
                 entity: 'users',
                 entityId: userId,
                 details: 'Staff member activated',
-              },
-            });
+              });
+
+            if (logError) throw logError;
 
             processedCount++;
           } catch (error: any) {
@@ -185,7 +216,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       case 'DEACTIVATE':
         for (const userId of userIds) {
           try {
-            const user = await prisma.users.findUnique({ where: { id: userId } });
+            const { data: user, error: userError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', userId)
+              .single();
 
             // Prevent deactivating SUPER_ADMIN
             if (user?.role === 'SUPER_ADMIN') {
@@ -193,21 +228,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               continue;
             }
 
-            await prisma.users.update({
-              where: { id: userId },
-              data: { emailVerified: false },
-            });
+            const { error: updateError } = await supabase
+              .from('users')
+              .update({ emailVerified: false })
+              .eq('id', userId);
 
-            await prisma.activity_logs.create({
-              data: {
+            if (updateError) throw updateError;
+
+            const { error: logError } = await supabase
+              .from('activity_logs')
+              .insert({
                 id: uuidv4(),
                 userId: session.user.id,
                 action: 'BULK_DEACTIVATE_STAFF',
                 entity: 'users',
                 entityId: userId,
                 details: 'Staff member deactivated',
-              },
-            });
+              });
+
+            if (logError) throw logError;
 
             processedCount++;
           } catch (error: any) {
@@ -221,15 +260,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Update bulk action record
-    await prisma.bulk_actions.update({
-      where: { id: bulkAction.id },
-      data: {
+    const { error: updateBulkError } = await supabase
+      .from('bulk_actions')
+      .update({
         status: errors.length > 0 && processedCount === 0 ? 'FAILED' : 'COMPLETED',
         processedItems: processedCount,
         errors,
-        completedAt: new Date(),
-      },
-    });
+        completedAt: new Date().toISOString(),
+      })
+      .eq('id', bulkAction.id);
+
+    if (updateBulkError) throw new Error(updateBulkError.message);
 
     return res.status(200).json({
       success: true,

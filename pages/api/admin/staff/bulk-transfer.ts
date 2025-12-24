@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -36,15 +36,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'transferType is required (ALL_CONTENT, SELECTED_CONTENT, or PENDING_ONLY)' });
     }
 
-    // Verify both users exist
-    const fromUser = await prisma.users.findUnique({ where: { id: fromUserId } });
-    const toUser = await prisma.users.findUnique({ where: { id: toUserId } });
+    const supabase = supabaseAdmin();
 
-    if (!fromUser) {
+    // Verify both users exist
+    const { data: fromUser, error: fromUserError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', fromUserId)
+      .single();
+
+    const { data: toUser, error: toUserError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', toUserId)
+      .single();
+
+    if (!fromUser || fromUserError) {
       return res.status(404).json({ error: `Source user not found: ${fromUserId}` });
     }
 
-    if (!toUser) {
+    if (!toUser || toUserError) {
       return res.status(404).json({ error: `Destination user not found: ${toUserId}` });
     }
 
@@ -53,8 +64,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let totalItems = 0;
 
     // Create bulk action record
-    const bulkAction = await prisma.bulk_actions.create({
-      data: {
+    const { data: bulkAction, error: bulkActionError } = await supabase
+      .from('bulk_actions')
+      .insert({
         id: uuidv4(),
         userId: session.user.id,
         action: `TRANSFER_${transferType}`,
@@ -64,26 +76,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         totalItems: 0, // Will update after counting
         processedItems: 0,
         errors: [],
-        startedAt: new Date(),
-      },
-    });
+        startedAt: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (bulkActionError) throw new Error(bulkActionError.message);
 
     try {
       switch (transferType) {
         case 'ALL_CONTENT':
           // Transfer all editorial calendar items from one user to another
-          const allContent = await prisma.editorial_calendar.findMany({
-            where: { assignedToId: fromUserId },
-          });
+          const { data: allContent, error: allContentError } = await supabase
+            .from('editorial_calendar')
+            .select('*')
+            .eq('assignedToId', fromUserId);
 
-          totalItems = allContent.length;
+          if (allContentError) throw new Error(allContentError.message);
 
-          for (const item of allContent) {
+          totalItems = allContent?.length || 0;
+
+          for (const item of allContent || []) {
             try {
-              await prisma.editorial_calendar.update({
-                where: { id: item.id },
-                data: { assignedToId: toUserId },
-              });
+              const { error: updateError } = await supabase
+                .from('editorial_calendar')
+                .update({ assignedToId: toUserId })
+                .eq('id', item.id);
+
+              if (updateError) throw updateError;
               processedCount++;
             } catch (error: any) {
               errors.push(`Error transferring item ${item.id}: ${error.message}`);
@@ -91,18 +111,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
 
           // Also transfer all posts
-          const allPosts = await prisma.posts.findMany({
-            where: { authorId: fromUserId },
-          });
+          const { data: allPosts, error: allPostsError } = await supabase
+            .from('posts')
+            .select('*')
+            .eq('authorId', fromUserId);
 
-          totalItems += allPosts.length;
+          if (allPostsError) throw new Error(allPostsError.message);
 
-          for (const post of allPosts) {
+          totalItems += allPosts?.length || 0;
+
+          for (const post of allPosts || []) {
             try {
-              await prisma.posts.update({
-                where: { id: post.id },
-                data: { authorId: toUserId },
-              });
+              const { error: updateError } = await supabase
+                .from('posts')
+                .update({ authorId: toUserId })
+                .eq('id', post.id);
+
+              if (updateError) throw updateError;
               processedCount++;
             } catch (error: any) {
               errors.push(`Error transferring post ${post.id}: ${error.message}`);
@@ -120,37 +145,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           for (const contentId of contentIds) {
             try {
               // Try editorial calendar first
-              const editorialItem = await prisma.editorial_calendar.findUnique({
-                where: { id: contentId },
-              });
+              const { data: editorialItem, error: editorialError } = await supabase
+                .from('editorial_calendar')
+                .select('*')
+                .eq('id', contentId)
+                .single();
 
-              if (editorialItem) {
+              if (editorialItem && !editorialError) {
                 if (editorialItem.assignedToId !== fromUserId) {
                   errors.push(`Item ${contentId} is not assigned to source user`);
                   continue;
                 }
 
-                await prisma.editorial_calendar.update({
-                  where: { id: contentId },
-                  data: { assignedToId: toUserId },
-                });
+                const { error: updateError } = await supabase
+                  .from('editorial_calendar')
+                  .update({ assignedToId: toUserId })
+                  .eq('id', contentId);
+
+                if (updateError) throw updateError;
                 processedCount++;
               } else {
                 // Try posts
-                const post = await prisma.posts.findUnique({
-                  where: { id: contentId },
-                });
+                const { data: post, error: postError } = await supabase
+                  .from('posts')
+                  .select('*')
+                  .eq('id', contentId)
+                  .single();
 
-                if (post) {
+                if (post && !postError) {
                   if (post.authorId !== fromUserId) {
                     errors.push(`Post ${contentId} is not authored by source user`);
                     continue;
                   }
 
-                  await prisma.posts.update({
-                    where: { id: contentId },
-                    data: { authorId: toUserId },
-                  });
+                  const { error: updateError } = await supabase
+                    .from('posts')
+                    .update({ authorId: toUserId })
+                    .eq('id', contentId);
+
+                  if (updateError) throw updateError;
                   processedCount++;
                 } else {
                   errors.push(`Content item ${contentId} not found`);
@@ -164,23 +197,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         case 'PENDING_ONLY':
           // Transfer only pending/draft content
-          const pendingEditorial = await prisma.editorial_calendar.findMany({
-            where: {
-              assignedToId: fromUserId,
-              status: {
-                in: ['IDEA', 'ASSIGNED', 'IN_PROGRESS', 'DRAFT'],
-              },
-            },
-          });
+          const { data: pendingEditorial, error: pendingError } = await supabase
+            .from('editorial_calendar')
+            .select('*')
+            .eq('assignedToId', fromUserId)
+            .in('status', ['IDEA', 'ASSIGNED', 'IN_PROGRESS', 'DRAFT']);
 
-          totalItems = pendingEditorial.length;
+          if (pendingError) throw new Error(pendingError.message);
 
-          for (const item of pendingEditorial) {
+          totalItems = pendingEditorial?.length || 0;
+
+          for (const item of pendingEditorial || []) {
             try {
-              await prisma.editorial_calendar.update({
-                where: { id: item.id },
-                data: { assignedToId: toUserId },
-              });
+              const { error: updateError } = await supabase
+                .from('editorial_calendar')
+                .update({ assignedToId: toUserId })
+                .eq('id', item.id);
+
+              if (updateError) throw updateError;
               processedCount++;
             } catch (error: any) {
               errors.push(`Error transferring pending item ${item.id}: ${error.message}`);
@@ -188,21 +222,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
 
           // Also transfer draft posts
-          const draftPosts = await prisma.posts.findMany({
-            where: {
-              authorId: fromUserId,
-              status: 'DRAFT',
-            },
-          });
+          const { data: draftPosts, error: draftPostsError } = await supabase
+            .from('posts')
+            .select('*')
+            .eq('authorId', fromUserId)
+            .eq('status', 'DRAFT');
 
-          totalItems += draftPosts.length;
+          if (draftPostsError) throw new Error(draftPostsError.message);
 
-          for (const post of draftPosts) {
+          totalItems += draftPosts?.length || 0;
+
+          for (const post of draftPosts || []) {
             try {
-              await prisma.posts.update({
-                where: { id: post.id },
-                data: { authorId: toUserId },
-              });
+              const { error: updateError } = await supabase
+                .from('posts')
+                .update({ authorId: toUserId })
+                .eq('id', post.id);
+
+              if (updateError) throw updateError;
               processedCount++;
             } catch (error: any) {
               errors.push(`Error transferring draft post ${post.id}: ${error.message}`);
@@ -211,13 +248,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           break;
 
         default:
-          await prisma.bulk_actions.delete({ where: { id: bulkAction.id } });
+          await supabase.from('bulk_actions').delete().eq('id', bulkAction.id);
           return res.status(400).json({ error: `Unknown transfer type: ${transferType}` });
       }
 
       // Log comprehensive activity
-      await prisma.activity_logs.create({
-        data: {
+      await supabase
+        .from('activity_logs')
+        .insert({
           id: uuidv4(),
           userId: session.user.id,
           action: 'BULK_TRANSFER',
@@ -230,20 +268,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             processedItems: processedCount,
             errors: errors.length,
           }),
-        },
-      });
+        });
 
       // Update bulk action record
-      await prisma.bulk_actions.update({
-        where: { id: bulkAction.id },
-        data: {
+      await supabase
+        .from('bulk_actions')
+        .update({
           totalItems,
           status: errors.length > 0 && processedCount === 0 ? 'FAILED' : 'COMPLETED',
           processedItems: processedCount,
           errors,
-          completedAt: new Date(),
-        },
-      });
+          completedAt: new Date().toISOString(),
+        })
+        .eq('id', bulkAction.id);
 
       return res.status(200).json({
         success: true,
@@ -258,14 +295,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     } catch (error: any) {
       // Update bulk action as failed
-      await prisma.bulk_actions.update({
-        where: { id: bulkAction.id },
-        data: {
+      await supabase
+        .from('bulk_actions')
+        .update({
           status: 'FAILED',
           errors: [error.message],
-          completedAt: new Date(),
-        },
-      });
+          completedAt: new Date().toISOString(),
+        })
+        .eq('id', bulkAction.id);
       throw error;
     }
   } catch (error: any) {

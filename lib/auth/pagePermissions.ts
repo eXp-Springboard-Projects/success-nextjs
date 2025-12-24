@@ -2,8 +2,8 @@
  * Page Permissions System
  * Handles role and department-based access control for admin pages
  */
-import { prisma } from '@/lib/prisma';
-import { UserRole, Department } from '@prisma/client';
+import { supabaseAdmin } from '@/lib/supabase';
+import { UserRole, Department } from '@/lib/types';
 
 export interface PagePermission {
   canAccess: boolean;
@@ -25,18 +25,21 @@ export async function checkPagePermission(
   pagePath: string
 ): Promise<PermissionCheckResult> {
   try {
-    // Get user info
-    const user = await prisma.users.findUnique({
-      where: { id: userId },
-      select: {
-        role: true,
-        staff_departments: {
-          select: { department: true },
-        },
-      },
-    });
+    const supabase = supabaseAdmin();
 
-    if (!user) {
+    // Get user info
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select(`
+        role,
+        staff_departments (
+          department
+        )
+      `)
+      .eq('id', userId)
+      .single();
+
+    if (userError || !user) {
       return {
         allowed: false,
         canAccess: false,
@@ -59,16 +62,18 @@ export async function checkPagePermission(
     }
 
     // Get page permission configuration
-    const page = await prisma.page_permissions.findUnique({
-      where: { pagePath },
-      include: {
-        role_permissions: true,
-        department_permissions: true,
-      },
-    });
+    const { data: page, error: pageError } = await supabase
+      .from('page_permissions')
+      .select(`
+        *,
+        role_permissions (*),
+        department_permissions (*)
+      `)
+      .eq('pagePath', pagePath)
+      .single();
 
     // If page is not in permissions system, deny access by default
-    if (!page || !page.isActive) {
+    if (pageError || !page || !page.isActive) {
       return {
         allowed: false,
         canAccess: false,
@@ -80,8 +85,8 @@ export async function checkPagePermission(
     }
 
     // Check role-based permissions
-    const rolePermission = page.role_permissions.find(
-      (rp: { role: UserRole }) => rp.role === user.role
+    const rolePermission = page.role_permissions?.find(
+      (rp: any) => rp.role === user.role
     );
 
     if (rolePermission && rolePermission.canAccess) {
@@ -95,13 +100,13 @@ export async function checkPagePermission(
     }
 
     // Check department-based permissions
-    const userDepartments = user.staff_departments.map(
-      (sd: { department: Department }) => sd.department
+    const userDepartments = (user.staff_departments as any[] || []).map(
+      (sd: any) => sd.department
     );
 
     for (const dept of userDepartments) {
-      const deptPermission = page.department_permissions.find(
-        (dp: { department: Department }) => dp.department === dept
+      const deptPermission = page.department_permissions?.find(
+        (dp: any) => dp.department === dept
       );
 
       if (deptPermission && deptPermission.canAccess) {
@@ -141,66 +146,79 @@ export async function checkPagePermission(
  */
 export async function getUserAccessiblePages(userId: string): Promise<string[]> {
   try {
-    const user = await prisma.users.findUnique({
-      where: { id: userId },
-      select: {
-        role: true,
-        staff_departments: {
-          select: { department: true },
-        },
-      },
-    });
+    const supabase = supabaseAdmin();
 
-    if (!user) return [];
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select(`
+        role,
+        staff_departments (
+          department
+        )
+      `)
+      .eq('id', userId)
+      .single();
+
+    if (userError || !user) return [];
 
     // Super admins can access all pages
     if (user.role === 'SUPER_ADMIN') {
-      const allPages = await prisma.page_permissions.findMany({
-        where: { isActive: true },
-        select: { pagePath: true },
-      });
-      return allPages.map((p: { pagePath: string }) => p.pagePath);
+      const { data: allPages, error } = await supabase
+        .from('page_permissions')
+        .select('pagePath')
+        .eq('isActive', true);
+
+      if (error || !allPages) return [];
+      return allPages.map((p: any) => p.pagePath);
     }
 
     const accessiblePages = new Set<string>();
 
     // Get pages accessible by role
-    const rolePages = await prisma.role_permissions.findMany({
-      where: {
-        role: user.role,
-        canAccess: true,
-      },
-      include: {
-        page: true,
-      },
-    });
+    const { data: rolePages, error: roleError } = await supabase
+      .from('role_permissions')
+      .select(`
+        page:page_permissions (
+          pagePath,
+          isActive
+        )
+      `)
+      .eq('role', user.role)
+      .eq('canAccess', true);
 
-    rolePages.forEach((rp: { page: { pagePath: string; isActive: boolean } }) => {
-      if (rp.page.isActive) {
-        accessiblePages.add(rp.page.pagePath);
-      }
-    });
+    if (!roleError && rolePages) {
+      rolePages.forEach((rp: any) => {
+        if (rp.page?.isActive) {
+          accessiblePages.add(rp.page.pagePath);
+        }
+      });
+    }
 
     // Get pages accessible by department
-    const userDepartments = user.staff_departments.map(
-      (sd: { department: Department }) => sd.department
+    const userDepartments = (user.staff_departments as any[] || []).map(
+      (sd: any) => sd.department
     );
 
-    const deptPages = await prisma.department_permissions.findMany({
-      where: {
-        department: { in: userDepartments },
-        canAccess: true,
-      },
-      include: {
-        page: true,
-      },
-    });
+    if (userDepartments.length > 0) {
+      const { data: deptPages, error: deptError } = await supabase
+        .from('department_permissions')
+        .select(`
+          page:page_permissions (
+            pagePath,
+            isActive
+          )
+        `)
+        .in('department', userDepartments)
+        .eq('canAccess', true);
 
-    deptPages.forEach((dp: { page: { pagePath: string; isActive: boolean } }) => {
-      if (dp.page.isActive) {
-        accessiblePages.add(dp.page.pagePath);
+      if (!deptError && deptPages) {
+        deptPages.forEach((dp: any) => {
+          if (dp.page?.isActive) {
+            accessiblePages.add(dp.page.pagePath);
+          }
+        });
       }
-    });
+    }
 
     return Array.from(accessiblePages);
   } catch (error) {
@@ -212,6 +230,8 @@ export async function getUserAccessiblePages(userId: string): Promise<string[]> 
  * Initialize default permissions for common admin pages
  */
 export async function initializeDefaultPermissions() {
+  const supabase = supabaseAdmin();
+
   const defaultPages = [
     // Content Management
     {
@@ -345,15 +365,28 @@ export async function initializeDefaultPermissions() {
   ];
 
   for (const pageData of defaultPages) {
-    await prisma.page_permissions.upsert({
-      where: { pagePath: pageData.pagePath },
-      create: pageData,
-      update: {
-        displayName: pageData.displayName,
-        description: pageData.description,
-        category: pageData.category,
-      },
-    });
-  }
+    // Check if page exists
+    const { data: existing } = await supabase
+      .from('page_permissions')
+      .select('pagePath')
+      .eq('pagePath', pageData.pagePath)
+      .single();
 
+    if (existing) {
+      // Update existing page
+      await supabase
+        .from('page_permissions')
+        .update({
+          displayName: pageData.displayName,
+          description: pageData.description,
+          category: pageData.category,
+        })
+        .eq('pagePath', pageData.pagePath);
+    } else {
+      // Insert new page
+      await supabase
+        .from('page_permissions')
+        .insert(pageData);
+    }
+  }
 }

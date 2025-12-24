@@ -1,12 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const supabase = supabaseAdmin();
+
   const session = await getServerSession(req, res, authOptions);
 
   if (!session || !session.user) {
@@ -25,11 +27,13 @@ export default async function handler(
 
   if (req.method === 'GET') {
     try {
-      const page = await prisma.pages.findUnique({
-        where: { id },
-      });
+      const { data: page, error } = await supabase
+        .from('pages')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-      if (!page) {
+      if (error || !page) {
         return res.status(404).json({ error: 'Page not found' });
       }
 
@@ -57,27 +61,28 @@ export default async function handler(
 
       // Check if slug is being changed and if it conflicts
       if (slug) {
-        const existing = await prisma.pages.findFirst({
-          where: {
-            slug,
-            NOT: { id },
-          },
-        });
+        const { data: existing } = await supabase
+          .from('pages')
+          .select('id')
+          .eq('slug', slug)
+          .neq('id', id)
+          .single();
 
         if (existing) {
           return res.status(409).json({ error: 'Page with this slug already exists' });
         }
       }
 
-      const updateData: any = {
-        updatedAt: new Date(),
-      };
-
       // Get current page to check publishedAt
-      const currentPage = await prisma.pages.findUnique({
-        where: { id },
-        select: { publishedAt: true }
-      });
+      const { data: currentPage } = await supabase
+        .from('pages')
+        .select('publishedAt')
+        .eq('id', id)
+        .single();
+
+      const updateData: any = {
+        updatedAt: new Date().toISOString(),
+      };
 
       if (title !== undefined) updateData.title = title;
       if (slug !== undefined) updateData.slug = slug;
@@ -87,7 +92,7 @@ export default async function handler(
         updateData.status = newStatus;
         // Set publishedAt only if being published and it doesn't already have one
         if ((newStatus === 'PUBLISHED' || newStatus === 'PUBLISH') && !currentPage?.publishedAt) {
-          updateData.publishedAt = new Date();
+          updateData.publishedAt = new Date().toISOString();
         }
       }
       if (seoTitle !== undefined) updateData.seoTitle = seoTitle;
@@ -98,22 +103,28 @@ export default async function handler(
       if (parentId !== undefined) updateData.parentId = parentId;
       if (order !== undefined) updateData.order = parseInt(order);
 
-      const page = await prisma.pages.update({
-        where: { id },
-        data: updateData,
-      });
+      const { data: page, error } = await supabase
+        .from('pages')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
 
       // Log activity
-      await prisma.activity_logs.create({
-        data: {
+      await supabase
+        .from('activity_logs')
+        .insert({
           id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           userId: session.user.id,
           action: 'UPDATE',
           entity: 'page',
           entityId: page.id,
           details: JSON.stringify({ title: page.title, slug: page.slug }),
-        },
-      });
+        });
 
       return res.status(200).json(page);
     } catch (error: any) {
@@ -123,20 +134,25 @@ export default async function handler(
 
   if (req.method === 'DELETE') {
     try {
-      await prisma.pages.delete({
-        where: { id },
-      });
+      const { error } = await supabase
+        .from('pages')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
 
       // Log activity
-      await prisma.activity_logs.create({
-        data: {
+      await supabase
+        .from('activity_logs')
+        .insert({
           id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           userId: session.user.id,
           action: 'DELETE',
           entity: 'page',
           entityId: id,
-        },
-      });
+        });
 
       return res.status(200).json({ message: 'Page deleted successfully' });
     } catch (error: any) {

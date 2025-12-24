@@ -1,14 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../lib/supabase';
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  const supabase = supabaseAdmin();
 
   try {
     const { firstName, lastName, email, password } = req.body;
@@ -23,17 +23,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Check if email already exists in members or users table
-    const existingMember = await prisma.members.findUnique({
-      where: { email: email.toLowerCase() },
-    });
+    const { data: existingMember } = await supabase
+      .from('members')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .single();
 
     if (existingMember) {
       return res.status(400).json({ error: 'Email already registered' });
     }
 
-    const existingUser = await prisma.users.findUnique({
-      where: { email: email.toLowerCase() },
-    });
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .single();
 
     if (existingUser) {
       return res.status(400).json({ error: 'Email already registered' });
@@ -47,8 +51,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     trialEndsAt.setDate(trialEndsAt.getDate() + 7);
 
     // Create member record with trial status
-    const member = await prisma.members.create({
-      data: {
+    const { data: member, error: memberError } = await supabase
+      .from('members')
+      .insert({
         id: nanoid(),
         firstName,
         lastName,
@@ -56,46 +61,62 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         phone: null,
         membershipTier: 'Free',
         membershipStatus: 'Active',
-        trialEndsAt,
+        trialEndsAt: trialEndsAt.toISOString(),
         totalSpent: 0,
         lifetimeValue: 0,
         engagementScore: 0,
         tags: ['trial'],
         priorityLevel: 'Standard',
-      },
-    });
+      })
+      .select()
+      .single();
+
+    if (memberError) {
+      throw memberError;
+    }
 
     // Create corresponding platform user for login
-    const user = await prisma.users.create({
-      data: {
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .insert({
         id: nanoid(),
         name: `${firstName} ${lastName}`,
         email: email.toLowerCase(),
         password: hashedPassword,
         emailVerified: false,
-        trialEndsAt,
+        trialEndsAt: trialEndsAt.toISOString(),
         linkedMemberId: member.id,
-      },
-    });
+      })
+      .select()
+      .single();
+
+    if (userError) {
+      throw userError;
+    }
 
     // Create a trial subscription record
-    await prisma.subscriptions.create({
-      data: {
+    const { error: subscriptionError } = await supabase
+      .from('subscriptions')
+      .insert({
         id: nanoid(),
         memberId: member.id,
         status: 'TRIALING',
         tier: 'SUCCESS_PLUS_TRIAL',
         provider: 'trial',
-        currentPeriodStart: new Date(),
-        currentPeriodEnd: trialEndsAt,
+        currentPeriodStart: new Date().toISOString(),
+        currentPeriodEnd: trialEndsAt.toISOString(),
         cancelAtPeriodEnd: false,
-        updatedAt: new Date(),
-      },
-    });
+        updatedAt: new Date().toISOString(),
+      });
+
+    if (subscriptionError) {
+      console.error('Failed to create subscription:', subscriptionError);
+    }
 
     // Log activity
-    await prisma.user_activities.create({
-      data: {
+    const { error: activityError } = await supabase
+      .from('user_activities')
+      .insert({
         id: nanoid(),
         userId: user.id,
         activityType: 'SUBSCRIPTION_STARTED',
@@ -105,8 +126,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           trialEndsAt: trialEndsAt.toISOString(),
           membershipTier: 'TRIALING',
         }),
-      },
-    });
+      });
+
+    if (activityError) {
+      console.error('Failed to log activity:', activityError);
+    }
 
     return res.status(201).json({
       success: true,
@@ -123,7 +147,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       error: 'Failed to create trial account',
       details: error instanceof Error ? error.message : 'Unknown error',
     });
-  } finally {
-    await prisma.$disconnect();
   }
 }

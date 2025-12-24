@@ -5,7 +5,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -26,94 +26,103 @@ export default async function handler(
   }
 
   try {
+    const supabase = supabaseAdmin();
+
     // Get date range (last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     // Total revenue from all orders
-    const ordersRevenue = await prisma.orders.aggregate({
-      _sum: {
-        total: true,
-      },
-      where: {
-        status: {
-          in: ['COMPLETED', 'PENDING', 'PROCESSING'],
-        },
-      },
-    });
+    const { data: ordersData, error: ordersError } = await supabase
+      .from('orders')
+      .select('total')
+      .in('status', ['COMPLETED', 'PENDING', 'PROCESSING']);
+
+    if (ordersError) throw ordersError;
+
+    const totalRevenue = ordersData?.reduce((sum, order) => sum + parseFloat(order.total.toString()), 0) || 0;
 
     // Monthly revenue (last 30 days)
-    const monthlyOrdersRevenue = await prisma.orders.aggregate({
-      _sum: {
-        total: true,
-      },
-      where: {
-        createdAt: {
-          gte: thirtyDaysAgo,
-        },
-        status: {
-          in: ['COMPLETED', 'PENDING', 'PROCESSING'],
-        },
-      },
-    });
+    const { data: monthlyOrdersData, error: monthlyError } = await supabase
+      .from('orders')
+      .select('total')
+      .gte('createdAt', thirtyDaysAgo.toISOString())
+      .in('status', ['COMPLETED', 'PENDING', 'PROCESSING']);
+
+    if (monthlyError) throw monthlyError;
+
+    const monthlyRevenue = monthlyOrdersData?.reduce((sum, order) => sum + parseFloat(order.total.toString()), 0) || 0;
 
     // Active subscriptions count
-    const activeSubscriptions = await prisma.subscriptions.count({
-      where: {
-        status: 'active',
-      },
-    });
+    const { count: activeSubscriptions, error: subsError } = await supabase
+      .from('subscriptions')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'active');
+
+    if (subsError) throw subsError;
 
     // Total customers (users)
-    const totalCustomers = await prisma.users.count();
+    const { count: totalCustomers, error: usersError } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true });
+
+    if (usersError) throw usersError;
 
     // Pending orders
-    const pendingOrders = await prisma.orders.count({
-      where: {
-        status: 'PENDING',
-      },
-    });
+    const { count: pendingOrders, error: pendingError } = await supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'PENDING');
+
+    if (pendingError) throw pendingError;
 
     // Email subscribers
-    const emailSubscribers = await prisma.email_subscribers.count({
-      where: {
-        status: 'ACTIVE',
-      },
-    });
+    const { count: emailSubscribers, error: emailError } = await supabase
+      .from('email_subscribers')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'ACTIVE');
+
+    if (emailError) throw emailError;
 
     // Average order value
-    const completedOrders = await prisma.orders.aggregate({
-      _avg: {
-        total: true,
-      },
-      where: {
-        status: 'COMPLETED',
-      },
-    });
+    const { data: completedOrders, error: completedError } = await supabase
+      .from('orders')
+      .select('total')
+      .eq('status', 'COMPLETED');
+
+    if (completedError) throw completedError;
+
+    const averageOrderValue = completedOrders && completedOrders.length > 0
+      ? completedOrders.reduce((sum, order) => sum + parseFloat(order.total.toString()), 0) / completedOrders.length
+      : 0;
 
     // Calculate churn rate (subscriptions canceled in last 30 days / total subscriptions)
-    const canceledSubscriptions = await prisma.subscriptions.count({
-      where: {
-        status: 'canceled',
-        updatedAt: {
-          gte: thirtyDaysAgo,
-        },
-      },
-    });
+    const { count: canceledSubscriptions, error: canceledError } = await supabase
+      .from('subscriptions')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'canceled')
+      .gte('updatedAt', thirtyDaysAgo.toISOString());
 
-    const totalSubscriptions = await prisma.subscriptions.count();
-    const churnRate = totalSubscriptions > 0
-      ? (canceledSubscriptions / totalSubscriptions) * 100
+    if (canceledError) throw canceledError;
+
+    const { count: totalSubscriptions, error: totalSubsError } = await supabase
+      .from('subscriptions')
+      .select('*', { count: 'exact', head: true });
+
+    if (totalSubsError) throw totalSubsError;
+
+    const churnRate = totalSubscriptions && totalSubscriptions > 0
+      ? ((canceledSubscriptions || 0) / totalSubscriptions) * 100
       : 0;
 
     const stats = {
-      totalRevenue: parseFloat(ordersRevenue._sum.total?.toString() || '0'),
-      monthlyRevenue: parseFloat(monthlyOrdersRevenue._sum.total?.toString() || '0'),
-      activeSubscriptions,
-      totalCustomers,
-      pendingOrders,
-      emailSubscribers,
-      averageOrderValue: parseFloat(completedOrders._avg.total?.toString() || '0'),
+      totalRevenue,
+      monthlyRevenue,
+      activeSubscriptions: activeSubscriptions || 0,
+      totalCustomers: totalCustomers || 0,
+      pendingOrders: pendingOrders || 0,
+      emailSubscribers: emailSubscribers || 0,
+      averageOrderValue,
       churnRate,
     };
 

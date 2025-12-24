@@ -1,5 +1,5 @@
 import { NextApiRequest } from 'next';
-import { prisma } from './prisma';
+import { supabaseAdmin } from './supabase';
 
 export interface AuditLogData {
   userId?: string;
@@ -33,6 +33,8 @@ export async function auditLog(
   req?: NextApiRequest
 ): Promise<void> {
   try {
+    const supabase = supabaseAdmin();
+
     const ipAddress = req
       ? (req.headers['x-forwarded-for'] as string)?.split(',')[0] ||
         (req.headers['x-real-ip'] as string) ||
@@ -43,21 +45,19 @@ export async function auditLog(
     const requestUrl = req?.url;
     const method = req?.method;
 
-    await prisma.audit_logs.create({
-      data: {
-        userId: data.userId,
-        userEmail: data.userEmail,
-        userName: data.userName,
-        action: data.action,
-        entityType: data.entityType,
-        entityId: data.entityId,
-        changes: data.changes ? JSON.parse(JSON.stringify(data.changes)) : undefined,
-        ipAddress,
-        userAgent,
-        requestUrl,
-        method,
-        metadata: data.metadata,
-      },
+    await supabase.from('audit_logs').insert({
+      userId: data.userId,
+      userEmail: data.userEmail,
+      userName: data.userName,
+      action: data.action,
+      entityType: data.entityType,
+      entityId: data.entityId,
+      changes: data.changes ? JSON.parse(JSON.stringify(data.changes)) : undefined,
+      ipAddress,
+      userAgent,
+      requestUrl,
+      method,
+      metadata: data.metadata,
     });
 
     // Also create system alert for critical actions
@@ -93,19 +93,19 @@ export async function createSystemAlert(data: {
   metadata?: Record<string, any>;
 }): Promise<void> {
   try {
-    await prisma.system_alerts.create({
-      data: {
-        type: data.type,
-        category: data.category,
-        title: data.title,
-        message: data.message,
-        severity: data.severity,
-        assignedTo: data.assignedTo,
-        assignedToEmail: data.assignedToEmail,
-        stackTrace: data.stackTrace,
-        metadata: data.metadata,
-        errorCount: 1,
-      },
+    const supabase = supabaseAdmin();
+
+    await supabase.from('system_alerts').insert({
+      type: data.type,
+      category: data.category,
+      title: data.title,
+      message: data.message,
+      severity: data.severity,
+      assignedTo: data.assignedTo,
+      assignedToEmail: data.assignedToEmail,
+      stackTrace: data.stackTrace,
+      metadata: data.metadata,
+      errorCount: 1,
     });
   } catch (error) {
   }
@@ -126,18 +126,18 @@ export async function createNotification(data: {
   expiresAt?: Date;
 }): Promise<void> {
   try {
-    await prisma.notifications.create({
-      data: {
-        userId: data.userId,
-        type: data.type,
-        title: data.title,
-        message: data.message,
-        actionUrl: data.actionUrl,
-        icon: data.icon,
-        priority: data.priority || 'NORMAL',
-        metadata: data.metadata,
-        expiresAt: data.expiresAt,
-      },
+    const supabase = supabaseAdmin();
+
+    await supabase.from('notifications').insert({
+      userId: data.userId,
+      type: data.type,
+      title: data.title,
+      message: data.message,
+      actionUrl: data.actionUrl,
+      icon: data.icon,
+      priority: data.priority || 'NORMAL',
+      metadata: data.metadata,
+      expiresAt: data.expiresAt?.toISOString(),
     });
   } catch (error) {
   }
@@ -159,22 +159,23 @@ export async function logWebhook(data: {
   responseBody?: string;
 }): Promise<string> {
   try {
-    const log = await prisma.webhook_logs.create({
-      data: {
-        provider: data.provider,
-        eventType: data.eventType,
-        eventId: data.eventId,
-        payload: data.payload,
-        headers: data.headers,
-        status: data.status,
-        attempts: data.attempts || 0,
-        errorMessage: data.errorMessage,
-        responseCode: data.responseCode,
-        responseBody: data.responseBody,
-        processedAt: data.status === 'Success' ? new Date() : undefined,
-      },
-    });
+    const supabase = supabaseAdmin();
 
+    const { data: log, error } = await supabase.from('webhook_logs').insert({
+      provider: data.provider,
+      eventType: data.eventType,
+      eventId: data.eventId,
+      payload: data.payload,
+      headers: data.headers,
+      status: data.status,
+      attempts: data.attempts || 0,
+      errorMessage: data.errorMessage,
+      responseCode: data.responseCode,
+      responseBody: data.responseBody,
+      processedAt: data.status === 'Success' ? new Date().toISOString() : null,
+    }).select('id').single();
+
+    if (error) throw error;
     return log.id;
   } catch (error) {
     throw error;
@@ -197,40 +198,41 @@ export async function logError(data: {
   metadata?: Record<string, any>;
 }): Promise<void> {
   try {
-    // Check if this error already exists
-    const existingError = await prisma.error_logs.findFirst({
-      where: {
-        errorType: data.errorType,
-        message: data.message,
-        isResolved: false,
-      },
-    });
+    const supabase = supabaseAdmin();
 
-    if (existingError) {
+    // Check if this error already exists
+    const { data: existingErrors, error: fetchError } = await supabase
+      .from('error_logs')
+      .select('id, occurrences')
+      .eq('errorType', data.errorType)
+      .eq('message', data.message)
+      .eq('isResolved', false)
+      .limit(1);
+
+    if (!fetchError && existingErrors && existingErrors.length > 0) {
       // Increment occurrence count
-      await prisma.error_logs.update({
-        where: { id: existingError.id },
-        data: {
-          occurrences: { increment: 1 },
-          lastSeen: new Date(),
-        },
-      });
+      const existingError = existingErrors[0];
+      await supabase
+        .from('error_logs')
+        .update({
+          occurrences: existingError.occurrences + 1,
+          lastSeen: new Date().toISOString(),
+        })
+        .eq('id', existingError.id);
     } else {
       // Create new error log
-      await prisma.error_logs.create({
-        data: {
-          errorType: data.errorType,
-          message: data.message,
-          stackTrace: data.stackTrace,
-          userId: data.userId,
-          userEmail: data.userEmail,
-          url: data.url,
-          method: data.method,
-          statusCode: data.statusCode,
-          severity: data.severity,
-          metadata: data.metadata,
-          occurrences: 1,
-        },
+      await supabase.from('error_logs').insert({
+        errorType: data.errorType,
+        message: data.message,
+        stackTrace: data.stackTrace,
+        userId: data.userId,
+        userEmail: data.userEmail,
+        url: data.url,
+        method: data.method,
+        statusCode: data.statusCode,
+        severity: data.severity,
+        metadata: data.metadata,
+        occurrences: 1,
       });
 
       // Create system alert for critical errors
@@ -260,13 +262,13 @@ export async function recordMetric(
   metadata?: Record<string, any>
 ): Promise<void> {
   try {
-    await prisma.system_metrics.create({
-      data: {
-        metricType,
-        value,
-        unit,
-        metadata,
-      },
+    const supabase = supabaseAdmin();
+
+    await supabase.from('system_metrics').insert({
+      metricType,
+      value,
+      unit,
+      metadata,
     });
   } catch (error) {
   }

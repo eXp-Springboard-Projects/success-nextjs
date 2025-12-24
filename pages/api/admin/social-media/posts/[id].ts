@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { prisma } from '../../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -14,15 +14,18 @@ export default async function handler(
   }
 
   const { id } = req.query;
+  const supabase = supabaseAdmin();
 
   if (req.method === 'DELETE') {
     try {
       // Delete post (CASCADE will delete related results)
-      await prisma.$executeRaw`
-        DELETE FROM social_posts
-        WHERE id = ${id as string}
-        AND user_id = ${session.user.id}
-      `;
+      const { error } = await supabase
+        .from('social_posts')
+        .delete()
+        .eq('id', id as string)
+        .eq('user_id', session.user.id);
+
+      if (error) throw error;
 
       return res.status(200).json({ success: true });
     } catch (error: any) {
@@ -34,21 +37,18 @@ export default async function handler(
   if (req.method === 'GET') {
     try {
       // Get single post
-      const posts = await prisma.$queryRaw`
-        SELECT
-          p.id, p.user_id, p.content, p.image_url, p.link_url,
-          p.platforms, p.status, p.scheduled_at, p.posted_at,
-          p.auto_generated, p.created_at
-        FROM social_posts p
-        WHERE p.id = ${id as string}
-        AND p.user_id = ${session.user.id}
-      `;
+      const { data: post, error } = await supabase
+        .from('social_posts')
+        .select('id, user_id, content, image_url, link_url, platforms, status, scheduled_at, posted_at, auto_generated, created_at')
+        .eq('id', id as string)
+        .eq('user_id', session.user.id)
+        .single();
 
-      if (!posts || (posts as any[]).length === 0) {
+      if (error || !post) {
         return res.status(404).json({ error: 'Post not found' });
       }
 
-      return res.status(200).json({ post: (posts as any[])[0] });
+      return res.status(200).json({ post });
     } catch (error: any) {
       console.error('Error fetching post:', error);
       return res.status(500).json({ error: 'Failed to fetch post' });

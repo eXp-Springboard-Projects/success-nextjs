@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { Department } from '@prisma/client';
+import { Department } from '@/lib/types';
 import { hasDepartmentAccess } from '@/lib/auth/departmentAccess';
 
 /**

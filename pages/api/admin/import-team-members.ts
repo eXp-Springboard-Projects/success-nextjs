@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
-import { prisma } from '../../../lib/prisma';
+import { supabaseAdmin } from '../../../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
 const teamMembers = [
@@ -221,29 +221,44 @@ export default async function handler(
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  // Only SUPER_ADMIN can import team members
-  const user = await prisma.users.findUnique({
-    where: { email: session.user.email as string },
-  });
+  const supabase = supabaseAdmin();
 
-  if (!user || user.role !== 'SUPER_ADMIN') {
+  // Only SUPER_ADMIN can import team members
+  const { data: user, error: userError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', session.user.email as string)
+    .single();
+
+  if (userError || !user || user.role !== 'SUPER_ADMIN') {
     return res.status(403).json({ error: 'Forbidden - SUPER_ADMIN only' });
   }
 
   try {
     // Clear existing team members
-    await prisma.team_members.deleteMany({});
+    const { error: deleteError } = await supabase
+      .from('team_members')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+    if (deleteError) throw deleteError;
 
     // Import new team members
     const created = [];
     for (const member of teamMembers) {
-      const teamMember = await prisma.team_members.create({
-        data: {
+      const { data: teamMember, error: createError } = await supabase
+        .from('team_members')
+        .insert({
           id: uuidv4(),
           ...member,
           isActive: true,
-        },
-      });
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
       created.push(teamMember);
     }
 

@@ -2,9 +2,11 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]';
 import { sendEmail } from '../../../../../lib/email';
-import { prisma } from '../../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const supabase = supabaseAdmin();
+
   const session = await getServerSession(req, res, authOptions);
   if (!session || session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'ADMIN') {
     return res.status(403).json({ error: 'Forbidden' });
@@ -104,18 +106,18 @@ This is an automated test email from the DevOps system.
       });
 
       // Log this action in audit logs
-      await prisma.$executeRaw`
-        INSERT INTO audit_logs ("userEmail", "userName", action, "entityType", "changes", "ipAddress", "createdAt")
-        VALUES (
-          ${session.user.email},
-          ${session.user.name},
-          'devops.test_email_sent',
-          'System',
-          ${JSON.stringify({ recipient: adminEmail, success: emailSent })},
-          ${req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || 'unknown'},
-          ${new Date()}
-        )
-      `;
+      await supabase
+        .from('audit_logs')
+        .insert({
+          id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          userEmail: session.user.email,
+          userName: session.user.name,
+          action: 'devops.test_email_sent',
+          entityType: 'System',
+          changes: { recipient: adminEmail, success: emailSent },
+          ipAddress: req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || 'unknown',
+          createdAt: new Date().toISOString()
+        });
 
       if (!emailSent) {
         // Email service not configured

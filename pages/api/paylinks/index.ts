@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { prisma } from '../../../lib/prisma';
+import { supabaseAdmin } from '../../../lib/supabase';
 import { randomUUID } from 'crypto';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -24,39 +24,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getPayLinks(req: NextApiRequest, res: NextApiResponse, session: any) {
   try {
+    const supabase = supabaseAdmin();
     const { status, search } = req.query;
 
-    const where: any = {};
+    let query = supabase
+      .from('pay_links')
+      .select('*, users(id, name, email)')
+      .order('createdAt', { ascending: false });
 
     // Filter by status
     if (status && status !== 'all') {
-      where.status = status;
+      query = query.eq('status', status);
     }
 
     // Search by title or slug
     if (search) {
-      where.OR = [
-        { title: { contains: search as string, mode: 'insensitive' } },
-        { slug: { contains: search as string, mode: 'insensitive' } },
-      ];
+      query = query.or(`title.ilike.%${search}%,slug.ilike.%${search}%`);
     }
 
-    const paylinks = await prisma.pay_links.findMany({
-      where,
-      include: {
-        users: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { data: paylinks, error } = await query;
+
+    if (error) throw error;
 
     // Calculate if expired
-    const paylinkswithExpiry = paylinks.map((link: any) => ({
+    const paylinkswithExpiry = (paylinks || []).map((link: any) => ({
       ...link,
       isExpired: link.expiresAt ? new Date(link.expiresAt) < new Date() : false,
       isMaxedOut: link.maxUses ? link.currentUses >= link.maxUses : false,
@@ -70,6 +61,7 @@ async function getPayLinks(req: NextApiRequest, res: NextApiResponse, session: a
 
 async function createPayLink(req: NextApiRequest, res: NextApiResponse, session: any) {
   try {
+    const supabase = supabaseAdmin();
     const {
       title,
       description,
@@ -93,11 +85,13 @@ async function createPayLink(req: NextApiRequest, res: NextApiResponse, session:
     }
 
     // Check if slug already exists
-    const existingLink = await prisma.pay_links.findUnique({
-      where: { slug },
-    });
+    const { data: existingLink, error: checkError } = await supabase
+      .from('pay_links')
+      .select('*')
+      .eq('slug', slug)
+      .single();
 
-    if (existingLink) {
+    if (existingLink && !checkError) {
       return res.status(400).json({ error: 'Slug already exists. Please choose a different slug.' });
     }
 
@@ -138,8 +132,9 @@ async function createPayLink(req: NextApiRequest, res: NextApiResponse, session:
     }
 
     // Create paylink
-    const paylink = await prisma.pay_links.create({
-      data: {
+    const { data: paylink, error: createError } = await supabase
+      .from('pay_links')
+      .insert({
         id: randomUUID(),
         userId: session.user.id,
         title,
@@ -150,37 +145,31 @@ async function createPayLink(req: NextApiRequest, res: NextApiResponse, session:
         stripePriceId,
         stripeProductId,
         status: 'ACTIVE',
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
         maxUses: maxUses || null,
         currentUses: 0,
         requiresShipping: requiresShipping || false,
         customFields: customFields || null,
         metadata: metadata || null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      include: {
-        users: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })
+      .select('*, users(id, name, email)')
+      .single();
+
+    if (createError) throw createError;
 
     // Log activity
-    await prisma.activity_logs.create({
-      data: {
+    await supabase
+      .from('activity_logs')
+      .insert({
         id: randomUUID(),
         userId: session.user.id,
         action: 'CREATE_PAYLINK',
         entity: 'pay_link',
         entityId: paylink.id,
         details: JSON.stringify({ title, slug, amount, currency }),
-      },
-    });
+      });
 
     return res.status(201).json(paylink);
   } catch (error) {

@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '../../../lib/prisma';
+import { supabaseAdmin } from '@/lib/supabase';
 import { sendCampaignEmail, sendEmailBatch } from '../../../lib/email';
 
 export default async function handler(
@@ -19,25 +19,27 @@ export default async function handler(
     }
   }
 
+  const supabase = supabaseAdmin();
+
   try {
     // Find campaigns where status="SCHEDULED" AND scheduledAt <= now
-    const now = new Date();
-    const scheduledCampaigns = await prisma.campaigns.findMany({
-      where: {
-        status: 'SCHEDULED',
-        scheduledAt: {
-          lte: now,
-        },
-      },
-      include: {
-        email_templates: true,
-        campaign_contacts: {
-          include: {
-            contacts: true,
-          },
-        },
-      },
-    });
+    const now = new Date().toISOString();
+    const { data: scheduledCampaigns, error: campaignsError } = await supabase
+      .from('campaigns')
+      .select(`
+        *,
+        email_templates (*),
+        campaign_contacts (
+          *,
+          contacts (*)
+        )
+      `)
+      .eq('status', 'SCHEDULED')
+      .lte('scheduledAt', now);
+
+    if (campaignsError) {
+      throw campaignsError;
+    }
 
     if (scheduledCampaigns.length === 0) {
       return res.status(200).json({
@@ -72,16 +74,16 @@ export default async function handler(
 
             // Log the email event
             if (result.success) {
-              await prisma.email_events.create({
-                data: {
+              await supabase
+                .from('email_events')
+                .insert({
                   id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                   campaignId: campaign.id,
                   contactId: contact.id,
                   emailAddress: contact.email,
                   event: 'sent',
                   eventData: {},
-                },
-              });
+                });
             }
 
             return result;
@@ -92,16 +94,16 @@ export default async function handler(
         const { sentCount, failedCount, errors } = await sendEmailBatch(emailTasks, 100, 1000);
 
         // Update campaign with stats
-        await prisma.campaigns.update({
-          where: { id: campaign.id },
-          data: {
+        await supabase
+          .from('campaigns')
+          .update({
             status: 'SENT',
-            sentAt: new Date(),
+            sentAt: new Date().toISOString(),
             sentCount,
             failedCount,
             sendErrors: errors.length > 0 ? errors : null,
-          },
-        });
+          })
+          .eq('id', campaign.id);
 
         results.push({
           campaignId: campaign.id,

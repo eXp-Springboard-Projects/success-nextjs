@@ -1,4 +1,4 @@
-import { prisma } from './prisma';
+import { supabaseAdmin } from './supabase';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 
@@ -34,21 +34,22 @@ export async function createInviteCode({
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + expiresInDays);
 
-  const invite = await prisma.invite_codes.create({
-    data: {
-      id: uuidv4(),
-      code,
-      email,
-      role,
-      createdBy,
-      expiresAt,
-      maxUses,
-      uses: 0,
-      isActive: true,
-      createdAt: new Date(),
-    },
-  });
+  const supabase = supabaseAdmin();
 
+  const { data: invite, error } = await supabase.from('invite_codes').insert({
+    id: uuidv4(),
+    code,
+    email,
+    role,
+    createdBy,
+    expiresAt: expiresAt.toISOString(),
+    maxUses,
+    uses: 0,
+    isActive: true,
+    createdAt: new Date().toISOString(),
+  }).select().single();
+
+  if (error) throw error;
   return invite;
 }
 
@@ -56,11 +57,15 @@ export async function createInviteCode({
  * Validate an invite code
  */
 export async function validateInviteCode(code: string, email?: string) {
-  const invite = await prisma.invite_codes.findUnique({
-    where: { code },
-  });
+  const supabase = supabaseAdmin();
 
-  if (!invite) {
+  const { data: invite, error } = await supabase
+    .from('invite_codes')
+    .select('*')
+    .eq('code', code)
+    .single();
+
+  if (error || !invite) {
     return { valid: false, error: 'Invalid invite code' };
   }
 
@@ -72,7 +77,7 @@ export async function validateInviteCode(code: string, email?: string) {
     return { valid: false, error: 'This invite code has already been used' };
   }
 
-  if (new Date() > invite.expiresAt) {
+  if (new Date() > new Date(invite.expiresAt)) {
     return { valid: false, error: 'This invite code has expired' };
   }
 
@@ -88,23 +93,27 @@ export async function validateInviteCode(code: string, email?: string) {
  * Mark invite code as used
  */
 export async function markInviteCodeAsUsed(code: string, userId: string) {
-  const invite = await prisma.invite_codes.findUnique({
-    where: { code },
-  });
+  const supabase = supabaseAdmin();
 
-  if (!invite) {
+  const { data: invite, error } = await supabase
+    .from('invite_codes')
+    .select('uses, maxUses')
+    .eq('code', code)
+    .single();
+
+  if (error || !invite) {
     throw new Error('Invite code not found');
   }
 
-  await prisma.invite_codes.update({
-    where: { code },
-    data: {
+  await supabase
+    .from('invite_codes')
+    .update({
       uses: invite.uses + 1,
       usedBy: userId,
-      usedAt: new Date(),
+      usedAt: new Date().toISOString(),
       isActive: invite.uses + 1 >= invite.maxUses ? false : true,
-    },
-  });
+    })
+    .eq('code', code);
 }
 
 /**
@@ -118,11 +127,15 @@ export function generateResetToken(): string {
  * Create password reset token for user
  */
 export async function createPasswordResetToken(email: string) {
-  const user = await prisma.users.findUnique({
-    where: { email },
-  });
+  const supabase = supabaseAdmin();
 
-  if (!user) {
+  const { data: user, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', email)
+    .single();
+
+  if (error || !user) {
     throw new Error('User not found');
   }
 
@@ -130,14 +143,14 @@ export async function createPasswordResetToken(email: string) {
   const resetTokenExpiry = new Date();
   resetTokenExpiry.setHours(resetTokenExpiry.getHours() + 1); // 1 hour expiry
 
-  await prisma.users.update({
-    where: { email },
-    data: {
+  await supabase
+    .from('users')
+    .update({
       resetToken,
-      resetTokenExpiry,
-      updatedAt: new Date(),
-    },
-  });
+      resetTokenExpiry: resetTokenExpiry.toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    .eq('email', email);
 
   return { resetToken, user };
 }
@@ -146,43 +159,48 @@ export async function createPasswordResetToken(email: string) {
  * Validate password reset token
  */
 export async function validateResetToken(token: string) {
-  const user = await prisma.users.findFirst({
-    where: {
-      resetToken: token,
-      resetTokenExpiry: {
-        gt: new Date(), // Token must not be expired
-      },
-    },
-  });
+  const supabase = supabaseAdmin();
 
-  if (!user) {
+  const { data: users, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('resetToken', token)
+    .gt('resetTokenExpiry', new Date().toISOString())
+    .limit(1);
+
+  if (error || !users || users.length === 0) {
     return { valid: false, error: 'Invalid or expired reset token' };
   }
 
-  return { valid: true, user };
+  return { valid: true, user: users[0] };
 }
 
 /**
  * Check if password reset is required (first login)
  */
 export async function requiresPasswordChange(userId: string): Promise<boolean> {
-  const user = await prisma.users.findUnique({
-    where: { id: userId },
-    select: { hasChangedDefaultPassword: true },
-  });
+  const supabase = supabaseAdmin();
 
-  return user ? !user.hasChangedDefaultPassword : false;
+  const { data: user, error } = await supabase
+    .from('users')
+    .select('hasChangedDefaultPassword')
+    .eq('id', userId)
+    .single();
+
+  return user && !error ? !user.hasChangedDefaultPassword : false;
 }
 
 /**
  * Update last login timestamp
  */
 export async function updateLastLogin(userId: string) {
-  await prisma.users.update({
-    where: { id: userId },
-    data: {
-      lastLoginAt: new Date(),
-      updatedAt: new Date(),
-    },
-  });
+  const supabase = supabaseAdmin();
+
+  await supabase
+    .from('users')
+    .update({
+      lastLoginAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    .eq('id', userId);
 }

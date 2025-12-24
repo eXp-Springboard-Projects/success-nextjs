@@ -1,9 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { prisma } from '../../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const supabase = supabaseAdmin();
+
   const session = await getServerSession(req, res, authOptions);
   if (!session || session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'ADMIN') {
     return res.status(403).json({ error: 'Forbidden' });
@@ -12,28 +14,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'GET') {
     try {
       // Get cache last cleared from database
-      const settings = await prisma.$queryRaw<any[]>`
-        SELECT value, "updatedAt", "updatedBy"
-        FROM system_settings
-        WHERE key = 'cache_last_cleared'
-        LIMIT 1
-      `;
+      const { data: settings } = await supabase
+        .from('system_settings')
+        .select('value, updatedAt, updatedBy')
+        .eq('key', 'cache_last_cleared')
+        .single();
 
-      const lastCleared = settings[0]?.value || null;
-      const clearedBy = settings[0]?.updatedBy || null;
+      const lastCleared = settings?.value || null;
+      const clearedBy = settings?.updatedBy || null;
 
       // Estimate cache size (in production, you'd get this from actual cache metrics)
       // For now, we'll estimate based on database content
-      const contentCounts = await prisma.$queryRaw<any[]>`
-        SELECT
-          (SELECT COUNT(*) FROM posts) as post_count,
-          (SELECT COUNT(*) FROM pages) as page_count,
-          (SELECT COUNT(*) FROM videos) as video_count,
-          (SELECT COUNT(*) FROM podcasts) as podcast_count
-      `;
+      const [
+        { count: postCount },
+        { count: pageCount },
+        { count: videoCount },
+        { count: podcastCount }
+      ] = await Promise.all([
+        supabase.from('posts').select('*', { count: 'exact', head: true }),
+        supabase.from('pages').select('*', { count: 'exact', head: true }),
+        supabase.from('videos').select('*', { count: 'exact', head: true }),
+        supabase.from('podcasts').select('*', { count: 'exact', head: true })
+      ]);
 
-      const totalContent = Object.values(contentCounts[0] || {}).reduce((sum: number, count: any) => sum + Number(count), 0);
-      const estimatedSize = Math.round((totalContent as number) * 0.5); // Rough estimate: 0.5 MB per cached item
+      const totalContent = (postCount || 0) + (pageCount || 0) + (videoCount || 0) + (podcastCount || 0);
+      const estimatedSize = Math.round(totalContent * 0.5); // Rough estimate: 0.5 MB per cached item
 
       return res.status(200).json({
         size: `${estimatedSize} MB`,

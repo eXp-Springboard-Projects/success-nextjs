@@ -4,8 +4,8 @@
  * Handles COLLECTIVE vs INSIDER tier logic and content gating
  */
 
-import { SubscriptionStatus } from '@prisma/client';
-import { prisma } from './prisma';
+import { SubscriptionStatus } from '@/lib/types';
+import { supabaseAdmin } from './supabase';
 
 // Membership tier definitions
 export enum MembershipTier {
@@ -90,12 +90,20 @@ export async function getUserTier(userId: string): Promise<MembershipTier> {
     return MembershipTier.FREE;
   }
 
-  const user = await prisma.users.findUnique({
-    where: { id: userId },
-    include: { member: { include: { subscriptions: true } } },
-  });
+  const supabase = supabaseAdmin();
+  const { data: user, error } = await supabase
+    .from('users')
+    .select(`
+      *,
+      member:members!users_memberId_fkey (
+        *,
+        subscriptions (*)
+      )
+    `)
+    .eq('id', userId)
+    .single();
 
-  if (!user) {
+  if (error || !user) {
     return MembershipTier.FREE;
   }
 
@@ -242,21 +250,31 @@ export async function checkArticleLimit(userId: string): Promise<boolean> {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const config = await prisma.paywall_config.findFirst();
+  const supabase = supabaseAdmin();
+
+  // Get paywall config
+  const { data: config } = await supabase
+    .from('paywall_config')
+    .select('*')
+    .limit(1)
+    .single();
+
   const limit = config?.freeArticleLimit || 3;
 
-  // Count unique article views
-  const uniqueArticles = await prisma.page_views.groupBy({
-    by: ['articleId'],
-    where: {
-      userId,
-      viewedAt: {
-        gte: startOfMonth,
-      },
-    },
-  });
+  // Count unique article views - Supabase doesn't have groupBy, so we select distinct articleIds
+  const { data: uniqueArticles, error } = await supabase
+    .from('page_views')
+    .select('articleId')
+    .eq('userId', userId)
+    .gte('viewedAt', startOfMonth.toISOString());
 
-  const viewCount = uniqueArticles.length;
+  if (error || !uniqueArticles) {
+    return false;
+  }
+
+  // Get unique article IDs
+  const uniqueArticleIds = new Set(uniqueArticles.map(v => v.articleId));
+  const viewCount = uniqueArticleIds.size;
 
   return viewCount >= limit;
 }
@@ -265,24 +283,34 @@ export async function checkArticleLimit(userId: string): Promise<boolean> {
  * Get remaining free articles for user
  */
 export async function getRemainingFreeArticles(userId: string): Promise<number> {
-  const config = await prisma.paywall_config.findFirst();
+  const supabase = supabaseAdmin();
+
+  // Get paywall config
+  const { data: config } = await supabase
+    .from('paywall_config')
+    .select('*')
+    .limit(1)
+    .single();
+
   const limit = config?.freeArticleLimit || 3;
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
   // Count unique article views
-  const uniqueArticles = await prisma.page_views.groupBy({
-    by: ['articleId'],
-    where: {
-      userId,
-      viewedAt: {
-        gte: startOfMonth,
-      },
-    },
-  });
+  const { data: uniqueArticles, error } = await supabase
+    .from('page_views')
+    .select('articleId')
+    .eq('userId', userId)
+    .gte('viewedAt', startOfMonth.toISOString());
 
-  const viewCount = uniqueArticles.length;
+  if (error || !uniqueArticles) {
+    return limit;
+  }
+
+  // Get unique article IDs
+  const uniqueArticleIds = new Set(uniqueArticles.map(v => v.articleId));
+  const viewCount = uniqueArticleIds.size;
 
   return Math.max(0, limit - viewCount);
 }
@@ -305,18 +333,17 @@ export async function trackArticleView(
 
   const generateId = () => `pv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-  await prisma.page_views.create({
-    data: {
-      id: generateId(),
-      userId: userId || null,
-      sessionId: sessionId || null,
-      articleId: article.id,
-      articleTitle: article.title,
-      articleUrl: article.url,
-      viewedAt: new Date(),
-      ipAddress: ipAddress || null,
-      userAgent: userAgent || null,
-    },
+  const supabase = supabaseAdmin();
+  await supabase.from('page_views').insert({
+    id: generateId(),
+    userId: userId || null,
+    sessionId: sessionId || null,
+    articleId: article.id,
+    articleTitle: article.title,
+    articleUrl: article.url,
+    viewedAt: new Date().toISOString(),
+    ipAddress: ipAddress || null,
+    userAgent: userAgent || null,
   });
 }
 
@@ -324,12 +351,20 @@ export async function trackArticleView(
  * Check if user's subscription is active
  */
 export async function hasActiveSubscription(userId: string): Promise<boolean> {
-  const user = await prisma.users.findUnique({
-    where: { id: userId },
-    include: { member: { include: { subscriptions: true } } },
-  });
+  const supabase = supabaseAdmin();
+  const { data: user, error } = await supabase
+    .from('users')
+    .select(`
+      *,
+      member:members!users_memberId_fkey (
+        *,
+        subscriptions (*)
+      )
+    `)
+    .eq('id', userId)
+    .single();
 
-  if (!user || !user.member?.subscriptions || user.member.subscriptions.length === 0) {
+  if (error || !user || !user.member?.subscriptions || user.member.subscriptions.length === 0) {
     return false;
   }
 
@@ -341,12 +376,20 @@ export async function hasActiveSubscription(userId: string): Promise<boolean> {
  * Get subscription details for display
  */
 export async function getSubscriptionDetails(userId: string) {
-  const user = await prisma.users.findUnique({
-    where: { id: userId },
-    include: { member: { include: { subscriptions: true } } },
-  });
+  const supabase = supabaseAdmin();
+  const { data: user, error } = await supabase
+    .from('users')
+    .select(`
+      *,
+      member:members!users_memberId_fkey (
+        *,
+        subscriptions (*)
+      )
+    `)
+    .eq('id', userId)
+    .single();
 
-  if (!user || !user.member?.subscriptions || user.member.subscriptions.length === 0) {
+  if (error || !user || !user.member?.subscriptions || user.member.subscriptions.length === 0) {
     return null;
   }
 

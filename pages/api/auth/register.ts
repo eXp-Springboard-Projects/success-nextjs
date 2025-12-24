@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '../../../lib/prisma';
+import { supabaseAdmin } from '../../../lib/supabase';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { isSuccessEmail, DEFAULT_PASSWORD, AUTH_ERRORS } from '../../../lib/auth-validation';
@@ -13,6 +13,8 @@ export default async function handler(
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  const supabase = supabaseAdmin();
 
   try {
     const { email, name, password, role, inviteCode } = req.body;
@@ -51,9 +53,11 @@ export default async function handler(
     }
 
     // Check if user already exists
-    const existingUser = await prisma.users.findUnique({
-      where: { email }
-    });
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single();
 
     if (existingUser) {
       return res.status(400).json({ error: 'User with this email already exists' });
@@ -68,8 +72,9 @@ export default async function handler(
 
     // Create user with their chosen password
     const userId = uuidv4();
-    const user = await prisma.users.create({
-      data: {
+    const { data: user, error: createError } = await supabase
+      .from('users')
+      .insert({
         id: userId,
         email,
         name,
@@ -81,8 +86,18 @@ export default async function handler(
         interests: [], // Required array field
         isActive: true,
         onboardingCompleted: false
+      })
+      .select()
+      .single();
+
+    if (createError) {
+      console.error('Failed to create user:', createError);
+      // Check for duplicate email constraint
+      if (createError.code === '23505') {
+        return res.status(400).json({ error: 'An account with this email already exists' });
       }
-    });
+      throw createError;
+    }
 
     // Mark invite code as used if provided
     if (inviteCode) {
@@ -118,7 +133,7 @@ export default async function handler(
     console.error('Registration error:', error);
 
     // Check for specific database errors
-    if (error.code === 'P2002') {
+    if (error.code === '23505') {
       return res.status(400).json({ error: 'An account with this email already exists' });
     }
 

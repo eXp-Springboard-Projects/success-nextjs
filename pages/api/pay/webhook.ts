@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { buffer } from 'micro';
 import { stripe } from '../../../lib/stripe';
-import { prisma } from '../../../lib/prisma';
+import { supabaseAdmin } from '@/lib/supabase';
 import { randomUUID } from 'crypto';
 
 // Disable body parsing, need raw body for webhook signature verification
@@ -62,29 +62,39 @@ break;
 }
 
 async function handleCheckoutSessionCompleted(session: any) {
-const paylinkId = session.metadata?.paylink_id;
+  const paylinkId = session.metadata?.paylink_id;
 
   if (!paylinkId) {
     return;
   }
 
+  const supabase = supabaseAdmin();
+
   try {
-    // Increment currentUses for the paylink
-    await prisma.pay_links.update({
-      where: { id: paylinkId },
-      data: {
-        currentUses: {
-          increment: 1,
-        },
-        updatedAt: new Date(),
-      },
-    });
+    // Get current paylink to increment currentUses
+    const { data: paylink } = await supabase
+      .from('pay_links')
+      .select('currentUses')
+      .eq('id', paylinkId)
+      .single();
+
+    if (paylink) {
+      // Increment currentUses for the paylink
+      await supabase
+        .from('pay_links')
+        .update({
+          currentUses: (paylink.currentUses || 0) + 1,
+          updatedAt: new Date().toISOString(),
+        })
+        .eq('id', paylinkId);
+    }
 
     // Create order record (optional - for tracking)
     const orderNumber = `PL-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-    await prisma.orders.create({
-      data: {
+    await supabase
+      .from('orders')
+      .insert({
         id: randomUUID(),
         orderNumber,
         userName: session.customer_details?.name || 'Guest',
@@ -100,11 +110,10 @@ const paylinkId = session.metadata?.paylink_id;
         shippingAddress: session.shipping_details ? JSON.stringify(session.shipping_details) : null,
         billingAddress: session.customer_details?.address ? JSON.stringify(session.customer_details.address) : null,
         notes: `PayLink: ${session.metadata?.paylink_title || session.metadata?.paylink_slug}`,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    });
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
 
-} catch (error) {
+  } catch (error) {
   }
 }

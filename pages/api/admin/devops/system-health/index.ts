@@ -1,12 +1,13 @@
 import { NextApiRequest, NextApiResponse} from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { prisma } from '../../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 async function checkDatabase() {
   try {
+    const supabase = supabaseAdmin();
     const start = Date.now();
-    await prisma.$queryRaw`SELECT 1`;
+    await supabase.from('users').select('id').limit(1).single();
     const responseTime = Date.now() - start;
     return {
       name: 'Database Status',

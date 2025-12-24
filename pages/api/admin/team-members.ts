@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
-import { prisma } from '../../../lib/prisma.js';
+import { supabaseAdmin } from '../../../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
 export default async function handler(
@@ -14,12 +14,16 @@ export default async function handler(
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  // Only staff members can manage team members
-  const user = await prisma.users.findUnique({
-    where: { email: session.user.email as string },
-  });
+  const supabase = supabaseAdmin();
 
-  if (!user || !['ADMIN', 'SUPER_ADMIN', 'EDITOR'].includes(user.role)) {
+  // Only staff members can manage team members
+  const { data: user, error: userError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', session.user.email as string)
+    .single();
+
+  if (!user || userError || !['ADMIN', 'SUPER_ADMIN', 'EDITOR'].includes(user.role)) {
     return res.status(403).json({ error: 'Forbidden' });
   }
 
@@ -39,9 +43,13 @@ export default async function handler(
 
 async function getTeamMembers(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const teamMembers = await prisma.team_members.findMany({
-      orderBy: { displayOrder: 'asc' },
-    });
+    const supabase = supabaseAdmin();
+    const { data: teamMembers, error } = await supabase
+      .from('team_members')
+      .select('*')
+      .order('displayOrder', { ascending: true });
+
+    if (error) throw error;
 
     return res.status(200).json(teamMembers);
   } catch (error) {
@@ -56,14 +64,16 @@ async function createTeamMember(
   userId: string
 ) {
   try {
+    const supabase = supabaseAdmin();
     const { name, title, bio, image, linkedIn, displayOrder, isActive } = req.body;
 
     if (!name || !title || !bio || !image) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const teamMember = await prisma.team_members.create({
-      data: {
+    const { data: teamMember, error: createError } = await supabase
+      .from('team_members')
+      .insert({
         id: uuidv4(),
         name,
         title,
@@ -72,20 +82,23 @@ async function createTeamMember(
         linkedIn: linkedIn || null,
         displayOrder: displayOrder || 0,
         isActive: isActive !== undefined ? isActive : true,
-      },
-    });
+      })
+      .select()
+      .single();
+
+    if (createError) throw createError;
 
     // Log activity
-    await prisma.activity_logs.create({
-      data: {
+    await supabase
+      .from('activity_logs')
+      .insert({
         id: uuidv4(),
         userId,
         action: 'CREATE_TEAM_MEMBER',
         entity: 'team_members',
         entityId: teamMember.id,
         details: `Created team member: ${name}`,
-      },
-    });
+      });
 
     return res.status(201).json(teamMember);
   } catch (error) {
@@ -100,15 +113,16 @@ async function updateTeamMember(
   userId: string
 ) {
   try {
+    const supabase = supabaseAdmin();
     const { id, name, title, bio, image, linkedIn, displayOrder, isActive } = req.body;
 
     if (!id) {
       return res.status(400).json({ error: 'Team member ID is required' });
     }
 
-    const teamMember = await prisma.team_members.update({
-      where: { id },
-      data: {
+    const { data: teamMember, error: updateError } = await supabase
+      .from('team_members')
+      .update({
         name,
         title,
         bio,
@@ -116,20 +130,24 @@ async function updateTeamMember(
         linkedIn,
         displayOrder,
         isActive,
-      },
-    });
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
 
     // Log activity
-    await prisma.activity_logs.create({
-      data: {
+    await supabase
+      .from('activity_logs')
+      .insert({
         id: uuidv4(),
         userId,
         action: 'UPDATE_TEAM_MEMBER',
         entity: 'team_members',
         entityId: teamMember.id,
         details: `Updated team member: ${name}`,
-      },
-    });
+      });
 
     return res.status(200).json(teamMember);
   } catch (error) {
@@ -144,35 +162,41 @@ async function deleteTeamMember(
   userId: string
 ) {
   try {
+    const supabase = supabaseAdmin();
     const { id } = req.body;
 
     if (!id) {
       return res.status(400).json({ error: 'Team member ID is required' });
     }
 
-    const teamMember = await prisma.team_members.findUnique({
-      where: { id },
-    });
+    const { data: teamMember, error: findError } = await supabase
+      .from('team_members')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (!teamMember) {
+    if (!teamMember || findError) {
       return res.status(404).json({ error: 'Team member not found' });
     }
 
-    await prisma.team_members.delete({
-      where: { id },
-    });
+    const { error: deleteError } = await supabase
+      .from('team_members')
+      .delete()
+      .eq('id', id);
+
+    if (deleteError) throw deleteError;
 
     // Log activity
-    await prisma.activity_logs.create({
-      data: {
+    await supabase
+      .from('activity_logs')
+      .insert({
         id: uuidv4(),
         userId,
         action: 'DELETE_TEAM_MEMBER',
         entity: 'team_members',
         entityId: id,
         details: `Deleted team member: ${teamMember.name}`,
-      },
-    });
+      });
 
     return res.status(200).json({ message: 'Team member deleted successfully' });
   } catch (error) {

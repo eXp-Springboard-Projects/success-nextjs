@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 import { postToSocialMedia } from '../../../../lib/social-media-poster';
 
 /**
@@ -23,19 +23,19 @@ export default async function handler(
   }
 
   try {
-    // Find posts scheduled for now or earlier that haven't been posted yet
-    const scheduledPosts = await prisma.$queryRaw<Array<{
-      id: string;
-      user_id: string;
-    }>>`
-      SELECT id, user_id
-      FROM social_posts
-      WHERE status = 'SCHEDULED'
-        AND scheduled_at <= CURRENT_TIMESTAMP
-      LIMIT 100
-    `;
+    const supabase = supabaseAdmin();
 
-    if (scheduledPosts.length === 0) {
+    // Find posts scheduled for now or earlier that haven't been posted yet
+    const { data: scheduledPosts, error: fetchError } = await supabase
+      .from('social_posts')
+      .select('id, user_id')
+      .eq('status', 'SCHEDULED')
+      .lte('scheduled_at', new Date().toISOString())
+      .limit(100);
+
+    if (fetchError) throw fetchError;
+
+    if (!scheduledPosts || scheduledPosts.length === 0) {
       return res.status(200).json({
         success: true,
         processed: 0,
@@ -45,11 +45,15 @@ export default async function handler(
 
     // Update status to POSTING to prevent duplicate processing
     const postIds = scheduledPosts.map((p: any) => p.id);
-    await prisma.$executeRaw`
-      UPDATE social_posts
-      SET status = 'POSTING', updated_at = CURRENT_TIMESTAMP
-      WHERE id = ANY(ARRAY[${postIds.join(',')}]::TEXT[])
-    `;
+    const { error: updateError } = await supabase
+      .from('social_posts')
+      .update({
+        status: 'POSTING',
+        updated_at: new Date().toISOString()
+      })
+      .in('id', postIds);
+
+    if (updateError) throw updateError;
 
     // Process each post
     const results = await Promise.allSettled(

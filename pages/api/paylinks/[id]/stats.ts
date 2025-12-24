@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -22,12 +22,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Get paylink
-    const paylink = await prisma.pay_links.findUnique({
-      where: { id },
-    });
+    const supabase = supabaseAdmin();
 
-    if (!paylink) {
+    // Get paylink
+    const { data: paylink, error } = await supabase
+      .from('pay_links')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (!paylink || error) {
       return res.status(404).json({ error: 'Paylink not found' });
     }
 

@@ -5,12 +5,14 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const supabase = supabaseAdmin();
+
   const session = await getServerSession(req, res, authOptions);
 
   if (!session || !session.user) {
@@ -31,7 +33,7 @@ export default async function handler(
   try {
     switch (req.method) {
       case 'PUT':
-        return await updatePermissions(pageId, req, res);
+        return await updatePermissions(supabase, pageId, req, res);
       default:
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -41,6 +43,7 @@ export default async function handler(
 }
 
 async function updatePermissions(
+  supabase: any,
   pageId: string,
   req: NextApiRequest,
   res: NextApiResponse
@@ -48,78 +51,66 @@ async function updatePermissions(
   const { rolePermissions, departmentPermissions } = req.body;
 
   // Verify page exists
-  const page = await prisma.page_permissions.findUnique({
-    where: { id: pageId },
-  });
+  const { data: page, error: pageError } = await supabase
+    .from('page_permissions')
+    .select('id')
+    .eq('id', pageId)
+    .single();
 
-  if (!page) {
+  if (pageError || !page) {
     return res.status(404).json({ error: 'Page not found' });
   }
 
   // Update role permissions
   if (rolePermissions && Array.isArray(rolePermissions)) {
     for (const rolePerm of rolePermissions) {
-      await prisma.role_permissions.upsert({
-        where: {
-          pageId_role: {
-            pageId,
-            role: rolePerm.role,
-          },
-        },
-        create: {
+      await supabase
+        .from('role_permissions')
+        .upsert({
           pageId,
           role: rolePerm.role,
           canAccess: rolePerm.canAccess,
           canCreate: rolePerm.canCreate,
           canEdit: rolePerm.canEdit,
           canDelete: rolePerm.canDelete,
-        },
-        update: {
-          canAccess: rolePerm.canAccess,
-          canCreate: rolePerm.canCreate,
-          canEdit: rolePerm.canEdit,
-          canDelete: rolePerm.canDelete,
-        },
-      });
+        }, {
+          onConflict: 'pageId,role'
+        });
     }
   }
 
   // Update department permissions
   if (departmentPermissions && Array.isArray(departmentPermissions)) {
     for (const deptPerm of departmentPermissions) {
-      await prisma.department_permissions.upsert({
-        where: {
-          pageId_department: {
-            pageId,
-            department: deptPerm.department,
-          },
-        },
-        create: {
+      await supabase
+        .from('department_permissions')
+        .upsert({
           pageId,
           department: deptPerm.department,
           canAccess: deptPerm.canAccess,
           canCreate: deptPerm.canCreate,
           canEdit: deptPerm.canEdit,
           canDelete: deptPerm.canDelete,
-        },
-        update: {
-          canAccess: deptPerm.canAccess,
-          canCreate: deptPerm.canCreate,
-          canEdit: deptPerm.canEdit,
-          canDelete: deptPerm.canDelete,
-        },
-      });
+        }, {
+          onConflict: 'pageId,department'
+        });
     }
   }
 
   // Fetch updated permissions
-  const updated = await prisma.page_permissions.findUnique({
-    where: { id: pageId },
-    include: {
-      role_permissions: true,
-      department_permissions: true,
-    },
-  });
+  const { data: updated, error: fetchError } = await supabase
+    .from('page_permissions')
+    .select(`
+      *,
+      role_permissions (*),
+      department_permissions (*)
+    `)
+    .eq('id', pageId)
+    .single();
+
+  if (fetchError) {
+    throw fetchError;
+  }
 
   return res.status(200).json({
     message: 'Permissions updated successfully',

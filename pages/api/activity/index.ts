@@ -1,13 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
-import { prisma } from '../../../lib/prisma';
+import { supabaseAdmin } from '@/lib/supabase';
 import { randomUUID } from 'crypto';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const supabase = supabaseAdmin();
   const session = await getServerSession(req, res, authOptions);
 
   if (!session || !session.user) {
@@ -21,18 +22,24 @@ export default async function handler(
     try {
       const { limit = '20', type } = req.query;
 
-      const where: any = { userId };
+      let query = supabase
+        .from('user_activities')
+        .select('*')
+        .eq('userId', userId)
+        .order('createdAt', { ascending: false })
+        .limit(parseInt(limit as string));
+
       if (type && typeof type === 'string') {
-        where.activityType = type;
+        query = query.eq('activityType', type);
       }
 
-      const activities = await prisma.user_activities.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        take: parseInt(limit as string),
-      });
+      const { data: activities, error } = await query;
 
-      return res.status(200).json(activities);
+      if (error) {
+        throw error;
+      }
+
+      return res.status(200).json(activities || []);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch activities' });
     }
@@ -47,16 +54,22 @@ export default async function handler(
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
-      const activity = await prisma.user_activities.create({
-        data: {
+      const { data: activity, error } = await supabase
+        .from('user_activities')
+        .insert({
           id: randomUUID(),
           userId,
           activityType,
           title,
           description: description || null,
           metadata: metadata ? JSON.stringify(metadata) : null,
-        },
-      });
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
 
       return res.status(201).json(activity);
     } catch (error) {

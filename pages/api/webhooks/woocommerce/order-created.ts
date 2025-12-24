@@ -12,8 +12,10 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '../../../../lib/prisma';
+import { supabaseAdmin } from '../../../../lib/supabase';
 import crypto from 'crypto';
+
+const supabase = supabaseAdmin();
 
 interface WooCommerceOrder {
   id: number;
@@ -98,14 +100,14 @@ export default async function handler(
     const wooOrder: WooCommerceOrder = req.body;
 
     // Check if order already exists
-    const existingOrder = await prisma.orders.findFirst({
-      where: {
-        woocommerceOrderId: wooOrder.id,
-      },
-    });
+    const { data: existingOrder, error: findOrderError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('woocommerceOrderId', wooOrder.id)
+      .single();
 
-    if (existingOrder) {
-return res.status(200).json({
+    if (existingOrder && !findOrderError) {
+      return res.status(200).json({
         message: 'Order already synced',
         orderId: existingOrder.id
       });
@@ -113,14 +115,19 @@ return res.status(200).json({
 
     // Find or create member
     const email = wooOrder.billing.email;
-    let member = await prisma.members.findUnique({
-      where: { email },
-    });
+    const { data: member, error: findMemberError } = await supabase
+      .from('members')
+      .select('*')
+      .eq('email', email)
+      .single();
 
-    if (!member) {
+    let memberId;
+
+    if (!member || findMemberError) {
       // Create new member from WooCommerce customer
-      member = await prisma.members.create({
-        data: {
+      const { data: newMember, error: createMemberError } = await supabase
+        .from('members')
+        .insert({
           id: `member_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           firstName: wooOrder.billing.first_name,
           lastName: wooOrder.billing.last_name,
@@ -128,12 +135,18 @@ return res.status(200).json({
           phone: wooOrder.billing.phone || null,
           membershipTier: 'Customer',
           membershipStatus: 'Active',
-          joinDate: new Date(wooOrder.date_created),
+          joinDate: new Date(wooOrder.date_created).toISOString(),
           woocommerceCustomerId: wooOrder.customer_id || null,
           tags: ['WooCommerce'],
-        },
-      });
-}
+        })
+        .select()
+        .single();
+
+      if (createMemberError) throw createMemberError;
+      memberId = newMember.id;
+    } else {
+      memberId = member.id;
+    }
 
     // Map WooCommerce status to our OrderStatus
     const statusMap: Record<string, string> = {
@@ -173,11 +186,12 @@ return res.status(200).json({
     });
 
     // Create order in our database
-    const order = await prisma.orders.create({
-      data: {
+    const { data: order, error: createOrderError } = await supabase
+      .from('orders')
+      .insert({
         id: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         orderNumber: `WC-${wooOrder.number}`,
-        memberId: member.id,
+        memberId,
         userName: `${wooOrder.billing.first_name} ${wooOrder.billing.last_name}`,
         userEmail: wooOrder.billing.email,
         total: parseFloat(wooOrder.total),
@@ -195,26 +209,29 @@ return res.status(200).json({
         orderSource: 'WooCommerce',
         woocommerceOrderId: wooOrder.id,
         fulfillmentStatus: orderStatus === 'COMPLETED' ? 'FULFILLED' : 'UNFULFILLED',
-        updatedAt: new Date(),
-      },
-    });
+        updatedAt: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (createOrderError) throw createOrderError;
 
     // Create order items
     for (const item of wooOrder.line_items) {
       // Find or create product
-      let product = await prisma.products.findFirst({
-        where: {
-          OR: [
-            { sku: item.sku },
-            { name: item.name },
-          ],
-        },
-      });
+      const { data: products, error: findProductError } = await supabase
+        .from('products')
+        .select('*')
+        .or(`sku.eq.${item.sku},name.eq.${item.name}`)
+        .limit(1);
 
-      if (!product) {
+      let productId;
+
+      if (!products || products.length === 0 || findProductError) {
         // Create placeholder product
-        product = await prisma.products.create({
-          data: {
+        const { data: newProduct, error: createProductError } = await supabase
+          .from('products')
+          .insert({
             id: `product_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             name: item.name,
             slug: item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
@@ -223,41 +240,48 @@ return res.status(200).json({
             sku: item.sku || `wc-${item.product_id}`,
             status: 'ACTIVE',
             category: 'MERCHANDISE',
-          },
-        });
-}
+          })
+          .select()
+          .single();
 
-      await prisma.order_items.create({
-        data: {
+        if (createProductError) throw createProductError;
+        productId = newProduct.id;
+      } else {
+        productId = products[0].id;
+      }
+
+      await supabase
+        .from('order_items')
+        .insert({
           id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           orderId: order.id,
-          productId: product.id,
+          productId,
           productName: item.name,
           quantity: item.quantity,
           price: parseFloat(item.subtotal) / item.quantity,
           total: parseFloat(item.total),
-        },
-      });
+        });
     }
 
-// Update member's total spent
-    await prisma.members.update({
-      where: { id: member.id },
-      data: {
-        totalSpent: {
-          increment: parseFloat(wooOrder.total),
-        },
-        lifetimeValue: {
-          increment: parseFloat(wooOrder.total),
-        },
-      },
-    });
+    // Update member's total spent
+    const currentMember = member || (await supabase.from('members').select('*').eq('id', memberId).single()).data;
+    const currentTotalSpent = parseFloat(currentMember?.totalSpent?.toString() || '0');
+    const currentLifetimeValue = parseFloat(currentMember?.lifetimeValue?.toString() || '0');
+
+    await supabase
+      .from('members')
+      .update({
+        totalSpent: currentTotalSpent + parseFloat(wooOrder.total),
+        lifetimeValue: currentLifetimeValue + parseFloat(wooOrder.total),
+      })
+      .eq('id', memberId);
 
     // Create transaction record
-    await prisma.transactions.create({
-      data: {
+    await supabase
+      .from('transactions')
+      .insert({
         id: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        memberId: member.id,
+        memberId,
         amount: parseFloat(wooOrder.total),
         currency: wooOrder.currency,
         status: orderStatus === 'COMPLETED' ? 'succeeded' : 'pending',
@@ -270,8 +294,7 @@ return res.status(200).json({
           woocommerceOrderId: wooOrder.id,
           orderNumber: wooOrder.number,
         },
-      },
-    });
+      });
 
 return res.status(200).json({
       success: true,

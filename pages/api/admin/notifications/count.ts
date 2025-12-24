@@ -1,15 +1,16 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getSession } from 'next-auth/react';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../../auth/[...nextauth]';
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const supabase = supabaseAdmin();
+
   try {
-    const session = await getSession({ req }) as any;
+    const session = await getServerSession(req, res, authOptions);
 
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -17,16 +18,20 @@ export default async function handler(
 
     if (req.method === 'GET') {
       // Count unread notifications for the user
-      const count = await prisma.notifications.count({
-        where: {
-          userId: session.user.id,
-          isRead: false,
-        },
-      }).catch(() => 0);
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('userId', session.user.id)
+        .eq('isRead', false);
+
+      if (error) {
+        console.error('Failed to count notifications:', error);
+        return res.status(200).json({ count: 0, hasUnread: false });
+      }
 
       return res.status(200).json({
-        count,
-        hasUnread: count > 0,
+        count: count || 0,
+        hasUnread: (count || 0) > 0,
       });
     }
 
@@ -34,7 +39,5 @@ export default async function handler(
 
   } catch (error) {
     return res.status(200).json({ count: 0, hasUnread: false });
-  } finally {
-    await prisma.$disconnect();
   }
 }

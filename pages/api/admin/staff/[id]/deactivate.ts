@@ -1,9 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -34,19 +32,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'You cannot deactivate your own account' });
     }
 
-    // Get staff member
-    const staffMember = await prisma.users.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        isActive: true,
-      },
-    });
+    const supabase = supabaseAdmin();
 
-    if (!staffMember) {
+    // Get staff member
+    const { data: staffMember, error: fetchError } = await supabase
+      .from('users')
+      .select('id, name, email, role, isActive')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !staffMember) {
       return res.status(404).json({ error: 'Staff member not found' });
     }
 
@@ -55,25 +50,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Deactivate the account
-    await prisma.users.update({
-      where: { id },
-      data: {
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
         isActive: false,
-        updatedAt: new Date(),
-      },
-    });
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('id', id);
+
+    if (updateError) throw updateError;
 
     // Log activity
-    await prisma.activity_logs.create({
-      data: {
-        id: `activity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        userId: session.user.id,
-        action: 'STAFF_DEACTIVATED',
-        entity: 'users',
-        entityId: staffMember.id,
-        details: `Deactivated account for ${staffMember.name} (${staffMember.email})${reason ? `. Reason: ${reason}` : ''}`,
-        createdAt: new Date(),
-      },
+    await supabase.from('activity_logs').insert({
+      id: crypto.randomUUID(),
+      userId: session.user.id,
+      action: 'STAFF_DEACTIVATED',
+      entity: 'users',
+      entityId: staffMember.id,
+      details: `Deactivated account for ${staffMember.name} (${staffMember.email})${reason ? `. Reason: ${reason}` : ''}`,
     });
 
     return res.status(200).json({
@@ -88,7 +82,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (error) {
     console.error('Deactivate staff API error:', error);
     return res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    await prisma.$disconnect();
   }
 }

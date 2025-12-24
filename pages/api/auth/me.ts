@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './[...nextauth]';
-import { prisma } from '../../../lib/prisma';
+import { supabaseAdmin } from '../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -11,6 +11,8 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const supabase = supabaseAdmin();
+
   try {
     const session = await getServerSession(req, res, authOptions);
 
@@ -19,21 +21,13 @@ export default async function handler(
     }
 
     // Get full user details from database
-    const user = await prisma.users.findUnique({
-      where: { id: session.user.id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        avatar: true,
-        hasChangedDefaultPassword: true,
-        createdAt: true,
-        lastLoginAt: true
-      }
-    });
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, email, name, role, avatar, hasChangedDefaultPassword, createdAt, lastLoginAt')
+      .eq('id', session.user.id)
+      .single();
 
-    if (!user) {
+    if (error || !user) {
       return res.status(404).json({ error: 'User not found' });
     }
 

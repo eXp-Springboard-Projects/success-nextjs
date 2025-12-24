@@ -1,14 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const supabase = supabaseAdmin();
+
   const session = await getServerSession(req, res, authOptions);
 
   if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user.role)) {
@@ -19,34 +19,22 @@ export default async function handler(
 
   if (req.method === 'GET') {
     try {
-      const post = await prisma.posts.findUnique({
-        where: { id: id as string },
-        include: {
-          users: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            }
-          },
-          categories: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            }
-          },
-          tags: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            }
-          },
-        }
-      });
+      const { data: post, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          users!posts_authorId_fkey (
+            id,
+            name,
+            email
+          ),
+          categories (*),
+          tags (*)
+        `)
+        .eq('id', id as string)
+        .single();
 
-      if (!post) {
+      if (error || !post) {
         return res.status(404).json({ error: 'Post not found' });
       }
 
@@ -72,13 +60,13 @@ export default async function handler(
             email: post.users.email,
           }],
           'wp:term': [
-            post.categories.map(cat => ({
+            (post.categories || []).map((cat: any) => ({
               id: cat.id,
               name: cat.name,
               slug: cat.slug,
               taxonomy: 'category'
             })),
-            post.tags.map(tag => ({
+            (post.tags || []).map((tag: any) => ({
               id: tag.id,
               name: tag.name,
               slug: tag.slug,
@@ -90,12 +78,12 @@ export default async function handler(
             alt_text: post.featuredImageAlt || '',
           }] : []
         },
-        categories: post.categories.map(cat => ({
+        categories: (post.categories || []).map((cat: any) => ({
           id: cat.id,
           name: cat.name,
           slug: cat.slug
         })),
-        tags: post.tags.map(tag => ({
+        tags: (post.tags || []).map((tag: any) => ({
           id: tag.id,
           name: tag.name,
           slug: tag.slug
@@ -125,47 +113,49 @@ export default async function handler(
         publishedAt
       } = req.body;
 
-      // Update post
-      const currentPost = await prisma.posts.findUnique({
-        where: { id: id as string },
-        select: { publishedAt: true }
-      });
+      // Get current post
+      const { data: currentPost } = await supabase
+        .from('posts')
+        .select('publishedAt')
+        .eq('id', id as string)
+        .single();
 
       const newStatus = status?.toUpperCase() || 'DRAFT';
       const isBeingPublished = newStatus === 'PUBLISHED' || newStatus === 'PUBLISH';
 
-      const updatedPost = await prisma.posts.update({
-        where: { id: id as string },
-        data: {
-          title,
-          slug,
-          content,
-          excerpt,
-          status: newStatus,
-          featuredImage,
-          featuredImageAlt,
-          seoTitle,
-          seoDescription,
-          publishedAt: isBeingPublished
-            ? (publishedAt ? new Date(publishedAt) : (currentPost?.publishedAt || new Date()))
-            : undefined,
-          categories: categoryIds ? {
-            set: categoryIds.map((catId: string) => ({ id: catId }))
-          } : undefined,
-          tags: tagIds ? {
-            set: tagIds.map((tagId: string) => ({ id: tagId }))
-          } : undefined,
-        },
-        include: {
-          users: true,
-          categories: true,
-          tags: true,
-        }
-      });
+      const updateData: any = {
+        title,
+        slug,
+        content,
+        excerpt,
+        status: newStatus,
+        featuredImage,
+        featuredImageAlt,
+        seoTitle,
+        seoDescription,
+      };
+
+      if (isBeingPublished) {
+        updateData.publishedAt = publishedAt
+          ? new Date(publishedAt).toISOString()
+          : (currentPost?.publishedAt || new Date().toISOString());
+      }
+
+      const { data: updatedPost, error: updateError } = await supabase
+        .from('posts')
+        .update(updateData)
+        .eq('id', id as string)
+        .select()
+        .single();
+
+      if (updateError) {
+        throw updateError;
+      }
 
       // Create revision
-      await prisma.post_revisions.create({
-        data: {
+      await supabase
+        .from('post_revisions')
+        .insert({
           id: `rev_${Date.now()}`,
           postId: updatedPost.id,
           title: updatedPost.title,
@@ -179,8 +169,7 @@ export default async function handler(
           authorId: session.user.id,
           authorName: session.user.name || 'Unknown',
           changeNote: 'Updated via admin editor',
-        }
-      });
+        });
 
       return res.status(200).json({
         success: true,
@@ -198,9 +187,14 @@ export default async function handler(
 
   if (req.method === 'DELETE') {
     try {
-      await prisma.posts.delete({
-        where: { id: id as string }
-      });
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', id as string);
+
+      if (error) {
+        throw error;
+      }
 
       return res.status(200).json({ success: true, message: 'Post deleted' });
     } catch (error) {

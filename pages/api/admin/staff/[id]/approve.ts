@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -23,7 +21,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { id } = req.query;
-    // Default to EDITOR role if not specified
     const { role = 'EDITOR', department } = req.body;
 
     if (!department) {
@@ -50,28 +47,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Invalid department' });
     }
 
-    // Check if user exists and is pending
-    const user = await prisma.$queryRaw<Array<{ role: string }>>`
-      SELECT role FROM users WHERE id = ${id}
-    `;
+    const supabase = supabaseAdmin();
 
-    if (user.length === 0) {
+    // Check if user exists and is pending
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', id as string)
+      .single();
+
+    if (userError || !user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    if (user[0].role !== 'PENDING') {
+    if (user.role !== 'PENDING') {
       return res.status(400).json({ error: 'User is not pending approval' });
     }
 
     // Update user role and department
-    await prisma.$executeRaw`
-      UPDATE users
-      SET
-        role = ${role}::"UserRole",
-        primary_department = ${department}::"Department",
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = ${id}
-    `;
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
+        role: role,
+        primary_department: department,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id as string);
+
+    if (updateError) throw updateError;
 
     // TODO: Send approval email to user
 

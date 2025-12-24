@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { prisma } from '../prisma';
+import { supabaseAdmin } from '../supabase';
 
 /**
  * Generate a secure unsubscribe token
@@ -29,11 +29,15 @@ export async function checkEmailAllowed(
   email: string,
   type: 'marketing' | 'transactional' | 'newsletter'
 ): Promise<boolean> {
-  const preferences = await prisma.email_preferences.findUnique({
-    where: { email },
-  });
+  const supabase = supabaseAdmin();
 
-  if (!preferences) {
+  const { data: preferences, error } = await supabase
+    .from('email_preferences')
+    .select('*')
+    .eq('email', email)
+    .single();
+
+  if (error || !preferences) {
     return true; // If no preferences exist, allow by default
   }
 
@@ -66,22 +70,26 @@ export async function updatePreferences(
     unsubscribeReason?: string;
   }
 ) {
-  const emailPrefs = await prisma.email_preferences.findUnique({
-    where: { unsubscribeToken: token },
-  });
+  const supabase = supabaseAdmin();
 
-  if (!emailPrefs) {
+  const { data: emailPrefs, error: fetchError } = await supabase
+    .from('email_preferences')
+    .select('*')
+    .eq('unsubscribeToken', token)
+    .single();
+
+  if (fetchError || !emailPrefs) {
     throw new Error('Invalid token');
   }
 
   const updateData: any = {
     ...preferences,
-    updatedAt: new Date(),
+    updatedAt: new Date().toISOString(),
   };
 
   // If unsubscribing, set timestamp
   if (preferences.unsubscribed && !emailPrefs.unsubscribed) {
-    updateData.unsubscribedAt = new Date();
+    updateData.unsubscribedAt = new Date().toISOString();
   }
 
   // If resubscribing, clear timestamp
@@ -89,52 +97,76 @@ export async function updatePreferences(
     updateData.unsubscribedAt = null;
   }
 
-  return prisma.email_preferences.update({
-    where: { unsubscribeToken: token },
-    data: updateData,
-  });
+  const { data, error } = await supabase
+    .from('email_preferences')
+    .update(updateData)
+    .eq('unsubscribeToken', token)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error('Failed to update preferences');
+  }
+
+  return data;
 }
 
 /**
  * Create or update email preferences for an email
  */
 export async function ensureEmailPreferences(email: string, contactId?: string) {
-  const existing = await prisma.email_preferences.findUnique({
-    where: { email },
-  });
+  const supabase = supabaseAdmin();
 
-  if (existing) {
+  const { data: existing, error } = await supabase
+    .from('email_preferences')
+    .select('*')
+    .eq('email', email)
+    .single();
+
+  if (existing && !error) {
     return existing;
   }
 
   const token = generateUnsubscribeToken(email);
   const { v4: uuidv4 } = await import('uuid');
 
-  return prisma.email_preferences.create({
-    data: {
+  const { data, error: createError } = await supabase
+    .from('email_preferences')
+    .insert({
       id: uuidv4(),
       email,
       contactId,
       unsubscribeToken: token,
-    },
-  });
+    })
+    .select()
+    .single();
+
+  if (createError) {
+    throw new Error('Failed to create email preferences');
+  }
+
+  return data;
 }
 
 /**
  * Get preferences by token
  */
 export async function getPreferencesByToken(token: string) {
-  return prisma.email_preferences.findUnique({
-    where: { unsubscribeToken: token },
-    include: {
-      contact: {
-        select: {
-          firstName: true,
-          lastName: true,
-        },
-      },
-    },
-  });
+  const supabase = supabaseAdmin();
+
+  const { data, error } = await supabase
+    .from('email_preferences')
+    .select(`
+      *,
+      contact:contacts!email_preferences_contactId_fkey (
+        firstName,
+        lastName
+      )
+    `)
+    .eq('unsubscribeToken', token)
+    .single();
+
+  return error ? null : data;
 }
 
 /**

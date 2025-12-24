@@ -1,12 +1,13 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
-import { prisma } from '../../../lib/prisma';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const supabase = supabaseAdmin();
   const session = await getServerSession(req, res, authOptions);
 
   if (!session || !session.user) {
@@ -24,11 +25,13 @@ export default async function handler(
   if (req.method === 'DELETE') {
     try {
       // Check if bookmark exists and belongs to user
-      const bookmark = await prisma.bookmarks.findUnique({
-        where: { id },
-      });
+      const { data: bookmark, error: fetchError } = await supabase
+        .from('bookmarks')
+        .select('userId')
+        .eq('id', id)
+        .single();
 
-      if (!bookmark) {
+      if (fetchError || !bookmark) {
         return res.status(404).json({ error: 'Bookmark not found' });
       }
 
@@ -36,9 +39,14 @@ export default async function handler(
         return res.status(403).json({ error: 'Forbidden' });
       }
 
-      await prisma.bookmarks.delete({
-        where: { id },
-      });
+      const { error: deleteError } = await supabase
+        .from('bookmarks')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) {
+        throw deleteError;
+      }
 
       return res.status(200).json({ message: 'Bookmark deleted' });
     } catch (error) {
