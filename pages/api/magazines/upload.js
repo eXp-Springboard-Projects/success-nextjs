@@ -1,4 +1,4 @@
-import { prisma } from '../../../lib/prisma';
+import { supabaseAdmin } from '../../../lib/supabase';
 import { put } from '@vercel/blob';
 import formidable from 'formidable';
 import { readFile } from 'fs/promises';
