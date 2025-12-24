@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
 import { supabaseAdmin } from '@/lib/supabase';
-import { Department } from '@prisma/client';
+import { Department } from '@/lib/types';
 
 /**
  * POST /api/admin/departments/assign

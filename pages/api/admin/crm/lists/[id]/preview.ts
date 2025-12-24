@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { supabaseAdmin } from '../../../../../../../lib/supabase';
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 
 function buildSupabaseQuery(supabase: any, filters: any) {
   if (!filters || !filters.conditions || filters.conditions.length === 0) {
