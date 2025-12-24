@@ -3,6 +3,7 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import Link from 'next/link';
 import styles from './SuperAdmin.module.css';
 import { requireAdminAuth } from '@/lib/adminAuth';
+import { Department } from '@/lib/types';
 
 function SuperAdminDashboard() {
   return (
@@ -68,7 +69,7 @@ function SuperAdminDashboard() {
 }
 
 export default withDepartmentAccess(SuperAdminDashboard, {
-  department: 'SUPER_ADMIN',
+  department: Department.SUPER_ADMIN,
 });
 
 // Server-side authentication check
