@@ -71,23 +71,29 @@ export default async function handler(
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user with their chosen password
-    // Try with snake_case column names (Supabase standard)
+    // Use snake_case column names (production Supabase uses snake_case)
     const userId = uuidv4();
     const now = new Date().toISOString();
+
+    // Split name into first and last name
+    const nameParts = name.trim().split(' ');
+    const firstName = nameParts[0] || name;
+    const lastName = nameParts.slice(1).join(' ') || '';
+
     const { data: user, error: createError } = await supabase
       .from('users')
       .insert({
         id: userId,
-        email,
-        name,
+        email: email.toLowerCase(),
         password: hashedPassword,
+        first_name: firstName,
+        last_name: lastName,
         role: userRole,
+        primary_department: null, // Will be set later if needed
         email_verified: isSuccessStaff, // Auto-verify @success.com emails
         has_changed_default_password: true, // They set their own password
         invite_code: inviteCode || null,
-        interests: [], // Required array field
         is_active: true,
-        onboarding_completed: false,
         created_at: now,
         updated_at: now
       })
@@ -117,8 +123,9 @@ export default async function handler(
     }
 
     // Send welcome email (without password since they created their own)
+    const fullName = `${user.first_name} ${user.last_name}`.trim();
     try {
-      const emailResult = await sendStaffWelcomeEmail(user.email, user.name, '');
+      const emailResult = await sendStaffWelcomeEmail(user.email, fullName, '');
       if (!emailResult.success) {
         // Don't fail registration if email fails
       }
@@ -132,7 +139,7 @@ export default async function handler(
       user: {
         id: user.id,
         email: user.email,
-        name: user.name,
+        name: fullName,
         role: user.role
       }
     });
