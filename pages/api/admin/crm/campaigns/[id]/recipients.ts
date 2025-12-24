@@ -46,7 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Flatten the structure to match original format
-    const flattenedRecipients = recipients?.map(r => ({
+    const flattenedRecipients = recipients?.map((r: any) => ({
       ...r,
       first_name: r.contacts?.first_name,
       last_name: r.contacts?.last_name,
