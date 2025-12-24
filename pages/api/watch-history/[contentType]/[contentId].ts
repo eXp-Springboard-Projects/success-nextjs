@@ -1,11 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]';
-
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const supabase = supabaseAdmin();
+
   try {
     const session = await getServerSession(req, res, authOptions);
 
@@ -25,17 +25,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === 'GET') {
       // Get watch history for specific content
-      const watchHistory = await prisma.watch_history.findUnique({
-        where: {
-          userId_contentType_contentId: {
-            userId: session.user.id,
-            contentType: contentType as string,
-            contentId: contentId as string,
-          },
-        },
-      });
+      const { data: watchHistory, error } = await supabase
+        .from('watch_history')
+        .select('*')
+        .eq('userId', session.user.id)
+        .eq('contentType', contentType as string)
+        .eq('contentId', contentId as string)
+        .single();
 
-      if (!watchHistory) {
+      if (error || !watchHistory) {
         return res.status(404).json({ error: 'Watch history not found' });
       }
 
@@ -52,15 +50,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === 'DELETE') {
       // Delete watch history
-      await prisma.watch_history.delete({
-        where: {
-          userId_contentType_contentId: {
-            userId: session.user.id,
-            contentType: contentType as string,
-            contentId: contentId as string,
-          },
-        },
-      });
+      const { error } = await supabase
+        .from('watch_history')
+        .delete()
+        .eq('userId', session.user.id)
+        .eq('contentType', contentType as string)
+        .eq('contentId', contentId as string);
+
+      if (error) {
+        console.error('Error deleting watch history:', error);
+        return res.status(500).json({ error: 'Failed to delete watch history' });
+      }
 
       return res.status(200).json({
         message: 'Watch history deleted',
@@ -71,7 +71,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (error) {
     console.error('Watch history item API error:', error);
     return res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    await prisma.$disconnect();
   }
 }
