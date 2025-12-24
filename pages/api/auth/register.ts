@@ -80,8 +80,8 @@ export default async function handler(
     const firstName = nameParts[0] || name;
     const lastName = nameParts.slice(1).join(' ') || '';
 
-    // Use minimal fields only - exactly like staff/create.ts which works
-    const { data: user, error: createError} = await supabase
+    // Create user - matching staff/create.ts pattern that works
+    const { error: createError } = await supabase
       .from('users')
       .insert({
         id: userId,
@@ -94,9 +94,7 @@ export default async function handler(
         email_verified: true, // Always true for registration
         created_at: now,
         updated_at: now
-      })
-      .select()
-      .single();
+      });
 
     if (createError) {
       console.error('=== REGISTRATION ERROR ===');
@@ -141,9 +139,9 @@ export default async function handler(
     }
 
     // Send welcome email (without password since they created their own)
-    const fullName = `${user.first_name} ${user.last_name}`.trim();
+    const fullName = `${firstName} ${lastName}`.trim();
     try {
-      const emailResult = await sendStaffWelcomeEmail(user.email, fullName, '');
+      const emailResult = await sendStaffWelcomeEmail(email.toLowerCase(), fullName, '');
       if (!emailResult.success) {
         // Don't fail registration if email fails
       }
@@ -155,10 +153,10 @@ export default async function handler(
       success: true,
       message: 'Account created successfully',
       user: {
-        id: user.id,
-        email: user.email,
+        id: userId,
+        email: email.toLowerCase(),
         name: fullName,
-        role: user.role
+        role: userRole
       }
     });
 
