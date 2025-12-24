@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -24,41 +22,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const original = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM landing_pages WHERE id = ${id}
-    `;
+    const supabase = supabaseAdmin();
 
-    if (original.length === 0) {
+    const { data: original, error: fetchError } = await supabase
+      .from('landing_pages')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !original) {
       return res.status(404).json({ error: 'Landing page not found' });
     }
 
-    const originalPage = original[0];
     const newId = nanoid();
-    const newSlug = `${originalPage.slug}-copy-${Date.now()}`;
+    const newSlug = `${original.slug}-copy-${Date.now()}`;
 
-    await prisma.$executeRaw`
-      INSERT INTO landing_pages (
-        id, title, slug, content, meta_title, meta_description,
-        template, form_id, status, created_by
-      ) VALUES (
-        ${newId},
-        ${`${originalPage.title} (Copy)`},
-        ${newSlug},
-        ${originalPage.content}::jsonb,
-        ${originalPage.meta_title},
-        ${originalPage.meta_description},
-        ${originalPage.template},
-        ${originalPage.form_id},
-        ${'draft'},
-        ${session.user.email}
-      )
-    `;
+    const { data: newPage, error: insertError } = await supabase
+      .from('landing_pages')
+      .insert({
+        id: newId,
+        title: `${original.title} (Copy)`,
+        slug: newSlug,
+        content: original.content,
+        meta_title: original.meta_title,
+        meta_description: original.meta_description,
+        template: original.template,
+        form_id: original.form_id,
+        status: 'draft',
+        created_by: session.user.email,
+      })
+      .select()
+      .single();
 
-    const newPage = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM landing_pages WHERE id = ${newId}
-    `;
+    if (insertError) {
+      return res.status(500).json({ error: 'Failed to duplicate landing page' });
+    }
 
-    return res.status(201).json(newPage[0]);
+    return res.status(201).json(newPage);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to duplicate landing page' });
   }

@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../lib/supabase';
 import { randomUUID } from 'crypto';
-
-const prisma = new PrismaClient();
 
 export default async function handler(
   req: NextApiRequest,
@@ -16,20 +14,44 @@ export default async function handler(
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
+  const supabase = supabaseAdmin();
+
   try {
     if (req.method === 'GET') {
-      const campaigns = await prisma.campaigns.findMany({
-        include: {
-          _count: {
-            select: {
-              campaign_contacts: true,
-              drip_emails: true,
+      // Fetch all campaigns
+      const { data: campaigns, error } = await supabase
+        .from('campaigns')
+        .select('*')
+        .order('createdAt', { ascending: false });
+
+      if (error) {
+        return res.status(500).json({ message: 'Failed to fetch campaigns' });
+      }
+
+      // Fetch counts for each campaign
+      const campaignsWithCounts = await Promise.all(
+        (campaigns || []).map(async (campaign) => {
+          const { count: contactCount } = await supabase
+            .from('campaign_contacts')
+            .select('*', { count: 'exact', head: true })
+            .eq('campaignId', campaign.id);
+
+          const { count: emailCount } = await supabase
+            .from('drip_emails')
+            .select('*', { count: 'exact', head: true })
+            .eq('campaignId', campaign.id);
+
+          return {
+            ...campaign,
+            _count: {
+              campaign_contacts: contactCount || 0,
+              drip_emails: emailCount || 0,
             },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-      });
-      return res.status(200).json(campaigns);
+          };
+        })
+      );
+
+      return res.status(200).json(campaignsWithCounts);
     }
 
     if (req.method === 'POST') {
@@ -39,16 +61,23 @@ export default async function handler(
         return res.status(400).json({ message: 'Name and subject are required' });
       }
 
-      const campaign = await prisma.campaigns.create({
-        data: {
+      const { data: campaign, error } = await supabase
+        .from('campaigns')
+        .insert({
           id: randomUUID(),
           name,
           subject,
           status: 'DRAFT',
-          scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-          updatedAt: new Date(),
-        },
-      });
+          scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) {
+        return res.status(500).json({ message: 'Failed to create campaign' });
+      }
 
       return res.status(201).json(campaign);
     }

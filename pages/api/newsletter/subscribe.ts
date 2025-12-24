@@ -1,8 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../lib/supabase';
 
 /**
  * Newsletter subscription endpoint
@@ -13,6 +11,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const supabase = supabaseAdmin();
+
   try {
     const { email, firstName, source = 'website' } = req.body;
 
@@ -21,9 +21,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Check if already subscribed
-    const existing = await prisma.newsletter_subscribers.findUnique({
-      where: { email: email.toLowerCase() }
-    });
+    const { data: existing } = await supabase
+      .from('newsletter_subscribers')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .single();
 
     if (existing) {
       if (existing.status === 'ACTIVE') {
@@ -33,14 +35,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       } else {
         // Reactivate subscription
-        await prisma.newsletter_subscribers.update({
-          where: { email: email.toLowerCase() },
-          data: {
+        await supabase
+          .from('newsletter_subscribers')
+          .update({
             status: 'ACTIVE',
-            subscribedAt: new Date(),
+            subscribedAt: new Date().toISOString(),
             unsubscribedAt: null
-          }
-        });
+          })
+          .eq('email', email.toLowerCase());
 
         return res.status(200).json({
           message: 'Welcome back! Your subscription has been reactivated.',
@@ -50,44 +52,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Create newsletter subscriber
-    await prisma.newsletter_subscribers.create({
-      data: {
+    await supabase
+      .from('newsletter_subscribers')
+      .insert({
         id: randomUUID(),
         email: email.toLowerCase(),
         status: 'ACTIVE',
-        subscribedAt: new Date(),
-        updatedAt: new Date(),
-      }
-    });
+        subscribedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
 
     // Also create/update CRM contact
-    const existingContact = await prisma.contacts.findUnique({
-      where: { email: email.toLowerCase() }
-    });
+    const { data: existingContact } = await supabase
+      .from('contacts')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .single();
 
     if (existingContact) {
       // Update existing contact
-      await prisma.contacts.update({
-        where: { email: email.toLowerCase() },
-        data: {
+      const updatedTags = [...new Set([...existingContact.tags, 'newsletter-subscriber'])];
+      await supabase
+        .from('contacts')
+        .update({
           firstName: firstName || existingContact.firstName,
-          tags: [...new Set([...existingContact.tags, 'newsletter-subscriber'])],
-          lastContactedAt: new Date()
-        }
-      });
+          tags: updatedTags,
+          lastContactedAt: new Date().toISOString()
+        })
+        .eq('email', email.toLowerCase());
     } else {
       // Create new contact
-      await prisma.contacts.create({
-        data: {
+      await supabase
+        .from('contacts')
+        .insert({
           id: randomUUID(),
           email: email.toLowerCase(),
           firstName: firstName || null,
           source,
           tags: ['newsletter-subscriber'],
           status: 'ACTIVE',
-          updatedAt: new Date(),
-        }
-      });
+          updatedAt: new Date().toISOString(),
+        });
     }
 
     // Optional: Send welcome email

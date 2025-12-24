@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -21,51 +19,86 @@ export default async function handler(
     return res.status(400).json({ message: 'Invalid campaign ID' });
   }
 
+  const supabase = supabaseAdmin();
+
   try {
     if (req.method === 'GET') {
-      const campaign = await prisma.campaigns.findUnique({
-        where: { id },
-        include: {
-          drip_emails: {
-            orderBy: { order: 'asc' },
-          },
-          campaign_contacts: {
-            include: {
-              contacts: true,
-            },
-          },
-          email_templates: true,
-        },
-      });
+      // Fetch campaign
+      const { data: campaign, error: campaignError } = await supabase
+        .from('campaigns')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-      if (!campaign) {
+      if (campaignError || !campaign) {
         return res.status(404).json({ message: 'Campaign not found' });
       }
 
-      return res.status(200).json(campaign);
+      // Fetch drip emails
+      const { data: drip_emails } = await supabase
+        .from('drip_emails')
+        .select('*')
+        .eq('campaignId', id)
+        .order('order', { ascending: true });
+
+      // Fetch campaign contacts with contact details
+      const { data: campaign_contacts } = await supabase
+        .from('campaign_contacts')
+        .select('*, contacts(*)')
+        .eq('campaignId', id);
+
+      // Fetch email template
+      const { data: email_templates } = await supabase
+        .from('email_templates')
+        .select('*')
+        .eq('id', campaign.templateId)
+        .single();
+
+      const result = {
+        ...campaign,
+        drip_emails: drip_emails || [],
+        campaign_contacts: campaign_contacts || [],
+        email_templates,
+      };
+
+      return res.status(200).json(result);
     }
 
     if (req.method === 'PUT') {
       const { name, subject, status, scheduledAt } = req.body;
 
-      const campaign = await prisma.campaigns.update({
-        where: { id },
-        data: {
-          name: name || undefined,
-          subject: subject || undefined,
-          status: status || undefined,
-          scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
-          updatedAt: new Date(),
-        },
-      });
+      const updateData: any = {
+        updatedAt: new Date().toISOString(),
+      };
+
+      if (name !== undefined) updateData.name = name;
+      if (subject !== undefined) updateData.subject = subject;
+      if (status !== undefined) updateData.status = status;
+      if (scheduledAt !== undefined) updateData.scheduledAt = scheduledAt ? new Date(scheduledAt).toISOString() : null;
+
+      const { data: campaign, error } = await supabase
+        .from('campaigns')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        return res.status(500).json({ message: 'Failed to update campaign' });
+      }
 
       return res.status(200).json(campaign);
     }
 
     if (req.method === 'DELETE') {
-      await prisma.campaigns.delete({
-        where: { id },
-      });
+      const { error } = await supabase
+        .from('campaigns')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        return res.status(500).json({ message: 'Failed to delete campaign' });
+      }
 
       return res.status(200).json({ message: 'Campaign deleted successfully' });
     }

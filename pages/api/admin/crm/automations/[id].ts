@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -31,15 +29,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getAutomation(id: string, res: NextApiResponse) {
   try {
-    const automation = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM automations WHERE id = ${id}
-    `;
+    const supabase = supabaseAdmin();
 
-    if (automation.length === 0) {
+    const { data: automation, error } = await supabase
+      .from('automations')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !automation) {
       return res.status(404).json({ error: 'Automation not found' });
     }
 
-    return res.status(200).json(automation[0]);
+    return res.status(200).json(automation);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to fetch automation' });
   }
@@ -47,61 +49,31 @@ async function getAutomation(id: string, res: NextApiResponse) {
 
 async function updateAutomation(id: string, req: NextApiRequest, res: NextApiResponse) {
   try {
+    const supabase = supabaseAdmin();
     const { name, description, trigger, steps, status } = req.body;
 
-    const updates: string[] = [];
-    const params: any[] = [];
-    let paramIndex = 1;
+    const updates: any = { updated_at: new Date().toISOString() };
 
-    if (name !== undefined) {
-      updates.push(`name = $${paramIndex}`);
-      params.push(name);
-      paramIndex++;
-    }
+    if (name !== undefined) updates.name = name;
+    if (description !== undefined) updates.description = description;
+    if (trigger !== undefined) updates.trigger = trigger;
+    if (steps !== undefined) updates.steps = steps;
+    if (status !== undefined) updates.status = status;
 
-    if (description !== undefined) {
-      updates.push(`description = $${paramIndex}`);
-      params.push(description);
-      paramIndex++;
-    }
-
-    if (trigger !== undefined) {
-      updates.push(`trigger = $${paramIndex}::jsonb`);
-      params.push(JSON.stringify(trigger));
-      paramIndex++;
-    }
-
-    if (steps !== undefined) {
-      updates.push(`steps = $${paramIndex}::jsonb`);
-      params.push(JSON.stringify(steps));
-      paramIndex++;
-    }
-
-    if (status !== undefined) {
-      updates.push(`status = $${paramIndex}`);
-      params.push(status);
-      paramIndex++;
-    }
-
-    if (updates.length === 0) {
+    if (Object.keys(updates).length === 1) { // Only updated_at
       return res.status(400).json({ error: 'No fields to update' });
     }
 
-    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    const { data: automation, error } = await supabase
+      .from('automations')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
 
-    params.push(id);
+    if (error) throw error;
 
-    await prisma.$queryRawUnsafe(`
-      UPDATE automations
-      SET ${updates.join(', ')}
-      WHERE id = $${paramIndex}
-    `, ...params);
-
-    const automation = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM automations WHERE id = ${id}
-    `;
-
-    return res.status(200).json(automation[0]);
+    return res.status(200).json(automation);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to update automation' });
   }
@@ -109,7 +81,15 @@ async function updateAutomation(id: string, req: NextApiRequest, res: NextApiRes
 
 async function deleteAutomation(id: string, res: NextApiResponse) {
   try {
-    await prisma.$executeRaw`DELETE FROM automations WHERE id = ${id}`;
+    const supabase = supabaseAdmin();
+
+    const { error } = await supabase
+      .from('automations')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
     return res.status(200).json({ message: 'Automation deleted successfully' });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to delete automation' });

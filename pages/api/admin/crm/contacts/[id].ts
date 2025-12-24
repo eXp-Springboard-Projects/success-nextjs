@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -32,58 +30,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getContact(id: string, res: NextApiResponse) {
   try {
-    const contact = await prisma.$queryRaw<Array<any>>`
-      SELECT
-        c.*,
-        COALESCE(
-          json_agg(DISTINCT jsonb_build_object('id', ct.id, 'name', ct.name, 'color', ct.color))
-          FILTER (WHERE ct.id IS NOT NULL),
-          '[]'
-        ) as tags,
-        COALESCE(
-          json_agg(DISTINCT jsonb_build_object('id', cl.id, 'name', cl.name))
-          FILTER (WHERE cl.id IS NOT NULL),
-          '[]'
-        ) as lists
-      FROM contacts c
-      LEFT JOIN contact_tag_assignments cta ON c.id = cta.contact_id
-      LEFT JOIN contact_tags ct ON cta.tag_id = ct.id
-      LEFT JOIN contact_list_members clm ON c.id = clm.contact_id
-      LEFT JOIN contact_lists cl ON clm.list_id = cl.id
-      WHERE c.id = ${id}
-      GROUP BY c.id
-    `;
+    const supabase = supabaseAdmin();
 
-    if (contact.length === 0) {
+    // Get contact with tags and lists
+    const { data: contact, error: contactError } = await supabase
+      .rpc('get_contact_with_relations', { contact_id: id });
+
+    if (contactError || !contact || contact.length === 0) {
       return res.status(404).json({ error: 'Contact not found' });
     }
 
-    const activities = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM contact_activities
-      WHERE contact_id = ${id}
-      ORDER BY created_at DESC
-      LIMIT 50
-    `;
+    // Get activities
+    const { data: activities } = await supabase
+      .from('contact_activities')
+      .select('*')
+      .eq('contact_id', id)
+      .order('created_at', { ascending: false })
+      .limit(50);
 
-    const notes = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM contact_notes
-      WHERE contact_id = ${id}
-      ORDER BY created_at DESC
-      LIMIT 50
-    `;
+    // Get notes
+    const { data: notes } = await supabase
+      .from('contact_notes')
+      .select('*')
+      .eq('contact_id', id)
+      .order('created_at', { ascending: false })
+      .limit(50);
 
-    const emailSends = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM email_sends
-      WHERE contact_id = ${id}
-      ORDER BY sent_at DESC
-      LIMIT 20
-    `;
+    // Get email sends
+    const { data: emailSends } = await supabase
+      .from('email_sends')
+      .select('*')
+      .eq('contact_id', id)
+      .order('sent_at', { ascending: false })
+      .limit(20);
 
     return res.status(200).json({
       ...contact[0],
-      activities,
-      notes,
-      emailSends,
+      activities: activities || [],
+      notes: notes || [],
+      emailSends: emailSends || [],
     });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to fetch contact' });
@@ -92,6 +77,7 @@ async function getContact(id: string, res: NextApiResponse) {
 
 async function updateContact(id: string, req: NextApiRequest, res: NextApiResponse) {
   try {
+    const supabase = supabaseAdmin();
     const {
       email,
       firstName,
@@ -102,81 +88,34 @@ async function updateContact(id: string, req: NextApiRequest, res: NextApiRespon
       customFields,
     } = req.body;
 
-    const updates: string[] = [];
-    const params: any[] = [id];
-    let paramIndex = 2;
+    const updates: any = {};
 
-    if (email !== undefined) {
-      updates.push(`email = $${paramIndex}`);
-      params.push(email);
-      paramIndex++;
+    if (email !== undefined) updates.email = email;
+    if (firstName !== undefined) updates.first_name = firstName;
+    if (lastName !== undefined) updates.last_name = lastName;
+    if (phone !== undefined) updates.phone = phone;
+    if (company !== undefined) updates.company = company;
+    if (emailStatus !== undefined) updates.email_status = emailStatus;
+    if (customFields !== undefined) updates.custom_fields = customFields;
+
+    if (Object.keys(updates).length > 0) {
+      updates.updated_at = new Date().toISOString();
+
+      const { error: updateError } = await supabase
+        .from('contacts')
+        .update(updates)
+        .eq('id', id);
+
+      if (updateError) throw updateError;
     }
 
-    if (firstName !== undefined) {
-      updates.push(`first_name = $${paramIndex}`);
-      params.push(firstName);
-      paramIndex++;
-    }
+    // Get updated contact with relations
+    const { data: contact, error: contactError } = await supabase
+      .rpc('get_contact_with_relations', { contact_id: id });
 
-    if (lastName !== undefined) {
-      updates.push(`last_name = $${paramIndex}`);
-      params.push(lastName);
-      paramIndex++;
+    if (contactError || !contact || contact.length === 0) {
+      return res.status(404).json({ error: 'Contact not found' });
     }
-
-    if (phone !== undefined) {
-      updates.push(`phone = $${paramIndex}`);
-      params.push(phone);
-      paramIndex++;
-    }
-
-    if (company !== undefined) {
-      updates.push(`company = $${paramIndex}`);
-      params.push(company);
-      paramIndex++;
-    }
-
-    if (emailStatus !== undefined) {
-      updates.push(`email_status = $${paramIndex}`);
-      params.push(emailStatus);
-      paramIndex++;
-    }
-
-    if (customFields !== undefined) {
-      updates.push(`custom_fields = $${paramIndex}::jsonb`);
-      params.push(JSON.stringify(customFields));
-      paramIndex++;
-    }
-
-    if (updates.length > 0) {
-      updates.push(`updated_at = CURRENT_TIMESTAMP`);
-      await prisma.$queryRawUnsafe(
-        `UPDATE contacts SET ${updates.join(', ')} WHERE id = $1`,
-        ...params
-      );
-    }
-
-    const contact = await prisma.$queryRaw<Array<any>>`
-      SELECT
-        c.*,
-        COALESCE(
-          json_agg(DISTINCT jsonb_build_object('id', ct.id, 'name', ct.name, 'color', ct.color))
-          FILTER (WHERE ct.id IS NOT NULL),
-          '[]'
-        ) as tags,
-        COALESCE(
-          json_agg(DISTINCT jsonb_build_object('id', cl.id, 'name', cl.name))
-          FILTER (WHERE cl.id IS NOT NULL),
-          '[]'
-        ) as lists
-      FROM contacts c
-      LEFT JOIN contact_tag_assignments cta ON c.id = cta.contact_id
-      LEFT JOIN contact_tags ct ON cta.tag_id = ct.id
-      LEFT JOIN contact_list_members clm ON c.id = clm.contact_id
-      LEFT JOIN contact_lists cl ON clm.list_id = cl.id
-      WHERE c.id = ${id}
-      GROUP BY c.id
-    `;
 
     return res.status(200).json(contact[0]);
   } catch (error) {
@@ -186,9 +125,14 @@ async function updateContact(id: string, req: NextApiRequest, res: NextApiRespon
 
 async function deleteContact(id: string, res: NextApiResponse) {
   try {
-    await prisma.$executeRaw`
-      DELETE FROM contacts WHERE id = ${id}
-    `;
+    const supabase = supabaseAdmin();
+
+    const { error } = await supabase
+      .from('contacts')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
 
     return res.status(200).json({ success: true });
   } catch (error) {

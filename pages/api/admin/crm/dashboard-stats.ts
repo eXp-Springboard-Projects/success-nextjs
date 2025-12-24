@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -16,6 +14,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const supabase = supabaseAdmin();
+
   try {
     // Get date ranges
     const now = new Date();
@@ -24,152 +24,165 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const firstOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     // Total contacts with trend
-    const totalContacts = await prisma.$queryRaw<Array<{ count: number }>>`
-      SELECT COUNT(*)::int as count FROM contacts
-    `;
+    const { data: totalContactsData, error: totalContactsError } = await supabase
+      .rpc('count_contacts');
 
-    const contactsLastMonth = await prisma.$queryRaw<Array<{ count: number }>>`
-      SELECT COUNT(*)::int as count FROM contacts
-      WHERE created_at < ${firstOfMonth.toISOString()}
-    `;
+    if (totalContactsError) throw totalContactsError;
 
-    const contactsTrend = totalContacts[0].count - contactsLastMonth[0].count;
+    const { data: contactsLastMonthData, error: contactsLastMonthError } = await supabase
+      .from('contacts')
+      .select('id', { count: 'exact', head: true })
+      .lt('created_at', firstOfMonth.toISOString());
+
+    if (contactsLastMonthError) throw contactsLastMonthError;
+
+    const totalContacts = totalContactsData || 0;
+    const contactsLastMonth = contactsLastMonthData || 0;
+    const contactsTrend = totalContacts - contactsLastMonth;
 
     // Active deals
-    const activeDeals = await prisma.$queryRaw<Array<{ count: number; total_value: number }>>`
-      SELECT
-        COUNT(*)::int as count,
-        COALESCE(SUM(value), 0)::float as total_value
-      FROM deals
-      WHERE status = 'open'
-    `;
+    const { data: activeDealsData, error: activeDealsError } = await supabase
+      .from('deals')
+      .select('value')
+      .eq('status', 'open');
+
+    if (activeDealsError) throw activeDealsError;
+
+    const activeDealsCount = activeDealsData?.length || 0;
+    const dealsTotalValue = activeDealsData?.reduce((sum, deal) => sum + (deal.value || 0), 0) || 0;
 
     // Open tickets
-    const openTickets = await prisma.$queryRaw<Array<{ count: number; avg_resolution: number }>>`
-      SELECT
-        COUNT(*) FILTER (WHERE status != 'closed')::int as count,
-        COALESCE(
-          AVG(
-            EXTRACT(EPOCH FROM (resolved_at - created_at)) / 3600
-          ) FILTER (WHERE resolved_at IS NOT NULL),
-          0
-        )::float as avg_resolution
-      FROM tickets
-    `;
+    const { data: ticketsData, error: ticketsError } = await supabase
+      .from('tickets')
+      .select('status, resolved_at, created_at')
+      .neq('status', 'closed');
+
+    if (ticketsError) throw ticketsError;
+
+    const openTicketsCount = ticketsData?.length || 0;
+    const resolvedTickets = ticketsData?.filter(t => t.resolved_at) || [];
+    const avgResolutionTime = resolvedTickets.length > 0
+      ? resolvedTickets.reduce((sum, t) => {
+          const hours = (new Date(t.resolved_at).getTime() - new Date(t.created_at).getTime()) / (1000 * 60 * 60);
+          return sum + hours;
+        }, 0) / resolvedTickets.length
+      : 0;
 
     // Emails sent this month
-    const emailsThisMonth = await prisma.$queryRaw<Array<{
-      sent: number;
-      opened: number;
-    }>>`
-      SELECT
-        COUNT(*)::int as sent,
-        COUNT(*) FILTER (WHERE opened_at IS NOT NULL)::int as opened
-      FROM email_sends
-      WHERE sent_at >= ${firstOfThisMonth.toISOString()}
-    `;
+    const { data: emailsData, error: emailsError } = await supabase
+      .from('email_sends')
+      .select('opened_at')
+      .gte('sent_at', firstOfThisMonth.toISOString());
 
-    const openRate = emailsThisMonth[0].sent > 0
-      ? ((emailsThisMonth[0].opened / emailsThisMonth[0].sent) * 100).toFixed(1)
+    if (emailsError) throw emailsError;
+
+    const emailsSent = emailsData?.length || 0;
+    const emailsOpened = emailsData?.filter(e => e.opened_at).length || 0;
+    const openRate = emailsSent > 0
+      ? ((emailsOpened / emailsSent) * 100).toFixed(1)
       : '0.0';
 
     // Recent activities (across contacts, deals, tickets)
-    const contactActivities = await prisma.$queryRaw<Array<any>>`
-      SELECT
-        'contact' as source,
-        type,
-        description,
-        created_at,
-        created_by
-      FROM contact_activities
-      ORDER BY created_at DESC
-      LIMIT 5
-    `;
+    const { data: contactActivities, error: contactActError } = await supabase
+      .from('contact_activities')
+      .select('type, description, created_at, created_by')
+      .order('created_at', { ascending: false })
+      .limit(5);
 
-    const dealActivities = await prisma.$queryRaw<Array<any>>`
-      SELECT
-        'deal' as source,
-        type,
-        description,
-        created_at,
-        created_by
-      FROM deal_activities
-      ORDER BY created_at DESC
-      LIMIT 5
-    `;
+    if (contactActError) throw contactActError;
 
-    const recentActivities = [...contactActivities, ...dealActivities]
+    const { data: dealActivities, error: dealActError } = await supabase
+      .from('deal_activities')
+      .select('type, description, created_at, created_by')
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (dealActError) throw dealActError;
+
+    const recentActivities = [
+      ...(contactActivities || []).map(a => ({ ...a, source: 'contact' })),
+      ...(dealActivities || []).map(a => ({ ...a, source: 'deal' }))
+    ]
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 10);
 
     // Top performing campaigns
-    const topCampaigns = await prisma.$queryRaw<Array<any>>`
-      SELECT
-        id,
-        name,
-        total_sent,
-        total_opened,
-        total_clicked,
-        CASE
-          WHEN total_sent > 0 THEN (total_opened::float / total_sent * 100)
-          ELSE 0
-        END as open_rate,
-        sent_at
-      FROM email_campaigns
-      WHERE status = 'completed' OR status = 'sending'
-      ORDER BY open_rate DESC
-      LIMIT 5
-    `;
+    const { data: topCampaigns, error: campaignsError } = await supabase
+      .from('email_campaigns')
+      .select('id, name, total_sent, total_opened, total_clicked, sent_at')
+      .in('status', ['completed', 'sending'])
+      .order('total_opened', { ascending: false })
+      .limit(5);
+
+    if (campaignsError) throw campaignsError;
+
+    const campaignsWithRate = (topCampaigns || []).map(c => ({
+      ...c,
+      open_rate: c.total_sent > 0 ? (c.total_opened / c.total_sent * 100) : 0
+    })).sort((a, b) => b.open_rate - a.open_rate);
 
     // Pipeline summary
-    const pipelineSummary = await prisma.$queryRaw<Array<any>>`
-      SELECT
-        s.id as stage_id,
-        s.name as stage_name,
-        s.color as stage_color,
-        s.order as stage_order,
-        COUNT(d.id)::int as deal_count,
-        COALESCE(SUM(d.value), 0)::float as total_value
-      FROM deal_stages s
-      LEFT JOIN deals d ON s.id = d.stage_id AND d.status = 'open'
-      GROUP BY s.id, s.name, s.color, s.order
-      ORDER BY s.order
-    `;
+    const { data: dealStages, error: stagesError } = await supabase
+      .from('deal_stages')
+      .select('id, name, color, order')
+      .order('order', { ascending: true });
+
+    if (stagesError) throw stagesError;
+
+    const { data: openDeals, error: openDealsError } = await supabase
+      .from('deals')
+      .select('stage_id, value')
+      .eq('status', 'open');
+
+    if (openDealsError) throw openDealsError;
+
+    const pipelineSummary = (dealStages || []).map(stage => {
+      const stageDeals = (openDeals || []).filter(d => d.stage_id === stage.id);
+      return {
+        stage_id: stage.id,
+        stage_name: stage.name,
+        stage_color: stage.color,
+        stage_order: stage.order,
+        deal_count: stageDeals.length,
+        total_value: stageDeals.reduce((sum, d) => sum + (d.value || 0), 0)
+      };
+    });
 
     // Tickets by priority
-    const ticketsByPriority = await prisma.$queryRaw<Array<any>>`
-      SELECT
-        priority,
-        COUNT(*)::int as count
-      FROM tickets
-      WHERE status != 'closed'
-      GROUP BY priority
-      ORDER BY
-        CASE priority
-          WHEN 'urgent' THEN 1
-          WHEN 'high' THEN 2
-          WHEN 'medium' THEN 3
-          WHEN 'low' THEN 4
-        END
-    `;
+    const { data: ticketsByPriorityData, error: priorityError } = await supabase
+      .from('tickets')
+      .select('priority')
+      .neq('status', 'closed');
+
+    if (priorityError) throw priorityError;
+
+    const priorityOrder = { urgent: 1, high: 2, medium: 3, low: 4 };
+    const ticketsByPriority = Object.entries(
+      (ticketsByPriorityData || []).reduce((acc: any, t) => {
+        acc[t.priority] = (acc[t.priority] || 0) + 1;
+        return acc;
+      }, {})
+    ).map(([priority, count]) => ({ priority, count }))
+      .sort((a, b) => (priorityOrder[a.priority as keyof typeof priorityOrder] || 99) - (priorityOrder[b.priority as keyof typeof priorityOrder] || 99));
 
     return res.status(200).json({
       stats: {
-        totalContacts: totalContacts[0].count,
+        totalContacts,
         contactsTrend,
-        activeDeals: activeDeals[0].count,
-        dealsTotalValue: activeDeals[0].total_value,
-        openTickets: openTickets[0].count,
-        avgResolutionTime: openTickets[0].avg_resolution,
-        emailsSent: emailsThisMonth[0].sent,
+        activeDeals: activeDealsCount,
+        dealsTotalValue,
+        openTickets: openTicketsCount,
+        avgResolutionTime,
+        emailsSent,
         emailOpenRate: openRate,
       },
       recentActivities,
-      topCampaigns,
+      topCampaigns: campaignsWithRate,
       pipelineSummary,
       ticketsByPriority,
     });
   } catch (error) {
+    console.error('Dashboard stats error:', error);
     return res.status(500).json({ error: 'Failed to fetch dashboard stats' });
   }
 }

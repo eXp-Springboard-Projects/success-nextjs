@@ -1,8 +1,16 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient, SubscriptionStatus } from '@prisma/client';
 import crypto from 'crypto';
+import { supabaseAdmin } from '@/lib/supabase';
+import { randomUUID } from 'crypto';
 
-const prisma = new PrismaClient();
+// Subscription status enum
+enum SubscriptionStatus {
+  ACTIVE = 'ACTIVE',
+  TRIALING = 'TRIALING',
+  CANCELED = 'CANCELED',
+  PAST_DUE = 'PAST_DUE',
+  INACTIVE = 'INACTIVE'
+}
 
 // Disable body parsing to get raw body for signature verification
 export const config = {
@@ -39,7 +47,7 @@ function verifyWebhookSignature(payload: string, signature: string, secret: stri
 
 // Generate unique ID
 function generateId(): string {
-  return `pk_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return randomUUID();
 }
 
 // Map PayKickstart status to our SubscriptionStatus
@@ -134,6 +142,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 }
 
 async function handleSubscriptionCreated(event: any) {
+  const supabase = supabaseAdmin();
   const data = event.data || event;
   const subscriptionId = data.subscription_id || data.id;
   const customerId = data.customer_id || data.customer?.id;
@@ -141,38 +150,57 @@ async function handleSubscriptionCreated(event: any) {
   const productName = data.product_name || data.product?.name || '';
   const status = data.status || 'active';
   const billingCycle = data.billing_cycle || data.interval || 'monthly';
-  const currentPeriodStart = data.current_period_start ? new Date(data.current_period_start * 1000) : new Date();
-  const currentPeriodEnd = data.current_period_end ? new Date(data.current_period_end * 1000) : null;
+  const currentPeriodStart = data.current_period_start ? new Date(data.current_period_start * 1000).toISOString() : new Date().toISOString();
+  const currentPeriodEnd = data.current_period_end ? new Date(data.current_period_end * 1000).toISOString() : null;
 
   // Find or create user by email
-  let user = await prisma.users.findUnique({ where: { email }, include: { member: true } });
+  const { data: existingUsers } = await supabase
+    .from('users')
+    .select('id, email, name, memberId')
+    .eq('email', email)
+    .limit(1);
+
+  let user = existingUsers?.[0];
 
   if (!user) {
     // Create a basic user account
     const bcrypt = require('bcryptjs');
     const hashedPassword = await bcrypt.hash(Math.random().toString(36), 10);
+    const userId = generateId();
 
-    user = await prisma.users.create({
-      data: {
-        id: generateId(),
+    const { data: newUser } = await supabase
+      .from('users')
+      .insert({
+        id: userId,
         email,
         name: data.customer_name || email.split('@')[0],
         password: hashedPassword,
         role: 'EDITOR',
         emailVerified: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      include: { member: true },
-    });
+      })
+      .select()
+      .single();
+
+    user = newUser;
   }
 
   // Find or create member for subscription
-  let member = user.member;
+  let member;
+  if (user.memberId) {
+    const { data: existingMember } = await supabase
+      .from('members')
+      .select('*')
+      .eq('id', user.memberId)
+      .single();
+    member = existingMember;
+  }
+
   if (!member) {
-    member = await prisma.members.create({
-      data: {
-        id: generateId(),
+    const memberId = generateId();
+    const { data: newMember } = await supabase
+      .from('members')
+      .insert({
+        id: memberId,
         email,
         firstName: (data.customer_name || '').split(' ')[0] || email.split('@')[0],
         lastName: (data.customer_name || '').split(' ').slice(1).join(' ') || '',
@@ -181,66 +209,78 @@ async function handleSubscriptionCreated(event: any) {
         totalSpent: 0,
         lifetimeValue: 0,
         paykickstartCustomerId: customerId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    });
+      })
+      .select()
+      .single();
+
+    member = newMember;
+
     // Link member to user
-    await prisma.users.update({
-      where: { id: user.id },
-      data: { memberId: member.id },
-    });
+    await supabase
+      .from('users')
+      .update({ memberId: member.id })
+      .eq('id', user.id);
   }
 
   // Create subscription record - use paykickstartSubscriptionId for unique lookup
-  const existingSubscription = await prisma.subscriptions.findUnique({
-    where: { paykickstartSubscriptionId: subscriptionId },
-  });
+  const { data: existingSubscriptions } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('paykickstartSubscriptionId', subscriptionId)
+    .limit(1);
 
-  const subscription = existingSubscription
-    ? await prisma.subscriptions.update({
-        where: { id: existingSubscription.id },
-        data: {
-          paykickstartCustomerId: customerId,
-          provider: 'paykickstart',
-          status: mapSubscriptionStatus(status),
-          tier: mapSubscriptionTier(productName),
-          billingCycle: billingCycle.toLowerCase(),
-          currentPeriodStart,
-          currentPeriodEnd,
-          updatedAt: new Date(),
-        },
+  const existingSubscription = existingSubscriptions?.[0];
+
+  let subscription;
+  if (existingSubscription) {
+    const { data: updatedSubscription } = await supabase
+      .from('subscriptions')
+      .update({
+        paykickstartCustomerId: customerId,
+        provider: 'paykickstart',
+        status: mapSubscriptionStatus(status),
+        tier: mapSubscriptionTier(productName),
+        billingCycle: billingCycle.toLowerCase(),
+        currentPeriodStart,
+        currentPeriodEnd,
       })
-    : await prisma.subscriptions.create({
-        data: {
-          id: generateId(),
-          memberId: member.id,
-          paykickstartCustomerId: customerId,
-          paykickstartSubscriptionId: subscriptionId,
-          provider: 'paykickstart',
-          status: mapSubscriptionStatus(status),
-          tier: mapSubscriptionTier(productName),
-          billingCycle: billingCycle.toLowerCase(),
-          currentPeriodStart,
-          currentPeriodEnd,
-          cancelAtPeriodEnd: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      });
+      .eq('id', existingSubscription.id)
+      .select()
+      .single();
+    subscription = updatedSubscription;
+  } else {
+    const { data: newSubscription } = await supabase
+      .from('subscriptions')
+      .insert({
+        id: generateId(),
+        memberId: member.id,
+        paykickstartCustomerId: customerId,
+        paykickstartSubscriptionId: subscriptionId,
+        provider: 'paykickstart',
+        status: mapSubscriptionStatus(status),
+        tier: mapSubscriptionTier(productName),
+        billingCycle: billingCycle.toLowerCase(),
+        currentPeriodStart,
+        currentPeriodEnd,
+        cancelAtPeriodEnd: false,
+      })
+      .select()
+      .single();
+    subscription = newSubscription;
+  }
 
   // Update member status based on subscription
-  await prisma.members.update({
-    where: { id: member.id },
-    data: {
+  await supabase
+    .from('members')
+    .update({
       membershipStatus: mapSubscriptionStatus(status) === 'ACTIVE' ? 'Active' : 'Inactive',
-      updatedAt: new Date(),
-    },
-  });
+    })
+    .eq('id', member.id);
 
   // Log activity
-  await prisma.activity_logs.create({
-    data: {
+  await supabase
+    .from('activity_logs')
+    .insert({
       id: generateId(),
       userId: user.id,
       action: 'SUBSCRIPTION_CREATED',
@@ -252,60 +292,65 @@ async function handleSubscriptionCreated(event: any) {
         tier: subscription.tier,
         status,
       }),
-      createdAt: new Date(),
-    },
-  });
+    });
 
 }
 
 async function handleSubscriptionUpdated(event: any) {
+  const supabase = supabaseAdmin();
   const data = event.data || event;
   const subscriptionId = data.subscription_id || data.id;
   const status = data.status || 'active';
   const productName = data.product_name || data.product?.name || '';
-  const currentPeriodStart = data.current_period_start ? new Date(data.current_period_start * 1000) : null;
-  const currentPeriodEnd = data.current_period_end ? new Date(data.current_period_end * 1000) : null;
+  const currentPeriodStart = data.current_period_start ? new Date(data.current_period_start * 1000).toISOString() : null;
+  const currentPeriodEnd = data.current_period_end ? new Date(data.current_period_end * 1000).toISOString() : null;
 
   // Find subscription by PayKickstart subscription ID
-  const subscription = await prisma.subscriptions.findFirst({
-    where: { paykickstartSubscriptionId: subscriptionId },
-    include: { member: true },
-  });
+  const { data: subscriptions } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('paykickstartSubscriptionId', subscriptionId)
+    .limit(1);
+
+  const subscription = subscriptions?.[0];
 
   if (!subscription) {
     return;
   }
 
   // Update subscription
-  await prisma.subscriptions.update({
-    where: { id: subscription.id },
-    data: {
+  await supabase
+    .from('subscriptions')
+    .update({
       status: mapSubscriptionStatus(status),
       tier: mapSubscriptionTier(productName),
       currentPeriodStart: currentPeriodStart || subscription.currentPeriodStart,
       currentPeriodEnd: currentPeriodEnd || subscription.currentPeriodEnd,
-      updatedAt: new Date(),
-    },
-  });
+    })
+    .eq('id', subscription.id);
 
   // Update member status
   if (subscription.memberId) {
-    await prisma.members.update({
-      where: { id: subscription.memberId },
-      data: {
+    await supabase
+      .from('members')
+      .update({
         membershipStatus: mapSubscriptionStatus(status) === 'ACTIVE' ? 'Active' : 'Inactive',
-        updatedAt: new Date(),
-      },
-    });
+      })
+      .eq('id', subscription.memberId);
   }
 
   // Log activity - find user through member's platformUser
-  const linkedUser = await prisma.users.findFirst({
-    where: { memberId: subscription.memberId },
-  });
+  const { data: linkedUsers } = await supabase
+    .from('users')
+    .select('*')
+    .eq('memberId', subscription.memberId)
+    .limit(1);
+
+  const linkedUser = linkedUsers?.[0];
   if (linkedUser) {
-    await prisma.activity_logs.create({
-      data: {
+    await supabase
+      .from('activity_logs')
+      .insert({
         id: generateId(),
         userId: linkedUser.id,
         action: 'SUBSCRIPTION_UPDATED',
@@ -317,55 +362,61 @@ async function handleSubscriptionUpdated(event: any) {
           newStatus: status,
           tier: mapSubscriptionTier(productName),
         }),
-        createdAt: new Date(),
-      },
-    });
+      });
   }
 
 }
 
 async function handleSubscriptionCancelled(event: any) {
+  const supabase = supabaseAdmin();
   const data = event.data || event;
   const subscriptionId = data.subscription_id || data.id;
   const cancelAtPeriodEnd = data.cancel_at_period_end !== false; // Default to true
 
   // Find subscription
-  const subscription = await prisma.subscriptions.findFirst({
-    where: { paykickstartSubscriptionId: subscriptionId },
-  });
+  const { data: subscriptions } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('paykickstartSubscriptionId', subscriptionId)
+    .limit(1);
+
+  const subscription = subscriptions?.[0];
 
   if (!subscription) {
     return;
   }
 
   // Update subscription
-  await prisma.subscriptions.update({
-    where: { id: subscription.id },
-    data: {
+  await supabase
+    .from('subscriptions')
+    .update({
       status: cancelAtPeriodEnd ? subscription.status : 'canceled',
       cancelAtPeriodEnd,
-      updatedAt: new Date(),
-    },
-  });
+    })
+    .eq('id', subscription.id);
 
   // Update member status if cancelled immediately
   if (!cancelAtPeriodEnd && subscription.memberId) {
-    await prisma.members.update({
-      where: { id: subscription.memberId },
-      data: {
+    await supabase
+      .from('members')
+      .update({
         membershipStatus: 'Inactive',
-        updatedAt: new Date(),
-      },
-    });
+      })
+      .eq('id', subscription.memberId);
   }
 
   // Log activity - find linked user through member
-  const cancelledUser = await prisma.users.findFirst({
-    where: { memberId: subscription.memberId },
-  });
+  const { data: cancelledUsers } = await supabase
+    .from('users')
+    .select('*')
+    .eq('memberId', subscription.memberId)
+    .limit(1);
+
+  const cancelledUser = cancelledUsers?.[0];
   if (cancelledUser) {
-    await prisma.activity_logs.create({
-      data: {
+    await supabase
+      .from('activity_logs')
+      .insert({
         id: generateId(),
         userId: cancelledUser.id,
         action: 'SUBSCRIPTION_CANCELLED',
@@ -376,14 +427,13 @@ async function handleSubscriptionCancelled(event: any) {
           subscriptionId,
           cancelAtPeriodEnd,
         }),
-        createdAt: new Date(),
-      },
-    });
+      });
   }
 
 }
 
 async function handlePaymentFailed(event: any) {
+  const supabase = supabaseAdmin();
   const data = event.data || event;
   const subscriptionId = data.subscription_id || data.subscription?.id;
 
@@ -392,40 +442,47 @@ async function handlePaymentFailed(event: any) {
   }
 
   // Find subscription
-  const subscription = await prisma.subscriptions.findFirst({
-    where: { paykickstartSubscriptionId: subscriptionId },
-  });
+  const { data: subscriptions } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('paykickstartSubscriptionId', subscriptionId)
+    .limit(1);
+
+  const subscription = subscriptions?.[0];
 
   if (!subscription) {
     return;
   }
 
   // Update to PAST_DUE status
-  await prisma.subscriptions.update({
-    where: { id: subscription.id },
-    data: {
+  await supabase
+    .from('subscriptions')
+    .update({
       status: 'past_due',
-      updatedAt: new Date(),
-    },
-  });
+    })
+    .eq('id', subscription.id);
 
   // Update member status
   if (subscription.memberId) {
-    await prisma.members.update({
-      where: { id: subscription.memberId },
-      data: {
+    await supabase
+      .from('members')
+      .update({
         membershipStatus: 'Inactive',
-        updatedAt: new Date(),
-      },
-    });
+      })
+      .eq('id', subscription.memberId);
 
     // Log activity - find linked user
-    const failedUser = await prisma.users.findFirst({
-      where: { memberId: subscription.memberId },
-    });
+    const { data: failedUsers } = await supabase
+      .from('users')
+      .select('*')
+      .eq('memberId', subscription.memberId)
+      .limit(1);
+
+    const failedUser = failedUsers?.[0];
     if (failedUser) {
-      await prisma.activity_logs.create({
-        data: {
+      await supabase
+        .from('activity_logs')
+        .insert({
           id: generateId(),
           userId: failedUser.id,
           action: 'PAYMENT_FAILED',
@@ -436,15 +493,14 @@ async function handlePaymentFailed(event: any) {
             subscriptionId,
             reason: data.failure_message || 'Payment failed',
           }),
-          createdAt: new Date(),
-        },
-      });
+        });
     }
   }
 
 }
 
 async function handlePaymentSucceeded(event: any) {
+  const supabase = supabaseAdmin();
   const data = event.data || event;
   const subscriptionId = data.subscription_id || data.subscription?.id;
 
@@ -453,40 +509,47 @@ async function handlePaymentSucceeded(event: any) {
   }
 
   // Find subscription
-  const subscription = await prisma.subscriptions.findFirst({
-    where: { paykickstartSubscriptionId: subscriptionId },
-  });
+  const { data: subscriptions } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('paykickstartSubscriptionId', subscriptionId)
+    .limit(1);
+
+  const subscription = subscriptions?.[0];
 
   if (!subscription || subscription.status !== 'past_due') {
     return; // Only update if currently past_due
   }
 
   // Update to active
-  await prisma.subscriptions.update({
-    where: { id: subscription.id },
-    data: {
+  await supabase
+    .from('subscriptions')
+    .update({
       status: 'active',
-      updatedAt: new Date(),
-    },
-  });
+    })
+    .eq('id', subscription.id);
 
   // Update member status
   if (subscription.memberId) {
-    await prisma.members.update({
-      where: { id: subscription.memberId },
-      data: {
+    await supabase
+      .from('members')
+      .update({
         membershipStatus: 'Active',
-        updatedAt: new Date(),
-      },
-    });
+      })
+      .eq('id', subscription.memberId);
 
     // Log activity - find linked user
-    const succeededUser = await prisma.users.findFirst({
-      where: { memberId: subscription.memberId },
-    });
+    const { data: succeededUsers } = await supabase
+      .from('users')
+      .select('*')
+      .eq('memberId', subscription.memberId)
+      .limit(1);
+
+    const succeededUser = succeededUsers?.[0];
     if (succeededUser) {
-      await prisma.activity_logs.create({
-        data: {
+      await supabase
+        .from('activity_logs')
+        .insert({
           id: generateId(),
           userId: succeededUser.id,
           action: 'PAYMENT_SUCCEEDED',
@@ -496,9 +559,7 @@ async function handlePaymentSucceeded(event: any) {
             provider: 'paykickstart',
             subscriptionId,
           }),
-          createdAt: new Date(),
-        },
-      });
+        });
     }
   }
 

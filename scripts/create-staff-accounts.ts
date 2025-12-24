@@ -11,7 +11,7 @@
  *   npx tsx scripts/create-staff-accounts.ts
  */
 
-import { PrismaClient } from '@prisma/client';
+
 import { randomUUID } from 'crypto';
 import bcrypt from 'bcryptjs';
 

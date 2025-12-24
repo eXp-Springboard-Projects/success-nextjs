@@ -1,10 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../lib/supabase';
 import { randomUUID } from 'crypto';
-
-const prisma = new PrismaClient();
 
 export default async function handler(
   req: NextApiRequest,
@@ -16,15 +14,18 @@ export default async function handler(
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
+  const supabase = supabaseAdmin();
   const { id } = req.query;
 
   if (req.method === 'GET') {
     try {
-      const media = await prisma.media.findUnique({
-        where: { id: id as string }
-      });
+      const { data: media, error } = await supabase
+        .from('media')
+        .select('*')
+        .eq('id', id as string)
+        .single();
 
-      if (!media) {
+      if (error || !media) {
         return res.status(404).json({ error: 'Media not found' });
       }
 
@@ -37,22 +38,30 @@ export default async function handler(
   if (req.method === 'DELETE') {
     try {
       // Check if media exists
-      const media = await prisma.media.findUnique({
-        where: { id: id as string }
-      });
+      const { data: media, error: fetchError } = await supabase
+        .from('media')
+        .select('*')
+        .eq('id', id as string)
+        .single();
 
-      if (!media) {
+      if (fetchError || !media) {
         return res.status(404).json({ error: 'Media not found' });
       }
 
       // Delete from database
-      await prisma.media.delete({
-        where: { id: id as string }
-      });
+      const { error: deleteError } = await supabase
+        .from('media')
+        .delete()
+        .eq('id', id as string);
+
+      if (deleteError) {
+        throw deleteError;
+      }
 
       // Log activity
-      await prisma.activity_logs.create({
-        data: {
+      await supabase
+        .from('activity_logs')
+        .insert({
           id: randomUUID(),
           userId: session.user.id,
           action: 'DELETE',
@@ -61,8 +70,7 @@ export default async function handler(
           details: JSON.stringify({
             filename: media.filename,
           }),
-        },
-      });
+        });
 
       return res.status(200).json({ success: true, message: 'Media deleted' });
     } catch (error) {
@@ -74,17 +82,25 @@ export default async function handler(
     try {
       const { alt, caption } = req.body;
 
-      const updatedMedia = await prisma.media.update({
-        where: { id: id as string },
-        data: {
-          alt: alt || undefined,
-          caption: caption || undefined,
-        },
-      });
+      const updateData: any = {};
+      if (alt !== undefined) updateData.alt = alt;
+      if (caption !== undefined) updateData.caption = caption;
+
+      const { data: updatedMedia, error: updateError } = await supabase
+        .from('media')
+        .update(updateData)
+        .eq('id', id as string)
+        .select()
+        .single();
+
+      if (updateError) {
+        throw updateError;
+      }
 
       // Log activity
-      await prisma.activity_logs.create({
-        data: {
+      await supabase
+        .from('activity_logs')
+        .insert({
           id: randomUUID(),
           userId: session.user.id,
           action: 'UPDATE',
@@ -94,8 +110,7 @@ export default async function handler(
             alt,
             caption,
           }),
-        },
-      });
+        });
 
       return res.status(200).json({
         success: true,

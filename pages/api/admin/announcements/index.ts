@@ -1,9 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -17,59 +15,56 @@ export default async function handler(
     }
 
     if (req.method === 'GET') {
+      const supabase = supabaseAdmin();
       const { page = '1', limit = '20', isActive, targetAudience } = req.query;
 
       const pageNum = parseInt(page as string);
       const limitNum = parseInt(limit as string);
       const skip = (pageNum - 1) * limitNum;
 
-      const where: any = {};
+      // Build query
+      let query = supabase
+        .from('announcements')
+        .select(`
+          *,
+          users!announcements_created_by_fkey (
+            id,
+            name,
+            email
+          )
+        `, { count: 'exact' });
 
       if (isActive !== undefined) {
-        where.isActive = isActive === 'true';
+        query = query.eq('is_active', isActive === 'true');
       }
 
       if (targetAudience && targetAudience !== 'ALL') {
-        where.targetAudience = targetAudience;
+        query = query.eq('target_audience', targetAudience);
       }
 
-      const [announcements, total] = await Promise.all([
-        prisma.announcements.findMany({
-          where,
-          skip,
-          take: limitNum,
-          orderBy: [
-            { isPinned: 'desc' },
-            { publishedAt: 'desc' },
-          ],
-          include: {
-            users: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        }),
-        prisma.announcements.count({ where }),
-      ]);
+      const { data: announcements, error, count: total } = await query
+        .order('is_pinned', { ascending: false })
+        .order('published_at', { ascending: false })
+        .range(skip, skip + limitNum - 1);
+
+      if (error) throw error;
 
       return res.status(200).json({
-        announcements: announcements.map(a => ({
+        announcements: (announcements || []).map(a => ({
           ...a,
-          createdBy: a.users.name,
+          createdBy: a.users?.name,
         })),
         pagination: {
           page: pageNum,
           limit: limitNum,
-          total,
-          totalPages: Math.ceil(total / limitNum),
+          total: total || 0,
+          totalPages: Math.ceil((total || 0) / limitNum),
         },
       });
     }
 
     if (req.method === 'POST') {
+      const supabase = supabaseAdmin();
       // Only Super Admin and Admin can create announcements
       if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'ADMIN') {
         return res.status(403).json({ error: 'Forbidden' });
@@ -94,51 +89,53 @@ export default async function handler(
         return res.status(400).json({ error: 'Title and content are required' });
       }
 
-      const announcement = await prisma.announcements.create({
-        data: {
+      const { data: announcement, error: createError } = await supabase
+        .from('announcements')
+        .insert({
           title,
           content,
           type,
           priority,
-          targetAudience,
-          isActive,
-          isPinned,
-          publishedAt: publishedAt ? new Date(publishedAt) : new Date(),
-          expiresAt: expiresAt ? new Date(expiresAt) : null,
-          createdBy: session.user.id,
+          target_audience: targetAudience,
+          is_active: isActive,
+          is_pinned: isPinned,
+          published_at: publishedAt ? new Date(publishedAt).toISOString() : new Date().toISOString(),
+          expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+          created_by: session.user.id,
           dismissible,
-          linkUrl,
-          linkText,
-        },
-        include: {
-          users: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
-      });
+          link_url: linkUrl,
+          link_text: linkText,
+        })
+        .select(`
+          *,
+          users!announcements_created_by_fkey (
+            id,
+            name,
+            email
+          )
+        `)
+        .single();
+
+      if (createError) throw createError;
 
       // Log activity
-      await prisma.activity_logs.create({
-        data: {
+      await supabase
+        .from('activity_logs')
+        .insert({
           id: `activity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          userId: session.user.id,
+          user_id: session.user.id,
           action: 'ANNOUNCEMENT_CREATED',
           entity: 'announcements',
-          entityId: announcement.id,
+          entity_id: announcement.id,
           details: `Created announcement: "${title}"`,
-          createdAt: new Date(),
-        },
-      });
+          created_at: new Date().toISOString(),
+        });
 
       return res.status(201).json({
         message: 'Announcement created successfully',
         announcement: {
           ...announcement,
-          createdBy: announcement.users.name,
+          createdBy: announcement.users?.name,
         },
       });
     }
@@ -148,7 +145,5 @@ export default async function handler(
   } catch (error) {
     console.error('Announcements API error:', error);
     return res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    await prisma.$disconnect();
   }
 }

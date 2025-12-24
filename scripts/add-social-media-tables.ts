@@ -7,7 +7,7 @@
  * - social_post_results: Track posting results per platform
  */
 
-import { PrismaClient } from '@prisma/client';
+
 
 const prisma = new PrismaClient();
 

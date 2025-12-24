@@ -1,10 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '@/lib/supabase';
 import { randomUUID } from 'crypto';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -12,6 +10,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!session || session.user.role !== 'ADMIN') {
     return res.status(401).json({ error: 'Unauthorized' });
   }
+
+  const supabase = supabaseAdmin();
 
   if (req.method === 'POST') {
     try {
@@ -22,8 +22,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Create bulk action record
-      const bulkAction = await prisma.bulk_actions.create({
-        data: {
+      const { data: bulkAction, error: bulkActionError } = await supabase
+        .from('bulk_actions')
+        .insert({
           id: randomUUID(),
           userId: session.user.id,
           action,
@@ -31,8 +32,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           entityIds,
           totalItems: entityIds.length,
           status: 'PENDING',
-        },
-      });
+        })
+        .select()
+        .single();
+
+      if (bulkActionError) throw bulkActionError;
 
       // Process bulk action asynchronously
       processBulkAction(bulkAction.id, action, entity, entityIds, session.user.id);
@@ -50,37 +54,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'GET') {
     try {
       const { page = '1', perPage = '20', status } = req.query;
-      const skip = (parseInt(page as string) - 1) * parseInt(perPage as string);
+      const pageNum = parseInt(page as string);
+      const perPageNum = parseInt(perPage as string);
+      const skip = (pageNum - 1) * perPageNum;
 
-      const where: any = { userId: session.user.id };
-      if (status) where.status = status;
+      // Build query
+      let query = supabase
+        .from('bulk_actions')
+        .select(`
+          *,
+          users!bulk_actions_userId_fkey(
+            name,
+            email
+          )
+        `, { count: 'exact' })
+        .eq('userId', session.user.id)
+        .order('createdAt', { ascending: false })
+        .range(skip, skip + perPageNum - 1);
 
-      const [actions, total] = await Promise.all([
-        prisma.bulk_actions.findMany({
-          where,
-          include: {
-            users: {
-              select: {
-                name: true,
-                email: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-          skip,
-          take: parseInt(perPage as string),
-        }),
-        prisma.bulk_actions.count({ where }),
-      ]);
+      if (status) {
+        query = query.eq('status', status);
+      }
+
+      const { data: actions, error: actionsError, count: total } = await query;
+
+      if (actionsError) throw actionsError;
 
       return res.status(200).json({
-        actions,
-        total,
-        page: parseInt(page as string),
-        perPage: parseInt(perPage as string),
-        totalPages: Math.ceil(total / parseInt(perPage as string)),
+        actions: actions || [],
+        total: total || 0,
+        page: pageNum,
+        perPage: perPageNum,
+        totalPages: Math.ceil((total || 0) / perPageNum),
       });
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch bulk actions' });
@@ -97,15 +102,17 @@ async function processBulkAction(
   entityIds: string[],
   userId: string
 ) {
+  const supabase = supabaseAdmin();
+
   try {
     // Update status to processing
-    await prisma.bulk_actions.update({
-      where: { id: bulkActionId },
-      data: {
+    await supabase
+      .from('bulk_actions')
+      .update({
         status: 'PROCESSING',
-        startedAt: new Date(),
-      },
-    });
+        startedAt: new Date().toISOString(),
+      })
+      .eq('id', bulkActionId);
 
     const errors: string[] = [];
     let processedCount = 0;
@@ -117,102 +124,114 @@ async function processBulkAction(
         processedCount++;
 
         // Log activity
-        await prisma.activity_logs.create({
-          data: {
+        await supabase
+          .from('activity_logs')
+          .insert({
             id: randomUUID(),
             userId,
             action: action.toUpperCase(),
             entity,
             entityId,
             details: JSON.stringify({ bulkActionId }),
-          },
-        });
+          });
 
         // Update progress
-        await prisma.bulk_actions.update({
-          where: { id: bulkActionId },
-          data: { processedItems: processedCount },
-        });
+        await supabase
+          .from('bulk_actions')
+          .update({ processedItems: processedCount })
+          .eq('id', bulkActionId);
       } catch (error) {
         errors.push(`${entityId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 
     // Mark as completed
-    await prisma.bulk_actions.update({
-      where: { id: bulkActionId },
-      data: {
+    await supabase
+      .from('bulk_actions')
+      .update({
         status: errors.length > 0 ? 'FAILED' : 'COMPLETED',
-        completedAt: new Date(),
+        completedAt: new Date().toISOString(),
         errors,
-      },
-    });
+      })
+      .eq('id', bulkActionId);
   } catch (error) {
-    await prisma.bulk_actions.update({
-      where: { id: bulkActionId },
-      data: {
+    await supabase
+      .from('bulk_actions')
+      .update({
         status: 'FAILED',
-        completedAt: new Date(),
+        completedAt: new Date().toISOString(),
         errors: [error instanceof Error ? error.message : 'Unknown error'],
-      },
-    });
+      })
+      .eq('id', bulkActionId);
   }
 }
 
 async function processSingleEntity(action: string, entity: string, entityId: string) {
+  const supabase = supabaseAdmin();
+
   switch (entity) {
     case 'media':
       if (action === 'DELETE') {
-        await prisma.media.delete({ where: { id: entityId } });
+        const { error } = await supabase.from('media').delete().eq('id', entityId);
+        if (error) throw error;
       }
       break;
 
     case 'bookmark':
       if (action === 'DELETE') {
-        await prisma.bookmarks.delete({ where: { id: entityId } });
+        const { error } = await supabase.from('bookmarks').delete().eq('id', entityId);
+        if (error) throw error;
       }
       break;
 
     case 'comment':
       if (action === 'DELETE') {
-        await prisma.comments.delete({ where: { id: entityId } });
+        const { error } = await supabase.from('comments').delete().eq('id', entityId);
+        if (error) throw error;
       } else if (action === 'APPROVE') {
-        await prisma.comments.update({
-          where: { id: entityId },
-          data: { status: 'APPROVED' },
-        });
+        const { error } = await supabase
+          .from('comments')
+          .update({ status: 'APPROVED' })
+          .eq('id', entityId);
+        if (error) throw error;
       } else if (action === 'SPAM') {
-        await prisma.comments.update({
-          where: { id: entityId },
-          data: { status: 'SPAM' },
-        });
+        const { error } = await supabase
+          .from('comments')
+          .update({ status: 'SPAM' })
+          .eq('id', entityId);
+        if (error) throw error;
       } else if (action === 'TRASH') {
-        await prisma.comments.update({
-          where: { id: entityId },
-          data: { status: 'TRASH' },
-        });
+        const { error } = await supabase
+          .from('comments')
+          .update({ status: 'TRASH' })
+          .eq('id', entityId);
+        if (error) throw error;
       }
       break;
 
     case 'user':
       if (action === 'DELETE') {
-        await prisma.users.delete({ where: { id: entityId } });
+        const { error } = await supabase.from('users').delete().eq('id', entityId);
+        if (error) throw error;
       }
       break;
 
     case 'editorialItem':
       if (action === 'DELETE') {
-        await prisma.editorial_calendar.delete({ where: { id: entityId } });
+        const { error } = await supabase.from('editorial_calendar').delete().eq('id', entityId);
+        if (error) throw error;
       } else if (action === 'PUBLISH') {
-        await prisma.editorial_calendar.update({
-          where: { id: entityId },
-          data: { status: 'PUBLISHED' },
-        });
+        const { error } = await supabase
+          .from('editorial_calendar')
+          .update({ status: 'PUBLISHED' })
+          .eq('id', entityId);
+        if (error) throw error;
       } else if (action === 'ARCHIVE') {
-        await prisma.editorial_calendar.update({
-          where: { id: entityId },
-          data: { status: 'ARCHIVED' },
-        });
+        const { error } = await supabase
+          .from('editorial_calendar')
+          .update({ status: 'ARCHIVED' })
+          .eq('id', entityId);
+        if (error) throw error;
       }
       break;
 

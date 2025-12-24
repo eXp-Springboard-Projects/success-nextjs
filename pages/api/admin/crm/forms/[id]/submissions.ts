@@ -1,7 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -11,38 +9,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { id } = req.query;
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 50;
-  const skip = (page - 1) * limit;
+  const offset = (page - 1) * limit;
 
   try {
-    const [submissions, total] = await Promise.all([
-      prisma.form_submissions.findMany({
-        where: { formId: id as string },
-        include: {
-          contact: {
-            select: {
-              id: true,
-              email: true,
-              firstName: true,
-              lastName: true,
-            },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-      prisma.form_submissions.count({
-        where: { formId: id as string },
-      }),
+    const supabase = supabaseAdmin();
+
+    const [submissionsResult, countResult] = await Promise.all([
+      supabase
+        .from('form_submissions')
+        .select(`
+          *,
+          contact:contacts(id, email, first_name, last_name)
+        `)
+        .eq('form_id', id as string)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1),
+      supabase
+        .from('form_submissions')
+        .select('id', { count: 'exact', head: true })
+        .eq('form_id', id as string),
     ]);
+
+    const { data: submissions, error: submissionsError } = submissionsResult;
+    const { count: total, error: countError } = countResult;
+
+    if (submissionsError || countError) {
+      return res.status(500).json({ error: 'Failed to fetch submissions' });
+    }
 
     return res.status(200).json({
       submissions,
       pagination: {
         page,
         limit,
-        total,
-        pages: Math.ceil(total / limit),
+        total: total || 0,
+        pages: Math.ceil((total || 0) / limit),
       },
     });
   } catch (error) {

@@ -1,4 +1,4 @@
-import { prisma } from '../../../lib/prisma';
+import { supabaseAdmin } from '../../../lib/supabase';
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -14,6 +14,8 @@ export default async function handler(req, res) {
 }
 
 async function getCategories(req, res) {
+  const supabase = supabaseAdmin();
+
   try {
     const {
       per_page = 50,
@@ -21,64 +23,80 @@ async function getCategories(req, res) {
       search,
     } = req.query;
 
-    const skip = (parseInt(page) - 1) * parseInt(per_page);
-    const take = parseInt(per_page);
+    const offset = (parseInt(page) - 1) * parseInt(per_page);
+    const limit = parseInt(per_page);
 
-    const where = {};
+    let query = supabase
+      .from('categories')
+      .select('*', { count: 'exact' })
+      .order('name', { ascending: true })
+      .range(offset, offset + limit - 1);
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { slug: { contains: search, mode: 'insensitive' } },
-      ];
+      query = query.or(`name.ilike.%${search}%,slug.ilike.%${search}%`);
     }
 
-    const categories = await prisma.categories.findMany({
-      where,
-      skip,
-      take,
-      orderBy: { name: 'asc' },
-      include: {
-        _count: {
-          select: { posts: true },
-        },
-      },
-    });
+    const { data: categories, error, count } = await query;
 
-    const total = await prisma.categories.count({ where });
+    if (error) {
+      console.error('Error fetching categories:', error);
+      return res.status(500).json({ message: 'Failed to fetch categories' });
+    }
 
-    res.setHeader('X-WP-Total', total);
-    res.setHeader('X-WP-TotalPages', Math.ceil(total / take));
+    // Get post counts for each category
+    const categoriesWithCounts = await Promise.all(
+      (categories || []).map(async (cat) => {
+        const { count: postCount } = await supabase
+          .from('post_categories')
+          .select('*', { count: 'exact', head: true })
+          .eq('category_id', cat.id);
 
-    // Transform to WordPress-like format
-    const transformedCategories = categories.map(cat => ({
-      id: cat.id,
-      count: cat._count.posts,
-      description: cat.description || '',
-      name: cat.name,
-      slug: cat.slug,
-    }));
+        return {
+          id: cat.id,
+          count: postCount || 0,
+          description: cat.description || '',
+          name: cat.name,
+          slug: cat.slug,
+        };
+      })
+    );
 
-    return res.status(200).json(transformedCategories);
+    res.setHeader('X-WP-Total', count || 0);
+    res.setHeader('X-WP-TotalPages', Math.ceil((count || 0) / limit));
+
+    return res.status(200).json(categoriesWithCounts);
   } catch (error) {
+    console.error('Error fetching categories:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
 
 async function createCategory(req, res) {
+  const supabase = supabaseAdmin();
+
   try {
     const { name, slug, description } = req.body;
 
-    const category = await prisma.categories.create({
-      data: {
-        name,
-        slug,
-        description,
-      },
-    });
+    const categoryData = {
+      name,
+      slug,
+      description,
+    };
+
+    const { data: category, error } = await supabase
+      .from('categories')
+      .insert([categoryData])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating category:', error);
+      return res.status(500).json({ message: 'Failed to create category' });
+    }
 
     return res.status(201).json(category);
   } catch (error) {
+    console.error('Error creating category:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

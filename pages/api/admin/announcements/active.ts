@@ -1,9 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -17,57 +15,54 @@ export default async function handler(
     }
 
     if (req.method === 'GET') {
-      const now = new Date();
+      const supabase = supabaseAdmin();
+      const now = new Date().toISOString();
 
-      // Get active announcements that haven't been dismissed by the user
-      const announcements = await prisma.announcements.findMany({
-        where: {
-          isActive: true,
-          publishedAt: {
-            lte: now,
-          },
-          AND: [
-            {
-              OR: [
-                { expiresAt: null },
-                { expiresAt: { gt: now } },
-              ],
-            },
-            {
-              // Filter by target audience
-              OR: [
-                { targetAudience: 'ALL' },
-                ...(session.user.role === 'SUPER_ADMIN' || session.user.role === 'ADMIN' || session.user.role === 'EDITOR' || session.user.role === 'AUTHOR'
-                  ? [{ targetAudience: 'STAFF' }]
-                  : []),
-                ...((session.user as any).memberId ? [{ targetAudience: 'MEMBERS' }] : []),
-              ],
-            },
-          ],
-        },
-        orderBy: [
-          { isPinned: 'desc' },
-          { priority: 'desc' },
-          { publishedAt: 'desc' },
-        ],
-        include: {
-          announcement_views: {
-            where: {
-              userId: session.user.id,
-            },
-            select: {
-              viewedAt: true,
-              dismissedAt: true,
-            },
-          },
-        },
-      });
+      // Build target audience filter
+      const targetAudiences = ['ALL'];
+      if (session.user.role === 'SUPER_ADMIN' || session.user.role === 'ADMIN' ||
+          session.user.role === 'EDITOR' || session.user.role === 'AUTHOR') {
+        targetAudiences.push('STAFF');
+      }
+      if ((session.user as any).memberId) {
+        targetAudiences.push('MEMBERS');
+      }
+
+      // Get active announcements
+      const { data: announcements, error } = await supabase
+        .from('announcements')
+        .select(`
+          *,
+          announcement_views!left (
+            viewed_at,
+            dismissed_at
+          )
+        `)
+        .eq('is_active', true)
+        .lte('published_at', now)
+        .in('target_audience', targetAudiences)
+        .or(`expires_at.is.null,expires_at.gt.${now}`)
+        .order('is_pinned', { ascending: false })
+        .order('priority', { ascending: false })
+        .order('published_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Filter announcements by user's view status
+      const { data: views } = await supabase
+        .from('announcement_views')
+        .select('announcement_id, viewed_at, dismissed_at')
+        .eq('user_id', session.user.id);
+
+      const viewsMap = new Map(
+        (views || []).map(v => [v.announcement_id, v])
+      );
 
       // Filter out dismissed announcements (if they're dismissible)
-      const activeAnnouncements = announcements.filter(a => {
+      const activeAnnouncements = (announcements || []).filter(a => {
         if (!a.dismissible) return true; // Non-dismissible always show
-        const view = a.announcement_views[0];
-        return !view || !view.dismissedAt; // Show if not dismissed
+        const view = viewsMap.get(a.id);
+        return !view || !view.dismissed_at; // Show if not dismissed
       });
 
       return res.status(200).json({
@@ -78,16 +73,17 @@ export default async function handler(
           type: a.type,
           priority: a.priority,
           dismissible: a.dismissible,
-          isPinned: a.isPinned,
-          linkUrl: a.linkUrl,
-          linkText: a.linkText,
-          publishedAt: a.publishedAt,
-          expiresAt: a.expiresAt,
+          isPinned: a.is_pinned,
+          linkUrl: a.link_url,
+          linkText: a.link_text,
+          publishedAt: a.published_at,
+          expiresAt: a.expires_at,
         })),
       });
     }
 
     if (req.method === 'POST') {
+      const supabase = supabaseAdmin();
       // Mark announcement as viewed or dismissed
       const { announcementId, action } = req.body;
 
@@ -99,24 +95,48 @@ export default async function handler(
         return res.status(400).json({ error: 'action must be either "view" or "dismiss"' });
       }
 
-      // Upsert the announcement view record
-      const view = await prisma.announcement_views.upsert({
-        where: {
-          announcementId_userId: {
-            announcementId,
-            userId: session.user.id,
-          },
-        },
-        create: {
-          announcementId,
-          userId: session.user.id,
-          viewedAt: new Date(),
-          ...(action === 'dismiss' && { dismissedAt: new Date() }),
-        },
-        update: {
-          ...(action === 'dismiss' && { dismissedAt: new Date() }),
-        },
-      });
+      // Check if view record exists
+      const { data: existing } = await supabase
+        .from('announcement_views')
+        .select('*')
+        .eq('announcement_id', announcementId)
+        .eq('user_id', session.user.id)
+        .single();
+
+      let view;
+      if (existing) {
+        // Update existing view
+        const updates: any = {};
+        if (action === 'dismiss') {
+          updates.dismissed_at = new Date().toISOString();
+        }
+
+        const { data, error } = await supabase
+          .from('announcement_views')
+          .update(updates)
+          .eq('announcement_id', announcementId)
+          .eq('user_id', session.user.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        view = data;
+      } else {
+        // Create new view
+        const { data, error } = await supabase
+          .from('announcement_views')
+          .insert({
+            announcement_id: announcementId,
+            user_id: session.user.id,
+            viewed_at: new Date().toISOString(),
+            ...(action === 'dismiss' && { dismissed_at: new Date().toISOString() }),
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        view = data;
+      }
 
       return res.status(200).json({
         message: `Announcement ${action}ed successfully`,
@@ -129,7 +149,5 @@ export default async function handler(
   } catch (error) {
     console.error('Active announcements API error:', error);
     return res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    await prisma.$disconnect();
   }
 }

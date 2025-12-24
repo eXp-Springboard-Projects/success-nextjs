@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -24,6 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    const supabase = supabaseAdmin();
     const { contactId, dealId } = req.body;
 
     if (!contactId) {
@@ -31,37 +30,53 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Check if already enrolled
-    const existing = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM sequence_enrollments
-      WHERE sequence_id = ${id} AND contact_id = ${contactId} AND status = 'active'
-    `;
+    const { data: existing } = await supabase
+      .from('sequence_enrollments')
+      .select('*')
+      .eq('sequence_id', id)
+      .eq('contact_id', contactId)
+      .eq('status', 'active')
+      .single();
 
-    if (existing.length > 0) {
+    if (existing) {
       return res.status(400).json({ error: 'Contact already enrolled in this sequence' });
     }
 
     const enrollmentId = nanoid();
 
-    await prisma.$executeRaw`
-      INSERT INTO sequence_enrollments (
-        id, sequence_id, contact_id, deal_id, current_step, status
-      ) VALUES (
-        ${enrollmentId}, ${id}, ${contactId}, ${dealId || null}, 0, 'active'
-      )
-    `;
+    const { data: enrollment, error: enrollError } = await supabase
+      .from('sequence_enrollments')
+      .insert({
+        id: enrollmentId,
+        sequence_id: id,
+        contact_id: contactId,
+        deal_id: dealId || null,
+        current_step: 0,
+        status: 'active',
+      })
+      .select()
+      .single();
+
+    if (enrollError) {
+      throw enrollError;
+    }
 
     // Update sequence total enrolled
-    await prisma.$executeRaw`
-      UPDATE sequences
-      SET total_enrolled = total_enrolled + 1, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ${id}
-    `;
+    const { data: sequence } = await supabase
+      .from('sequences')
+      .select('total_enrolled')
+      .eq('id', id)
+      .single();
 
-    const enrollment = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM sequence_enrollments WHERE id = ${enrollmentId}
-    `;
+    await supabase
+      .from('sequences')
+      .update({
+        total_enrolled: (sequence?.total_enrolled || 0) + 1,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
 
-    return res.status(201).json(enrollment[0]);
+    return res.status(201).json(enrollment);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to enroll contact' });
   }

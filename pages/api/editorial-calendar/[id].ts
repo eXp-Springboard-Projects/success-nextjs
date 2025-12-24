@@ -1,9 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -18,21 +16,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Invalid ID' });
   }
 
+  const supabase = supabaseAdmin();
+
   if (req.method === 'GET') {
     try {
-      const item = await prisma.editorial_calendar.findUnique({
-        where: { id },
-        include: {
-          users: {
-            select: {
-              name: true,
-              email: true,
-            },
-          },
-        },
-      });
+      const { data: item, error } = await supabase
+        .from('editorial_calendar')
+        .select(`
+          *,
+          users:assignedToId (
+            name,
+            email
+          )
+        `)
+        .eq('id', id)
+        .single();
 
-      if (!item) {
+      if (error || !item) {
         return res.status(404).json({ error: 'Item not found' });
       }
 
@@ -62,25 +62,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (contentType !== undefined) updateData.contentType = contentType;
       if (status !== undefined) updateData.status = status;
       if (priority !== undefined) updateData.priority = priority;
-      if (scheduledDate !== undefined) updateData.scheduledDate = scheduledDate ? new Date(scheduledDate) : null;
-      if (publishDate !== undefined) updateData.publishDate = publishDate ? new Date(publishDate) : null;
-      if (deadline !== undefined) updateData.deadline = deadline ? new Date(deadline) : null;
+      if (scheduledDate !== undefined) updateData.scheduledDate = scheduledDate ? new Date(scheduledDate).toISOString() : null;
+      if (publishDate !== undefined) updateData.publishDate = publishDate ? new Date(publishDate).toISOString() : null;
+      if (deadline !== undefined) updateData.deadline = deadline ? new Date(deadline).toISOString() : null;
       if (notes !== undefined) updateData.notes = notes;
       if (assignedToId !== undefined) updateData.assignedToId = assignedToId;
       if (wordpressId !== undefined) updateData.wordpressId = wordpressId;
 
-      const item = await prisma.editorial_calendar.update({
-        where: { id },
-        data: updateData,
-        include: {
-          users: {
-            select: {
-              name: true,
-              email: true,
-            },
-          },
-        },
-      });
+      const { data: item, error } = await supabase
+        .from('editorial_calendar')
+        .update(updateData)
+        .eq('id', id)
+        .select(`
+          *,
+          users:assignedToId (
+            name,
+            email
+          )
+        `)
+        .single();
+
+      if (error || !item) {
+        return res.status(500).json({ error: 'Failed to update editorial item' });
+      }
 
       return res.status(200).json(item);
     } catch (error) {
@@ -90,9 +94,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'DELETE') {
     try {
-      await prisma.editorial_calendar.delete({
-        where: { id },
-      });
+      const { error } = await supabase
+        .from('editorial_calendar')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        return res.status(500).json({ error: 'Failed to delete editorial item' });
+      }
 
       return res.status(200).json({ success: true });
     } catch (error) {

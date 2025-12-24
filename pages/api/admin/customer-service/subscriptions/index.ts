@@ -1,10 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getSession } from 'next-auth/react';
 import { Department } from '@/lib/types';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '@/lib/supabase';
 import { hasDepartmentAccess } from '@/lib/departmentAuth';
-
-const prisma = new PrismaClient();
 
 export default async function handler(
   req: NextApiRequest,
@@ -13,6 +11,8 @@ export default async function handler(
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  const supabase = supabaseAdmin();
 
   try {
     const session = await getSession({ req }) as any;
@@ -35,57 +35,61 @@ export default async function handler(
 
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(limit as string, 10);
-    const skip = (pageNum - 1) * limitNum;
+    const offset = (pageNum - 1) * limitNum;
 
-    // Build where clause
-    const where: any = {};
+    // Build the query
+    let query = supabase
+      .from('subscriptions')
+      .select(`
+        *,
+        member:member_id (
+          first_name,
+          last_name,
+          email
+        )
+      `, { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limitNum - 1);
 
-    if (search) {
-      where.OR = [
-        { users: { email: { contains: search as string, mode: 'insensitive' } } },
-        { users: { name: { contains: search as string, mode: 'insensitive' } } },
-        { stripeSubscriptionId: { contains: search as string } },
-      ];
-    }
-
+    // Apply filters
     if (status && status !== 'all') {
-      where.status = status;
+      query = query.eq('status', status);
     }
 
-    // Fetch subscriptions with member details
-    const [subscriptions, total] = await Promise.all([
-      prisma.subscriptions.findMany({
-        where,
-        include: {
-          member: {
-            select: {
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: 'desc'
-        },
-        take: limitNum,
-        skip,
-      }),
-      prisma.subscriptions.count({ where })
-    ]);
+    // Execute the query
+    const { data: subscriptions, error, count } = await query;
+
+    if (error) {
+      console.error('Error fetching subscriptions:', error);
+      return res.status(500).json({ error: 'Failed to fetch subscriptions' });
+    }
+
+    // Apply search filter in memory (since Supabase doesn't support OR across relations easily)
+    let filteredSubscriptions = subscriptions || [];
+    if (search) {
+      const searchLower = (search as string).toLowerCase();
+      filteredSubscriptions = filteredSubscriptions.filter(sub =>
+        sub.member?.email?.toLowerCase().includes(searchLower) ||
+        sub.member?.first_name?.toLowerCase().includes(searchLower) ||
+        sub.member?.last_name?.toLowerCase().includes(searchLower) ||
+        sub.stripe_subscription_id?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    const total = search ? filteredSubscriptions.length : (count || 0);
 
     const response = {
-      subscriptions: subscriptions.map(sub => ({
+      subscriptions: filteredSubscriptions.map(sub => ({
         id: sub.id,
-        userId: sub.memberId,
-        userName: sub.member ? `${sub.member.firstName} ${sub.member.lastName}` : 'Unknown',
+        userId: sub.member_id,
+        userName: sub.member ? `${sub.member.first_name} ${sub.member.last_name}` : 'Unknown',
         userEmail: sub.member?.email || 'Unknown',
         planName: sub.tier || 'Unknown Plan',
         status: sub.status || 'unknown',
-        nextBillingDate: sub.currentPeriodEnd?.toISOString(),
+        nextBillingDate: sub.current_period_end,
         amount: 0, // TODO: Add amount field to subscriptions model
-        interval: sub.billingCycle || 'month',
-        stripeSubscriptionId: sub.stripeSubscriptionId,
+        interval: sub.billing_cycle || 'month',
+        stripeSubscriptionId: sub.stripe_subscription_id,
       })),
       pagination: {
         page: pageNum,
@@ -98,8 +102,7 @@ export default async function handler(
     return res.status(200).json(response);
 
   } catch (error) {
+    console.error('Error in subscriptions handler:', error);
     return res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    await prisma.$disconnect();
   }
 }

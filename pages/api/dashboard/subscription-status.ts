@@ -1,11 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const supabase = supabaseAdmin();
+
   try {
     const session = await getServerSession(req, res, authOptions);
 
@@ -18,30 +18,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Get user with member and subscription data
-    const user = await prisma.users.findUnique({
-      where: { email: session.user.email! },
-      include: {
-        member: {
-          include: {
-            subscriptions: {
-              where: {
-                status: 'ACTIVE',
-              },
-              orderBy: {
-                createdAt: 'desc',
-              },
-              take: 1,
-            },
-          },
-        },
-      },
-    });
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select(`
+        id,
+        email,
+        member:members (
+          membershipTier,
+          subscriptions (
+            tier,
+            status,
+            currentPeriodEnd,
+            currentPeriodStart,
+            cancelAtPeriodEnd,
+            provider,
+            billingCycle,
+            stripeCustomerId,
+            createdAt
+          )
+        )
+      `)
+      .eq('email', session.user.email!)
+      .single();
 
-    if (!user) {
+    if (userError || !user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const activeSubscription = user.member?.subscriptions?.[0];
+    // Get active subscriptions and sort by createdAt
+    const activeSubscriptions = user.member?.subscriptions
+      ?.filter((s: any) => s.status === 'ACTIVE')
+      ?.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) || [];
+
+    const activeSubscription = activeSubscriptions[0];
 
     if (!activeSubscription) {
       return res.status(200).json({
@@ -87,8 +96,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       paymentMethod,
     });
   } catch (error) {
+    console.error('Dashboard subscription status error:', error);
     return res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    await prisma.$disconnect();
   }
 }

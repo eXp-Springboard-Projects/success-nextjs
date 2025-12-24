@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -24,40 +22,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const original = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM email_templates WHERE id = ${id}
-    `;
+    const supabase = supabaseAdmin();
 
-    if (original.length === 0) {
+    const { data: original, error: fetchError } = await supabase
+      .from('email_templates')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !original) {
       return res.status(404).json({ error: 'Template not found' });
     }
 
-    const template = original[0];
     const newId = nanoid();
 
-    await prisma.$executeRaw`
-      INSERT INTO email_templates (
-        id, name, subject, preview_text, html_content, json_content,
-        category, variables, is_active, created_by
-      ) VALUES (
-        ${newId},
-        ${template.name + ' (Copy)'},
-        ${template.subject},
-        ${template.preview_text},
-        ${template.html_content},
-        ${template.json_content},
-        ${template.category},
-        ${template.variables},
-        false,
-        ${session.user.id}
-      )
-    `;
+    const { data: newTemplate, error: insertError } = await supabase
+      .from('email_templates')
+      .insert({
+        id: newId,
+        name: original.name + ' (Copy)',
+        subject: original.subject,
+        preview_text: original.preview_text,
+        html_content: original.html_content,
+        json_content: original.json_content,
+        category: original.category,
+        variables: original.variables,
+        is_active: false,
+        created_by: session.user.id,
+      })
+      .select()
+      .single();
 
-    const newTemplate = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM email_templates WHERE id = ${newId}
-    `;
+    if (insertError) {
+      return res.status(500).json({ error: 'Failed to duplicate template' });
+    }
 
-    return res.status(201).json(newTemplate[0]);
+    return res.status(201).json(newTemplate);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to duplicate template' });
   }

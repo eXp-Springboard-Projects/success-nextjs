@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -31,15 +29,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getSequence(id: string, res: NextApiResponse) {
   try {
-    const sequence = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM sequences WHERE id = ${id}
-    `;
+    const supabase = supabaseAdmin();
 
-    if (sequence.length === 0) {
+    const { data: sequence, error } = await supabase
+      .from('sequences')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !sequence) {
       return res.status(404).json({ error: 'Sequence not found' });
     }
 
-    return res.status(200).json(sequence[0]);
+    return res.status(200).json(sequence);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to fetch sequence' });
   }
@@ -47,61 +49,34 @@ async function getSequence(id: string, res: NextApiResponse) {
 
 async function updateSequence(id: string, req: NextApiRequest, res: NextApiResponse) {
   try {
+    const supabase = supabaseAdmin();
     const { name, description, steps, status, autoUnenrollOnReply } = req.body;
 
-    const updates: string[] = [];
-    const params: any[] = [];
-    let paramIndex = 1;
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (steps !== undefined) updateData.steps = steps;
+    if (status !== undefined) updateData.status = status;
+    if (autoUnenrollOnReply !== undefined) updateData.auto_unenroll_on_reply = autoUnenrollOnReply;
 
-    if (name !== undefined) {
-      updates.push(`name = $${paramIndex}`);
-      params.push(name);
-      paramIndex++;
-    }
-
-    if (description !== undefined) {
-      updates.push(`description = $${paramIndex}`);
-      params.push(description);
-      paramIndex++;
-    }
-
-    if (steps !== undefined) {
-      updates.push(`steps = $${paramIndex}::jsonb`);
-      params.push(JSON.stringify(steps));
-      paramIndex++;
-    }
-
-    if (status !== undefined) {
-      updates.push(`status = $${paramIndex}`);
-      params.push(status);
-      paramIndex++;
-    }
-
-    if (autoUnenrollOnReply !== undefined) {
-      updates.push(`auto_unenroll_on_reply = $${paramIndex}`);
-      params.push(autoUnenrollOnReply);
-      paramIndex++;
-    }
-
-    if (updates.length === 0) {
+    if (Object.keys(updateData).length === 0) {
       return res.status(400).json({ error: 'No fields to update' });
     }
 
-    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    updateData.updated_at = new Date().toISOString();
 
-    params.push(id);
+    const { data: sequence, error } = await supabase
+      .from('sequences')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
 
-    await prisma.$queryRawUnsafe(`
-      UPDATE sequences
-      SET ${updates.join(', ')}
-      WHERE id = $${paramIndex}
-    `, ...params);
+    if (error) {
+      return res.status(500).json({ error: 'Failed to update sequence' });
+    }
 
-    const sequence = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM sequences WHERE id = ${id}
-    `;
-
-    return res.status(200).json(sequence[0]);
+    return res.status(200).json(sequence);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to update sequence' });
   }
@@ -109,7 +84,17 @@ async function updateSequence(id: string, req: NextApiRequest, res: NextApiRespo
 
 async function deleteSequence(id: string, res: NextApiResponse) {
   try {
-    await prisma.$executeRaw`DELETE FROM sequences WHERE id = ${id}`;
+    const supabase = supabaseAdmin();
+
+    const { error } = await supabase
+      .from('sequences')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to delete sequence' });
+    }
+
     return res.status(200).json({ message: 'Sequence deleted successfully' });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to delete sequence' });

@@ -1,4 +1,4 @@
-import { prisma } from '../../../lib/prisma';
+import { createClient } from '../../../lib/supabase-server';
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -14,6 +14,8 @@ export default async function handler(req, res) {
 }
 
 async function getVideos(req, res) {
+  const supabase = createClient(req, res);
+
   try {
     const {
       per_page = 10,
@@ -22,27 +24,31 @@ async function getVideos(req, res) {
       status,
     } = req.query;
 
-    const skip = (parseInt(page) - 1) * parseInt(per_page);
-    const take = parseInt(per_page);
+    const offset = (parseInt(page) - 1) * parseInt(per_page);
+    const limit = parseInt(per_page);
 
-    const where = status && status !== 'all' ? { status: status.toUpperCase() } : { status: 'PUBLISHED' };
+    const statusFilter = status && status !== 'all' ? status.toUpperCase() : 'PUBLISHED';
 
-    const videos = await prisma.videos.findMany({
-      where,
-      skip,
-      take,
-      orderBy: { publishedAt: 'desc' },
-    });
+    let query = supabase
+      .from('videos')
+      .select('*', { count: 'exact' })
+      .eq('status', statusFilter)
+      .order('published_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-    const total = await prisma.videos.count({ where });
+    const { data: videos, error, count } = await query;
 
-    res.setHeader('X-WP-Total', total);
-    res.setHeader('X-WP-TotalPages', Math.ceil(total / take));
+    if (error) {
+      return res.status(500).json({ message: 'Failed to fetch videos' });
+    }
+
+    res.setHeader('X-WP-Total', count || 0);
+    res.setHeader('X-WP-TotalPages', Math.ceil((count || 0) / limit));
 
     // Transform to WordPress-like format
     const transformedVideos = videos.map(video => ({
       id: video.id,
-      date: video.publishedAt,
+      date: video.published_at,
       slug: video.slug,
       title: {
         rendered: video.title,
@@ -50,7 +56,7 @@ async function getVideos(req, res) {
       content: {
         rendered: video.description || '',
       },
-      video_url: video.videoUrl,
+      video_url: video.video_url,
       _embedded: _embed ? {
         'wp:featuredmedia': video.thumbnail ? [{
           source_url: video.thumbnail,
@@ -65,6 +71,8 @@ async function getVideos(req, res) {
 }
 
 async function createVideo(req, res) {
+  const supabase = createClient(req, res);
+
   try {
     const {
       title,
@@ -76,18 +84,26 @@ async function createVideo(req, res) {
       status = 'DRAFT',
     } = req.body;
 
-    const video = await prisma.videos.create({
-      data: {
-        title,
-        slug,
-        description,
-        videoUrl,
-        thumbnail,
-        duration,
-        status: status.toUpperCase(),
-        publishedAt: status.toUpperCase() === 'PUBLISHED' ? new Date() : null,
-      },
-    });
+    const videoData = {
+      title,
+      slug,
+      description,
+      video_url: videoUrl,
+      thumbnail,
+      duration,
+      status: status.toUpperCase(),
+      published_at: status.toUpperCase() === 'PUBLISHED' ? new Date().toISOString() : null,
+    };
+
+    const { data: video, error } = await supabase
+      .from('videos')
+      .insert([videoData])
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(500).json({ message: 'Failed to create video' });
+    }
 
     return res.status(201).json(video);
   } catch (error) {

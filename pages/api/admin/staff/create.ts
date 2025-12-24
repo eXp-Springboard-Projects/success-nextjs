@@ -1,11 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -56,12 +54,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Invalid department' });
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.$queryRaw<Array<{ email: string }>>`
-      SELECT email FROM users WHERE email = ${email.toLowerCase()}
-    `;
+    const supabase = supabaseAdmin();
 
-    if (existingUser.length > 0) {
+    // Check if user already exists
+    const { data: existingUser, error: checkError } = await supabase
+      .from('users')
+      .select('email')
+      .eq('email', email.toLowerCase())
+      .single();
+
+    if (existingUser) {
       return res.status(400).json({ error: 'User with this email already exists' });
     }
 
@@ -70,57 +72,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Create user
     const userId = nanoid();
-    await prisma.$executeRaw`
-      INSERT INTO users (
-        id,
-        email,
-        password,
-        first_name,
-        last_name,
-        role,
-        primary_department,
-        email_verified,
-        created_at,
-        updated_at
-      ) VALUES (
-        ${userId},
-        ${email.toLowerCase()},
-        ${hashedPassword},
-        ${firstName},
-        ${lastName},
-        ${role}::"UserRole",
-        ${primaryDepartment}::"Department",
-        true,
-        CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-      )
-    `;
+    const now = new Date().toISOString();
+
+    const { error: createError } = await supabase
+      .from('users')
+      .insert({
+        id: userId,
+        email: email.toLowerCase(),
+        password: hashedPassword,
+        first_name: firstName,
+        last_name: lastName,
+        role: role,
+        primary_department: primaryDepartment,
+        email_verified: true,
+        created_at: now,
+        updated_at: now
+      });
+
+    if (createError) {
+      throw createError;
+    }
 
     // Log the activity
-    await prisma.$executeRaw`
-      INSERT INTO audit_logs (
-        id,
-        user_id,
-        action,
-        resource_type,
-        resource_id,
-        details,
-        created_at
-      ) VALUES (
-        gen_random_uuid(),
-        ${session.user.id},
-        'CREATE',
-        'USER',
-        ${userId},
-        jsonb_build_object(
-          'created_email', ${email.toLowerCase()},
-          'role', ${role},
-          'department', ${primaryDepartment},
-          'created_by', ${session.user.email}
-        ),
-        CURRENT_TIMESTAMP
-      )
-    `;
+    const { error: logError } = await supabase
+      .from('audit_logs')
+      .insert({
+        user_id: session.user.id,
+        action: 'CREATE',
+        resource_type: 'USER',
+        resource_id: userId,
+        details: {
+          created_email: email.toLowerCase(),
+          role: role,
+          department: primaryDepartment,
+          created_by: session.user.email
+        },
+        created_at: now
+      });
 
     return res.status(200).json({
       message: 'Staff member created successfully',

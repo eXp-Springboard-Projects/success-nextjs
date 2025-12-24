@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -23,18 +21,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    await prisma.$executeRaw`
-      UPDATE email_campaigns
-      SET status = 'paused',
-          updated_at = CURRENT_TIMESTAMP
-      WHERE id = ${id}
-    `;
+    const supabase = supabaseAdmin();
 
-    const campaign = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM email_campaigns WHERE id = ${id}
-    `;
+    const { data: campaign, error } = await supabase
+      .from('email_campaigns')
+      .update({
+        status: 'paused',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-    return res.status(200).json(campaign[0]);
+    if (error) {
+      return res.status(500).json({ error: 'Failed to pause campaign' });
+    }
+
+    return res.status(200).json(campaign);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to pause campaign' });
   }

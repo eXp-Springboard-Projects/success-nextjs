@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -31,22 +29,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getPromotion(id: string, res: NextApiResponse) {
   try {
-    const promotion = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM promotions WHERE id = ${id}
-    `;
+    const supabase = supabaseAdmin();
 
-    if (promotion.length === 0) {
+    const { data: promotion, error } = await supabase
+      .from('promotions')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !promotion) {
       return res.status(404).json({ error: 'Promotion not found' });
     }
 
-    return res.status(200).json(promotion[0]);
+    return res.status(200).json(promotion);
   } catch (error) {
+    console.error('Failed to fetch promotion:', error);
     return res.status(500).json({ error: 'Failed to fetch promotion' });
   }
 }
 
 async function updatePromotion(id: string, req: NextApiRequest, res: NextApiResponse) {
   try {
+    const supabase = supabaseAdmin();
     const {
       code,
       discountType,
@@ -59,28 +63,38 @@ async function updatePromotion(id: string, req: NextApiRequest, res: NextApiResp
       description,
     } = req.body;
 
-    await prisma.$executeRaw`
-      UPDATE promotions
-      SET
-        code = COALESCE(${code}, code),
-        discount_type = COALESCE(${discountType}, discount_type),
-        discount_amount = COALESCE(${discountAmount}, discount_amount),
-        min_purchase_amount = ${minPurchaseAmount},
-        max_discount_amount = ${maxDiscountAmount},
-        usage_limit = ${usageLimit},
-        expires_at = ${expiresAt},
-        status = COALESCE(${status}, status),
-        description = ${description},
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = ${id}
-    `;
+    const updates: any = {
+      updated_at: new Date().toISOString(),
+    };
 
-    const promotion = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM promotions WHERE id = ${id}
-    `;
+    if (code !== undefined) updates.code = code;
+    if (discountType !== undefined) updates.discount_type = discountType;
+    if (discountAmount !== undefined) updates.discount_amount = discountAmount;
+    if (minPurchaseAmount !== undefined) updates.min_purchase_amount = minPurchaseAmount;
+    if (maxDiscountAmount !== undefined) updates.max_discount_amount = maxDiscountAmount;
+    if (usageLimit !== undefined) updates.usage_limit = usageLimit;
+    if (expiresAt !== undefined) updates.expires_at = expiresAt;
+    if (status !== undefined) updates.status = status;
+    if (description !== undefined) updates.description = description;
 
-    return res.status(200).json(promotion[0]);
+    const { data: promotion, error } = await supabase
+      .from('promotions')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Failed to update promotion:', error);
+      if (error.code === '23505') {
+        return res.status(400).json({ error: 'Promotion code already exists' });
+      }
+      return res.status(500).json({ error: 'Failed to update promotion' });
+    }
+
+    return res.status(200).json(promotion);
   } catch (error: any) {
+    console.error('Failed to update promotion:', error);
     if (error?.code === '23505') {
       return res.status(400).json({ error: 'Promotion code already exists' });
     }
@@ -90,12 +104,21 @@ async function updatePromotion(id: string, req: NextApiRequest, res: NextApiResp
 
 async function deletePromotion(id: string, res: NextApiResponse) {
   try {
-    await prisma.$executeRaw`
-      DELETE FROM promotions WHERE id = ${id}
-    `;
+    const supabase = supabaseAdmin();
+
+    const { error } = await supabase
+      .from('promotions')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Failed to delete promotion:', error);
+      return res.status(500).json({ error: 'Failed to delete promotion' });
+    }
 
     return res.status(200).json({ success: true });
   } catch (error) {
+    console.error('Failed to delete promotion:', error);
     return res.status(500).json({ error: 'Failed to delete promotion' });
   }
 }

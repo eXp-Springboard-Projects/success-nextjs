@@ -1,10 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../lib/supabase';
 import { randomUUID } from 'crypto';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -18,6 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    const supabase = supabaseAdmin();
     const { name, email } = req.body;
 
     if (!name || !email) {
@@ -29,37 +28,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Check if email is already taken by another user
-    const existingUser = await prisma.users.findFirst({
-      where: {
-        email: email.toLowerCase(),
-        NOT: { id: session.user.id },
-      },
-    });
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .neq('id', session.user.id)
+      .limit(1);
 
-    if (existingUser) {
+    if (existingUser && existingUser.length > 0) {
       return res.status(400).json({ error: 'Email is already in use' });
     }
 
     // Update user
-    const updatedUser = await prisma.users.update({
-      where: { id: session.user.id },
-      data: {
+    const { data: updatedUser, error: updateError } = await supabase
+      .from('users')
+      .update({
         name,
         email: email.toLowerCase(),
-      },
-    });
+      })
+      .eq('id', session.user.id)
+      .select('id, name, email')
+      .single();
+
+    if (updateError) throw updateError;
 
     // Log activity
-    await prisma.activity_logs.create({
-      data: {
+    await supabase
+      .from('activity_logs')
+      .insert({
         id: randomUUID(),
-        userId: session.user.id,
+        user_id: session.user.id,
         action: 'UPDATE',
         entity: 'user',
-        entityId: session.user.id,
+        entity_id: session.user.id,
         details: JSON.stringify({ fields: ['name', 'email'] }),
-      },
-    });
+      });
 
     return res.status(200).json({
       success: true,

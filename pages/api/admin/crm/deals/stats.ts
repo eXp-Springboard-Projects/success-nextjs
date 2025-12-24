@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -17,53 +15,69 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const stats = await prisma.$queryRaw<Array<any>>`
-      SELECT
-        s.id as stage_id,
-        s.name as stage_name,
-        s.color as stage_color,
-        s.order as stage_order,
-        COUNT(d.id) as deal_count,
-        COALESCE(SUM(d.value), 0) as total_value
-      FROM deal_stages s
-      LEFT JOIN deals d ON s.id = d.stage_id AND d.status = 'open'
-      GROUP BY s.id, s.name, s.color, s.order
-      ORDER BY s.order
-    `;
+    const supabase = supabaseAdmin();
 
-    const totalStats = await prisma.$queryRaw<Array<any>>`
-      SELECT
-        COUNT(*) FILTER (WHERE status = 'open') as open_deals,
-        COUNT(*) FILTER (WHERE status = 'won') as won_deals,
-        COUNT(*) FILTER (WHERE status = 'lost') as lost_deals,
-        COALESCE(SUM(value) FILTER (WHERE status = 'open'), 0) as open_value,
-        COALESCE(SUM(value) FILTER (WHERE status = 'won'), 0) as won_value,
-        COALESCE(SUM(value) FILTER (WHERE status = 'lost'), 0) as lost_value
-      FROM deals
-    `;
+    // Get stage statistics
+    const { data: stages, error: stagesError } = await supabase
+      .from('deal_stages')
+      .select('id, name, color, order');
 
-    // Convert BigInt to Number for JSON serialization
-    const serializedStats = stats.map(s => ({
-      ...s,
-      deal_count: Number(s.deal_count),
-      total_value: Number(s.total_value),
-    }));
+    if (stagesError) {
+      console.error('Failed to fetch deal stages:', stagesError);
+      return res.status(500).json({ error: 'Failed to fetch deal stats' });
+    }
 
-    const serializedTotals = {
-      ...totalStats[0],
-      open_deals: Number(totalStats[0].open_deals),
-      won_deals: Number(totalStats[0].won_deals),
-      lost_deals: Number(totalStats[0].lost_deals),
-      open_value: Number(totalStats[0].open_value),
-      won_value: Number(totalStats[0].won_value),
-      lost_value: Number(totalStats[0].lost_value),
+    // Get deals for each stage
+    const stageStats = await Promise.all(
+      stages.map(async (stage) => {
+        const { data: deals, error } = await supabase
+          .from('deals')
+          .select('id, value')
+          .eq('stage_id', stage.id)
+          .eq('status', 'open');
+
+        const deal_count = deals?.length || 0;
+        const total_value = deals?.reduce((sum, deal) => sum + (deal.value || 0), 0) || 0;
+
+        return {
+          stage_id: stage.id,
+          stage_name: stage.name,
+          stage_color: stage.color,
+          stage_order: stage.order,
+          deal_count,
+          total_value,
+        };
+      })
+    );
+
+    // Sort by stage order
+    stageStats.sort((a, b) => a.stage_order - b.stage_order);
+
+    // Get total statistics
+    const { data: allDeals, error: dealsError } = await supabase
+      .from('deals')
+      .select('status, value');
+
+    if (dealsError) {
+      console.error('Failed to fetch deals:', dealsError);
+      return res.status(500).json({ error: 'Failed to fetch deal stats' });
+    }
+
+    const totals = {
+      open_deals: allDeals?.filter(d => d.status === 'open').length || 0,
+      won_deals: allDeals?.filter(d => d.status === 'won').length || 0,
+      lost_deals: allDeals?.filter(d => d.status === 'lost').length || 0,
+      open_value: allDeals?.filter(d => d.status === 'open').reduce((sum, d) => sum + (d.value || 0), 0) || 0,
+      won_value: allDeals?.filter(d => d.status === 'won').reduce((sum, d) => sum + (d.value || 0), 0) || 0,
+      lost_value: allDeals?.filter(d => d.status === 'lost').reduce((sum, d) => sum + (d.value || 0), 0) || 0,
     };
 
     return res.status(200).json({
-      stages: serializedStats,
-      totals: serializedTotals,
+      stages: stageStats,
+      totals,
     });
   } catch (error) {
+    console.error('Failed to fetch deal stats:', error);
     return res.status(500).json({ error: 'Failed to fetch deal stats' });
   }
 }

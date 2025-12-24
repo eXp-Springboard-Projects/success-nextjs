@@ -1,10 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '@/lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -15,16 +13,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'GET') {
     try {
+      const supabase = supabaseAdmin();
+
       // Get SEO settings (create default if doesn't exist)
-      let seoSettings = await prisma.seo_settings.findFirst();
+      const { data: existingSettings } = await supabase
+        .from('seo_settings')
+        .select('*')
+        .limit(1);
+
+      let seoSettings = existingSettings?.[0];
 
       if (!seoSettings) {
-        seoSettings = await prisma.seo_settings.create({
-          data: {
+        const { data: newSettings } = await supabase
+          .from('seo_settings')
+          .insert({
             id: randomUUID(),
-            updatedAt: new Date(),
-          },
-        });
+          })
+          .select()
+          .single();
+        seoSettings = newSettings;
       }
 
       return res.status(200).json(seoSettings);
@@ -35,6 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'PUT') {
     try {
+      const supabase = supabaseAdmin();
       const {
         siteTitle,
         siteDescription,
@@ -59,13 +67,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       } = req.body;
 
       // Get or create SEO settings
-      let seoSettings = await prisma.seo_settings.findFirst();
+      const { data: existingSettings } = await supabase
+        .from('seo_settings')
+        .select('*')
+        .limit(1);
+
+      let seoSettings = existingSettings?.[0];
 
       if (seoSettings) {
         // Update existing
-        seoSettings = await prisma.seo_settings.update({
-          where: { id: seoSettings.id },
-          data: {
+        const { data: updatedSettings } = await supabase
+          .from('seo_settings')
+          .update({
             siteTitle,
             siteDescription,
             siteKeywords,
@@ -86,12 +99,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             footerScripts,
             faviconUrl,
             appleTouchIconUrl,
-          },
-        });
+          })
+          .eq('id', seoSettings.id)
+          .select()
+          .single();
+        seoSettings = updatedSettings;
       } else {
         // Create new
-        seoSettings = await prisma.seo_settings.create({
-          data: {
+        const { data: newSettings } = await supabase
+          .from('seo_settings')
+          .insert({
             id: randomUUID(),
             siteTitle,
             siteDescription,
@@ -113,9 +130,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             footerScripts,
             faviconUrl,
             appleTouchIconUrl,
-            updatedAt: new Date(),
-          },
-        });
+          })
+          .select()
+          .single();
+        seoSettings = newSettings;
       }
 
       return res.status(200).json({ success: true, data: seoSettings });

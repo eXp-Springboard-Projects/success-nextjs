@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -24,6 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getPromotions(req: NextApiRequest, res: NextApiResponse) {
   try {
+    const supabase = supabaseAdmin();
     const query = req.query;
     const status = (query.status as string) || '';
     const page = (query.page as string) || '1';
@@ -31,51 +30,38 @@ async function getPromotions(req: NextApiRequest, res: NextApiResponse) {
 
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
-    let whereClause = '';
-    const params: any[] = [];
-    let paramIndex = 1;
+    let promotionsQuery = supabase
+      .from('promotions')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + parseInt(limit) - 1);
 
     if (status) {
-      whereClause += ` AND status = $${paramIndex}`;
-      params.push(status);
-      paramIndex++;
+      promotionsQuery = promotionsQuery.eq('status', status);
     }
 
-    const promotions = await prisma.$queryRawUnsafe<Array<any>>(
-      `
-      SELECT *
-      FROM promotions
-      WHERE 1=1 ${whereClause}
-      ORDER BY created_at DESC
-      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
-    `,
-      ...params,
-      parseInt(limit),
-      offset
-    );
+    const { data: promotions, error, count } = await promotionsQuery;
 
-    const totalCount = await prisma.$queryRawUnsafe<Array<{ count: number }>>(
-      `
-      SELECT COUNT(*)::int as count
-      FROM promotions
-      WHERE 1=1 ${whereClause}
-    `,
-      ...params
-    );
+    if (error) {
+      console.error('Failed to fetch promotions:', error);
+      return res.status(500).json({ error: 'Failed to fetch promotions' });
+    }
 
     return res.status(200).json({
       promotions,
-      total: totalCount[0].count,
+      total: count || 0,
       page: parseInt(page),
       limit: parseInt(limit),
     });
   } catch (error) {
+    console.error('Failed to fetch promotions:', error);
     return res.status(500).json({ error: 'Failed to fetch promotions' });
   }
 }
 
 async function createPromotion(req: NextApiRequest, res: NextApiResponse, session: any) {
   try {
+    const supabase = supabaseAdmin();
     const {
       code,
       discountType,
@@ -93,31 +79,34 @@ async function createPromotion(req: NextApiRequest, res: NextApiResponse, sessio
 
     const promotionId = nanoid();
 
-    await prisma.$executeRaw`
-      INSERT INTO promotions (
-        id, code, discount_type, discount_amount,
-        min_purchase_amount, max_discount_amount, usage_limit,
-        expires_at, description, created_by
-      ) VALUES (
-        ${promotionId},
-        ${code},
-        ${discountType},
-        ${discountAmount},
-        ${minPurchaseAmount || null},
-        ${maxDiscountAmount || null},
-        ${usageLimit || null},
-        ${expiresAt || null},
-        ${description || null},
-        ${session.user.email}
-      )
-    `;
+    const { data: promotion, error } = await supabase
+      .from('promotions')
+      .insert({
+        id: promotionId,
+        code,
+        discount_type: discountType,
+        discount_amount: discountAmount,
+        min_purchase_amount: minPurchaseAmount || null,
+        max_discount_amount: maxDiscountAmount || null,
+        usage_limit: usageLimit || null,
+        expires_at: expiresAt || null,
+        description: description || null,
+        created_by: session.user.email,
+      })
+      .select()
+      .single();
 
-    const promotion = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM promotions WHERE id = ${promotionId}
-    `;
+    if (error) {
+      console.error('Failed to create promotion:', error);
+      if (error.code === '23505') {
+        return res.status(400).json({ error: 'Promotion code already exists' });
+      }
+      return res.status(500).json({ error: 'Failed to create promotion' });
+    }
 
-    return res.status(201).json(promotion[0]);
+    return res.status(201).json(promotion);
   } catch (error: any) {
+    console.error('Failed to create promotion:', error);
     if (error?.code === '23505') {
       return res.status(400).json({ error: 'Promotion code already exists' });
     }

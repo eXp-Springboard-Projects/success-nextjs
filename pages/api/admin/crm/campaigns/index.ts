@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -24,33 +22,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getCampaigns(req: NextApiRequest, res: NextApiResponse) {
   try {
+    const supabase = supabaseAdmin();
     const { status: statusFilter = '' } = req.query;
 
-    const whereClause: any = {};
+    let query = supabase
+      .from('email_campaigns')
+      .select('id, name, subject, status, sent_count, opened_count, clicked_count, bounced_count, failed_count, delivered_count, created_at, sent_at, scheduled_at')
+      .order('created_at', { ascending: false });
 
     if (statusFilter && statusFilter !== 'all') {
-      whereClause.status = statusFilter.toString().toUpperCase();
+      query = query.eq('status', statusFilter.toString().toUpperCase());
     }
 
-    const campaigns = await prisma.campaigns.findMany({
-      where: whereClause,
-      select: {
-        id: true,
-        name: true,
-        subject: true,
-        status: true,
-        sentCount: true,
-        openedCount: true,
-        clickedCount: true,
-        bouncedCount: true,
-        failedCount: true,
-        deliveredCount: true,
-        createdAt: true,
-        sentAt: true,
-        scheduledAt: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { data: campaigns, error } = await query;
+
+    if (error) {
+      console.error('Get campaigns error:', error);
+      return res.status(500).json({ error: 'Failed to fetch campaigns' });
+    }
 
     return res.status(200).json({ campaigns });
   } catch (error) {
@@ -61,6 +50,7 @@ async function getCampaigns(req: NextApiRequest, res: NextApiResponse) {
 
 async function createCampaign(req: NextApiRequest, res: NextApiResponse, session: any) {
   try {
+    const supabase = supabaseAdmin();
     const {
       name,
       subject,
@@ -71,23 +61,28 @@ async function createCampaign(req: NextApiRequest, res: NextApiResponse, session
       return res.status(400).json({ error: 'Name and subject are required' });
     }
 
-    const campaign = await prisma.campaigns.create({
-      data: {
+    const { data: campaign, error } = await supabase
+      .from('email_campaigns')
+      .insert({
         id: nanoid(),
         name,
         subject,
         status: scheduledAt ? 'SCHEDULED' : 'DRAFT',
-        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-        sentCount: 0,
-        openedCount: 0,
-        clickedCount: 0,
-        bouncedCount: 0,
-        failedCount: 0,
-        deliveredCount: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    });
+        scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+        sent_count: 0,
+        opened_count: 0,
+        clicked_count: 0,
+        bounced_count: 0,
+        failed_count: 0,
+        delivered_count: 0,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Create campaign error:', error);
+      return res.status(500).json({ error: 'Failed to create campaign' });
+    }
 
     return res.status(201).json(campaign);
   } catch (error) {

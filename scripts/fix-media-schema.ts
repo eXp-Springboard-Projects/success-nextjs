@@ -5,7 +5,7 @@
  * This adds the relation properly
  */
 
-import { PrismaClient } from '@prisma/client';
+
 
 const prisma = new PrismaClient();
 

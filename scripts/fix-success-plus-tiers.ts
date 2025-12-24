@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+
 import { readFileSync } from 'fs';
 
 const prisma = new PrismaClient();

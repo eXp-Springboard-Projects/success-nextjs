@@ -1,8 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getSession } from 'next-auth/react';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -33,59 +31,57 @@ export default async function handler(
     const limitNum = parseInt(limit as string, 10);
     const skip = (pageNum - 1) * limitNum;
 
-    // Build where clause
-    const where: any = {};
+    const supabase = supabaseAdmin();
+
+    // Build query
+    let query = supabase
+      .from('staff_activity_feed')
+      .select('*', { count: 'exact' });
 
     if (department && department !== 'all') {
-      where.department = department;
+      query = query.eq('department', department);
     }
 
     if (type) {
-      where.entityType = type;
+      query = query.eq('entity_type', type);
     }
 
     if (userId) {
-      where.userId = userId;
+      query = query.eq('user_id', userId);
     }
 
-    if (startDate || endDate) {
-      where.createdAt = {};
-      if (startDate) {
-        where.createdAt.gte = new Date(startDate as string);
-      }
-      if (endDate) {
-        where.createdAt.lte = new Date(endDate as string);
-      }
+    if (startDate) {
+      query = query.gte('created_at', new Date(startDate as string).toISOString());
     }
 
-    // Fetch activities
-    const [activities, total] = await Promise.all([
-      prisma.staff_activity_feed.findMany({
-        where,
-        orderBy: {
-          createdAt: 'desc'
-        },
-        take: limitNum,
-        skip,
-      }),
-      prisma.staff_activity_feed.count({ where })
-    ]);
+    if (endDate) {
+      query = query.lte('created_at', new Date(endDate as string).toISOString());
+    }
+
+    // Fetch activities with pagination
+    const { data: activities, error, count: total } = await query
+      .order('created_at', { ascending: false })
+      .range(skip, skip + limitNum - 1);
+
+    if (error) {
+      throw error;
+    }
 
     const response = {
-      activities: activities.map(activity => ({
+      activities: (activities || []).map(activity => ({
         id: activity.id,
-        userName: activity.userName,
+        userName: activity.user_name,
         action: activity.action,
         description: activity.description,
-        entityType: activity.entityType,
+        entityType: activity.entity_type,
         department: activity.department,
-        createdAt: activity.createdAt.toISOString(),
+        createdAt: activity.created_at,
       })),
       pagination: {
         page: pageNum,
         limit: limitNum,
-        total,
-        totalPages: Math.ceil(total / limitNum),
+        total: total || 0,
+        totalPages: Math.ceil((total || 0) / limitNum),
       },
     };
 
@@ -93,7 +89,5 @@ export default async function handler(
 
   } catch (error) {
     return res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    await prisma.$disconnect();
   }
 }

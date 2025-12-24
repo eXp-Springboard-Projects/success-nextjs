@@ -1,4 +1,4 @@
-import { prisma } from '../../../lib/prisma';
+import { supabaseAdmin } from '../../../lib/supabase';
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -14,6 +14,8 @@ export default async function handler(req, res) {
 }
 
 async function getPodcasts(req, res) {
+  const supabase = supabaseAdmin();
+
   try {
     const {
       per_page = 10,
@@ -22,27 +24,32 @@ async function getPodcasts(req, res) {
       status,
     } = req.query;
 
-    const skip = (parseInt(page) - 1) * parseInt(per_page);
-    const take = parseInt(per_page);
+    const offset = (parseInt(page) - 1) * parseInt(per_page);
+    const limit = parseInt(per_page);
 
-    const where = status && status !== 'all' ? { status: status.toUpperCase() } : { status: 'PUBLISHED' };
+    const statusFilter = status && status !== 'all' ? status.toUpperCase() : 'PUBLISHED';
 
-    const podcasts = await prisma.podcasts.findMany({
-      where,
-      skip,
-      take,
-      orderBy: { publishedAt: 'desc' },
-    });
+    let query = supabase
+      .from('podcasts')
+      .select('*', { count: 'exact' })
+      .eq('status', statusFilter)
+      .order('published_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-    const total = await prisma.podcasts.count({ where });
+    const { data: podcasts, error, count } = await query;
 
-    res.setHeader('X-WP-Total', total);
-    res.setHeader('X-WP-TotalPages', Math.ceil(total / take));
+    if (error) {
+      console.error('Error fetching podcasts:', error);
+      return res.status(500).json({ message: 'Failed to fetch podcasts' });
+    }
+
+    res.setHeader('X-WP-Total', count || 0);
+    res.setHeader('X-WP-TotalPages', Math.ceil((count || 0) / limit));
 
     // Transform to WordPress-like format
-    const transformedPodcasts = podcasts.map(podcast => ({
+    const transformedPodcasts = (podcasts || []).map(podcast => ({
       id: podcast.id,
-      date: podcast.publishedAt,
+      date: podcast.published_at,
       slug: podcast.slug,
       title: {
         rendered: podcast.title,
@@ -50,7 +57,7 @@ async function getPodcasts(req, res) {
       content: {
         rendered: podcast.description || '',
       },
-      audio_url: podcast.audioUrl,
+      audio_url: podcast.audio_url,
       _embedded: _embed ? {
         'wp:featuredmedia': podcast.thumbnail ? [{
           source_url: podcast.thumbnail,
@@ -60,11 +67,14 @@ async function getPodcasts(req, res) {
 
     return res.status(200).json(transformedPodcasts);
   } catch (error) {
+    console.error('Error fetching podcasts:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
 
 async function createPodcast(req, res) {
+  const supabase = supabaseAdmin();
+
   try {
     const {
       title,
@@ -76,21 +86,31 @@ async function createPodcast(req, res) {
       status = 'DRAFT',
     } = req.body;
 
-    const podcast = await prisma.podcasts.create({
-      data: {
-        title,
-        slug,
-        description,
-        audioUrl,
-        thumbnail,
-        duration,
-        status: status.toUpperCase(),
-        publishedAt: status.toUpperCase() === 'PUBLISHED' ? new Date() : null,
-      },
-    });
+    const podcastData = {
+      title,
+      slug,
+      description,
+      audio_url: audioUrl,
+      thumbnail,
+      duration,
+      status: status.toUpperCase(),
+      published_at: status.toUpperCase() === 'PUBLISHED' ? new Date().toISOString() : null,
+    };
+
+    const { data: podcast, error } = await supabase
+      .from('podcasts')
+      .insert([podcastData])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating podcast:', error);
+      return res.status(500).json({ message: 'Failed to create podcast' });
+    }
 
     return res.status(201).json(podcast);
   } catch (error) {
+    console.error('Error creating podcast:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

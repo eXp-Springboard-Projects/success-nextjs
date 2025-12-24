@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -24,6 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    const supabase = supabaseAdmin();
     const { type, description, metadata = {} } = req.body;
 
     if (!type || !description) {
@@ -32,20 +31,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const activityId = nanoid();
 
-    await prisma.$executeRaw`
-      INSERT INTO deal_activities (id, deal_id, type, description, metadata, created_by)
-      VALUES (
-        ${activityId}, ${id}, ${type}, ${description},
-        ${JSON.stringify(metadata)}::jsonb, ${session.user.id}
-      )
-    `;
+    const { data: activity, error } = await supabase
+      .from('deal_activities')
+      .insert({
+        id: activityId,
+        deal_id: id,
+        type,
+        description,
+        metadata,
+        created_by: session.user.id,
+      })
+      .select()
+      .single();
 
-    const activity = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM deal_activities WHERE id = ${activityId}
-    `;
+    if (error) {
+      console.error('Failed to create activity:', error);
+      return res.status(500).json({ error: 'Failed to create activity' });
+    }
 
-    return res.status(201).json(activity[0]);
+    return res.status(201).json(activity);
   } catch (error) {
+    console.error('Failed to create activity:', error);
     return res.status(500).json({ error: 'Failed to create activity' });
   }
 }

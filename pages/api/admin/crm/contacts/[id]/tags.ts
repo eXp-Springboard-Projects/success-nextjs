@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -29,25 +27,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    await prisma.$executeRaw`
-      INSERT INTO contact_tag_assignments (contact_id, tag_id)
-      VALUES (${id}, ${tagId})
-      ON CONFLICT DO NOTHING
-    `;
+    const supabase = supabaseAdmin();
 
-    await prisma.$executeRaw`
-      INSERT INTO contact_activities (id, contact_id, type, description, metadata)
-      VALUES (
-        ${nanoid()}, ${id}, 'tag_added', 'Tag added to contact',
-        ${JSON.stringify({ tagId })}::jsonb
-      )
-    `;
+    // Add tag assignment
+    const { error: assignError } = await supabase
+      .from('contact_tag_assignments')
+      .insert({ contact_id: id, tag_id: tagId })
+      .select()
+      .single();
 
-    const tag = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM contact_tags WHERE id = ${tagId}
-    `;
+    // Ignore duplicate errors (ON CONFLICT DO NOTHING)
+    if (assignError && !assignError.message.includes('duplicate')) {
+      throw assignError;
+    }
 
-    return res.status(201).json(tag[0]);
+    // Log activity
+    await supabase
+      .from('contact_activities')
+      .insert({
+        id: nanoid(),
+        contact_id: id,
+        type: 'tag_added',
+        description: 'Tag added to contact',
+        metadata: { tagId }
+      });
+
+    // Get tag details
+    const { data: tag, error: tagError } = await supabase
+      .from('contact_tags')
+      .select('*')
+      .eq('id', tagId)
+      .single();
+
+    if (tagError) throw tagError;
+
+    return res.status(201).json(tag);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to add tag' });
   }

@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../lib/supabase';
 import { getSession } from 'next-auth/react';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
   // Check authentication
@@ -10,14 +8,20 @@ export default async function handler(req, res) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
+  const supabase = supabaseAdmin();
+
   if (req.method === 'GET') {
     try {
       // Get settings from database
-      let settings;
-      try {
-        settings = await prisma.site_settings.findFirst();
-      } catch (dbError) {
-settings = null;
+      const { data: settings, error: fetchError } = await supabase
+        .from('site_settings')
+        .select('*')
+        .limit(1)
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        // PGRST116 means no rows found, which is ok
+        throw fetchError;
       }
 
       if (!settings) {
@@ -43,6 +47,7 @@ settings = null;
 
       return res.status(200).json(settings);
     } catch (error) {
+      console.error('Settings fetch error:', error);
       return res.status(500).json({ message: 'Failed to fetch settings' });
     }
   }
@@ -68,61 +73,56 @@ settings = null;
 
     try {
       // Check if settings exist
-      let existingSettings;
-      try {
-        existingSettings = await prisma.site_settings.findFirst();
-      } catch (dbError) {
-        return res.status(503).json({
-          message: 'Database not available. Please run: npx prisma migrate dev --name add_site_settings',
-          error: dbError.message,
-          hint: 'You need to run database migrations first'
-        });
+      const { data: existingSettings, error: checkError } = await supabase
+        .from('site_settings')
+        .select('*')
+        .limit(1)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
       }
+
+      const settingsData = {
+        siteName,
+        siteDescription,
+        siteUrl,
+        adminEmail,
+        facebookUrl,
+        twitterUrl,
+        instagramUrl,
+        linkedinUrl,
+        youtubeUrl,
+        wordpressApiUrl,
+        wordpressApiKey,
+        defaultMetaTitle,
+        defaultMetaDescription,
+        googleAnalyticsId,
+        facebookPixelId,
+      };
 
       let settings;
       if (existingSettings) {
         // Update existing settings
-        settings = await prisma.site_settings.update({
-          where: { id: existingSettings.id },
-          data: {
-            siteName,
-            siteDescription,
-            siteUrl,
-            adminEmail,
-            facebookUrl,
-            twitterUrl,
-            instagramUrl,
-            linkedinUrl,
-            youtubeUrl,
-            wordpressApiUrl,
-            wordpressApiKey,
-            defaultMetaTitle,
-            defaultMetaDescription,
-            googleAnalyticsId,
-            facebookPixelId,
-          },
-        });
+        const { data: updatedSettings, error: updateError } = await supabase
+          .from('site_settings')
+          .update(settingsData)
+          .eq('id', existingSettings.id)
+          .select()
+          .single();
+
+        if (updateError) throw updateError;
+        settings = updatedSettings;
       } else {
         // Create new settings
-        settings = await prisma.site_settings.create({
-          data: {
-            siteName,
-            siteDescription,
-            siteUrl,
-            adminEmail,
-            facebookUrl,
-            twitterUrl,
-            instagramUrl,
-            linkedinUrl,
-            youtubeUrl,
-            wordpressApiUrl,
-            wordpressApiKey,
-            defaultMetaTitle,
-            defaultMetaDescription,
-            googleAnalyticsId,
-            facebookPixelId,
-          },
-        });
+        const { data: newSettings, error: createError } = await supabase
+          .from('site_settings')
+          .insert(settingsData)
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        settings = newSettings;
       }
 
       return res.status(200).json({
@@ -130,10 +130,10 @@ settings = null;
         settings,
       });
     } catch (error) {
+      console.error('Settings save error:', error);
       return res.status(500).json({
-        message: 'Failed to save settings. Database may not be configured.',
+        message: 'Failed to save settings',
         error: error.message,
-        hint: 'Run: npx prisma migrate dev --name add_site_settings'
       });
     }
   }

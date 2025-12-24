@@ -1,10 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getSession } from 'next-auth/react';
 import { Department } from '@/lib/types';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '@/lib/supabase';
 import { hasDepartmentAccess } from '@/lib/departmentAuth';
-
-const prisma = new PrismaClient();
 
 export default async function handler(
   req: NextApiRequest,
@@ -26,89 +24,78 @@ export default async function handler(
       return res.status(403).json({ error: 'Forbidden' });
     }
 
+    const supabase = supabaseAdmin();
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
+
     // Fetch dashboard stats
     const [
-      activeSubscriptions,
-      failedPayments,
-      refundsToday,
-      recentActivity
+      activeSubscriptionsResult,
+      failedPaymentsResult,
+      refundsTodayResult,
+      recentActivityResult
     ] = await Promise.all([
       // Active subscriptions count
-      prisma.subscriptions.count({
-        where: {
-          status: 'active'
-        }
-      }),
+      supabase
+        .from('subscriptions')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active'),
 
       // Failed payment attempts from webhook logs
-      prisma.webhook_logs.count({
-        where: {
-          status: 'Failed',
-          eventType: 'invoice.payment_failed',
-          createdAt: {
-            gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
-          }
-        }
-      }),
+      supabase
+        .from('webhook_logs')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'Failed')
+        .eq('event_type', 'invoice.payment_failed')
+        .gte('created_at', twentyFourHoursAgo.toISOString()),
 
       // Refunds today
-      prisma.refund_disputes.count({
-        where: {
-          type: 'REFUND',
-          createdAt: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0))
-          }
-        }
-      }),
+      supabase
+        .from('refund_disputes')
+        .select('*', { count: 'exact', head: true })
+        .eq('type', 'REFUND')
+        .gte('created_at', todayStart.toISOString()),
 
       // Recent activity from staff activity feed
-      prisma.staff_activity_feed.findMany({
-        where: {
-          department: Department.CUSTOMER_SERVICE
-        },
-        orderBy: {
-          createdAt: 'desc'
-        },
-        take: 10
-      })
+      supabase
+        .from('staff_activity_feed')
+        .select('*')
+        .eq('department', Department.CUSTOMER_SERVICE)
+        .order('created_at', { ascending: false })
+        .limit(10)
     ]);
 
+    const activeSubscriptions = activeSubscriptionsResult.count || 0;
+    const failedPayments = failedPaymentsResult.count || 0;
+    const refundsToday = refundsTodayResult.count || 0;
+    const recentActivity = recentActivityResult.data || [];
+
     // Get pending items (failed payments that need attention)
-    const pendingFailedPayments = await prisma.webhook_logs.findMany({
-      where: {
-        status: 'Failed',
-        eventType: 'invoice.payment_failed',
-        attempts: {
-          lt: 3
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: 5
-    });
+    const { data: pendingFailedPayments } = await supabase
+      .from('webhook_logs')
+      .select('*')
+      .eq('status', 'Failed')
+      .eq('event_type', 'invoice.payment_failed')
+      .lt('attempts', 3)
+      .order('created_at', { ascending: false })
+      .limit(5);
 
     // Get open refund disputes
-    const openDisputes = await prisma.refund_disputes.findMany({
-      where: {
-        status: {
-          in: ['OPEN', 'IN_PROGRESS']
-        }
-      },
-      orderBy: {
-        priority: 'desc'
-      },
-      take: 5
-    });
+    const { data: openDisputes } = await supabase
+      .from('refund_disputes')
+      .select('*')
+      .in('status', ['OPEN', 'IN_PROGRESS'])
+      .order('priority', { ascending: false })
+      .limit(5);
 
     const pendingItems = [
-      ...pendingFailedPayments.map(payment => ({
+      ...(pendingFailedPayments || []).map((payment: any) => ({
         id: payment.id,
         type: 'Failed Payment',
-        description: `Payment failed for ${payment.provider} - ${payment.eventId || 'Unknown'}`,
+        description: `Payment failed for ${payment.provider} - ${payment.event_id || 'Unknown'}`,
         priority: 'high' as const
       })),
-      ...openDisputes.map(dispute => ({
+      ...(openDisputes || []).map((dispute: any) => ({
         id: dispute.id,
         type: 'Refund Dispute',
         description: dispute.description || 'Dispute requires attention',
@@ -118,15 +105,15 @@ export default async function handler(
 
     const stats = {
       activeSubscriptions,
-      openTickets: openDisputes.length, // Using refund disputes as "tickets"
+      openTickets: openDisputes?.length || 0, // Using refund disputes as "tickets"
       refundsToday,
       failedPayments,
-      recentActivity: recentActivity.map(activity => ({
+      recentActivity: recentActivity.map((activity: any) => ({
         id: activity.id,
-        type: activity.entityType?.toLowerCase() || 'unknown',
+        type: activity.entity_type?.toLowerCase() || 'unknown',
         description: activity.description || activity.action,
-        timestamp: activity.createdAt.toISOString(),
-        user: activity.userName
+        timestamp: activity.created_at,
+        user: activity.user_name
       })),
       pendingItems: pendingItems.slice(0, 10)
     };
@@ -135,7 +122,5 @@ export default async function handler(
 
   } catch (error) {
     return res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    await prisma.$disconnect();
   }
 }

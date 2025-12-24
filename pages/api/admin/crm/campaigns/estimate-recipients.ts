@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -17,6 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    const supabase = supabaseAdmin();
     const { lists, exclusions, excludeRecentDays } = req.query;
 
     const listIds = lists ? String(lists).split(',').filter(Boolean) : [];
@@ -28,23 +27,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Get contacts from selected lists
-    const listMembers = await prisma.list_members.findMany({
-      where: {
-        listId: { in: listIds },
-      },
-      include: {
-        contact: true,
-      },
-    });
+    const { data: listMembers, error: listMembersError } = await supabase
+      .from('list_members')
+      .select('contact_id, contacts(*)')
+      .in('list_id', listIds);
+
+    if (listMembersError) {
+      return res.status(500).json({ error: 'Failed to fetch list members' });
+    }
 
     // Get exclusion contacts
-    const exclusionMembers = exclusionIds.length > 0
-      ? await prisma.list_members.findMany({
-          where: { listId: { in: exclusionIds } },
-        })
-      : [];
+    let exclusionContactIds = new Set<string>();
+    if (exclusionIds.length > 0) {
+      const { data: exclusionMembers } = await supabase
+        .from('list_members')
+        .select('contact_id')
+        .in('list_id', exclusionIds);
 
-    const exclusionContactIds = new Set(exclusionMembers.map(m => m.contactId));
+      if (exclusionMembers) {
+        exclusionContactIds = new Set(exclusionMembers.map(m => m.contact_id));
+      }
+    }
 
     // Get recently emailed contacts if specified
     let recentContactIds = new Set<string>();
@@ -52,19 +55,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - recentDays);
 
-      const recentEvents = await prisma.email_events.findMany({
-        where: {
-          event: 'sent',
-          createdAt: { gte: cutoffDate },
-        },
-      });
+      const { data: recentEvents } = await supabase
+        .from('email_events')
+        .select('contact_id')
+        .eq('event', 'sent')
+        .gte('created_at', cutoffDate.toISOString());
 
-      recentContactIds = new Set(recentEvents.map(e => e.contactId));
+      if (recentEvents) {
+        recentContactIds = new Set(recentEvents.map(e => e.contact_id));
+      }
     }
 
     // Count valid recipients
-    const validContacts = listMembers.filter(member => {
-      const contact = member.contact;
+    const validContacts = listMembers?.filter(member => {
+      const contact = member.contacts;
 
       // Skip excluded
       if (exclusionContactIds.has(contact.id)) {
@@ -82,26 +86,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       return true;
-    });
+    }) || [];
 
     // Get unique contacts (in case they're in multiple lists)
-    const uniqueContactIds = new Set(validContacts.map(m => m.contactId));
+    const uniqueContactIds = new Set(validContacts.map(m => m.contact_id));
 
     // Check unsubscribe status for remaining contacts
-    const unsubscribedEmails = await prisma.email_preferences.findMany({
-      where: {
-        contactId: { in: Array.from(uniqueContactIds) },
-        unsubscribed: true,
-      },
-    });
+    const { data: unsubscribedEmails } = await supabase
+      .from('email_preferences')
+      .select('contact_id')
+      .in('contact_id', Array.from(uniqueContactIds))
+      .eq('unsubscribed', true);
 
-    const unsubscribedCount = unsubscribedEmails.length;
+    const unsubscribedCount = unsubscribedEmails?.length || 0;
     const finalCount = uniqueContactIds.size - unsubscribedCount;
 
     return res.status(200).json({
       count: Math.max(0, finalCount),
       breakdown: {
-        totalInLists: listMembers.length,
+        totalInLists: listMembers?.length || 0,
         uniqueContacts: uniqueContactIds.size,
         excluded: exclusionContactIds.size,
         recentlyEmailed: recentContactIds.size,

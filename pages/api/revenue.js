@@ -1,4 +1,4 @@
-import { prisma } from '../../lib/prisma';
+import { supabaseAdmin } from '../../lib/supabase';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
 
@@ -15,6 +15,8 @@ export default async function handler(req, res) {
   if (method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
+
+  const supabase = supabaseAdmin();
 
   try {
     const { range = 'month' } = req.query;
@@ -36,47 +38,43 @@ export default async function handler(req, res) {
     }
 
     // Get all active subscriptions
-    const activeSubscriptions = await prisma.subscriptions.findMany({
-      where: {
-        status: 'ACTIVE',
-      },
-      include: {
-        users: true,
-      },
-    });
+    const { data: activeSubscriptions, error: activeError } = await supabase
+      .from('subscriptions')
+      .select('*, users(*)')
+      .eq('status', 'ACTIVE');
+
+    if (activeError) throw activeError;
 
     // Calculate revenue metrics
     // Assuming a fixed price of $9.99/month for SUCCESS+
     const pricePerMonth = 9.99;
-    const monthlyRevenue = activeSubscriptions.length * pricePerMonth;
+    const monthlyRevenue = (activeSubscriptions || []).length * pricePerMonth;
 
     // Get total subscriptions in the time range
-    const totalSubscriptionsInRange = await prisma.subscriptions.count({
-      where: {
-        createdAt: {
-          gte: startDate,
-        },
-      },
-    });
+    const { count: totalSubscriptionsInRange, error: totalError } = await supabase
+      .from('subscriptions')
+      .select('*', { count: 'exact', head: true })
+      .gte('createdAt', startDate.toISOString());
+
+    if (totalError) throw totalError;
 
     // Get canceled subscriptions in the time range
-    const canceledInRange = await prisma.subscriptions.count({
-      where: {
-        status: 'CANCELED',
-        updatedAt: {
-          gte: startDate,
-        },
-      },
-    });
+    const { count: canceledInRange, error: canceledError } = await supabase
+      .from('subscriptions')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'CANCELED')
+      .gte('updatedAt', startDate.toISOString());
+
+    if (canceledError) throw canceledError;
 
     // Calculate churn rate
     const churnRate = totalSubscriptionsInRange > 0
-      ? (canceledInRange / totalSubscriptionsInRange) * 100
+      ? ((canceledInRange || 0) / totalSubscriptionsInRange) * 100
       : 0;
 
     // Calculate ARPU (Average Revenue Per User)
-    const averageRevenuePerUser = activeSubscriptions.length > 0
-      ? monthlyRevenue / activeSubscriptions.length
+    const averageRevenuePerUser = (activeSubscriptions || []).length > 0
+      ? monthlyRevenue / (activeSubscriptions || []).length
       : 0;
 
     // Generate monthly data for chart
@@ -90,42 +88,37 @@ export default async function handler(req, res) {
       const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
       const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
 
-      const subsInMonth = await prisma.subscriptions.count({
-        where: {
-          status: 'ACTIVE',
-          createdAt: {
-            lte: monthEnd,
-          },
-          OR: [
-            { updatedAt: { gte: monthStart } },
-            { createdAt: { gte: monthStart } },
-          ],
-        },
-      });
+      const { count: subsInMonth, error: monthError } = await supabase
+        .from('subscriptions')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'ACTIVE')
+        .lte('createdAt', monthEnd.toISOString())
+        .or(`updatedAt.gte.${monthStart.toISOString()},createdAt.gte.${monthStart.toISOString()}`);
+
+      if (monthError) throw monthError;
 
       monthlyData.push({
         month: date.toLocaleDateString('en-US', { month: 'short' }),
-        revenue: subsInMonth * pricePerMonth,
-        subscriptions: subsInMonth,
+        revenue: (subsInMonth || 0) * pricePerMonth,
+        subscriptions: subsInMonth || 0,
       });
     }
 
     // Calculate total revenue (all-time)
-    const totalSubscriptions = await prisma.subscriptions.count({
-      where: {
-        status: {
-          in: ['ACTIVE', 'CANCELED'],
-        },
-      },
-    });
+    const { count: totalSubscriptions, error: allSubsError } = await supabase
+      .from('subscriptions')
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['ACTIVE', 'CANCELED']);
+
+    if (allSubsError) throw allSubsError;
 
     // Rough estimate of total revenue (this would be better tracked in a separate table)
-    const totalRevenue = totalSubscriptions * pricePerMonth * 6; // Assuming avg 6 months
+    const totalRevenue = (totalSubscriptions || 0) * pricePerMonth * 6; // Assuming avg 6 months
 
     const revenueData = {
       totalRevenue,
       monthlyRevenue,
-      activeSubscriptions: activeSubscriptions.length,
+      activeSubscriptions: (activeSubscriptions || []).length,
       churnRate,
       averageRevenuePerUser,
       monthlyData,
@@ -133,6 +126,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json(revenueData);
   } catch (error) {
+    console.error('Revenue error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

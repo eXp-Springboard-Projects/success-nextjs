@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 const BATCH_SIZE = 100;
 
@@ -26,28 +24,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const campaigns = await prisma.campaigns.findMany({
-      where: { id },
-      include: { email_templates: true },
-    });
+    const supabase = supabaseAdmin();
 
-    if (campaigns.length === 0) {
+    const { data: campaign, error: campaignError } = await supabase
+      .from('campaigns')
+      .select('*, email_templates(*)')
+      .eq('id', id)
+      .single();
+
+    if (campaignError || !campaign) {
       return res.status(404).json({ error: 'Campaign not found' });
     }
-
-    const campaign = campaigns[0];
 
     if (campaign.status !== 'DRAFT' && campaign.status !== 'SCHEDULED') {
       return res.status(400).json({ error: 'Campaign cannot be sent in current status' });
     }
 
     // Get campaign contacts
-    const campaignContacts = await prisma.campaign_contacts.findMany({
-      where: { campaignId: id },
-      include: { contacts: true },
-    });
+    const { data: campaignContacts, error: contactsError } = await supabase
+      .from('campaign_contacts')
+      .select('*, contacts(*)')
+      .eq('campaignId', id);
 
-    if (campaignContacts.length === 0) {
+    if (contactsError || !campaignContacts || campaignContacts.length === 0) {
       return res.status(400).json({ error: 'No recipients found for this campaign' });
     }
 
@@ -57,9 +56,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const contact = cc.contacts;
 
       // Check unsubscribe status in email_preferences
-      const prefs = await prisma.email_preferences.findFirst({
-        where: { email: contact.email },
-      });
+      const { data: prefs } = await supabase
+        .from('email_preferences')
+        .select('*')
+        .eq('email', contact.email)
+        .single();
 
       // Skip if unsubscribed
       if (prefs && prefs.unsubscribed) {
@@ -88,20 +89,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const unsubToken = nanoid(32);
 
         // Ensure email_preferences record exists with unsubscribe token
-        await prisma.$executeRaw`
-          INSERT INTO email_preferences (
-            id, email, "contactId", "unsubscribeToken", "createdAt", "updatedAt"
-          ) VALUES (
-            ${nanoid()}, ${recipient.email}, ${recipient.id}, ${unsubToken},
-            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-          )
-          ON CONFLICT (email)
-          DO UPDATE SET "unsubscribeToken" = ${unsubToken}, "updatedAt" = CURRENT_TIMESTAMP
-        `;
+        await supabase
+          .from('email_preferences')
+          .upsert({
+            id: nanoid(),
+            email: recipient.email,
+            contactId: recipient.id,
+            unsubscribeToken: unsubToken,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }, {
+            onConflict: 'email',
+          });
 
         // Create email event
-        await prisma.email_events.create({
-          data: {
+        await supabase
+          .from('email_events')
+          .insert({
             id: nanoid(),
             campaignId: id,
             contactId: recipient.id,
@@ -113,8 +117,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               fromEmail: 'hello@success.com',
               unsubscribeUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://success.com'}/unsubscribe?token=${unsubToken}`,
             },
-          },
-        });
+          });
 
         totalQueued++;
       }
@@ -126,15 +129,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Update campaign status
-    await prisma.campaigns.update({
-      where: { id },
-      data: {
+    await supabase
+      .from('campaigns')
+      .update({
         status: 'SENDING',
-        sentAt: new Date(),
+        sentAt: new Date().toISOString(),
         sentCount: totalQueued,
-        updatedAt: new Date(),
-      },
-    });
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('id', id);
 
     return res.status(200).json({
       success: true,

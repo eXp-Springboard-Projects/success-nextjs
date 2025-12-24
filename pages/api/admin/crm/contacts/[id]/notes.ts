@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -29,26 +27,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    const supabase = supabaseAdmin();
     const noteId = nanoid();
 
-    await prisma.$executeRaw`
-      INSERT INTO contact_notes (id, contact_id, staff_id, staff_name, note)
-      VALUES (
-        ${noteId}, ${id}, ${session.user.id},
-        ${session.user.name || session.user.email}, ${note}
-      )
-    `;
+    // Insert note
+    const { data: createdNote, error: noteError } = await supabase
+      .from('contact_notes')
+      .insert({
+        id: noteId,
+        contact_id: id,
+        staff_id: session.user.id,
+        staff_name: session.user.name || session.user.email,
+        note
+      })
+      .select()
+      .single();
 
-    await prisma.$executeRaw`
-      INSERT INTO contact_activities (id, contact_id, type, description)
-      VALUES (${nanoid()}, ${id}, 'note_added', 'Staff note added')
-    `;
+    if (noteError) throw noteError;
 
-    const createdNote = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM contact_notes WHERE id = ${noteId}
-    `;
+    // Log activity
+    await supabase
+      .from('contact_activities')
+      .insert({
+        id: nanoid(),
+        contact_id: id,
+        type: 'note_added',
+        description: 'Staff note added'
+      });
 
-    return res.status(201).json(createdNote[0]);
+    return res.status(201).json(createdNote);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to add note' });
   }

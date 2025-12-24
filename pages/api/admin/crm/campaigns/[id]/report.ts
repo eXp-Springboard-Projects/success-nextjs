@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -23,54 +21,62 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const campaign = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM email_campaigns WHERE id = ${id}
-    `;
+    const supabase = supabaseAdmin();
 
-    if (campaign.length === 0) {
+    const { data: campaign, error: campaignError } = await supabase
+      .from('email_campaigns')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (campaignError || !campaign) {
       return res.status(404).json({ error: 'Campaign not found' });
     }
 
     // Get email send stats
-    const stats = await prisma.$queryRaw<Array<any>>`
-      SELECT
-        COUNT(*) FILTER (WHERE status = 'sent') as sent,
-        COUNT(*) FILTER (WHERE status = 'delivered') as delivered,
-        COUNT(*) FILTER (WHERE opened_at IS NOT NULL) as opened,
-        COUNT(*) FILTER (WHERE clicked_at IS NOT NULL) as clicked,
-        COUNT(*) FILTER (WHERE bounced_at IS NOT NULL) as bounced,
-        COUNT(*) FILTER (WHERE status = 'failed') as failed
-      FROM email_sends
-      WHERE campaign_id = ${id}
-    `;
+    const { data: sends, error: sendsError } = await supabase
+      .from('email_sends')
+      .select('*')
+      .eq('campaign_id', id);
+
+    if (sendsError) {
+      throw sendsError;
+    }
+
+    const stats = {
+      sent: sends.filter(s => s.status === 'sent').length,
+      delivered: sends.filter(s => s.status === 'delivered').length,
+      opened: sends.filter(s => s.opened_at !== null).length,
+      clicked: sends.filter(s => s.clicked_at !== null).length,
+      bounced: sends.filter(s => s.bounced_at !== null).length,
+      failed: sends.filter(s => s.status === 'failed').length,
+    };
 
     // Get timeline data (grouped by day)
-    const timeline = await prisma.$queryRaw<Array<any>>`
-      SELECT
-        DATE(opened_at) as date,
-        COUNT(*) as opens,
-        COUNT(DISTINCT clicked_at) as clicks
-      FROM email_sends
-      WHERE campaign_id = ${id} AND opened_at IS NOT NULL
-      GROUP BY DATE(opened_at)
-      ORDER BY DATE(opened_at)
-    `;
+    const opensData = sends.filter(s => s.opened_at !== null);
+    const timelineMap = new Map<string, { opens: number, clicks: number }>();
 
-    const c = campaign[0];
-    const s = stats[0];
+    opensData.forEach(send => {
+      const date = send.opened_at.split('T')[0];
+      const existing = timelineMap.get(date) || { opens: 0, clicks: 0 };
+      existing.opens++;
+      if (send.clicked_at) {
+        existing.clicks++;
+      }
+      timelineMap.set(date, existing);
+    });
 
-    const openRate = c.total_sent > 0 ? ((Number(s.opened) / c.total_sent) * 100).toFixed(2) : '0.00';
-    const clickRate = c.total_sent > 0 ? ((Number(s.clicked) / c.total_sent) * 100).toFixed(2) : '0.00';
+    const timeline = Array.from(timelineMap.entries())
+      .map(([date, data]) => ({ date, ...data }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    const openRate = campaign.total_sent > 0 ? ((stats.opened / campaign.total_sent) * 100).toFixed(2) : '0.00';
+    const clickRate = campaign.total_sent > 0 ? ((stats.clicked / campaign.total_sent) * 100).toFixed(2) : '0.00';
 
     return res.status(200).json({
-      campaign: c,
+      campaign,
       stats: {
-        sent: Number(s.sent) || 0,
-        delivered: Number(s.delivered) || 0,
-        opened: Number(s.opened) || 0,
-        clicked: Number(s.clicked) || 0,
-        bounced: Number(s.bounced) || 0,
-        failed: Number(s.failed) || 0,
+        ...stats,
         openRate,
         clickRate,
       },

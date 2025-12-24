@@ -1,9 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -16,6 +14,8 @@ export default async function handler(
   }
 
   if (req.method === 'GET') {
+    const supabase = supabaseAdmin();
+
     try {
       const {
         page = '1',
@@ -25,30 +25,27 @@ export default async function handler(
 
       const pageNum = parseInt(page as string);
       const perPage = parseInt(per_page as string);
-      const skip = (pageNum - 1) * perPage;
+      const offset = (pageNum - 1) * perPage;
 
-      // Build where clause
-      const where: any = {};
+      // Build query
+      let query = supabase
+        .from('media')
+        .select('*', { count: 'exact' })
+        .order('createdAt', { ascending: false })
+        .range(offset, offset + perPage - 1);
 
+      // Add search filter if provided
       if (search) {
-        where.OR = [
-          { filename: { contains: search as string, mode: 'insensitive' } },
-          { alt: { contains: search as string, mode: 'insensitive' } },
-        ];
+        query = query.or(`filename.ilike.%${search}%,alt.ilike.%${search}%`);
       }
 
-      // Fetch media
-      const [media, total] = await Promise.all([
-        prisma.media.findMany({
-          where,
-          orderBy: {
-            createdAt: 'desc'
-          },
-          skip,
-          take: perPage,
-        }),
-        prisma.media.count({ where })
-      ]);
+      const { data: media, error, count } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      const total = count || 0;
 
       // Add pagination headers
       res.setHeader('X-Total', total.toString());

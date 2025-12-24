@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -29,19 +27,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const template = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM email_templates WHERE id = ${id}
-    `;
+    const supabase = supabaseAdmin();
 
-    if (template.length === 0) {
+    const { data: template, error: templateError } = await supabase
+      .from('email_templates')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (templateError || !template) {
       return res.status(404).json({ error: 'Template not found' });
     }
 
-    const tpl = template[0];
-
     // Replace variables in HTML content
-    let htmlContent = tpl.html_content;
-    const variables = tpl.variables || [];
+    let htmlContent = template.html_content;
+    const variables = template.variables || [];
 
     for (const variable of variables) {
       const value = testData[variable] || `{{${variable}}}`;
@@ -51,15 +51,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Log the test send (in real implementation, this would actually send the email)
     const sendId = nanoid();
 
-    await prisma.$executeRaw`
-      INSERT INTO email_sends (
-        id, template_id, to_email, from_email, from_name, subject, status, metadata
-      ) VALUES (
-        ${sendId}, ${id}, ${testEmail}, 'noreply@success.com', 'SUCCESS Magazine',
-        ${'[TEST] ' + tpl.subject}, 'sent',
-        ${JSON.stringify({ isTest: true, testData })}::jsonb
-      )
-    `;
+    const { error: sendError } = await supabase
+      .from('email_sends')
+      .insert({
+        id: sendId,
+        template_id: id,
+        to_email: testEmail,
+        from_email: 'noreply@success.com',
+        from_name: 'SUCCESS Magazine',
+        subject: '[TEST] ' + template.subject,
+        status: 'sent',
+        metadata: { isTest: true, testData },
+      });
+
+    if (sendError) {
+      throw sendError;
+    }
 
     // In a real implementation, you would send the email here using AWS SES or similar
     // For now, we'll just return success with the rendered HTML

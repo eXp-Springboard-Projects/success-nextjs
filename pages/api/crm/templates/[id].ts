@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -21,20 +19,33 @@ export default async function handler(
     return res.status(400).json({ message: 'Invalid template ID' });
   }
 
+  const supabase = supabaseAdmin();
+
   try {
     if (req.method === 'GET') {
-      const template = await prisma.email_templates.findUnique({
-        where: { id },
-        include: {
-          campaigns: true,
-        },
-      });
+      // Fetch template
+      const { data: template, error: templateError } = await supabase
+        .from('email_templates')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-      if (!template) {
+      if (templateError || !template) {
         return res.status(404).json({ message: 'Template not found' });
       }
 
-      return res.status(200).json(template);
+      // Fetch campaigns using this template
+      const { data: campaigns } = await supabase
+        .from('campaigns')
+        .select('*')
+        .eq('templateId', id);
+
+      const result = {
+        ...template,
+        campaigns: campaigns || [],
+      };
+
+      return res.status(200).json(result);
     }
 
     if (req.method === 'PUT') {
@@ -42,51 +53,61 @@ export default async function handler(
 
       // If this is set as default, unset all other defaults
       if (isDefault) {
-        await prisma.email_templates.updateMany({
-          where: {
-            isDefault: true,
-            id: { not: id }
-          },
-          data: { isDefault: false },
-        });
+        await supabase
+          .from('email_templates')
+          .update({ isDefault: false })
+          .eq('isDefault', true)
+          .neq('id', id);
       }
 
-      const template = await prisma.email_templates.update({
-        where: { id },
-        data: {
-          name: name || undefined,
-          subject: subject || undefined,
-          content: content || undefined,
-          isDefault: isDefault !== undefined ? isDefault : undefined,
-          updatedAt: new Date(),
-        },
-      });
+      const updateData: any = {
+        updatedAt: new Date().toISOString(),
+      };
+
+      if (name !== undefined) updateData.name = name;
+      if (subject !== undefined) updateData.subject = subject;
+      if (content !== undefined) updateData.content = content;
+      if (isDefault !== undefined) updateData.isDefault = isDefault;
+
+      const { data: template, error } = await supabase
+        .from('email_templates')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        return res.status(500).json({ message: 'Failed to update template' });
+      }
 
       return res.status(200).json(template);
     }
 
     if (req.method === 'DELETE') {
       // Check if template is in use
-      const template = await prisma.email_templates.findUnique({
-        where: { id },
-        include: {
-          _count: {
-            select: {
-              campaigns: true,
-            },
-          },
-        },
-      });
+      const { count, error: countError } = await supabase
+        .from('campaigns')
+        .select('*', { count: 'exact', head: true })
+        .eq('templateId', id);
 
-      if (template && template._count.campaigns > 0) {
+      if (countError) {
+        return res.status(500).json({ message: 'Failed to check template usage' });
+      }
+
+      if (count && count > 0) {
         return res.status(400).json({
-          message: `Cannot delete template. It is currently used in ${template._count.campaigns} campaign(s).`
+          message: `Cannot delete template. It is currently used in ${count} campaign(s).`
         });
       }
 
-      await prisma.email_templates.delete({
-        where: { id },
-      });
+      const { error } = await supabase
+        .from('email_templates')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        return res.status(500).json({ message: 'Failed to delete template' });
+      }
 
       return res.status(200).json({ message: 'Template deleted successfully' });
     }

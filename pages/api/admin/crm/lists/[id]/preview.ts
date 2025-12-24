@@ -1,59 +1,60 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../../../lib/supabase';
 
-const prisma = new PrismaClient();
-
-function buildFilterWhere(filters: any) {
+function buildSupabaseQuery(supabase: any, filters: any) {
   if (!filters || !filters.conditions || filters.conditions.length === 0) {
-    return {};
+    return supabase.from('contacts').select('*', { count: 'exact', head: true });
   }
 
-  const conditions = filters.conditions.map((condition: any) => {
+  let query = supabase.from('contacts').select('*', { count: 'exact', head: true });
+
+  // Build filter conditions
+  filters.conditions.forEach((condition: any) => {
     const { field, operator, value } = condition;
 
     switch (field) {
       case 'status':
         if (operator === 'equals') {
-          return { status: value };
+          query = query.eq('status', value);
         } else if (operator === 'not_equals') {
-          return { status: { not: value } };
+          query = query.neq('status', value);
         }
         break;
 
       case 'tags':
         if (operator === 'contains') {
-          return { tags: { has: value } };
+          query = query.contains('tags', [value]);
         } else if (operator === 'not_contains') {
-          return { NOT: { tags: { has: value } } };
+          query = query.not('tags', 'cs', `{${value}}`);
         } else if (operator === 'is_empty') {
-          return { tags: { equals: [] } };
+          query = query.or('tags.is.null,tags.eq.{}');
         } else if (operator === 'is_not_empty') {
-          return { NOT: { tags: { equals: [] } } };
+          query = query.not('tags', 'is', null).not('tags', 'eq', '{}');
         }
         break;
 
       case 'source':
         if (operator === 'equals') {
-          return { source: value };
+          query = query.eq('source', value);
         } else if (operator === 'not_equals') {
-          return { source: { not: value } };
+          query = query.neq('source', value);
         } else if (operator === 'contains') {
-          return { source: { contains: value, mode: 'insensitive' } };
+          query = query.ilike('source', `%${value}%`);
         } else if (operator === 'is_empty') {
-          return { source: null };
+          query = query.is('source', null);
         } else if (operator === 'is_not_empty') {
-          return { source: { not: null } };
+          query = query.not('source', 'is', null);
         }
         break;
 
       case 'emailEngagementScore':
         const score = parseInt(value, 10);
         if (operator === 'greater_than') {
-          return { emailEngagementScore: { gt: score } };
+          query = query.gt('emailEngagementScore', score);
         } else if (operator === 'less_than') {
-          return { emailEngagementScore: { lt: score } };
+          query = query.lt('emailEngagementScore', score);
         } else if (operator === 'equals') {
-          return { emailEngagementScore: score };
+          query = query.eq('emailEngagementScore', score);
         }
         break;
 
@@ -62,16 +63,16 @@ function buildFilterWhere(filters: any) {
           const days = parseInt(value, 10);
           const date = new Date();
           date.setDate(date.getDate() - days);
-          return { lastContactedAt: { gte: date } };
+          query = query.gte('lastContactedAt', date.toISOString());
         } else if (operator === 'not_in_last_days') {
           const days = parseInt(value, 10);
           const date = new Date();
           date.setDate(date.getDate() - days);
-          return { lastContactedAt: { lt: date } };
+          query = query.lt('lastContactedAt', date.toISOString());
         } else if (operator === 'is_empty') {
-          return { lastContactedAt: null };
+          query = query.is('lastContactedAt', null);
         } else if (operator === 'is_not_empty') {
-          return { lastContactedAt: { not: null } };
+          query = query.not('lastContactedAt', 'is', null);
         }
         break;
 
@@ -80,32 +81,27 @@ function buildFilterWhere(filters: any) {
           const days = parseInt(value, 10);
           const date = new Date();
           date.setDate(date.getDate() - days);
-          return { createdAt: { gte: date } };
+          query = query.gte('createdAt', date.toISOString());
         } else if (operator === 'not_in_last_days') {
           const days = parseInt(value, 10);
           const date = new Date();
           date.setDate(date.getDate() - days);
-          return { createdAt: { lt: date } };
+          query = query.lt('createdAt', date.toISOString());
         } else if (operator === 'before_date') {
-          return { createdAt: { lt: new Date(value) } };
+          query = query.lt('createdAt', new Date(value).toISOString());
         } else if (operator === 'after_date') {
-          return { createdAt: { gt: new Date(value) } };
+          query = query.gt('createdAt', new Date(value).toISOString());
         }
         break;
     }
-
-    return {};
   });
 
-  if (filters.logic === 'OR') {
-    return { OR: conditions };
-  } else {
-    return { AND: conditions };
-  }
+  return query;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
+  const supabase = supabaseAdmin();
 
   if (typeof id !== 'string') {
     return res.status(400).json({ error: 'Invalid list ID' });
@@ -113,11 +109,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'GET') {
     try {
-      const list = await prisma.contact_lists.findUnique({
-        where: { id },
-      });
+      const { data: list, error: listError } = await supabase
+        .from('contact_lists')
+        .select('type, filters')
+        .eq('id', id)
+        .single();
 
-      if (!list) {
+      if (listError || !list) {
         return res.status(404).json({ error: 'List not found' });
       }
 
@@ -125,10 +123,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: 'List is not a dynamic segment' });
       }
 
-      const where = buildFilterWhere(list.filters);
-      const count = await prisma.contacts.count({ where });
+      const query = buildSupabaseQuery(supabase, list.filters);
+      const { count, error } = await query;
 
-      return res.status(200).json({ count });
+      if (error) throw error;
+
+      return res.status(200).json({ count: count || 0 });
     } catch (error) {
       return res.status(500).json({ error: 'Failed to preview list' });
     }

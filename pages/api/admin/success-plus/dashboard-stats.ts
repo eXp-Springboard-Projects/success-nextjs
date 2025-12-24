@@ -1,10 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getSession } from 'next-auth/react';
 import { Department } from '@/lib/types';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '@/lib/supabase';
 import { hasDepartmentAccess } from '@/lib/departmentAuth';
-
-const prisma = new PrismaClient();
 
 export default async function handler(
   req: NextApiRequest,
@@ -29,102 +27,88 @@ export default async function handler(
     const now = new Date();
     const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+    const supabase = supabaseAdmin();
 
     // Fetch dashboard stats
     const [
-      activeMembers,
-      newMembersThisMonth,
-      cancelledLastMonth,
-      cancelledTwoMonthsAgo,
-      subscriptions,
-      recentActivity,
-      activeTrials,
-      totalTrials
+      activeMembersResult,
+      newMembersResult,
+      cancelledLastMonthResult,
+      cancelledTwoMonthsAgoResult,
+      subscriptionsResult,
+      recentActivityResult,
+      activeTrialsResult,
+      totalTrialsResult
     ] = await Promise.all([
       // Active SUCCESS+ members (count members with SUCCESSPlus tier)
-      prisma.members.count({
-        where: {
-          membershipTier: 'SUCCESSPlus',
-          membershipStatus: 'Active'
-        }
-      }),
+      supabase
+        .from('members')
+        .select('*', { count: 'exact', head: true })
+        .eq('membership_tier', 'SUCCESSPlus')
+        .eq('membership_status', 'Active'),
 
       // New members this month
-      prisma.members.count({
-        where: {
-          membershipTier: 'SUCCESSPlus',
-          createdAt: {
-            gte: oneMonthAgo
-          }
-        }
-      }),
+      supabase
+        .from('members')
+        .select('*', { count: 'exact', head: true })
+        .eq('membership_tier', 'SUCCESSPlus')
+        .gte('created_at', oneMonthAgo.toISOString()),
 
       // Cancelled last month (members who are no longer SUCCESSPlus)
-      prisma.subscriptions.count({
-        where: {
-          tier: 'SUCCESSPlus',
-          status: {
-            in: ['inactive', 'canceled']
-          },
-          updatedAt: {
-            gte: oneMonthAgo,
-            lt: now
-          }
-        }
-      }),
+      supabase
+        .from('subscriptions')
+        .select('*', { count: 'exact', head: true })
+        .eq('tier', 'SUCCESSPlus')
+        .in('status', ['inactive', 'canceled'])
+        .gte('updated_at', oneMonthAgo.toISOString())
+        .lt('updated_at', now.toISOString()),
 
       // Cancelled two months ago (for trend)
-      prisma.subscriptions.count({
-        where: {
-          tier: 'SUCCESSPlus',
-          status: {
-            in: ['inactive', 'canceled']
-          },
-          updatedAt: {
-            gte: twoMonthsAgo,
-            lt: oneMonthAgo
-          }
-        }
-      }),
+      supabase
+        .from('subscriptions')
+        .select('*', { count: 'exact', head: true })
+        .eq('tier', 'SUCCESSPlus')
+        .in('status', ['inactive', 'canceled'])
+        .gte('updated_at', twoMonthsAgo.toISOString())
+        .lt('updated_at', oneMonthAgo.toISOString()),
 
       // Get all active subscriptions for MRR calculation
-      prisma.subscriptions.findMany({
-        where: {
-          status: 'active',
-          tier: 'SUCCESSPlus'
-        }
-      }),
+      supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('status', 'active')
+        .eq('tier', 'SUCCESSPlus'),
 
       // Recent member activity from staff activity feed
-      prisma.staff_activity_feed.findMany({
-        where: {
-          department: Department.SUCCESS_PLUS
-        },
-        orderBy: {
-          createdAt: 'desc'
-        },
-        take: 10
-      }),
+      supabase
+        .from('staff_activity_feed')
+        .select('*')
+        .eq('department', Department.SUCCESS_PLUS)
+        .order('created_at', { ascending: false })
+        .limit(10),
 
       // Active trial users (trials that haven't expired yet)
-      prisma.members.count({
-        where: {
-          trialEndsAt: {
-            not: null,
-            gt: now
-          }
-        }
-      }),
+      supabase
+        .from('members')
+        .select('*', { count: 'exact', head: true })
+        .not('trial_ends_at', 'is', null)
+        .gt('trial_ends_at', now.toISOString()),
 
       // Total trial users (all time)
-      prisma.members.count({
-        where: {
-          trialEndsAt: {
-            not: null
-          }
-        }
-      })
+      supabase
+        .from('members')
+        .select('*', { count: 'exact', head: true })
+        .not('trial_ends_at', 'is', null)
     ]);
+
+    const activeMembers = activeMembersResult.count || 0;
+    const newMembersThisMonth = newMembersResult.count || 0;
+    const cancelledLastMonth = cancelledLastMonthResult.count || 0;
+    const cancelledTwoMonthsAgo = cancelledTwoMonthsAgoResult.count || 0;
+    const subscriptions = subscriptionsResult.data || [];
+    const recentActivity = recentActivityResult.data || [];
+    const activeTrials = activeTrialsResult.count || 0;
+    const totalTrials = totalTrialsResult.count || 0;
 
     // Calculate Monthly Recurring Revenue (normalize annual to monthly)
     // Note: subscriptions table doesn't have amount/interval fields
@@ -146,10 +130,10 @@ export default async function handler(
       totalTrials,
       recentActivity: recentActivity.map(activity => ({
         id: activity.id,
-        type: activity.entityType?.toLowerCase() || 'member',
+        type: activity.entity_type?.toLowerCase() || 'member',
         description: activity.description || activity.action,
-        timestamp: activity.createdAt.toISOString(),
-        user: activity.userName
+        timestamp: activity.created_at,
+        user: activity.user_name
       }))
     };
 
@@ -157,7 +141,5 @@ export default async function handler(
 
   } catch (error) {
     return res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    await prisma.$disconnect();
   }
 }

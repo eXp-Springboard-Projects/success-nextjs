@@ -1,8 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '@/lib/supabase';
 import { randomUUID } from 'crypto';
-
-const prisma = new PrismaClient();
 
 /**
  * Contact form submission endpoint
@@ -12,6 +10,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  const supabase = supabaseAdmin();
 
   try {
     const {
@@ -30,32 +30,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Create or update contact in CRM
-    const existingContact = await prisma.contacts.findUnique({
-      where: { email: email.toLowerCase() }
-    });
+    const { data: existingContacts, error: contactFindError } = await supabase
+      .from('contacts')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .limit(1);
 
+    if (contactFindError) throw contactFindError;
+
+    const existingContact = existingContacts?.[0];
     let contact;
 
     if (existingContact) {
       // Update existing contact
-      contact = await prisma.contacts.update({
-        where: { email: email.toLowerCase() },
-        data: {
+      const { data: updatedContact, error: contactUpdateError } = await supabase
+        .from('contacts')
+        .update({
           firstName,
           lastName,
           phone: phone || existingContact.phone,
           company: company || existingContact.company,
           tags: [...new Set([...existingContact.tags, 'contact-form-lead'])],
-          lastContactedAt: new Date(),
+          lastContactedAt: new Date().toISOString(),
           notes: existingContact.notes
             ? `${existingContact.notes}\n\n[${new Date().toISOString()}] ${subject}: ${message}`
             : `[${new Date().toISOString()}] ${subject}: ${message}`
-        }
-      });
+        })
+        .eq('email', email.toLowerCase())
+        .select()
+        .single();
+
+      if (contactUpdateError) throw contactUpdateError;
+      contact = updatedContact;
     } else {
       // Create new contact
-      contact = await prisma.contacts.create({
-        data: {
+      const { data: newContact, error: contactCreateError } = await supabase
+        .from('contacts')
+        .insert({
           id: randomUUID(),
           email: email.toLowerCase(),
           firstName,
@@ -66,9 +77,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           tags: ['contact-form-lead'],
           status: 'ACTIVE',
           notes: `[${new Date().toISOString()}] ${subject}: ${message}`,
-          updatedAt: new Date(),
-        }
-      });
+          updatedAt: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (contactCreateError) throw contactCreateError;
+      contact = newContact;
     }
 
     // Send notification email to admin

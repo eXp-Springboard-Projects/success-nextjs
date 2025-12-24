@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -24,18 +22,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    await prisma.$executeRaw`
-      DELETE FROM contact_tag_assignments
-      WHERE contact_id = ${id} AND tag_id = ${tagId}
-    `;
+    const supabase = supabaseAdmin();
 
-    await prisma.$executeRaw`
-      INSERT INTO contact_activities (id, contact_id, type, description, metadata)
-      VALUES (
-        ${nanoid()}, ${id}, 'tag_removed', 'Tag removed from contact',
-        ${JSON.stringify({ tagId })}::jsonb
-      )
-    `;
+    // Remove tag assignment
+    const { error: deleteError } = await supabase
+      .from('contact_tag_assignments')
+      .delete()
+      .eq('contact_id', id)
+      .eq('tag_id', tagId);
+
+    if (deleteError) throw deleteError;
+
+    // Log activity
+    await supabase
+      .from('contact_activities')
+      .insert({
+        id: nanoid(),
+        contact_id: id,
+        type: 'tag_removed',
+        description: 'Tag removed from contact',
+        metadata: { tagId }
+      });
 
     return res.status(200).json({ success: true });
   } catch (error) {

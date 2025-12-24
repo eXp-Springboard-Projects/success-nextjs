@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -31,15 +29,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getLandingPage(id: string, res: NextApiResponse) {
   try {
-    const page = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM landing_pages WHERE id = ${id}
-    `;
+    const supabase = supabaseAdmin();
 
-    if (page.length === 0) {
+    const { data: page, error } = await supabase
+      .from('landing_pages')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !page) {
       return res.status(404).json({ error: 'Landing page not found' });
     }
 
-    return res.status(200).json(page[0]);
+    return res.status(200).json(page);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to fetch landing page' });
   }
@@ -47,6 +49,7 @@ async function getLandingPage(id: string, res: NextApiResponse) {
 
 async function updateLandingPage(id: string, req: NextApiRequest, res: NextApiResponse) {
   try {
+    const supabase = supabaseAdmin();
     const {
       title,
       slug,
@@ -58,42 +61,54 @@ async function updateLandingPage(id: string, req: NextApiRequest, res: NextApiRe
       formId,
     } = req.body;
 
-    const publishedAt = status === 'published' ? new Date() : null;
+    const updateData: any = {};
+    if (title !== undefined) updateData.title = title;
+    if (slug !== undefined) updateData.slug = slug;
+    if (content !== undefined) updateData.content = content;
+    if (metaTitle !== undefined) updateData.meta_title = metaTitle;
+    if (metaDescription !== undefined) updateData.meta_description = metaDescription;
+    if (status !== undefined) updateData.status = status;
+    if (template !== undefined) updateData.template = template;
+    if (formId !== undefined) updateData.form_id = formId;
 
-    await prisma.$executeRaw`
-      UPDATE landing_pages
-      SET
-        title = COALESCE(${title}, title),
-        slug = COALESCE(${slug}, slug),
-        content = COALESCE(${content ? JSON.stringify(content) : null}::jsonb, content),
-        meta_title = COALESCE(${metaTitle}, meta_title),
-        meta_description = ${metaDescription},
-        status = COALESCE(${status}, status),
-        template = COALESCE(${template}, template),
-        form_id = ${formId},
-        published_at = COALESCE(${publishedAt ? publishedAt.toISOString() : null}::timestamp, published_at),
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = ${id}
-    `;
-
-    const page = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM landing_pages WHERE id = ${id}
-    `;
-
-    return res.status(200).json(page[0]);
-  } catch (error: any) {
-    if (error?.code === '23505') {
-      return res.status(400).json({ error: 'Slug already exists' });
+    if (status === 'published' && updateData.status) {
+      updateData.published_at = new Date().toISOString();
     }
+
+    updateData.updated_at = new Date().toISOString();
+
+    const { data: page, error } = await supabase
+      .from('landing_pages')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === '23505') {
+        return res.status(400).json({ error: 'Slug already exists' });
+      }
+      return res.status(500).json({ error: 'Failed to update landing page' });
+    }
+
+    return res.status(200).json(page);
+  } catch (error: any) {
     return res.status(500).json({ error: 'Failed to update landing page' });
   }
 }
 
 async function deleteLandingPage(id: string, res: NextApiResponse) {
   try {
-    await prisma.$executeRaw`
-      DELETE FROM landing_pages WHERE id = ${id}
-    `;
+    const supabase = supabaseAdmin();
+
+    const { error } = await supabase
+      .from('landing_pages')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to delete landing page' });
+    }
 
     return res.status(200).json({ success: true });
   } catch (error) {

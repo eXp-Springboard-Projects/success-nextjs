@@ -1,7 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../lib/supabase';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.success.com';
 
@@ -28,33 +26,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 }
 
 async function generateSitemap(): Promise<string> {
+  const supabase = supabaseAdmin();
+
   // Fetch all published content
-  const [posts, pages, categories, videos, podcasts] = await Promise.all([
-    prisma.posts.findMany({
-      where: { status: 'PUBLISHED' },
-      select: { slug: true, updatedAt: true, publishedAt: true },
-      orderBy: { publishedAt: 'desc' }
-    }),
-    prisma.pages.findMany({
-      where: { status: 'PUBLISHED' },
-      select: { slug: true, updatedAt: true },
-      orderBy: { updatedAt: 'desc' }
-    }),
-    prisma.categories.findMany({
-      select: { slug: true, updatedAt: true },
-      orderBy: { updatedAt: 'desc' }
-    }),
-    prisma.videos.findMany({
-      where: { status: 'PUBLISHED' },
-      select: { slug: true, updatedAt: true },
-      orderBy: { publishedAt: 'desc' }
-    }),
-    prisma.podcasts.findMany({
-      where: { status: 'PUBLISHED' },
-      select: { slug: true, updatedAt: true },
-      orderBy: { publishedAt: 'desc' }
-    })
+  const [postsRes, pagesRes, categoriesRes, videosRes, podcastsRes] = await Promise.all([
+    supabase
+      .from('posts')
+      .select('slug, updatedAt, publishedAt')
+      .eq('status', 'PUBLISHED')
+      .order('publishedAt', { ascending: false }),
+    supabase
+      .from('pages')
+      .select('slug, updatedAt')
+      .eq('status', 'PUBLISHED')
+      .order('updatedAt', { ascending: false }),
+    supabase
+      .from('categories')
+      .select('slug, updatedAt')
+      .order('updatedAt', { ascending: false }),
+    supabase
+      .from('videos')
+      .select('slug, updatedAt')
+      .eq('status', 'PUBLISHED')
+      .order('publishedAt', { ascending: false }),
+    supabase
+      .from('podcasts')
+      .select('slug, updatedAt')
+      .eq('status', 'PUBLISHED')
+      .order('publishedAt', { ascending: false })
   ]);
+
+  const posts = postsRes.data || [];
+  const pages = pagesRes.data || [];
+  const categories = categoriesRes.data || [];
+  const videos = videosRes.data || [];
+  const podcasts = podcastsRes.data || [];
 
   const urls: string[] = [];
 

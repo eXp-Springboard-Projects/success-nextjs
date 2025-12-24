@@ -2,7 +2,7 @@
  * Test CRM Campaign - Send to Rachel and Talitha
  */
 
-import { PrismaClient } from '@prisma/client';
+
 import { nanoid } from 'nanoid';
 import * as dotenv from 'dotenv';
 import * as path from 'path';

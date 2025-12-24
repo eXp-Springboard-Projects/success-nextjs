@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -24,51 +22,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getDeals(req: NextApiRequest, res: NextApiResponse) {
   try {
+    const supabase = supabaseAdmin();
     const { stage = '', owner = '', startDate = '', endDate = '' } = req.query;
 
-    let whereClause = '';
-    const params: any[] = [];
-    let paramIndex = 1;
+    let query = supabase
+      .from('deals')
+      .select(`
+        *,
+        stage:deal_stages(name, color, order),
+        contact:contacts(email, first_name, last_name)
+      `)
+      .order('created_at', { ascending: false });
 
     if (stage) {
-      whereClause += ` AND d.stage_id = $${paramIndex}`;
-      params.push(stage);
-      paramIndex++;
+      query = query.eq('stage_id', stage);
     }
 
     if (owner) {
-      whereClause += ` AND d.owner_id = $${paramIndex}`;
-      params.push(owner);
-      paramIndex++;
+      query = query.eq('owner_id', owner);
     }
 
     if (startDate) {
-      whereClause += ` AND d.expected_close_date >= $${paramIndex}`;
-      params.push(startDate);
-      paramIndex++;
+      query = query.gte('expected_close_date', startDate);
     }
 
     if (endDate) {
-      whereClause += ` AND d.expected_close_date <= $${paramIndex}`;
-      params.push(endDate);
-      paramIndex++;
+      query = query.lte('expected_close_date', endDate);
     }
 
-    const deals = await prisma.$queryRawUnsafe(`
-      SELECT
-        d.*,
-        s.name as stage_name,
-        s.color as stage_color,
-        s.order as stage_order,
-        c.email as contact_email,
-        c.first_name as contact_first_name,
-        c.last_name as contact_last_name
-      FROM deals d
-      LEFT JOIN deal_stages s ON d.stage_id = s.id
-      LEFT JOIN contacts c ON d.contact_id = c.id
-      WHERE 1=1 ${whereClause}
-      ORDER BY d.created_at DESC
-    `, ...params);
+    const { data: dealsData, error } = await query;
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to fetch deals' });
+    }
+
+    // Flatten the structure to match original format
+    const deals = dealsData?.map(d => ({
+      ...d,
+      stage_name: d.stage?.name,
+      stage_color: d.stage?.color,
+      stage_order: d.stage?.order,
+      contact_email: d.contact?.email,
+      contact_first_name: d.contact?.first_name,
+      contact_last_name: d.contact?.last_name,
+      stage: undefined,
+      contact: undefined,
+    }));
 
     return res.status(200).json({ deals });
   } catch (error) {
@@ -78,6 +77,7 @@ async function getDeals(req: NextApiRequest, res: NextApiResponse) {
 
 async function createDeal(req: NextApiRequest, res: NextApiResponse, session: any) {
   try {
+    const supabase = supabaseAdmin();
     const {
       name,
       contactId,
@@ -98,32 +98,55 @@ async function createDeal(req: NextApiRequest, res: NextApiResponse, session: an
 
     const dealId = nanoid();
 
-    await prisma.$executeRaw`
-      INSERT INTO deals (
-        id, name, contact_id, company_name, value, currency, stage_id, probability,
-        expected_close_date, owner_id, owner_name, source, notes, custom_fields, status
-      ) VALUES (
-        ${dealId}, ${name}, ${contactId || null}, ${companyName || null}, ${value},
-        ${currency}, ${stageId}, ${probability || null}, ${expectedCloseDate || null},
-        ${session.user.id}, ${session.user.name || session.user.email},
-        ${source || null}, ${notes || null}, ${JSON.stringify(customFields)}::jsonb, 'open'
-      )
-    `;
+    const { data: deal, error: dealError } = await supabase
+      .from('deals')
+      .insert({
+        id: dealId,
+        name,
+        contact_id: contactId || null,
+        company_name: companyName || null,
+        value,
+        currency,
+        stage_id: stageId,
+        probability: probability || null,
+        expected_close_date: expectedCloseDate || null,
+        owner_id: session.user.id,
+        owner_name: session.user.name || session.user.email,
+        source: source || null,
+        notes: notes || null,
+        custom_fields: customFields,
+        status: 'open',
+      })
+      .select(`
+        *,
+        stage:deal_stages(name, color)
+      `)
+      .single();
+
+    if (dealError) {
+      return res.status(500).json({ error: 'Failed to create deal' });
+    }
 
     // Log activity
-    await prisma.$executeRaw`
-      INSERT INTO deal_activities (id, deal_id, type, description, created_by)
-      VALUES (${nanoid()}, ${dealId}, 'created', 'Deal created', ${session.user.id})
-    `;
+    await supabase
+      .from('deal_activities')
+      .insert({
+        id: nanoid(),
+        deal_id: dealId,
+        type: 'created',
+        description: 'Deal created',
+        created_by: session.user.id,
+      });
 
-    const deal = await prisma.$queryRaw<Array<any>>`
-      SELECT d.*, s.name as stage_name, s.color as stage_color
-      FROM deals d
-      LEFT JOIN deal_stages s ON d.stage_id = s.id
-      WHERE d.id = ${dealId}
-    `;
+    // Flatten the structure
+    const result = {
+      ...deal,
+      stage_name: deal.stage?.name,
+      stage_color: deal.stage?.color,
+      stage: undefined,
+    };
 
-    return res.status(201).json(deal[0]);
+    return res.status(201).json(result);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to create deal' });
   }

@@ -1,12 +1,12 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../lib/supabase';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const supabase = supabaseAdmin();
+
   try {
     const session = await getServerSession(req, res, authOptions);
 
@@ -14,18 +14,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const user = await prisma.users.findUnique({
-      where: { email: session.user.email! },
-      include: { member: { include: { subscriptions: true } } },
-    });
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select(`
+        id,
+        name,
+        email,
+        bio,
+        avatar,
+        interests,
+        jobTitle,
+        website,
+        socialTwitter,
+        socialLinkedin,
+        socialFacebook,
+        password,
+        member:members (
+          membershipTier,
+          subscriptions (
+            status,
+            tier,
+            currentPeriodEnd
+          )
+        )
+      `)
+      .eq('email', session.user.email!)
+      .single();
 
-    if (!user) {
+    if (userError || !user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     if (req.method === 'GET') {
       // Get user profile and settings
-      const activeSubscription = user.member?.subscriptions?.find(s => s.status === 'ACTIVE');
+      const activeSubscription = user.member?.subscriptions?.find((s: any) => s.status === 'ACTIVE');
       return res.status(200).json({
         id: user.id,
         name: user.name,
@@ -59,20 +81,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         socialFacebook,
       } = req.body;
 
-      const updatedUser = await prisma.users.update({
-        where: { id: user.id },
-        data: {
-          ...(name && { name }),
-          ...(bio !== undefined && { bio }),
-          ...(avatar !== undefined && { avatar }),
-          ...(interests !== undefined && { interests }),
-          ...(jobTitle !== undefined && { jobTitle }),
-          ...(website !== undefined && { website }),
-          ...(socialTwitter !== undefined && { socialTwitter }),
-          ...(socialLinkedin !== undefined && { socialLinkedin }),
-          ...(socialFacebook !== undefined && { socialFacebook }),
-        },
-      });
+      const updateData: any = {};
+      if (name) updateData.name = name;
+      if (bio !== undefined) updateData.bio = bio;
+      if (avatar !== undefined) updateData.avatar = avatar;
+      if (interests !== undefined) updateData.interests = interests;
+      if (jobTitle !== undefined) updateData.jobTitle = jobTitle;
+      if (website !== undefined) updateData.website = website;
+      if (socialTwitter !== undefined) updateData.socialTwitter = socialTwitter;
+      if (socialLinkedin !== undefined) updateData.socialLinkedin = socialLinkedin;
+      if (socialFacebook !== undefined) updateData.socialFacebook = socialFacebook;
+
+      const { data: updatedUser, error: updateError } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', user.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        throw updateError;
+      }
 
       return res.status(200).json({
         message: 'Profile updated successfully',
@@ -106,18 +135,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const hashedPassword = await bcrypt.hash(newPassword, 10);
 
       // Update password
-      await prisma.users.update({
-        where: { id: user.id },
-        data: { password: hashedPassword },
-      });
+      const { error: passwordError } = await supabase
+        .from('users')
+        .update({ password: hashedPassword })
+        .eq('id', user.id);
+
+      if (passwordError) {
+        throw passwordError;
+      }
 
       return res.status(200).json({ message: 'Password updated successfully' });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
+    console.error('Dashboard settings error:', error);
     return res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    await prisma.$disconnect();
   }
 }

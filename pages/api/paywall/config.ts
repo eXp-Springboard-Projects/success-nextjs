@@ -1,18 +1,29 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../lib/supabase';
 import { randomUUID } from 'crypto';
 
-const prisma = new PrismaClient();
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const supabase = supabaseAdmin();
+
   if (req.method === 'GET') {
     try {
-      let config = await prisma.paywall_config.findFirst();
+      const { data: configs, error } = await supabase
+        .from('paywall_config')
+        .select('*')
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      let config = configs;
 
       // Create default config if none exists
       if (!config) {
-        config = await prisma.paywall_config.create({
-          data: {
+        const { data: newConfig, error: createError } = await supabase
+          .from('paywall_config')
+          .insert({
             id: randomUUID(),
             freeArticleLimit: 3,
             resetPeriodDays: 30,
@@ -22,13 +33,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             popupTitle: "You've reached your free article limit",
             popupMessage: "Subscribe to SUCCESS+ to get unlimited access to our premium content, exclusive interviews, and member-only benefits.",
             ctaButtonText: "Subscribe Now",
-            updatedAt: new Date(),
-          }
-        });
+            updatedAt: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        config = newConfig;
       }
 
       return res.status(200).json(config);
     } catch (error) {
+      console.error('Paywall config GET error:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
@@ -47,12 +63,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ctaButtonText
       } = req.body;
 
-      const config = await prisma.paywall_config.findFirst();
+      const { data: existingConfig, error: fetchError } = await supabase
+        .from('paywall_config')
+        .select('*')
+        .limit(1)
+        .single();
 
-      if (config) {
-        const updated = await prisma.paywall_config.update({
-          where: { id: config.id },
-          data: {
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+
+      if (existingConfig) {
+        const { data: updated, error: updateError } = await supabase
+          .from('paywall_config')
+          .update({
             freeArticleLimit,
             resetPeriodDays,
             enablePaywall,
@@ -60,14 +84,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             bypassedArticles,
             popupTitle,
             popupMessage,
-            ctaButtonText
-          }
-        });
+            ctaButtonText,
+            updatedAt: new Date().toISOString(),
+          })
+          .eq('id', existingConfig.id)
+          .select()
+          .single();
 
+        if (updateError) throw updateError;
         return res.status(200).json(updated);
       } else {
-        const created = await prisma.paywall_config.create({
-          data: {
+        const { data: created, error: createError } = await supabase
+          .from('paywall_config')
+          .insert({
             id: randomUUID(),
             freeArticleLimit,
             resetPeriodDays,
@@ -77,13 +106,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             popupTitle,
             popupMessage,
             ctaButtonText,
-            updatedAt: new Date(),
-          }
-        });
+            updatedAt: new Date().toISOString(),
+          })
+          .select()
+          .single();
 
+        if (createError) throw createError;
         return res.status(201).json(created);
       }
     } catch (error) {
+      console.error('Paywall config PUT error:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
   }

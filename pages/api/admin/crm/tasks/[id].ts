@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -31,33 +29,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getTask(id: string, res: NextApiResponse) {
   try {
-    const task = await prisma.$queryRaw<Array<any>>`
-      SELECT
-        t.*,
-        c.email as contact_email,
-        c.first_name as contact_first_name,
-        c.last_name as contact_last_name,
-        d.name as deal_name,
-        tk.subject as ticket_subject
-      FROM tasks t
-      LEFT JOIN contacts c ON t.contact_id = c.id
-      LEFT JOIN deals d ON t.deal_id = d.id
-      LEFT JOIN tickets tk ON t.ticket_id = tk.id
-      WHERE t.id = ${id}
-    `;
+    const supabase = supabaseAdmin();
 
-    if (task.length === 0) {
+    const { data: task, error } = await supabase
+      .from('tasks')
+      .select(`
+        *,
+        contacts!tasks_contact_id_fkey (
+          email,
+          first_name,
+          last_name
+        ),
+        deals!tasks_deal_id_fkey (
+          name
+        ),
+        tickets!tasks_ticket_id_fkey (
+          subject
+        )
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error || !task) {
       return res.status(404).json({ error: 'Task not found' });
     }
 
-    return res.status(200).json(task[0]);
+    // Transform the data to match the expected format
+    const transformedTask = {
+      ...task,
+      contact_email: task.contacts?.email,
+      contact_first_name: task.contacts?.first_name,
+      contact_last_name: task.contacts?.last_name,
+      deal_name: task.deals?.name,
+      ticket_subject: task.tickets?.subject,
+    };
+
+    return res.status(200).json(transformedTask);
   } catch (error) {
+    console.error('Failed to fetch task:', error);
     return res.status(500).json({ error: 'Failed to fetch task' });
   }
 }
 
 async function updateTask(id: string, req: NextApiRequest, res: NextApiResponse, session: any) {
   try {
+    const supabase = supabaseAdmin();
     const {
       title,
       description,
@@ -74,124 +90,70 @@ async function updateTask(id: string, req: NextApiRequest, res: NextApiResponse,
       reminderAt,
     } = req.body;
 
-    const updates: string[] = [];
-    const params: any[] = [];
-    let paramIndex = 1;
+    const updates: any = {};
 
-    if (title !== undefined) {
-      updates.push(`title = $${paramIndex}`);
-      params.push(title);
-      paramIndex++;
-    }
-
-    if (description !== undefined) {
-      updates.push(`description = $${paramIndex}`);
-      params.push(description);
-      paramIndex++;
-    }
-
-    if (type !== undefined) {
-      updates.push(`type = $${paramIndex}`);
-      params.push(type);
-      paramIndex++;
-    }
-
-    if (priority !== undefined) {
-      updates.push(`priority = $${paramIndex}`);
-      params.push(priority);
-      paramIndex++;
-    }
-
+    if (title !== undefined) updates.title = title;
+    if (description !== undefined) updates.description = description;
+    if (type !== undefined) updates.type = type;
+    if (priority !== undefined) updates.priority = priority;
     if (status !== undefined) {
-      updates.push(`status = $${paramIndex}`);
-      params.push(status);
-      paramIndex++;
-
+      updates.status = status;
       if (status === 'completed') {
-        updates.push(`completed_at = CURRENT_TIMESTAMP`);
-        updates.push(`completed_by = $${paramIndex}`);
-        params.push(session.user.id);
-        paramIndex++;
+        updates.completed_at = new Date().toISOString();
+        updates.completed_by = session.user.id;
       }
     }
+    if (dueDate !== undefined) updates.due_date = dueDate;
+    if (dueTime !== undefined) updates.due_time = dueTime;
+    if (contactId !== undefined) updates.contact_id = contactId;
+    if (dealId !== undefined) updates.deal_id = dealId;
+    if (ticketId !== undefined) updates.ticket_id = ticketId;
+    if (assignedTo !== undefined) updates.assigned_to = assignedTo;
+    if (assignedToName !== undefined) updates.assigned_to_name = assignedToName;
+    if (reminderAt !== undefined) updates.reminder_at = reminderAt;
 
-    if (dueDate !== undefined) {
-      updates.push(`due_date = $${paramIndex}`);
-      params.push(dueDate);
-      paramIndex++;
-    }
-
-    if (dueTime !== undefined) {
-      updates.push(`due_time = $${paramIndex}`);
-      params.push(dueTime);
-      paramIndex++;
-    }
-
-    if (contactId !== undefined) {
-      updates.push(`contact_id = $${paramIndex}`);
-      params.push(contactId);
-      paramIndex++;
-    }
-
-    if (dealId !== undefined) {
-      updates.push(`deal_id = $${paramIndex}`);
-      params.push(dealId);
-      paramIndex++;
-    }
-
-    if (ticketId !== undefined) {
-      updates.push(`ticket_id = $${paramIndex}`);
-      params.push(ticketId);
-      paramIndex++;
-    }
-
-    if (assignedTo !== undefined) {
-      updates.push(`assigned_to = $${paramIndex}`);
-      params.push(assignedTo);
-      paramIndex++;
-    }
-
-    if (assignedToName !== undefined) {
-      updates.push(`assigned_to_name = $${paramIndex}`);
-      params.push(assignedToName);
-      paramIndex++;
-    }
-
-    if (reminderAt !== undefined) {
-      updates.push(`reminder_at = $${paramIndex}`);
-      params.push(reminderAt);
-      paramIndex++;
-    }
-
-    if (updates.length === 0) {
+    if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: 'No fields to update' });
     }
 
-    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    updates.updated_at = new Date().toISOString();
 
-    params.push(id);
+    const { data: task, error } = await supabase
+      .from('tasks')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
 
-    await prisma.$queryRawUnsafe(`
-      UPDATE tasks
-      SET ${updates.join(', ')}
-      WHERE id = $${paramIndex}
-    `, ...params);
+    if (error) {
+      console.error('Failed to update task:', error);
+      return res.status(500).json({ error: 'Failed to update task' });
+    }
 
-    const task = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM tasks WHERE id = ${id}
-    `;
-
-    return res.status(200).json(task[0]);
+    return res.status(200).json(task);
   } catch (error) {
+    console.error('Failed to update task:', error);
     return res.status(500).json({ error: 'Failed to update task' });
   }
 }
 
 async function deleteTask(id: string, res: NextApiResponse) {
   try {
-    await prisma.$executeRaw`DELETE FROM tasks WHERE id = ${id}`;
+    const supabase = supabaseAdmin();
+
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Failed to delete task:', error);
+      return res.status(500).json({ error: 'Failed to delete task' });
+    }
+
     return res.status(200).json({ message: 'Task deleted successfully' });
   } catch (error) {
+    console.error('Failed to delete task:', error);
     return res.status(500).json({ error: 'Failed to delete task' });
   }
 }

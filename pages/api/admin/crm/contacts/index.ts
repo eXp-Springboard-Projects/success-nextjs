@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -24,55 +22,56 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getContacts(req: NextApiRequest, res: NextApiResponse) {
   try {
+    const supabase = supabaseAdmin();
     const query = req.query;
     const search = (query.search as string) || '';
     const emailStatus = (query.emailStatus as string) || '';
     const source = (query.source as string) || '';
     const page = parseInt((query.page as string) || '1');
     const limit = parseInt((query.limit as string) || '50');
-    const sortBy = (query.sortBy as string) || 'createdAt';
+    const sortBy = (query.sortBy as string) || 'created_at';
     const sortOrder = (query.sortOrder as string) || 'desc';
 
     const offset = (page - 1) * limit;
 
-    // Build where clause using Prisma
-    const where: any = {};
+    // Build query using Supabase
+    let contactsQuery = supabase.from('contacts').select('*', { count: 'exact' });
 
+    // Apply search filter
     if (search) {
-      where.OR = [
-        { email: { contains: search, mode: 'insensitive' } },
-        { firstName: { contains: search, mode: 'insensitive' } },
-        { lastName: { contains: search, mode: 'insensitive' } },
-        { company: { contains: search, mode: 'insensitive' } },
-      ];
+      contactsQuery = contactsQuery.or(
+        `email.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%,company.ilike.%${search}%`
+      );
     }
 
+    // Apply email status filter
     if (emailStatus) {
-      where.emailStatus = emailStatus;
+      contactsQuery = contactsQuery.eq('email_status', emailStatus);
     }
 
+    // Apply source filter
     if (source) {
-      where.source = source;
+      contactsQuery = contactsQuery.eq('source', source);
     }
 
-    // Fetch contacts using Prisma
-    const [contacts, total] = await Promise.all([
-      prisma.contacts.findMany({
-        where,
-        orderBy: { [sortBy]: sortOrder },
-        skip: offset,
-        take: limit,
-      }),
-      prisma.contacts.count({ where }),
-    ]);
+    // Apply sorting and pagination
+    contactsQuery = contactsQuery
+      .order(sortBy, { ascending: sortOrder === 'asc' })
+      .range(offset, offset + limit - 1);
+
+    const { data: contacts, error, count } = await contactsQuery;
+
+    if (error) {
+      throw error;
+    }
 
     return res.status(200).json({
-      contacts,
+      contacts: contacts || [],
       pagination: {
         page,
         limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
       },
     });
   } catch (error) {
@@ -86,6 +85,7 @@ async function getContacts(req: NextApiRequest, res: NextApiResponse) {
 
 async function createContact(req: NextApiRequest, res: NextApiResponse) {
   try {
+    const supabase = supabaseAdmin();
     const {
       email,
       firstName,
@@ -102,70 +102,96 @@ async function createContact(req: NextApiRequest, res: NextApiResponse) {
       return res.status(400).json({ error: 'Email is required' });
     }
 
-    const existing = await prisma.$queryRaw<Array<{ id: string }>>`
-      SELECT id FROM contacts WHERE email = ${email}
-    `;
+    // Check if contact already exists
+    const { data: existing } = await supabase
+      .from('contacts')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
 
-    if (existing.length > 0) {
+    if (existing) {
       return res.status(400).json({ error: 'Contact with this email already exists' });
     }
 
     const contactId = nanoid();
 
-    await prisma.$executeRaw`
-      INSERT INTO contacts (
-        id, email, first_name, last_name, phone, company, source, custom_fields
-      ) VALUES (
-        ${contactId}, ${email}, ${firstName || null}, ${lastName || null},
-        ${phone || null}, ${company || null}, ${source}, ${JSON.stringify(customFields)}::jsonb
-      )
-    `;
+    // Insert contact
+    const { error: contactError } = await supabase
+      .from('contacts')
+      .insert({
+        id: contactId,
+        email,
+        first_name: firstName || null,
+        last_name: lastName || null,
+        phone: phone || null,
+        company: company || null,
+        source,
+        custom_fields: customFields,
+      });
 
-    for (const tagId of tagIds) {
-      await prisma.$executeRaw`
-        INSERT INTO contact_tag_assignments (contact_id, tag_id)
-        VALUES (${contactId}, ${tagId})
-        ON CONFLICT DO NOTHING
-      `;
+    if (contactError) {
+      throw contactError;
     }
 
-    for (const listId of listIds) {
-      await prisma.$executeRaw`
-        INSERT INTO contact_list_members (contact_id, list_id)
-        VALUES (${contactId}, ${listId})
-        ON CONFLICT DO NOTHING
-      `;
+    // Insert tag assignments
+    if (tagIds.length > 0) {
+      const tagAssignments = tagIds.map((tagId) => ({
+        contact_id: contactId,
+        tag_id: tagId,
+      }));
+      await supabase.from('contact_tag_assignments').insert(tagAssignments);
     }
 
-    await prisma.$executeRaw`
-      INSERT INTO contact_activities (id, contact_id, type, description)
-      VALUES (${nanoid()}, ${contactId}, 'contact_created', 'Contact created')
-    `;
+    // Insert list memberships
+    if (listIds.length > 0) {
+      const listMemberships = listIds.map((listId) => ({
+        contact_id: contactId,
+        list_id: listId,
+      }));
+      await supabase.from('contact_list_members').insert(listMemberships);
+    }
 
-    const contact = await prisma.$queryRaw<Array<any>>`
-      SELECT
-        c.*,
-        COALESCE(
-          json_agg(DISTINCT jsonb_build_object('id', ct.id, 'name', ct.name, 'color', ct.color))
-          FILTER (WHERE ct.id IS NOT NULL),
-          '[]'
-        ) as tags,
-        COALESCE(
-          json_agg(DISTINCT jsonb_build_object('id', cl.id, 'name', cl.name))
-          FILTER (WHERE cl.id IS NOT NULL),
-          '[]'
-        ) as lists
-      FROM contacts c
-      LEFT JOIN contact_tag_assignments cta ON c.id = cta.contact_id
-      LEFT JOIN contact_tags ct ON cta.tag_id = ct.id
-      LEFT JOIN contact_list_members clm ON c.id = clm.contact_id
-      LEFT JOIN contact_lists cl ON clm.list_id = cl.id
-      WHERE c.id = ${contactId}
-      GROUP BY c.id
-    `;
+    // Insert activity
+    await supabase.from('contact_activities').insert({
+      id: nanoid(),
+      contact_id: contactId,
+      type: 'contact_created',
+      description: 'Contact created',
+    });
 
-    return res.status(201).json(contact[0]);
+    // Fetch the complete contact with tags and lists using RPC or raw SQL
+    const { data: contact } = await supabase.rpc('get_contact_with_relations', {
+      contact_id: contactId,
+    });
+
+    // Fallback if RPC doesn't exist - fetch contact separately
+    if (!contact) {
+      const { data: contactData } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('id', contactId)
+        .single();
+
+      const { data: tags } = await supabase
+        .from('contact_tag_assignments')
+        .select('tag_id, contact_tags(id, name, color)')
+        .eq('contact_id', contactId);
+
+      const { data: lists } = await supabase
+        .from('contact_list_members')
+        .select('list_id, contact_lists(id, name)')
+        .eq('contact_id', contactId);
+
+      return res.status(201).json({
+        ...contactData,
+        tags: tags?.map((t: any) => t.contact_tags).filter(Boolean) || [],
+        lists: lists?.map((l: any) => l.contact_lists).filter(Boolean) || [],
+      });
+    }
+
+    return res.status(201).json(contact);
   } catch (error) {
+    console.error('Error creating contact:', error);
     return res.status(500).json({ error: 'Failed to create contact' });
   }
 }

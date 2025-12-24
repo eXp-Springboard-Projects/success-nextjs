@@ -1,7 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
@@ -12,21 +10,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'POST') {
     try {
-      await prisma.email_preferences.update({
-        where: { id },
-        data: {
+      const supabase = supabaseAdmin();
+
+      // Update email preferences to resubscribe
+      const { error } = await supabase
+        .from('email_preferences')
+        .update({
           unsubscribed: false,
-          optInMarketing: true,
-          optInNewsletter: true,
-          optInTransactional: true,
-          unsubscribedAt: null,
-          unsubscribeReason: null,
-          updatedAt: new Date(),
-        },
-      });
+          opt_in_marketing: true,
+          opt_in_newsletter: true,
+          opt_in_transactional: true,
+          unsubscribed_at: null,
+          unsubscribe_reason: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
 
       return res.status(200).json({ success: true });
     } catch (error) {
+      console.error('Error resubscribing:', error);
       return res.status(500).json({ error: 'Failed to resubscribe' });
     }
   }

@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -24,26 +22,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getAutomations(req: NextApiRequest, res: NextApiResponse) {
   try {
+    const supabase = supabaseAdmin();
     const { status = '' } = req.query;
 
-    let whereClause = '';
-    const params: any[] = [];
-    let paramIndex = 1;
+    let query = supabase
+      .from('automations')
+      .select('*');
 
     if (status) {
-      whereClause += ` AND status = $${paramIndex}`;
-      params.push(status);
-      paramIndex++;
+      query = query.eq('status', status);
     }
 
-    const automations = await prisma.$queryRawUnsafe(`
-      SELECT *
-      FROM automations
-      WHERE 1=1 ${whereClause}
-      ORDER BY created_at DESC
-    `, ...params);
+    const { data: automations, error } = await query
+      .order('created_at', { ascending: false });
 
-    return res.status(200).json({ automations });
+    if (error) throw error;
+
+    return res.status(200).json({ automations: automations || [] });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to fetch automations' });
   }
@@ -51,6 +46,7 @@ async function getAutomations(req: NextApiRequest, res: NextApiResponse) {
 
 async function createAutomation(req: NextApiRequest, res: NextApiResponse, session: any) {
   try {
+    const supabase = supabaseAdmin();
     const {
       name,
       description,
@@ -64,20 +60,23 @@ async function createAutomation(req: NextApiRequest, res: NextApiResponse, sessi
 
     const automationId = nanoid();
 
-    await prisma.$executeRaw`
-      INSERT INTO automations (
-        id, name, description, trigger, steps, status, created_by
-      ) VALUES (
-        ${automationId}, ${name}, ${description || null}, ${JSON.stringify(trigger)}::jsonb,
-        ${JSON.stringify(steps)}::jsonb, 'draft', ${session.user.id}
-      )
-    `;
+    const { data: automation, error } = await supabase
+      .from('automations')
+      .insert({
+        id: automationId,
+        name,
+        description: description || null,
+        trigger,
+        steps,
+        status: 'draft',
+        created_by: session.user.id,
+      })
+      .select()
+      .single();
 
-    const automation = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM automations WHERE id = ${automationId}
-    `;
+    if (error) throw error;
 
-    return res.status(201).json(automation[0]);
+    return res.status(201).json(automation);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to create automation' });
   }

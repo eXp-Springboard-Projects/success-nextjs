@@ -1,15 +1,15 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getSession } from 'next-auth/react';
 import { Department } from '@/lib/types';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '@/lib/supabase';
 import { hasDepartmentAccess } from '@/lib/departmentAuth';
-
-const prisma = new PrismaClient();
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const supabase = supabaseAdmin();
+
   try {
     const session = await getSession({ req }) as any;
 
@@ -25,19 +25,19 @@ export default async function handler(
     const { id } = req.query;
 
     if (req.method === 'GET') {
-      const refund = await prisma.refunds.findUnique({
-        where: { id: id as string },
-        include: {
-          users: {
-            select: {
-              name: true,
-              email: true,
-            },
-          },
-        },
-      });
+      const { data: refund, error } = await supabase
+        .from('refunds')
+        .select(`
+          *,
+          users:user_id (
+            name,
+            email
+          )
+        `)
+        .eq('id', id as string)
+        .single();
 
-      if (!refund) {
+      if (error || !refund) {
         return res.status(404).json({ error: 'Refund not found' });
       }
 
@@ -46,13 +46,13 @@ export default async function handler(
           id: refund.id,
           customerName: refund.users?.name || 'Unknown',
           customerEmail: refund.users?.email || 'Unknown',
-          originalAmount: refund.originalAmount || 0,
+          originalAmount: refund.original_amount || 0,
           refundAmount: refund.amount || 0,
           reason: refund.reason || 'Not specified',
           status: refund.status || 'pending',
-          createdAt: refund.createdAt.toISOString(),
-          processedBy: refund.processedBy || 'System',
-          paymentId: refund.paymentId,
+          createdAt: refund.created_at,
+          processedBy: refund.processed_by || 'System',
+          paymentId: refund.payment_id,
           notes: refund.notes,
         },
       });
@@ -65,36 +65,49 @@ export default async function handler(
       if (status) updateData.status = status;
       if (notes) {
         // Append notes to existing notes
-        const existing = await prisma.refunds.findUnique({
-          where: { id: id as string },
-          select: { notes: true },
-        });
+        const { data: existing } = await supabase
+          .from('refunds')
+          .select('notes')
+          .eq('id', id as string)
+          .single();
+
         updateData.notes = existing?.notes
           ? `${existing.notes}\n\n[${new Date().toISOString()}] ${notes}`
           : notes;
       }
 
-      const refund = await prisma.refunds.update({
-        where: { id: id as string },
-        data: updateData,
-      });
+      const { data: refund, error: updateError } = await supabase
+        .from('refunds')
+        .update(updateData)
+        .eq('id', id as string)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Error updating refund:', updateError);
+        return res.status(500).json({ error: 'Failed to update refund' });
+      }
 
       // Log activity
-      await prisma.staff_activity_feed.create({
-        data: {
+      const { error: activityError } = await supabase
+        .from('staff_activity_feed')
+        .insert({
           id: `activity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          userId: session.user.id,
-          userName: session.user.name || session.user.email,
-          userEmail: session.user.email,
+          user_id: session.user.id,
+          user_name: session.user.name || session.user.email,
+          user_email: session.user.email,
           action: status ? 'REFUND_STATUS_UPDATED' : 'REFUND_NOTES_ADDED',
           description: status
             ? `Updated refund status to ${status}`
             : 'Added notes to refund',
-          entityType: 'refund',
-          entityId: id as string,
+          entity_type: 'refund',
+          entity_id: id as string,
           department: Department.CUSTOMER_SERVICE,
-        },
-      });
+        });
+
+      if (activityError) {
+        console.error('Error logging activity:', activityError);
+      }
 
       return res.status(200).json({
         refund: {
@@ -108,8 +121,7 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
 
   } catch (error) {
+    console.error('Error in refund handler:', error);
     return res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    await prisma.$disconnect();
   }
 }

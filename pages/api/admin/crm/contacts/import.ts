@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -30,6 +28,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       errors: [] as string[],
     };
 
+    const supabase = supabaseAdmin();
+
     for (const contact of contacts) {
       try {
         const { email, firstName, lastName, phone, company, tags = [], lists = [] } = contact;
@@ -41,11 +41,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         // Check if contact exists
-        const existing = await prisma.$queryRaw<Array<{ id: string }>>`
-          SELECT id FROM contacts WHERE email = ${email}
-        `;
+        const { data: existing } = await supabase
+          .from('contacts')
+          .select('id')
+          .eq('email', email)
+          .limit(1);
 
-        if (existing.length > 0) {
+        if (existing && existing.length > 0) {
           results.skipped++;
           results.errors.push(`Skipped: ${email} already exists`);
           continue;
@@ -54,36 +56,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const contactId = nanoid();
 
         // Create contact
-        await prisma.$executeRaw`
-          INSERT INTO contacts (
-            id, email, first_name, last_name, phone, company, source
-          ) VALUES (
-            ${contactId}, ${email}, ${firstName || null}, ${lastName || null},
-            ${phone || null}, ${company || null}, 'import'
-          )
-        `;
+        const { error: contactError } = await supabase
+          .from('contacts')
+          .insert({
+            id: contactId,
+            email,
+            first_name: firstName || null,
+            last_name: lastName || null,
+            phone: phone || null,
+            company: company || null,
+            source: 'import'
+          });
+
+        if (contactError) throw contactError;
 
         // Add tags (create tag if doesn't exist, then assign)
         for (const tagName of tags) {
           if (tagName && tagName.trim()) {
-            // Create tag if it doesn't exist
-            await prisma.$executeRaw`
-              INSERT INTO contact_tags (id, name)
-              VALUES (${nanoid()}, ${tagName.trim()})
-              ON CONFLICT (name) DO NOTHING
-            `;
+            // Create tag if it doesn't exist (upsert)
+            const tagId = nanoid();
+            await supabase
+              .from('contact_tags')
+              .upsert(
+                { id: tagId, name: tagName.trim() },
+                { onConflict: 'name', ignoreDuplicates: true }
+              );
 
             // Get tag ID
-            const tagResult = await prisma.$queryRaw<Array<{ id: string }>>`
-              SELECT id FROM contact_tags WHERE name = ${tagName.trim()}
-            `;
+            const { data: tagResult } = await supabase
+              .from('contact_tags')
+              .select('id')
+              .eq('name', tagName.trim())
+              .single();
 
-            if (tagResult.length > 0) {
-              await prisma.$executeRaw`
-                INSERT INTO contact_tag_assignments (contact_id, tag_id)
-                VALUES (${contactId}, ${tagResult[0].id})
-                ON CONFLICT DO NOTHING
-              `;
+            if (tagResult) {
+              await supabase
+                .from('contact_tag_assignments')
+                .insert({ contact_id: contactId, tag_id: tagResult.id })
+                .select()
+                .single();
             }
           }
         }
@@ -91,24 +102,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Add to lists (create list if doesn't exist, then assign)
         for (const listName of lists) {
           if (listName && listName.trim()) {
-            // Create list if it doesn't exist
-            await prisma.$executeRaw`
-              INSERT INTO contact_lists (id, name, type)
-              VALUES (${nanoid()}, ${listName.trim()}, 'static')
-              ON CONFLICT (name) DO NOTHING
-            `;
+            // Create list if it doesn't exist (upsert)
+            const listId = nanoid();
+            await supabase
+              .from('contact_lists')
+              .upsert(
+                { id: listId, name: listName.trim(), type: 'static' },
+                { onConflict: 'name', ignoreDuplicates: true }
+              );
 
             // Get list ID
-            const listResult = await prisma.$queryRaw<Array<{ id: string }>>`
-              SELECT id FROM contact_lists WHERE name = ${listName.trim()}
-            `;
+            const { data: listResult } = await supabase
+              .from('contact_lists')
+              .select('id')
+              .eq('name', listName.trim())
+              .single();
 
-            if (listResult.length > 0) {
-              await prisma.$executeRaw`
-                INSERT INTO contact_list_members (contact_id, list_id)
-                VALUES (${contactId}, ${listResult[0].id})
-                ON CONFLICT DO NOTHING
-              `;
+            if (listResult) {
+              await supabase
+                .from('contact_list_members')
+                .insert({ contact_id: contactId, list_id: listResult.id })
+                .select()
+                .single();
             }
           }
         }

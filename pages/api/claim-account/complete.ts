@@ -1,15 +1,15 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '@/lib/supabase';
 import { stripe } from '@/lib/stripe';
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  const supabase = supabaseAdmin();
 
   try {
     const { token, password } = req.body;
@@ -23,14 +23,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Find user with this claim token
-    const user = await prisma.users.findFirst({
-      where: {
-        resetToken: token,
-        resetTokenExpiry: {
-          gte: new Date(),
-        },
-      },
-    });
+    const { data: users, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('resetToken', token)
+      .gte('resetTokenExpiry', new Date().toISOString())
+      .limit(1);
+
+    if (userError) throw userError;
+
+    const user = users?.[0];
 
     if (!user) {
       return res.status(400).json({ error: 'Invalid or expired token' });
@@ -72,17 +74,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Create or get member record
-    let member = await prisma.members.findFirst({
-      where: { email: user.email },
-    });
+    const { data: existingMembers, error: memberFindError } = await supabase
+      .from('members')
+      .select('*')
+      .eq('email', user.email)
+      .limit(1);
+
+    if (memberFindError) throw memberFindError;
+
+    let member = existingMembers?.[0];
 
     if (!member) {
       // Create new member
       const [firstName, ...lastNameParts] = user.name.split(' ');
       const lastName = lastNameParts.join(' ') || firstName;
 
-      member = await prisma.members.create({
-        data: {
+      const { data: newMember, error: memberCreateError } = await supabase
+        .from('members')
+        .insert({
           id: nanoid(),
           firstName,
           lastName,
@@ -96,22 +105,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           engagementScore: 0,
           tags: ['claimed-account'],
           priorityLevel: 'Standard',
-        },
-      });
+        })
+        .select()
+        .single();
+
+      if (memberCreateError) throw memberCreateError;
+      member = newMember;
     }
 
     // Update user with password and link to member
-    await prisma.users.update({
-      where: { id: user.id },
-      data: {
+    const { error: userUpdateError } = await supabase
+      .from('users')
+      .update({
         password: hashedPassword,
         resetToken: null, // Clear claim token
         resetTokenExpiry: null,
         emailVerified: true,
         memberId: member.id,
         hasChangedDefaultPassword: true,
-      },
-    });
+      })
+      .eq('id', user.id);
+
+    if (userUpdateError) throw userUpdateError;
 
     // If there's an active Stripe subscription, create subscription record
     if (stripe && stripeCustomerId && membershipTier === 'SUCCESSPlus') {
@@ -125,19 +140,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const stripeSub = stripeSubscriptions.data[0];
 
         // Check if subscription already exists
-        const existingSub = await prisma.subscriptions.findUnique({
-          where: { stripeSubscriptionId: stripeSub.id },
-        });
+        const { data: existingSubs, error: subFindError } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('stripeSubscriptionId', stripeSub.id)
+          .limit(1);
 
-        if (!existingSub) {
+        if (subFindError) throw subFindError;
+
+        if (!existingSubs || existingSubs.length === 0) {
           // Extract subscription data with proper type handling
           const subData: any = stripeSub;
           const currentPeriodStart = subData.current_period_start || subData.currentPeriodStart;
           const currentPeriodEnd = subData.current_period_end || subData.currentPeriodEnd;
           const cancelAtPeriodEnd = subData.cancel_at_period_end ?? subData.cancelAtPeriodEnd ?? false;
 
-          await prisma.subscriptions.create({
-            data: {
+          const { error: subCreateError } = await supabase
+            .from('subscriptions')
+            .insert({
               id: nanoid(),
               memberId: member.id,
               stripeCustomerId,
@@ -146,20 +166,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               provider: 'stripe',
               status: stripeSub.status.toUpperCase(),
               tier: 'SUCCESS_PLUS',
-              currentPeriodStart: new Date(currentPeriodStart * 1000),
-              currentPeriodEnd: new Date(currentPeriodEnd * 1000),
+              currentPeriodStart: new Date(currentPeriodStart * 1000).toISOString(),
+              currentPeriodEnd: new Date(currentPeriodEnd * 1000).toISOString(),
               cancelAtPeriodEnd,
               billingCycle: stripeSub.items.data[0]?.price.recurring?.interval?.toUpperCase() || 'MONTHLY',
-              updatedAt: new Date(),
-            },
-          });
+              updatedAt: new Date().toISOString(),
+            });
+
+          if (subCreateError) throw subCreateError;
         }
       }
     }
 
     // Log activity
-    await prisma.user_activities.create({
-      data: {
+    await supabase
+      .from('user_activities')
+      .insert({
         id: nanoid(),
         userId: user.id,
         activityType: 'SUBSCRIPTION_STARTED',
@@ -169,10 +191,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           membershipTier,
           hasStripeCustomer: !!stripeCustomerId,
         }),
-      },
-    }).catch(() => {
-      // Ignore activity logging errors
-    });
+      })
+      .catch(() => {
+        // Ignore activity logging errors
+      });
 
     return res.status(200).json({
       success: true,
@@ -183,7 +205,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({
       error: 'Failed to complete account claim. Please try again or contact support.',
     });
-  } finally {
-    await prisma.$disconnect();
   }
 }

@@ -1,10 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../lib/supabase';
 import { randomUUID } from 'crypto';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -17,40 +15,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const { page = '1', perPage = '50', action, entity, userId } = req.query;
       const skip = (parseInt(page as string) - 1) * parseInt(perPage as string);
+      const supabase = supabaseAdmin();
 
-      const where: any = {};
-      if (action) where.action = action;
-      if (entity) where.entity = entity;
-      if (userId) where.userId = userId;
+      // Build query
+      let query = supabase
+        .from('activity_logs')
+        .select(`
+          *,
+          users (
+            name,
+            email,
+            avatar,
+            role
+          )
+        `, { count: 'exact' })
+        .order('createdAt', { ascending: false })
+        .range(skip, skip + parseInt(perPage as string) - 1);
 
-      const [logs, total] = await Promise.all([
-        prisma.activity_logs.findMany({
-          where,
-          include: {
-            users: {
-              select: {
-                name: true,
-                email: true,
-                avatar: true,
-                role: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-          skip,
-          take: parseInt(perPage as string),
-        }),
-        prisma.activity_logs.count({ where }),
-      ]);
+      if (action) query = query.eq('action', action);
+      if (entity) query = query.eq('entity', entity);
+      if (userId) query = query.eq('userId', userId);
+
+      const { data: logs, count: total, error } = await query;
+
+      if (error) {
+        throw error;
+      }
 
       return res.status(200).json({
-        logs,
-        total,
+        logs: logs || [],
+        total: total || 0,
         page: parseInt(page as string),
         perPage: parseInt(perPage as string),
-        totalPages: Math.ceil(total / parseInt(perPage as string)),
+        totalPages: Math.ceil((total || 0) / parseInt(perPage as string)),
       });
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch activity logs' });
@@ -60,9 +57,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'POST') {
     try {
       const { action, entity, entityId, details, ipAddress, userAgent } = req.body;
+      const supabase = supabaseAdmin();
 
-      const log = await prisma.activity_logs.create({
-        data: {
+      const { data: log, error } = await supabase
+        .from('activity_logs')
+        .insert({
           id: randomUUID(),
           userId: session.user.id,
           action,
@@ -71,8 +70,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           details: details ? JSON.stringify(details) : null,
           ipAddress,
           userAgent,
-        },
-      });
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
 
       return res.status(201).json(log);
     } catch (error) {

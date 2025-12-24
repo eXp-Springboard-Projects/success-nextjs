@@ -2,7 +2,7 @@
  * Fix test posts and pages - set them to PUBLISHED status
  */
 
-import { PrismaClient } from '@prisma/client';
+
 
 const prisma = new PrismaClient();
 

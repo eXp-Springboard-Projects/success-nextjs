@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -18,41 +16,40 @@ export default async function handler(
 
   const { range = '7d' } = req.query;
 
+  const supabase = supabaseAdmin();
+
   try {
     // Calculate date range
     const now = new Date();
     const startDate = getStartDate(range as string);
 
     // Fetch real analytics data from content_analytics table
-    const analyticsData = await prisma.content_analytics.findMany({
-      where: {
-        date: {
-          gte: startDate,
-          lte: now,
-        },
-      },
-      orderBy: {
-        views: 'desc',
-      },
-    });
+    const { data: analyticsData, error: analyticsError } = await supabase
+      .from('content_analytics')
+      .select('*')
+      .gte('date', startDate.toISOString())
+      .lte('date', now.toISOString())
+      .order('views', { ascending: false });
+
+    if (analyticsError) throw analyticsError;
 
     // Calculate total page views and unique visitors
-    const totalViews = analyticsData.reduce((sum, item) => sum + item.views, 0);
-    const totalUniqueVisitors = analyticsData.reduce((sum, item) => sum + item.uniqueVisitors, 0);
-    const avgTimeOnPage = analyticsData.length > 0
-      ? Math.floor(analyticsData.reduce((sum, item) => sum + item.avgTimeOnPage, 0) / analyticsData.length)
+    const totalViews = (analyticsData || []).reduce((sum, item) => sum + (item.views || 0), 0);
+    const totalUniqueVisitors = (analyticsData || []).reduce((sum, item) => sum + (item.uniqueVisitors || 0), 0);
+    const avgTimeOnPage = analyticsData && analyticsData.length > 0
+      ? Math.floor(analyticsData.reduce((sum, item) => sum + (item.avgTimeOnPage || 0), 0) / analyticsData.length)
       : 0;
-    const avgBounceRate = analyticsData.length > 0
-      ? (analyticsData.reduce((sum, item) => sum + item.bounceRate, 0) / analyticsData.length).toFixed(1)
+    const avgBounceRate = analyticsData && analyticsData.length > 0
+      ? (analyticsData.reduce((sum, item) => sum + (item.bounceRate || 0), 0) / analyticsData.length).toFixed(1)
       : '0.0';
 
     // Group by content to get top pages
     const contentMap = new Map<string, { views: number; uniqueVisitors: number; slug: string; title: string }>();
 
-    analyticsData.forEach(item => {
+    (analyticsData || []).forEach(item => {
       const existing = contentMap.get(item.contentId) || { views: 0, uniqueVisitors: 0, slug: item.contentSlug, title: item.contentTitle };
-      existing.views += item.views;
-      existing.uniqueVisitors += item.uniqueVisitors;
+      existing.views += item.views || 0;
+      existing.uniqueVisitors += item.uniqueVisitors || 0;
       contentMap.set(item.contentId, existing);
     });
 
@@ -66,21 +63,25 @@ export default async function handler(
       }));
 
     // Fetch user stats from users table
-    const totalUsers = await prisma.users.count();
-    const activeUsersCount = await prisma.users.count({
-      where: {
-        lastLoginAt: {
-          gte: startDate,
-        },
-      },
-    });
-    const newUsersCount = await prisma.users.count({
-      where: {
-        createdAt: {
-          gte: startDate,
-        },
-      },
-    });
+    const { count: totalUsers, error: totalUsersError } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true });
+
+    if (totalUsersError) throw totalUsersError;
+
+    const { count: activeUsersCount, error: activeUsersError } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .gte('lastLoginAt', startDate.toISOString());
+
+    if (activeUsersError) throw activeUsersError;
+
+    const { count: newUsersCount, error: newUsersError } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .gte('createdAt', startDate.toISOString());
+
+    if (newUsersError) throw newUsersError;
 
     const responseData = {
       pageViews: totalViews || 0,
@@ -96,9 +97,9 @@ export default async function handler(
         { source: 'Social Media', visits: Math.floor(totalUniqueVisitors * 0.25) },
       ],
       userStats: {
-        totalUsers,
-        activeUsers: activeUsersCount,
-        newUsers: newUsersCount,
+        totalUsers: totalUsers || 0,
+        activeUsers: activeUsersCount || 0,
+        newUsers: newUsersCount || 0,
       },
       linkClicks: [],
       deviceStats: {
@@ -117,9 +118,8 @@ export default async function handler(
 
     res.status(200).json(responseData);
   } catch (error) {
+    console.error('Analytics error:', error);
     res.status(500).json({ error: 'Failed to fetch analytics data' });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 

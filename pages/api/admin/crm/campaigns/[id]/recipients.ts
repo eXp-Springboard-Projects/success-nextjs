@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -23,27 +21,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const recipients = await prisma.$queryRaw<Array<any>>`
-      SELECT
-        es.id,
-        es.to_email,
-        es.status,
-        es.sent_at,
-        es.delivered_at,
-        es.opened_at,
-        es.clicked_at,
-        es.bounced_at,
-        es.failed_at,
-        es.error_message,
-        c.first_name,
-        c.last_name
-      FROM email_sends es
-      LEFT JOIN contacts c ON es.contact_id = c.id
-      WHERE es.campaign_id = ${id}
-      ORDER BY es.sent_at DESC
-    `;
+    const supabase = supabaseAdmin();
 
-    return res.status(200).json({ recipients });
+    const { data: recipients, error } = await supabase
+      .from('email_sends')
+      .select(`
+        id,
+        to_email,
+        status,
+        sent_at,
+        delivered_at,
+        opened_at,
+        clicked_at,
+        bounced_at,
+        failed_at,
+        error_message,
+        contacts(first_name, last_name)
+      `)
+      .eq('campaign_id', id)
+      .order('sent_at', { ascending: false });
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to fetch campaign recipients' });
+    }
+
+    // Flatten the structure to match original format
+    const flattenedRecipients = recipients?.map(r => ({
+      ...r,
+      first_name: r.contacts?.first_name,
+      last_name: r.contacts?.last_name,
+      contacts: undefined,
+    }));
+
+    return res.status(200).json({ recipients: flattenedRecipients });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to fetch campaign recipients' });
   }

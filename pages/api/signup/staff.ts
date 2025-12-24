@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '@/lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -23,12 +21,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Only @success.com email addresses are allowed' });
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.$queryRaw<Array<{ id: string }>>`
-      SELECT id FROM users WHERE email = ${email.toLowerCase()}
-    `;
+    const supabase = supabaseAdmin();
 
-    if (existingUser.length > 0) {
+    // Check if user already exists
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .limit(1);
+
+    if (existingUser && existingUser.length > 0) {
       return res.status(400).json({ error: 'An account with this email already exists' });
     }
 
@@ -38,19 +40,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Create pending staff account (PENDING status - requires admin approval)
     const userId = nanoid();
     const fullName = `${firstName} ${lastName}`;
-    await prisma.$executeRaw`
-      INSERT INTO users (
-        id, email, password, name, role, "createdAt", "updatedAt"
-      ) VALUES (
-        ${userId},
-        ${email.toLowerCase()},
-        ${hashedPassword},
-        ${fullName},
-        'PENDING',
-        CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-      )
-    `;
+
+    const { error } = await supabase
+      .from('users')
+      .insert({
+        id: userId,
+        email: email.toLowerCase(),
+        password: hashedPassword,
+        name: fullName,
+        role: 'PENDING',
+      });
+
+    if (error) {
+      throw error;
+    }
 
     return res.status(201).json({
       message: 'Account created successfully. Pending admin approval.',

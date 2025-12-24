@@ -1,14 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '@/lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  const supabase = supabaseAdmin();
 
   try {
     const session = await getServerSession(req, res, authOptions);
@@ -17,25 +17,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const user = await prisma.users.findUnique({
-      where: { email: session.user.email! },
-      include: {
-        member: {
-          select: {
-            membershipTier: true,
-            membershipStatus: true,
-            trialEndsAt: true,
-            trialStartedAt: true,
-          },
-        },
-      },
-    });
+    // Get user data
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id, email, trialEndsAt')
+      .eq('email', session.user.email!)
+      .single();
 
-    if (!user) {
+    if (userError || !user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const member = user.member;
+    // Get member data
+    const { data: member, error: memberError } = await supabase
+      .from('members')
+      .select('membershipTier, membershipStatus, trialEndsAt, trialStartedAt')
+      .eq('userId', user.id)
+      .single();
+
+    // Member data is optional, so we don't throw error if not found
     const trialEndsAt = user.trialEndsAt || member?.trialEndsAt;
     const membershipTier = member?.membershipTier || 'Free';
 
@@ -61,8 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       membershipStatus: member?.membershipStatus || 'Inactive',
     });
   } catch (error) {
+    console.error('Trial status API error:', error);
     return res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    await prisma.$disconnect();
   }
 }

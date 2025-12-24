@@ -1,23 +1,27 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
     try {
+      const supabase = supabaseAdmin();
       const { status } = req.query;
 
-      const where: any = {};
+      let query = supabase
+        .from('forms')
+        .select('*')
+        .order('created_at', { ascending: false });
+
       if (status && status !== 'all') {
-        where.status = status as string;
+        query = query.eq('status', status as string);
       }
 
-      const forms = await prisma.forms.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-      });
+      const { data: forms, error } = await query;
+
+      if (error) {
+        return res.status(500).json({ error: 'Failed to fetch forms' });
+      }
 
       return res.status(200).json({ forms });
     } catch (error) {
@@ -27,23 +31,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'POST') {
     try {
+      const supabase = supabaseAdmin();
       const { name, fields, settings, thankYouMessage, redirectUrl, listId, tags, notifyEmails, status } = req.body;
 
-      const form = await prisma.forms.create({
-        data: {
+      const { data: form, error } = await supabase
+        .from('forms')
+        .insert({
           id: uuidv4(),
           name,
           fields: fields || [],
           settings: settings || {},
-          thankYouMessage,
-          redirectUrl,
-          listId,
+          thank_you_message: thankYouMessage,
+          redirect_url: redirectUrl,
+          list_id: listId,
           tags: tags || [],
-          notifyEmails: notifyEmails || [],
+          notify_emails: notifyEmails || [],
           status: status || 'draft',
-          updatedAt: new Date(),
-        },
-      });
+        })
+        .select()
+        .single();
+
+      if (error) {
+        return res.status(500).json({ error: 'Failed to create form' });
+      }
 
       return res.status(201).json(form);
     } catch (error) {

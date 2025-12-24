@@ -1,7 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../lib/supabase';
 
 /**
  * Track paywall analytics
@@ -12,6 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    const supabase = supabaseAdmin();
     const { articleId, articleTitle, articleUrl, blocked, userId } = req.body;
 
     // You can extend this to log to a separate analytics table

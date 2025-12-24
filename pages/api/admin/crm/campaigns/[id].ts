@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -31,23 +29,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getCampaign(id: string, res: NextApiResponse) {
   try {
-    const campaign = await prisma.$queryRaw<Array<any>>`
-      SELECT
-        c.*,
-        t.name as template_name,
-        t.html_content as template_html,
-        l.name as list_name
-      FROM email_campaigns c
-      LEFT JOIN email_templates t ON c.template_id = t.id
-      LEFT JOIN contact_lists l ON c.list_id = l.id
-      WHERE c.id = ${id}
-    `;
+    const supabase = supabaseAdmin();
 
-    if (campaign.length === 0) {
+    const { data: campaign, error } = await supabase
+      .from('email_campaigns')
+      .select(`
+        *,
+        template:email_templates(name, html_content),
+        list:contact_lists(name)
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error || !campaign) {
       return res.status(404).json({ error: 'Campaign not found' });
     }
 
-    return res.status(200).json(campaign[0]);
+    // Flatten the nested structure to match the original format
+    const result = {
+      ...campaign,
+      template_name: campaign.template?.name,
+      template_html: campaign.template?.html_content,
+      list_name: campaign.list?.name,
+    };
+    delete result.template;
+    delete result.list;
+
+    return res.status(200).json(result);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to fetch campaign' });
   }
@@ -55,6 +63,7 @@ async function getCampaign(id: string, res: NextApiResponse) {
 
 async function updateCampaign(id: string, req: NextApiRequest, res: NextApiResponse) {
   try {
+    const supabase = supabaseAdmin();
     const {
       name,
       subject,
@@ -67,77 +76,45 @@ async function updateCampaign(id: string, req: NextApiRequest, res: NextApiRespo
       status,
     } = req.body;
 
-    const updates: string[] = [];
-    const params: any[] = [id];
-    let paramIndex = 2;
+    const updateData: any = {};
 
-    if (name !== undefined) {
-      updates.push(`name = $${paramIndex}`);
-      params.push(name);
-      paramIndex++;
+    if (name !== undefined) updateData.name = name;
+    if (subject !== undefined) updateData.subject = subject;
+    if (previewText !== undefined) updateData.preview_text = previewText;
+    if (templateId !== undefined) updateData.template_id = templateId;
+    if (listId !== undefined) updateData.list_id = listId;
+    if (segmentFilters !== undefined) updateData.segment_filters = segmentFilters;
+    if (fromEmail !== undefined) updateData.from_email = fromEmail;
+    if (fromName !== undefined) updateData.from_name = fromName;
+    if (status !== undefined) updateData.status = status;
+
+    if (Object.keys(updateData).length === 0) {
+      const { data: campaign, error } = await supabase
+        .from('email_campaigns')
+        .select()
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        return res.status(500).json({ error: 'Failed to fetch campaign' });
+      }
+      return res.status(200).json(campaign);
     }
 
-    if (subject !== undefined) {
-      updates.push(`subject = $${paramIndex}`);
-      params.push(subject);
-      paramIndex++;
+    updateData.updated_at = new Date().toISOString();
+
+    const { data: campaign, error } = await supabase
+      .from('email_campaigns')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to update campaign' });
     }
 
-    if (previewText !== undefined) {
-      updates.push(`preview_text = $${paramIndex}`);
-      params.push(previewText);
-      paramIndex++;
-    }
-
-    if (templateId !== undefined) {
-      updates.push(`template_id = $${paramIndex}`);
-      params.push(templateId);
-      paramIndex++;
-    }
-
-    if (listId !== undefined) {
-      updates.push(`list_id = $${paramIndex}`);
-      params.push(listId);
-      paramIndex++;
-    }
-
-    if (segmentFilters !== undefined) {
-      updates.push(`segment_filters = $${paramIndex}::jsonb`);
-      params.push(JSON.stringify(segmentFilters));
-      paramIndex++;
-    }
-
-    if (fromEmail !== undefined) {
-      updates.push(`from_email = $${paramIndex}`);
-      params.push(fromEmail);
-      paramIndex++;
-    }
-
-    if (fromName !== undefined) {
-      updates.push(`from_name = $${paramIndex}`);
-      params.push(fromName);
-      paramIndex++;
-    }
-
-    if (status !== undefined) {
-      updates.push(`status = $${paramIndex}`);
-      params.push(status);
-      paramIndex++;
-    }
-
-    if (updates.length > 0) {
-      updates.push(`updated_at = CURRENT_TIMESTAMP`);
-      await prisma.$queryRawUnsafe(
-        `UPDATE email_campaigns SET ${updates.join(', ')} WHERE id = $1`,
-        ...params
-      );
-    }
-
-    const campaign = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM email_campaigns WHERE id = ${id}
-    `;
-
-    return res.status(200).json(campaign[0]);
+    return res.status(200).json(campaign);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to update campaign' });
   }
@@ -145,9 +122,16 @@ async function updateCampaign(id: string, req: NextApiRequest, res: NextApiRespo
 
 async function deleteCampaign(id: string, res: NextApiResponse) {
   try {
-    await prisma.$executeRaw`
-      DELETE FROM email_campaigns WHERE id = ${id}
-    `;
+    const supabase = supabaseAdmin();
+
+    const { error } = await supabase
+      .from('email_campaigns')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to delete campaign' });
+    }
 
     return res.status(200).json({ success: true });
   } catch (error) {

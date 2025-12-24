@@ -1,12 +1,12 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
+
 import { stripe } from '@/lib/stripe';
 import Stripe from 'stripe';
 import { nanoid } from 'nanoid';
 import { createLogger } from '@/lib/logger';
+import { supabaseAdmin } from '@/lib/supabase';
 
 const log = createLogger('StripeWebhook');
-const prisma = new PrismaClient();
 
 // Disable body parsing, need raw body for webhook signature verification
 export const config = {
@@ -98,8 +98,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       error: 'Webhook processing failed',
       details: error instanceof Error ? error.message : 'Unknown error',
     });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -107,6 +105,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
  * Handle successful checkout session
  */
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
+  const supabase = supabaseAdmin();
   const customerId = session.customer as string;
   const subscriptionId = session.subscription as string;
 
@@ -116,17 +115,22 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   }
 
   // Find member by Stripe customer ID
-  const member = await prisma.members.findFirst({
-    where: { stripeCustomerId: customerId },
-    include: {
-      platformUser: true,
-    },
-  });
+  const { data: members, error: memberError } = await supabase
+    .from('members')
+    .select(`
+      *,
+      users!members_linkedMemberId_fkey(*)
+    `)
+    .eq('stripeCustomerId', customerId)
+    .limit(1);
 
-  if (!member) {
+  if (memberError || !members || members.length === 0) {
     log.error('No member found with Stripe customer ID', { customerId });
     return;
   }
+
+  const member = members[0];
+  const platformUser = member.users;
 
   // Get subscription details from Stripe
   const subscription = await stripe!.subscriptions.retrieve(subscriptionId);
@@ -137,62 +141,73 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   const currentPeriodEnd = subData.current_period_end || subData.currentPeriodEnd;
   const cancelAtPeriodEnd = subData.cancel_at_period_end ?? subData.cancelAtPeriodEnd ?? false;
 
+  // Check if subscription already exists
+  const { data: existingSub } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('stripeSubscriptionId', subscriptionId)
+    .single();
+
   // Create or update subscription record
-  await prisma.subscriptions.upsert({
-    where: {
-      stripeSubscriptionId: subscriptionId,
-    },
-    create: {
-      id: nanoid(),
-      memberId: member.id,
-      stripeCustomerId: customerId,
-      stripeSubscriptionId: subscriptionId,
-      stripePriceId: subscription.items.data[0]?.price.id,
-      provider: 'stripe',
-      status: subscription.status.toUpperCase(),
-      tier: 'SUCCESS_PLUS',
-      currentPeriodStart: new Date(currentPeriodStart * 1000),
-      currentPeriodEnd: new Date(currentPeriodEnd * 1000),
-      cancelAtPeriodEnd,
-      billingCycle: subscription.items.data[0]?.price.recurring?.interval?.toUpperCase() || 'MONTHLY',
-      updatedAt: new Date(),
-    },
-    update: {
-      status: subscription.status.toUpperCase(),
-      currentPeriodStart: new Date(currentPeriodStart * 1000),
-      currentPeriodEnd: new Date(currentPeriodEnd * 1000),
-      cancelAtPeriodEnd,
-      updatedAt: new Date(),
-    },
-  });
+  if (existingSub) {
+    await supabase
+      .from('subscriptions')
+      .update({
+        status: subscription.status.toUpperCase(),
+        currentPeriodStart: new Date(currentPeriodStart * 1000).toISOString(),
+        currentPeriodEnd: new Date(currentPeriodEnd * 1000).toISOString(),
+        cancelAtPeriodEnd,
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('stripeSubscriptionId', subscriptionId);
+  } else {
+    await supabase
+      .from('subscriptions')
+      .insert({
+        id: nanoid(),
+        memberId: member.id,
+        stripeCustomerId: customerId,
+        stripeSubscriptionId: subscriptionId,
+        stripePriceId: subscription.items.data[0]?.price.id,
+        provider: 'stripe',
+        status: subscription.status.toUpperCase(),
+        tier: 'SUCCESS_PLUS',
+        currentPeriodStart: new Date(currentPeriodStart * 1000).toISOString(),
+        currentPeriodEnd: new Date(currentPeriodEnd * 1000).toISOString(),
+        cancelAtPeriodEnd,
+        billingCycle: subscription.items.data[0]?.price.recurring?.interval?.toUpperCase() || 'MONTHLY',
+        updatedAt: new Date().toISOString(),
+      });
+  }
 
   // Update member tier and clear trial
-  await prisma.members.update({
-    where: { id: member.id },
-    data: {
+  await supabase
+    .from('members')
+    .update({
       membershipTier: 'SUCCESSPlus',
       membershipStatus: 'Active',
       trialEndsAt: null,
       trialStartedAt: null,
-    },
-  });
+    })
+    .eq('id', member.id);
 
   // Clear trial from platform user if linked
-  if (member.platformUser) {
-    await prisma.users.update({
-      where: { id: member.platformUser.id },
-      data: {
+  if (platformUser) {
+    await supabase
+      .from('users')
+      .update({
         trialEndsAt: null,
-      },
-    });
+      })
+      .eq('id', platformUser.id);
   }
 
   // Log activity
-  if (member.platformUser) {
-    await prisma.user_activities.create({
-      data: {
+  if (platformUser) {
+    await supabase
+      .from('user_activities')
+      .insert({
         id: nanoid(),
-        userId: member.platformUser.id,
+        userId: platformUser.id,
         activityType: 'SUBSCRIPTION_STARTED',
         title: 'SUCCESS+ Subscription Activated',
         description: 'Subscription activated via Stripe payment',
@@ -201,10 +216,11 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
           customerId,
           tier: 'SUCCESS_PLUS',
         }),
-      },
-    }).catch(() => {
-      // Ignore activity logging errors
-    });
+      })
+      .then(() => {})
+      .catch(() => {
+        // Ignore activity logging errors
+      });
   }
 
   log.info('Subscription activated for member', { email: member.email });
@@ -214,20 +230,22 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
  * Handle subscription updates
  */
 async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
+  const supabase = supabaseAdmin();
   const subscriptionId = subscription.id;
   const customerId = subscription.customer as string;
 
   // Find existing subscription
-  const existingSubscription = await prisma.subscriptions.findUnique({
-    where: { stripeSubscriptionId: subscriptionId },
-    include: {
-      member: {
-        include: {
-          platformUser: true,
-        },
-      },
-    },
-  });
+  const { data: existingSubscription } = await supabase
+    .from('subscriptions')
+    .select(`
+      *,
+      members!subscriptions_memberId_fkey(
+        *,
+        users!members_linkedMemberId_fkey(*)
+      )
+    `)
+    .eq('stripeSubscriptionId', subscriptionId)
+    .single();
 
   // Extract subscription data
   const subData: any = subscription;
@@ -238,13 +256,17 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
   if (!existingSubscription) {
     // If subscription doesn't exist, it might be a new subscription
     // Find member by customer ID and create subscription
-    const member = await prisma.members.findFirst({
-      where: { stripeCustomerId: customerId },
-    });
+    const { data: members } = await supabase
+      .from('members')
+      .select('*')
+      .eq('stripeCustomerId', customerId)
+      .limit(1);
 
-    if (member) {
-      await prisma.subscriptions.create({
-        data: {
+    if (members && members.length > 0) {
+      const member = members[0];
+      await supabase
+        .from('subscriptions')
+        .insert({
           id: nanoid(),
           memberId: member.id,
           stripeCustomerId: customerId,
@@ -253,48 +275,47 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
           provider: 'stripe',
           status: subscription.status.toUpperCase(),
           tier: 'SUCCESS_PLUS',
-          currentPeriodStart: new Date(currentPeriodStart * 1000),
-          currentPeriodEnd: new Date(currentPeriodEnd * 1000),
+          currentPeriodStart: new Date(currentPeriodStart * 1000).toISOString(),
+          currentPeriodEnd: new Date(currentPeriodEnd * 1000).toISOString(),
           cancelAtPeriodEnd,
           billingCycle: subscription.items.data[0]?.price.recurring?.interval?.toUpperCase() || 'MONTHLY',
-          updatedAt: new Date(),
-        },
-      });
+          updatedAt: new Date().toISOString(),
+        });
 
       // Update member tier
-      await prisma.members.update({
-        where: { id: member.id },
-        data: {
+      await supabase
+        .from('members')
+        .update({
           membershipTier: 'SUCCESSPlus',
           membershipStatus: 'Active',
-        },
-      });
+        })
+        .eq('id', member.id);
     }
     return;
   }
 
   // Update existing subscription
-  await prisma.subscriptions.update({
-    where: { stripeSubscriptionId: subscriptionId },
-    data: {
+  await supabase
+    .from('subscriptions')
+    .update({
       status: subscription.status.toUpperCase(),
-      currentPeriodStart: new Date(currentPeriodStart * 1000),
-      currentPeriodEnd: new Date(currentPeriodEnd * 1000),
+      currentPeriodStart: new Date(currentPeriodStart * 1000).toISOString(),
+      currentPeriodEnd: new Date(currentPeriodEnd * 1000).toISOString(),
       cancelAtPeriodEnd,
-      updatedAt: new Date(),
-    },
-  });
+      updatedAt: new Date().toISOString(),
+    })
+    .eq('stripeSubscriptionId', subscriptionId);
 
   // Update member status based on subscription status
   const isActive = subscription.status === 'active' || subscription.status === 'trialing';
 
-  await prisma.members.update({
-    where: { id: existingSubscription.memberId },
-    data: {
+  await supabase
+    .from('members')
+    .update({
       membershipTier: isActive ? 'SUCCESSPlus' : 'Free',
       membershipStatus: isActive ? 'Active' : 'Inactive',
-    },
-  });
+    })
+    .eq('id', existingSubscription.memberId);
 
   log.info('Subscription updated', { subscriptionId, status: subscription.status });
 }
@@ -303,18 +324,20 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
  * Handle subscription cancellation
  */
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+  const supabase = supabaseAdmin();
   const subscriptionId = subscription.id;
 
-  const existingSubscription = await prisma.subscriptions.findUnique({
-    where: { stripeSubscriptionId: subscriptionId },
-    include: {
-      member: {
-        include: {
-          platformUser: true,
-        },
-      },
-    },
-  });
+  const { data: existingSubscription } = await supabase
+    .from('subscriptions')
+    .select(`
+      *,
+      members!subscriptions_memberId_fkey(
+        *,
+        users!members_linkedMemberId_fkey(*)
+      )
+    `)
+    .eq('stripeSubscriptionId', subscriptionId)
+    .single();
 
   if (!existingSubscription) {
     log.error('Subscription not found', { subscriptionId });
@@ -322,29 +345,32 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }
 
   // Update subscription status
-  await prisma.subscriptions.update({
-    where: { stripeSubscriptionId: subscriptionId },
-    data: {
+  await supabase
+    .from('subscriptions')
+    .update({
       status: 'CANCELED',
-      updatedAt: new Date(),
-    },
-  });
+      updatedAt: new Date().toISOString(),
+    })
+    .eq('stripeSubscriptionId', subscriptionId);
 
   // Downgrade member to Free tier
-  await prisma.members.update({
-    where: { id: existingSubscription.memberId },
-    data: {
+  await supabase
+    .from('members')
+    .update({
       membershipTier: 'Free',
       membershipStatus: 'Inactive',
-    },
-  });
+    })
+    .eq('id', existingSubscription.memberId);
 
   // Log activity
-  if (existingSubscription.member.platformUser) {
-    await prisma.user_activities.create({
-      data: {
+  const member = existingSubscription.members;
+  const platformUser = member?.users;
+  if (platformUser) {
+    await supabase
+      .from('user_activities')
+      .insert({
         id: nanoid(),
-        userId: existingSubscription.member.platformUser.id,
+        userId: platformUser.id,
         activityType: 'SUBSCRIPTION_STARTED',
         title: 'Subscription Cancelled',
         description: 'SUCCESS+ subscription has been cancelled',
@@ -352,10 +378,11 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
           subscriptionId,
           canceledAt: new Date().toISOString(),
         }),
-      },
-    }).catch(() => {
-      // Ignore activity logging errors
-    });
+      })
+      .then(() => {})
+      .catch(() => {
+        // Ignore activity logging errors
+      });
   }
 
   log.info('Subscription cancelled', { subscriptionId });
@@ -365,6 +392,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
  * Handle successful invoice payment
  */
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
+  const supabase = supabaseAdmin();
   const invoiceData: any = invoice;
   const subscriptionId = invoiceData.subscription as string;
 
@@ -372,21 +400,23 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     return;
   }
 
-  const subscription = await prisma.subscriptions.findUnique({
-    where: { stripeSubscriptionId: subscriptionId },
-    include: {
-      member: true,
-    },
-  });
+  const { data: subscription } = await supabase
+    .from('subscriptions')
+    .select(`
+      *,
+      members!subscriptions_memberId_fkey(*)
+    `)
+    .eq('stripeSubscriptionId', subscriptionId)
+    .single();
 
   if (subscription) {
     // Update last payment date
-    await prisma.subscriptions.update({
-      where: { stripeSubscriptionId: subscriptionId },
-      data: {
-        updatedAt: new Date(),
-      },
-    });
+    await supabase
+      .from('subscriptions')
+      .update({
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('stripeSubscriptionId', subscriptionId);
 
     log.info('Payment succeeded for subscription', { subscriptionId });
   }
@@ -396,6 +426,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
  * Handle failed invoice payment
  */
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
+  const supabase = supabaseAdmin();
   const invoiceData: any = invoice;
   const subscriptionId = invoiceData.subscription as string;
 
@@ -403,33 +434,37 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
     return;
   }
 
-  const subscription = await prisma.subscriptions.findUnique({
-    where: { stripeSubscriptionId: subscriptionId },
-    include: {
-      member: {
-        include: {
-          platformUser: true,
-        },
-      },
-    },
-  });
+  const { data: subscription } = await supabase
+    .from('subscriptions')
+    .select(`
+      *,
+      members!subscriptions_memberId_fkey(
+        *,
+        users!members_linkedMemberId_fkey(*)
+      )
+    `)
+    .eq('stripeSubscriptionId', subscriptionId)
+    .single();
 
   if (subscription) {
     // Update subscription status
-    await prisma.subscriptions.update({
-      where: { stripeSubscriptionId: subscriptionId },
-      data: {
+    await supabase
+      .from('subscriptions')
+      .update({
         status: 'PAST_DUE',
-        updatedAt: new Date(),
-      },
-    });
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('stripeSubscriptionId', subscriptionId);
 
     // Log activity
-    if (subscription.member.platformUser) {
-      await prisma.user_activities.create({
-        data: {
+    const member = subscription.members;
+    const platformUser = member?.users;
+    if (platformUser) {
+      await supabase
+        .from('user_activities')
+        .insert({
           id: nanoid(),
-          userId: subscription.member.platformUser.id,
+          userId: platformUser.id,
           activityType: 'SUBSCRIPTION_STARTED',
           title: 'Payment Failed',
           description: 'Subscription payment failed - please update payment method',
@@ -437,10 +472,11 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
             subscriptionId,
             invoiceId: invoice.id,
           }),
-        },
-      }).catch(() => {
-        // Ignore activity logging errors
-      });
+        })
+        .then(() => {})
+        .catch(() => {
+          // Ignore activity logging errors
+        });
     }
 
     log.info('Payment failed for subscription', { subscriptionId });

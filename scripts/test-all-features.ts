@@ -3,7 +3,7 @@
  * Tests: Database, Schema, Announcements, Watch History, Subscriptions, Staff APIs
  */
 
-import { PrismaClient } from '@prisma/client';
+
 
 const prisma = new PrismaClient();
 

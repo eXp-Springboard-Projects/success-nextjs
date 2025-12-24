@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -24,6 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getTasks(req: NextApiRequest, res: NextApiResponse, session: any) {
   try {
+    const supabase = supabaseAdmin();
     const {
       filter = 'my',
       type = '',
@@ -33,83 +32,88 @@ async function getTasks(req: NextApiRequest, res: NextApiResponse, session: any)
       ticketId = '',
     } = req.query;
 
-    let whereClause = '';
-    const params: any[] = [];
-    let paramIndex = 1;
+    let query = supabase
+      .from('tasks')
+      .select(`
+        *,
+        contacts!tasks_contact_id_fkey (
+          email,
+          first_name,
+          last_name
+        ),
+        deals!tasks_deal_id_fkey (
+          name
+        ),
+        tickets!tasks_ticket_id_fkey (
+          subject
+        )
+      `);
 
     // Filter by user
     if (filter === 'my') {
-      whereClause += ` AND t.assigned_to = $${paramIndex}`;
-      params.push(session.user.id);
-      paramIndex++;
+      query = query.eq('assigned_to', session.user.id);
     } else if (filter === 'overdue') {
-      whereClause += ` AND t.status = 'pending' AND t.due_date < CURRENT_DATE`;
+      query = query.eq('status', 'pending').lt('due_date', new Date().toISOString().split('T')[0]);
     } else if (filter === 'today') {
-      whereClause += ` AND t.status = 'pending' AND t.due_date = CURRENT_DATE`;
+      query = query.eq('status', 'pending').eq('due_date', new Date().toISOString().split('T')[0]);
     } else if (filter === 'upcoming') {
-      whereClause += ` AND t.status = 'pending' AND t.due_date > CURRENT_DATE`;
+      query = query.eq('status', 'pending').gt('due_date', new Date().toISOString().split('T')[0]);
     } else if (filter === 'completed') {
-      whereClause += ` AND t.status = 'completed'`;
+      query = query.eq('status', 'completed');
     }
 
     if (type) {
-      whereClause += ` AND t.type = $${paramIndex}`;
-      params.push(type);
-      paramIndex++;
+      query = query.eq('type', type);
     }
 
     if (priority) {
-      whereClause += ` AND t.priority = $${paramIndex}`;
-      params.push(priority);
-      paramIndex++;
+      query = query.eq('priority', priority);
     }
 
     if (contactId) {
-      whereClause += ` AND t.contact_id = $${paramIndex}`;
-      params.push(contactId);
-      paramIndex++;
+      query = query.eq('contact_id', contactId);
     }
 
     if (dealId) {
-      whereClause += ` AND t.deal_id = $${paramIndex}`;
-      params.push(dealId);
-      paramIndex++;
+      query = query.eq('deal_id', dealId);
     }
 
     if (ticketId) {
-      whereClause += ` AND t.ticket_id = $${paramIndex}`;
-      params.push(ticketId);
-      paramIndex++;
+      query = query.eq('ticket_id', ticketId);
     }
 
-    const tasks = await prisma.$queryRawUnsafe(`
-      SELECT
-        t.*,
-        c.email as contact_email,
-        c.first_name as contact_first_name,
-        c.last_name as contact_last_name,
-        d.name as deal_name,
-        tk.subject as ticket_subject
-      FROM tasks t
-      LEFT JOIN contacts c ON t.contact_id = c.id
-      LEFT JOIN deals d ON t.deal_id = d.id
-      LEFT JOIN tickets tk ON t.ticket_id = tk.id
-      WHERE 1=1 ${whereClause}
-      ORDER BY
-        CASE WHEN t.status = 'pending' THEN 0 ELSE 1 END,
-        t.due_date ASC NULLS LAST,
-        t.priority DESC,
-        t.created_at DESC
-    `, ...params);
+    query = query.order('status', { ascending: true, nullsFirst: false })
+      .order('due_date', { ascending: true, nullsFirst: false })
+      .order('priority', { ascending: false })
+      .order('created_at', { ascending: false });
 
-    return res.status(200).json({ tasks });
+    const { data: tasks, error } = await query;
+
+    if (error) {
+      console.error('Failed to fetch tasks:', error);
+      return res.status(500).json({ error: 'Failed to fetch tasks' });
+    }
+
+    // Transform the data to match the expected format
+    const transformedTasks = tasks?.map(task => ({
+      ...task,
+      contact_email: task.contacts?.email,
+      contact_first_name: task.contacts?.first_name,
+      contact_last_name: task.contacts?.last_name,
+      deal_name: task.deals?.name,
+      ticket_subject: task.tickets?.subject,
+    }));
+
+    return res.status(200).json({ tasks: transformedTasks });
   } catch (error) {
+    console.error('Failed to fetch tasks:', error);
     return res.status(500).json({ error: 'Failed to fetch tasks' });
   }
 }
 
 async function createTask(req: NextApiRequest, res: NextApiResponse, session: any) {
   try {
+    const supabase = supabaseAdmin();
     const {
       title,
       description,
@@ -131,26 +135,35 @@ async function createTask(req: NextApiRequest, res: NextApiResponse, session: an
 
     const taskId = nanoid();
 
-    await prisma.$executeRaw`
-      INSERT INTO tasks (
-        id, title, description, type, priority, due_date, due_time,
-        contact_id, deal_id, ticket_id, assigned_to, assigned_to_name,
-        reminder_at, created_by
-      ) VALUES (
-        ${taskId}, ${title}, ${description || null}, ${type}, ${priority},
-        ${dueDate || null}, ${dueTime || null}, ${contactId || null},
-        ${dealId || null}, ${ticketId || null},
-        ${assignedTo || session.user.id}, ${assignedToName || session.user.name},
-        ${reminderAt || null}, ${session.user.id}
-      )
-    `;
+    const { data: task, error } = await supabase
+      .from('tasks')
+      .insert({
+        id: taskId,
+        title,
+        description: description || null,
+        type,
+        priority,
+        due_date: dueDate || null,
+        due_time: dueTime || null,
+        contact_id: contactId || null,
+        deal_id: dealId || null,
+        ticket_id: ticketId || null,
+        assigned_to: assignedTo || session.user.id,
+        assigned_to_name: assignedToName || session.user.name,
+        reminder_at: reminderAt || null,
+        created_by: session.user.id,
+      })
+      .select()
+      .single();
 
-    const task = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM tasks WHERE id = ${taskId}
-    `;
+    if (error) {
+      console.error('Failed to create task:', error);
+      return res.status(500).json({ error: 'Failed to create task' });
+    }
 
-    return res.status(201).json(task[0]);
+    return res.status(201).json(task);
   } catch (error) {
+    console.error('Failed to create task:', error);
     return res.status(500).json({ error: 'Failed to create task' });
   }
 }

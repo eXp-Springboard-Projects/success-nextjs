@@ -1,11 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../lib/supabase';
 import { nanoid } from 'nanoid';
 import { sendCampaignEmail, sendEmailBatch } from '../../../../lib/email';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -17,6 +15,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  const supabase = supabaseAdmin();
 
   try {
     const {
@@ -33,34 +33,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Subject, content, and list ID are required' });
     }
 
-    // Get contacts from list using proper Prisma schema
-    const listMembers = await prisma.list_members.findMany({
-      where: { listId },
-      include: { contact: true },
-    });
+    // Get contacts from list
+    const { data: listMembers, error: listError } = await supabase
+      .from('list_members')
+      .select('*, contact:contacts(*)')
+      .eq('listId', listId);
 
-    if (listMembers.length === 0) {
+    if (listError || !listMembers || listMembers.length === 0) {
       return res.status(400).json({ error: 'Selected list has no contacts' });
     }
 
     const contacts = listMembers.map(lm => lm.contact);
     const recipientCount = contacts.length;
 
-    // Create campaign using proper campaigns table
+    // Create campaign
     const campaignId = nanoid();
-    const scheduledDate = sendNow ? null : (scheduledAt ? new Date(scheduledAt) : null);
+    const scheduledDate = sendNow ? null : (scheduledAt ? new Date(scheduledAt).toISOString() : null);
 
-    const campaign = await prisma.campaigns.create({
-      data: {
+    const { data: campaign, error: campaignError } = await supabase
+      .from('campaigns')
+      .insert({
         id: campaignId,
         name: `Quick Email: ${subject.substring(0, 50)}`,
         subject,
         status: sendNow ? 'SENDING' : 'SCHEDULED',
         scheduledAt: scheduledDate,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    });
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (campaignError || !campaign) {
+      return res.status(500).json({ error: 'Failed to create campaign' });
+    }
 
     // If sending now, send emails immediately
     if (sendNow) {
@@ -71,8 +77,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
           // Log the email event
           if (result.success) {
-            await prisma.email_events.create({
-              data: {
+            await supabase
+              .from('email_events')
+              .insert({
                 id: nanoid(),
                 campaignId: campaign.id,
                 contactId: contact.id,
@@ -82,11 +89,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                   fromName,
                   fromEmail,
                 },
-              },
-            });
+                createdAt: new Date().toISOString(),
+              });
           } else {
-            await prisma.email_events.create({
-              data: {
+            await supabase
+              .from('email_events')
+              .insert({
                 id: nanoid(),
                 campaignId: campaign.id,
                 contactId: contact.id,
@@ -95,8 +103,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 eventData: {
                   error: result.error || 'Unknown error',
                 },
-              },
-            });
+                createdAt: new Date().toISOString(),
+              });
           }
 
           return result;
@@ -107,17 +115,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { sentCount, failedCount, errors } = await sendEmailBatch(emailTasks, 50, 500);
 
       // Update campaign with results
-      await prisma.campaigns.update({
-        where: { id: campaignId },
-        data: {
+      await supabase
+        .from('campaigns')
+        .update({
           status: 'SENT',
-          sentAt: new Date(),
+          sentAt: new Date().toISOString(),
           sentCount,
           failedCount,
-          sendErrors: errors.length > 0 ? errors : undefined,
-          updatedAt: new Date(),
-        },
-      });
+          sendErrors: errors.length > 0 ? errors : null,
+          updatedAt: new Date().toISOString(),
+        })
+        .eq('id', campaignId);
 
       return res.status(200).json({
         message: `Email sent to ${sentCount} recipients${failedCount > 0 ? `, ${failedCount} failed` : ''}`,
@@ -132,7 +140,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message: 'Email scheduled successfully',
         campaignId,
         recipientCount,
-        scheduledAt: scheduledDate?.toISOString(),
+        scheduledAt: scheduledDate,
       });
     }
   } catch (error: any) {
@@ -140,7 +148,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({
       error: error.message || 'Failed to send email',
     });
-  } finally {
-    await prisma.$disconnect();
   }
 }

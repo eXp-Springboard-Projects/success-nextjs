@@ -1,11 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { randomUUID } from 'crypto';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -13,26 +11,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    const supabase = supabaseAdmin();
     const session = await getServerSession(req, res, authOptions);
     const { articleId, articleTitle, articleUrl } = req.body;
 
     // Get paywall config
-    const config = await prisma.paywall_config.findFirst();
+    const { data: config } = await supabase
+      .from('paywall_config')
+      .select('*')
+      .limit(1)
+      .single();
+
     const freeArticleLimit = config?.freeArticleLimit || 3;
     const resetPeriodDays = config?.resetPeriodDays || 30;
 
     // Check if user has active subscription through member
     if (session?.user) {
-      const user = await prisma.users.findUnique({
-        where: { id: session.user.id },
-        include: { member: { include: { subscriptions: true } } }
-      });
-      const subscription = user?.member?.subscriptions?.find(s => s.status === 'ACTIVE');
+      const { data: user } = await supabase
+        .from('users')
+        .select(`
+          *,
+          member:members!inner (
+            *,
+            subscriptions (*)
+          )
+        `)
+        .eq('id', session.user.id)
+        .single();
+
+      const subscription = user?.member?.subscriptions?.find((s: any) => s.status === 'ACTIVE');
 
       if (subscription) {
         // Subscriber - track but don't count against limit
-        await prisma.page_views.create({
-          data: {
+        await supabase
+          .from('page_views')
+          .insert({
             id: randomUUID(),
             userId: session.user.id,
             articleId,
@@ -40,14 +53,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             articleUrl,
             ipAddress: req.headers['x-forwarded-for'] as string || req.socket.remoteAddress,
             userAgent: req.headers['user-agent']
-          }
-        });
+          });
 
         return res.status(200).json({ blocked: false, count: 0, isSubscriber: true });
       }
     }
 
-    // Calculate reset date (beginning of current month)
+    // Calculate reset date
     const resetDate = new Date();
     resetDate.setDate(resetDate.getDate() - resetPeriodDays);
 
@@ -59,16 +71,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       userId = session.user.id;
 
       // Count views since reset date
-      const viewCount = await prisma.page_views.count({
-        where: {
-          userId: userId,
-          viewedAt: { gte: resetDate }
-        }
-      });
+      const { count: viewCount } = await supabase
+        .from('page_views')
+        .select('*', { count: 'exact', head: true })
+        .eq('userId', userId)
+        .gte('viewedAt', resetDate.toISOString());
 
       // Track this view
-      await prisma.page_views.create({
-        data: {
+      await supabase
+        .from('page_views')
+        .insert({
           id: randomUUID(),
           userId,
           articleId,
@@ -76,14 +88,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           articleUrl,
           ipAddress: req.headers['x-forwarded-for'] as string || req.socket.remoteAddress,
           userAgent: req.headers['user-agent']
-        }
-      });
+        });
 
-      const blocked = viewCount >= freeArticleLimit;
+      const blocked = (viewCount || 0) >= freeArticleLimit;
 
       return res.status(200).json({
         blocked,
-        count: viewCount + 1,
+        count: (viewCount || 0) + 1,
         limit: freeArticleLimit,
         isSubscriber: false
       });
@@ -98,16 +109,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Count views for this session since reset date
-    const viewCount = await prisma.page_views.count({
-      where: {
-        sessionId: sessionId,
-        viewedAt: { gte: resetDate }
-      }
-    });
+    const { count: viewCount } = await supabase
+      .from('page_views')
+      .select('*', { count: 'exact', head: true })
+      .eq('sessionId', sessionId)
+      .gte('viewedAt', resetDate.toISOString());
 
     // Track this view
-    await prisma.page_views.create({
-      data: {
+    await supabase
+      .from('page_views')
+      .insert({
         id: randomUUID(),
         sessionId,
         articleId,
@@ -115,18 +126,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         articleUrl,
         ipAddress: req.headers['x-forwarded-for'] as string || req.socket.remoteAddress,
         userAgent: req.headers['user-agent']
-      }
-    });
+      });
 
-    const blocked = viewCount >= freeArticleLimit;
+    const blocked = (viewCount || 0) >= freeArticleLimit;
 
     return res.status(200).json({
       blocked,
-      count: viewCount + 1,
+      count: (viewCount || 0) + 1,
       limit: freeArticleLimit,
       isSubscriber: false
     });
   } catch (error) {
+    console.error('Paywall track error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

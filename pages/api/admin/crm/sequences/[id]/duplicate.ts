@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -24,32 +22,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const sequence = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM sequences WHERE id = ${id}
-    `;
+    const supabase = supabaseAdmin();
 
-    if (sequence.length === 0) {
+    const { data: sequence, error: fetchError } = await supabase
+      .from('sequences')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !sequence) {
       return res.status(404).json({ error: 'Sequence not found' });
     }
 
-    const seq = sequence[0];
     const newId = nanoid();
-    const newName = `${seq.name} (Copy)`;
+    const newName = `${sequence.name} (Copy)`;
 
-    await prisma.$executeRaw`
-      INSERT INTO sequences (
-        id, name, description, steps, status, auto_unenroll_on_reply, created_by
-      ) VALUES (
-        ${newId}, ${newName}, ${seq.description}, ${seq.steps}::jsonb,
-        'draft', ${seq.auto_unenroll_on_reply}, ${session.user.id}
-      )
-    `;
+    const { data: newSequence, error: insertError } = await supabase
+      .from('sequences')
+      .insert({
+        id: newId,
+        name: newName,
+        description: sequence.description,
+        steps: sequence.steps,
+        status: 'draft',
+        auto_unenroll_on_reply: sequence.auto_unenroll_on_reply,
+        created_by: session.user.id,
+      })
+      .select()
+      .single();
 
-    const newSequence = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM sequences WHERE id = ${newId}
-    `;
+    if (insertError) {
+      return res.status(500).json({ error: 'Failed to duplicate sequence' });
+    }
 
-    return res.status(201).json(newSequence[0]);
+    return res.status(201).json(newSequence);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to duplicate sequence' });
   }

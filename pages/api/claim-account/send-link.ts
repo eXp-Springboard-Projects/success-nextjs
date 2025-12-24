@@ -1,15 +1,15 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '@/lib/supabase';
 import { stripe } from '@/lib/stripe';
 import { nanoid } from 'nanoid';
 import crypto from 'crypto';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  const supabase = supabaseAdmin();
 
   try {
     const { email } = req.body;
@@ -21,11 +21,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const normalizedEmail = email.toLowerCase().trim();
 
     // Check if user already exists
-    const existingUser = await prisma.users.findUnique({
-      where: { email: normalizedEmail },
-    });
+    const { data: existingUsers, error: userFindError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', normalizedEmail)
+      .limit(1);
 
-    if (existingUser) {
+    if (userFindError) throw userFindError;
+
+    if (existingUsers && existingUsers.length > 0) {
       return res.status(400).json({
         error: 'An account with this email already exists. Please sign in instead.',
       });
@@ -71,8 +75,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     tokenExpiry.setHours(tokenExpiry.getHours() + 24);
 
     // Store claim request in database
-    await prisma.users.create({
-      data: {
+    const { error: userCreateError } = await supabase
+      .from('users')
+      .insert({
         id: nanoid(),
         email: normalizedEmail,
         name: stripeCustomer.name || normalizedEmail.split('@')[0],
@@ -80,9 +85,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         role: 'EDITOR',
         emailVerified: true, // Email is verified via Stripe
         resetToken: claimToken, // Reusing reset token field for claim token
-        resetTokenExpiry: tokenExpiry,
-      },
-    });
+        resetTokenExpiry: tokenExpiry.toISOString(),
+      });
+
+    if (userCreateError) throw userCreateError;
 
     // Send claim email
     const claimUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/claim-account/verify?token=${claimToken}`;
@@ -149,7 +155,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({
       error: 'Failed to process claim request. Please try again or contact support.',
     });
-  } finally {
-    await prisma.$disconnect();
   }
 }

@@ -3,7 +3,7 @@
  * Identifies which pages are hardcoded and which are in the database
  */
 
-import { PrismaClient } from '@prisma/client';
+
 import * as fs from 'fs';
 import * as path from 'path';
 

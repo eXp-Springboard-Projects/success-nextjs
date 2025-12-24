@@ -1,10 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id, contactId } = req.query;
+  const supabase = supabaseAdmin();
 
   if (typeof id !== 'string' || typeof contactId !== 'string') {
     return res.status(400).json({ error: 'Invalid list ID or contact ID' });
@@ -12,23 +11,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'DELETE') {
     try {
-      await prisma.list_members.deleteMany({
-        where: {
-          listId: id,
-          contactId: contactId,
-        },
-      });
+      const { error: deleteError } = await supabase
+        .from('list_members')
+        .delete()
+        .eq('listId', id)
+        .eq('contactId', contactId);
+
+      if (deleteError) throw deleteError;
+
+      // Get current member count
+      const { data: currentList } = await supabase
+        .from('contact_lists')
+        .select('memberCount')
+        .eq('id', id)
+        .single();
 
       // Update member count
-      await prisma.contact_lists.update({
-        where: { id },
-        data: {
-          memberCount: {
-            decrement: 1,
-          },
-          updatedAt: new Date(),
-        },
-      });
+      const { error: updateError } = await supabase
+        .from('contact_lists')
+        .update({
+          memberCount: Math.max(0, (currentList?.memberCount || 1) - 1),
+          updatedAt: new Date().toISOString(),
+        })
+        .eq('id', id);
+
+      if (updateError) throw updateError;
 
       return res.status(204).end();
     } catch (error) {

@@ -1,10 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient, EditorialStatus } from '@prisma/client';
 import { randomUUID } from 'crypto';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -13,30 +11,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
+  const supabase = supabaseAdmin();
+
   if (req.method === 'GET') {
     try {
       const { status } = req.query;
 
-      const where = status && status !== 'all' ? { status: status as EditorialStatus } : {};
+      let query = supabase
+        .from('editorial_calendar')
+        .select(`
+          *,
+          users:assignedToId (
+            name,
+            email
+          )
+        `)
+        .order('priority', { ascending: false })
+        .order('scheduledDate', { ascending: true })
+        .order('createdAt', { ascending: false });
 
-      const items = await prisma.editorial_calendar.findMany({
-        where,
-        include: {
-          users: {
-            select: {
-              name: true,
-              email: true,
-            },
-          },
-        },
-        orderBy: [
-          { priority: 'desc' },
-          { scheduledDate: 'asc' },
-          { createdAt: 'desc' },
-        ],
-      });
+      if (status && status !== 'all') {
+        query = query.eq('status', status);
+      }
 
-      return res.status(200).json(items);
+      const { data: items, error } = await query;
+
+      if (error) {
+        return res.status(500).json({ error: 'Failed to fetch editorial items' });
+      }
+
+      return res.status(200).json(items || []);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch editorial items' });
     }
@@ -55,28 +59,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         assignedToId,
       } = req.body;
 
-      const item = await prisma.editorial_calendar.create({
-        data: {
+      const { data: item, error } = await supabase
+        .from('editorial_calendar')
+        .insert({
           id: randomUUID(),
           title,
           contentType: contentType || 'ARTICLE',
           status: status || 'IDEA',
           priority: priority || 'MEDIUM',
-          scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
-          deadline: deadline ? new Date(deadline) : undefined,
+          scheduledDate: scheduledDate ? new Date(scheduledDate).toISOString() : null,
+          deadline: deadline ? new Date(deadline).toISOString() : null,
           notes,
           assignedToId,
-          updatedAt: new Date(),
-        },
-        include: {
-          users: {
-            select: {
-              name: true,
-              email: true,
-            },
-          },
-        },
-      });
+          updatedAt: new Date().toISOString(),
+        })
+        .select(`
+          *,
+          users:assignedToId (
+            name,
+            email
+          )
+        `)
+        .single();
+
+      if (error || !item) {
+        return res.status(500).json({ error: 'Failed to create editorial item' });
+      }
 
       return res.status(201).json(item);
     } catch (error) {

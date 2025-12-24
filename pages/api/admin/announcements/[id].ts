@@ -1,9 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -20,30 +18,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (req.method === 'GET') {
-      const announcement = await prisma.announcements.findUnique({
-        where: { id },
-        include: {
-          users: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
-      });
+      const supabase = supabaseAdmin();
 
-      if (!announcement) {
+      const { data: announcement, error } = await supabase
+        .from('announcements')
+        .select(`
+          *,
+          users!announcements_created_by_fkey (
+            id,
+            name,
+            email
+          )
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error || !announcement) {
         return res.status(404).json({ error: 'Announcement not found' });
       }
 
       return res.status(200).json({
         ...announcement,
-        createdBy: announcement.users.name,
+        createdBy: announcement.users?.name,
       });
     }
 
     if (req.method === 'PUT') {
+      const supabase = supabaseAdmin();
       // Only Super Admin and Admin can update announcements
       if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'ADMIN') {
         return res.status(403).json({ error: 'Forbidden' });
@@ -64,87 +65,94 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         linkText,
       } = req.body;
 
-      const announcement = await prisma.announcements.update({
-        where: { id },
-        data: {
-          ...(title !== undefined && { title }),
-          ...(content !== undefined && { content }),
-          ...(type !== undefined && { type }),
-          ...(priority !== undefined && { priority }),
-          ...(targetAudience !== undefined && { targetAudience }),
-          ...(isActive !== undefined && { isActive }),
-          ...(isPinned !== undefined && { isPinned }),
-          ...(publishedAt !== undefined && { publishedAt: new Date(publishedAt) }),
-          ...(expiresAt !== undefined && { expiresAt: expiresAt ? new Date(expiresAt) : null }),
-          ...(dismissible !== undefined && { dismissible }),
-          ...(linkUrl !== undefined && { linkUrl }),
-          ...(linkText !== undefined && { linkText }),
-          updatedAt: new Date(),
-        },
-        include: {
-          users: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
-      });
+      const updates: any = { updated_at: new Date().toISOString() };
+      if (title !== undefined) updates.title = title;
+      if (content !== undefined) updates.content = content;
+      if (type !== undefined) updates.type = type;
+      if (priority !== undefined) updates.priority = priority;
+      if (targetAudience !== undefined) updates.target_audience = targetAudience;
+      if (isActive !== undefined) updates.is_active = isActive;
+      if (isPinned !== undefined) updates.is_pinned = isPinned;
+      if (publishedAt !== undefined) updates.published_at = new Date(publishedAt).toISOString();
+      if (expiresAt !== undefined) updates.expires_at = expiresAt ? new Date(expiresAt).toISOString() : null;
+      if (dismissible !== undefined) updates.dismissible = dismissible;
+      if (linkUrl !== undefined) updates.link_url = linkUrl;
+      if (linkText !== undefined) updates.link_text = linkText;
+
+      const { data: announcement, error: updateError } = await supabase
+        .from('announcements')
+        .update(updates)
+        .eq('id', id)
+        .select(`
+          *,
+          users!announcements_created_by_fkey (
+            id,
+            name,
+            email
+          )
+        `)
+        .single();
+
+      if (updateError) throw updateError;
 
       // Log activity
-      await prisma.activity_logs.create({
-        data: {
+      await supabase
+        .from('activity_logs')
+        .insert({
           id: `activity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          userId: session.user.id,
+          user_id: session.user.id,
           action: 'ANNOUNCEMENT_UPDATED',
           entity: 'announcements',
-          entityId: announcement.id,
+          entity_id: announcement.id,
           details: `Updated announcement: "${announcement.title}"`,
-          createdAt: new Date(),
-        },
-      });
+          created_at: new Date().toISOString(),
+        });
 
       return res.status(200).json({
         message: 'Announcement updated successfully',
         announcement: {
           ...announcement,
-          createdBy: announcement.users.name,
+          createdBy: announcement.users?.name,
         },
       });
     }
 
     if (req.method === 'DELETE') {
+      const supabase = supabaseAdmin();
       // Only Super Admin and Admin can delete announcements
       if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'ADMIN') {
         return res.status(403).json({ error: 'Forbidden' });
       }
 
-      const announcement = await prisma.announcements.findUnique({
-        where: { id },
-        select: { title: true },
-      });
+      const { data: announcement, error: fetchError } = await supabase
+        .from('announcements')
+        .select('title')
+        .eq('id', id)
+        .single();
 
-      if (!announcement) {
+      if (fetchError || !announcement) {
         return res.status(404).json({ error: 'Announcement not found' });
       }
 
-      await prisma.announcements.delete({
-        where: { id },
-      });
+      const { error: deleteError } = await supabase
+        .from('announcements')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
 
       // Log activity
-      await prisma.activity_logs.create({
-        data: {
+      await supabase
+        .from('activity_logs')
+        .insert({
           id: `activity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          userId: session.user.id,
+          user_id: session.user.id,
           action: 'ANNOUNCEMENT_DELETED',
           entity: 'announcements',
-          entityId: id,
+          entity_id: id,
           details: `Deleted announcement: "${announcement.title}"`,
-          createdAt: new Date(),
-        },
-      });
+          created_at: new Date().toISOString(),
+        });
 
       return res.status(200).json({
         message: 'Announcement deleted successfully',
@@ -155,7 +163,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (error) {
     console.error('Announcement detail API error:', error);
     return res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    await prisma.$disconnect();
   }
 }

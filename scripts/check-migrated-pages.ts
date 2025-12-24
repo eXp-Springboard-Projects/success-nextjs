@@ -2,7 +2,7 @@
  * Check if key pages exist in database
  */
 
-import { PrismaClient } from '@prisma/client';
+
 
 const prisma = new PrismaClient();
 

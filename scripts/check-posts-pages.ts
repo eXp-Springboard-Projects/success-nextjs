@@ -2,7 +2,7 @@
  * Check recently created posts and pages
  */
 
-import { PrismaClient } from '@prisma/client';
+
 
 const prisma = new PrismaClient();
 

@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -24,78 +22,64 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getTickets(req: NextApiRequest, res: NextApiResponse) {
   try {
+    const supabase = supabaseAdmin();
     const query = req.query;
     const status = (query.status as string) || '';
     const priority = (query.priority as string) || '';
     const category = (query.category as string) || '';
     const assignedTo = (query.assignedTo as string) || '';
-    const page = (query.page as string) || '1';
-    const limit = (query.limit as string) || '50';
+    const page = parseInt((query.page as string) || '1');
+    const limit = parseInt((query.limit as string) || '50');
     const sortBy = (query.sortBy as string) || 'created_at';
     const sortOrder = (query.sortOrder as string) || 'desc';
+    const offset = (page - 1) * limit;
 
-    const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
+    let ticketsQuery = supabase
+      .from('tickets')
+      .select(`
+        *,
+        contact:crm_contacts(email, first_name, last_name)
+      `, { count: 'exact' })
+      .order(sortBy, { ascending: sortOrder === 'asc' })
+      .range(offset, offset + limit - 1);
 
-    let whereClause = '';
-    const params: any[] = [];
-    let paramIndex = 1;
+    if (status) ticketsQuery = ticketsQuery.eq('status', status);
+    if (priority) ticketsQuery = ticketsQuery.eq('priority', priority);
+    if (category) ticketsQuery = ticketsQuery.eq('category', category);
+    if (assignedTo) ticketsQuery = ticketsQuery.eq('assigned_to', assignedTo);
 
-    if (status) {
-      whereClause += ` AND t.status = $${paramIndex}`;
-      params.push(status);
-      paramIndex++;
+    const { data: tickets, error, count } = await ticketsQuery;
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to fetch tickets' });
     }
 
-    if (priority) {
-      whereClause += ` AND t.priority = $${paramIndex}`;
-      params.push(priority);
-      paramIndex++;
-    }
+    // Get message counts for each ticket
+    const ticketsWithMessageCount = await Promise.all(
+      (tickets || []).map(async (ticket) => {
+        const { count: messageCount } = await supabase
+          .from('ticket_messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('ticket_id', ticket.id);
 
-    if (category) {
-      whereClause += ` AND t.category = $${paramIndex}`;
-      params.push(category);
-      paramIndex++;
-    }
-
-    if (assignedTo) {
-      whereClause += ` AND t.assigned_to = $${paramIndex}`;
-      params.push(assignedTo);
-      paramIndex++;
-    }
-
-    const tickets = await prisma.$queryRawUnsafe(`
-      SELECT
-        t.*,
-        c.email as contact_email,
-        c.first_name as contact_first_name,
-        c.last_name as contact_last_name,
-        (
-          SELECT COUNT(*)
-          FROM ticket_messages tm
-          WHERE tm.ticket_id = t.id
-        ) as message_count
-      FROM tickets t
-      LEFT JOIN crm_contacts c ON t.contact_id = c.id
-      WHERE 1=1 ${whereClause}
-      ORDER BY t.${sortBy} ${sortOrder.toUpperCase()}
-      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
-    `, ...params, parseInt(limit as string), offset);
-
-    const countResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
-      `SELECT COUNT(*) as count FROM tickets t WHERE 1=1 ${whereClause}`,
-      ...params
+        return {
+          ...ticket,
+          contact_email: ticket.contact?.email,
+          contact_first_name: ticket.contact?.first_name,
+          contact_last_name: ticket.contact?.last_name,
+          contact: undefined,
+          message_count: messageCount || 0,
+        };
+      })
     );
 
-    const total = Number(countResult[0].count);
-
     return res.status(200).json({
-      tickets,
+      tickets: ticketsWithMessageCount,
       pagination: {
-        page: parseInt(page as string),
-        limit: parseInt(limit as string),
-        total,
-        totalPages: Math.ceil(total / parseInt(limit as string)),
+        page,
+        limit,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
       },
     });
   } catch (error) {
@@ -105,6 +89,7 @@ async function getTickets(req: NextApiRequest, res: NextApiResponse) {
 
 async function createTicket(req: NextApiRequest, res: NextApiResponse, session: any) {
   try {
+    const supabase = supabaseAdmin();
     const { contactId, subject, description, priority = 'medium', category = 'general' } = req.body;
 
     if (!subject || !description) {
@@ -113,42 +98,49 @@ async function createTicket(req: NextApiRequest, res: NextApiResponse, session: 
 
     const ticketId = nanoid();
 
-    await prisma.$executeRaw`
-      INSERT INTO tickets (
-        id, contact_id, subject, description, priority, category, status
-      ) VALUES (
-        ${ticketId}, ${contactId || null}, ${subject}, ${description},
-        ${priority}, ${category}, 'open'
-      )
-    `;
+    const { data: ticket, error: ticketError } = await supabase
+      .from('tickets')
+      .insert({
+        id: ticketId,
+        contact_id: contactId || null,
+        subject,
+        description,
+        priority,
+        category,
+        status: 'open',
+      })
+      .select()
+      .single();
 
-    // Get the created ticket with visible_id
-    const ticket = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM tickets WHERE id = ${ticketId}
-    `;
+    if (ticketError) {
+      return res.status(500).json({ error: 'Failed to create ticket' });
+    }
 
     // Create initial message
-    await prisma.$executeRaw`
-      INSERT INTO ticket_messages (
-        id, ticket_id, sender_id, sender_type, message
-      ) VALUES (
-        ${nanoid()}, ${ticketId}, ${contactId || 'system'}, 'customer', ${description}
-      )
-    `;
+    await supabase
+      .from('ticket_messages')
+      .insert({
+        id: nanoid(),
+        ticket_id: ticketId,
+        sender_id: contactId || 'system',
+        sender_type: 'customer',
+        message: description,
+      });
 
     // Add activity to contact if contactId provided
     if (contactId) {
-      await prisma.$executeRaw`
-        INSERT INTO crm_contact_activities (id, contact_id, type, description, metadata)
-        VALUES (
-          ${nanoid()}, ${contactId}, 'ticket_created',
-          'Support ticket created: ${subject}',
-          ${JSON.stringify({ ticketId })}::jsonb
-        )
-      `;
+      await supabase
+        .from('crm_contact_activities')
+        .insert({
+          id: nanoid(),
+          contact_id: contactId,
+          type: 'ticket_created',
+          description: `Support ticket created: ${subject}`,
+          metadata: { ticketId },
+        });
     }
 
-    return res.status(201).json(ticket[0]);
+    return res.status(201).json(ticket);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to create ticket' });
   }

@@ -1,8 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -12,29 +10,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { id } = req.query;
 
   try {
-    const originalForm = await prisma.forms.findUnique({
-      where: { id: id as string },
-    });
+    const supabase = supabaseAdmin();
 
-    if (!originalForm) {
+    const { data: originalForm, error: fetchError } = await supabase
+      .from('forms')
+      .select('*')
+      .eq('id', id as string)
+      .single();
+
+    if (fetchError || !originalForm) {
       return res.status(404).json({ error: 'Form not found' });
     }
 
-    const duplicatedForm = await prisma.forms.create({
-      data: {
+    const { data: duplicatedForm, error: insertError } = await supabase
+      .from('forms')
+      .insert({
         id: uuidv4(),
         name: `${originalForm.name} (Copy)`,
-        fields: originalForm.fields as any,
-        settings: originalForm.settings as any,
-        thankYouMessage: originalForm.thankYouMessage,
-        redirectUrl: originalForm.redirectUrl,
-        listId: originalForm.listId,
-        tags: originalForm.tags as any,
-        notifyEmails: originalForm.notifyEmails as any,
+        fields: originalForm.fields,
+        settings: originalForm.settings,
+        thank_you_message: originalForm.thank_you_message,
+        redirect_url: originalForm.redirect_url,
+        list_id: originalForm.list_id,
+        tags: originalForm.tags,
+        notify_emails: originalForm.notify_emails,
         status: 'draft',
-        updatedAt: new Date(),
-      },
-    });
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      return res.status(500).json({ error: 'Failed to duplicate form' });
+    }
 
     return res.status(201).json(duplicatedForm);
   } catch (error) {

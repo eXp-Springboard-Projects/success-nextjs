@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -23,17 +21,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    const supabase = supabaseAdmin();
     const { contactId } = req.body;
 
     if (!contactId) {
       return res.status(400).json({ error: 'Contact ID is required' });
     }
 
-    await prisma.$executeRaw`
-      UPDATE sequence_enrollments
-      SET status = 'unenrolled', updated_at = CURRENT_TIMESTAMP
-      WHERE sequence_id = ${id} AND contact_id = ${contactId} AND status = 'active'
-    `;
+    const { error } = await supabase
+      .from('sequence_enrollments')
+      .update({
+        status: 'unenrolled',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('sequence_id', id)
+      .eq('contact_id', contactId)
+      .eq('status', 'active');
+
+    if (error) {
+      throw error;
+    }
 
     return res.status(200).json({ message: 'Contact unenrolled successfully' });
   } catch (error) {

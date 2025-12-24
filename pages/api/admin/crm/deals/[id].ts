@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -32,35 +30,46 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getDeal(id: string, res: NextApiResponse) {
   try {
-    const deal = await prisma.$queryRaw<Array<any>>`
-      SELECT
-        d.*,
-        s.name as stage_name,
-        s.color as stage_color,
-        s.order as stage_order,
-        c.id as contact_id,
-        c.email as contact_email,
-        c.first_name as contact_first_name,
-        c.last_name as contact_last_name,
-        c.phone as contact_phone,
-        c.company as contact_company
-      FROM deals d
-      LEFT JOIN deal_stages s ON d.stage_id = s.id
-      LEFT JOIN contacts c ON d.contact_id = c.id
-      WHERE d.id = ${id}
-    `;
+    const supabase = supabaseAdmin();
 
-    if (deal.length === 0) {
+    const { data: deal, error } = await supabase
+      .from('deals')
+      .select(`
+        *,
+        stage:deal_stages(name, color, order),
+        contact:contacts(id, email, first_name, last_name, phone, company)
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error || !deal) {
       return res.status(404).json({ error: 'Deal not found' });
     }
 
-    const activities = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM deal_activities
-      WHERE deal_id = ${id}
-      ORDER BY created_at DESC
-    `;
+    const { data: activities } = await supabase
+      .from('deal_activities')
+      .select('*')
+      .eq('deal_id', id)
+      .order('created_at', { ascending: false });
 
-    return res.status(200).json({ ...deal[0], activities });
+    // Flatten the structure
+    const result = {
+      ...deal,
+      stage_name: deal.stage?.name,
+      stage_color: deal.stage?.color,
+      stage_order: deal.stage?.order,
+      contact_id: deal.contact?.id,
+      contact_email: deal.contact?.email,
+      contact_first_name: deal.contact?.first_name,
+      contact_last_name: deal.contact?.last_name,
+      contact_phone: deal.contact?.phone,
+      contact_company: deal.contact?.company,
+      stage: undefined,
+      contact: undefined,
+      activities,
+    };
+
+    return res.status(200).json(result);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to fetch deal' });
   }
@@ -68,6 +77,7 @@ async function getDeal(id: string, res: NextApiResponse) {
 
 async function updateDeal(id: string, req: NextApiRequest, res: NextApiResponse, session: any) {
   try {
+    const supabase = supabaseAdmin();
     const {
       name,
       contactId,
@@ -85,122 +95,63 @@ async function updateDeal(id: string, req: NextApiRequest, res: NextApiResponse,
       lostReason,
     } = req.body;
 
-    const updates: string[] = [];
-    const params: any[] = [];
-    let paramIndex = 1;
+    const updateData: any = {};
 
-    if (name !== undefined) {
-      updates.push(`name = $${paramIndex}`);
-      params.push(name);
-      paramIndex++;
-    }
+    if (name !== undefined) updateData.name = name;
+    if (contactId !== undefined) updateData.contact_id = contactId;
+    if (companyName !== undefined) updateData.company_name = companyName;
+    if (value !== undefined) updateData.value = value;
+    if (currency !== undefined) updateData.currency = currency;
+    if (stageId !== undefined) updateData.stage_id = stageId;
+    if (probability !== undefined) updateData.probability = probability;
+    if (expectedCloseDate !== undefined) updateData.expected_close_date = expectedCloseDate;
+    if (actualCloseDate !== undefined) updateData.actual_close_date = actualCloseDate;
+    if (source !== undefined) updateData.source = source;
+    if (notes !== undefined) updateData.notes = notes;
+    if (customFields !== undefined) updateData.custom_fields = customFields;
+    if (status !== undefined) updateData.status = status;
+    if (lostReason !== undefined) updateData.lost_reason = lostReason;
 
-    if (contactId !== undefined) {
-      updates.push(`contact_id = $${paramIndex}`);
-      params.push(contactId);
-      paramIndex++;
-    }
-
-    if (companyName !== undefined) {
-      updates.push(`company_name = $${paramIndex}`);
-      params.push(companyName);
-      paramIndex++;
-    }
-
-    if (value !== undefined) {
-      updates.push(`value = $${paramIndex}`);
-      params.push(value);
-      paramIndex++;
-    }
-
-    if (currency !== undefined) {
-      updates.push(`currency = $${paramIndex}`);
-      params.push(currency);
-      paramIndex++;
-    }
-
-    if (stageId !== undefined) {
-      updates.push(`stage_id = $${paramIndex}`);
-      params.push(stageId);
-      paramIndex++;
-    }
-
-    if (probability !== undefined) {
-      updates.push(`probability = $${paramIndex}`);
-      params.push(probability);
-      paramIndex++;
-    }
-
-    if (expectedCloseDate !== undefined) {
-      updates.push(`expected_close_date = $${paramIndex}`);
-      params.push(expectedCloseDate);
-      paramIndex++;
-    }
-
-    if (actualCloseDate !== undefined) {
-      updates.push(`actual_close_date = $${paramIndex}`);
-      params.push(actualCloseDate);
-      paramIndex++;
-    }
-
-    if (source !== undefined) {
-      updates.push(`source = $${paramIndex}`);
-      params.push(source);
-      paramIndex++;
-    }
-
-    if (notes !== undefined) {
-      updates.push(`notes = $${paramIndex}`);
-      params.push(notes);
-      paramIndex++;
-    }
-
-    if (customFields !== undefined) {
-      updates.push(`custom_fields = $${paramIndex}::jsonb`);
-      params.push(JSON.stringify(customFields));
-      paramIndex++;
-    }
-
-    if (status !== undefined) {
-      updates.push(`status = $${paramIndex}`);
-      params.push(status);
-      paramIndex++;
-    }
-
-    if (lostReason !== undefined) {
-      updates.push(`lost_reason = $${paramIndex}`);
-      params.push(lostReason);
-      paramIndex++;
-    }
-
-    if (updates.length === 0) {
+    if (Object.keys(updateData).length === 0) {
       return res.status(400).json({ error: 'No fields to update' });
     }
 
-    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    updateData.updated_at = new Date().toISOString();
 
-    params.push(id);
+    const { data: deal, error } = await supabase
+      .from('deals')
+      .update(updateData)
+      .eq('id', id)
+      .select(`
+        *,
+        stage:deal_stages(name, color)
+      `)
+      .single();
 
-    await prisma.$queryRawUnsafe(`
-      UPDATE deals
-      SET ${updates.join(', ')}
-      WHERE id = $${paramIndex}
-    `, ...params);
+    if (error) {
+      return res.status(500).json({ error: 'Failed to update deal' });
+    }
 
     // Log activity
-    await prisma.$executeRaw`
-      INSERT INTO deal_activities (id, deal_id, type, description, created_by)
-      VALUES (${nanoid()}, ${id}, 'updated', 'Deal updated', ${session.user.id})
-    `;
+    await supabase
+      .from('deal_activities')
+      .insert({
+        id: nanoid(),
+        deal_id: id,
+        type: 'updated',
+        description: 'Deal updated',
+        created_by: session.user.id,
+      });
 
-    const deal = await prisma.$queryRaw<Array<any>>`
-      SELECT d.*, s.name as stage_name, s.color as stage_color
-      FROM deals d
-      LEFT JOIN deal_stages s ON d.stage_id = s.id
-      WHERE d.id = ${id}
-    `;
+    // Flatten the structure
+    const result = {
+      ...deal,
+      stage_name: deal.stage?.name,
+      stage_color: deal.stage?.color,
+      stage: undefined,
+    };
 
-    return res.status(200).json(deal[0]);
+    return res.status(200).json(result);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to update deal' });
   }
@@ -208,7 +159,17 @@ async function updateDeal(id: string, req: NextApiRequest, res: NextApiResponse,
 
 async function deleteDeal(id: string, res: NextApiResponse, session: any) {
   try {
-    await prisma.$executeRaw`DELETE FROM deals WHERE id = ${id}`;
+    const supabase = supabaseAdmin();
+
+    const { error } = await supabase
+      .from('deals')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to delete deal' });
+    }
+
     return res.status(200).json({ message: 'Deal deleted successfully' });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to delete deal' });

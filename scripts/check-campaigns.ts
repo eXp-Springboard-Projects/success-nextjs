@@ -3,7 +3,7 @@ import * as path from 'path';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
-import { PrismaClient } from '@prisma/client';
+
 
 const prisma = new PrismaClient();
 

@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -23,32 +21,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    const supabase = supabaseAdmin();
     const { status = '' } = req.query;
 
-    let whereClause = '';
-    const params: any[] = [id];
-    let paramIndex = 2;
+    let query = supabase
+      .from('automation_enrollments')
+      .select(`
+        *,
+        contacts (
+          email,
+          first_name,
+          last_name,
+          company
+        )
+      `)
+      .eq('automation_id', id);
 
     if (status) {
-      whereClause += ` AND ae.status = $${paramIndex}`;
-      params.push(status);
-      paramIndex++;
+      query = query.eq('status', status);
     }
 
-    const enrollments = await prisma.$queryRawUnsafe(`
-      SELECT
-        ae.*,
-        c.email,
-        c.first_name,
-        c.last_name,
-        c.company
-      FROM automation_enrollments ae
-      JOIN contacts c ON ae.contact_id = c.id
-      WHERE ae.automation_id = $1 ${whereClause}
-      ORDER BY ae.enrolled_at DESC
-    `, ...params);
+    const { data: enrollments, error } = await query
+      .order('enrolled_at', { ascending: false });
 
-    return res.status(200).json({ enrollments });
+    if (error) throw error;
+
+    return res.status(200).json({ enrollments: enrollments || [] });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to fetch enrollments' });
   }

@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -23,31 +21,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const automation = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM automations WHERE id = ${id}
-    `;
+    const supabase = supabaseAdmin();
 
-    if (automation.length === 0) {
+    const { data: automation, error: fetchError } = await supabase
+      .from('automations')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !automation) {
       return res.status(404).json({ error: 'Automation not found' });
     }
 
-    const auto = automation[0];
-
-    if (auto.status === 'paused') {
+    if (automation.status === 'paused') {
       return res.status(400).json({ error: 'Automation is already paused' });
     }
 
-    await prisma.$executeRaw`
-      UPDATE automations
-      SET status = 'paused', updated_at = CURRENT_TIMESTAMP
-      WHERE id = ${id}
-    `;
+    const { data: updated, error: updateError } = await supabase
+      .from('automations')
+      .update({
+        status: 'paused',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-    const updated = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM automations WHERE id = ${id}
-    `;
+    if (updateError) throw updateError;
 
-    return res.status(200).json(updated[0]);
+    return res.status(200).json(updated);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to pause automation' });
   }

@@ -4,7 +4,7 @@
  * Creates a SUPER_ADMIN account for Rachel Nead with secure random password
  */
 
-import { PrismaClient } from '@prisma/client';
+
 import { randomUUID } from 'crypto';
 import bcrypt from 'bcryptjs';
 

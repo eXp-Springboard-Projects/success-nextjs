@@ -1,4 +1,4 @@
-import { prisma } from '../../../lib/prisma';
+import { supabaseAdmin } from '../../../lib/supabase';
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -14,6 +14,8 @@ export default async function handler(req, res) {
 }
 
 async function getPages(req, res) {
+  const supabase = supabaseAdmin();
+
   try {
     const {
       per_page = 50,
@@ -22,58 +24,70 @@ async function getPages(req, res) {
       search,
     } = req.query;
 
-    const skip = (parseInt(page) - 1) * parseInt(per_page);
-    const take = parseInt(per_page);
+    const offset = (parseInt(page) - 1) * parseInt(per_page);
+    const limit = parseInt(per_page);
 
-    const where = {};
+    let query = supabase
+      .from('pages')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (status && status !== 'all') {
-      where.status = status.toUpperCase();
+      query = query.eq('status', status.toUpperCase());
     }
 
     if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { content: { contains: search, mode: 'insensitive' } },
-      ];
+      query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%`);
     }
 
-    const pages = await prisma.pages.findMany({
-      where,
-      skip,
-      take,
-      orderBy: { createdAt: 'desc' },
-    });
+    const { data: pages, error, count } = await query;
 
-    const total = await prisma.pages.count({ where });
+    if (error) {
+      console.error('Error fetching pages:', error);
+      return res.status(500).json({ message: 'Failed to fetch pages' });
+    }
 
-    res.setHeader('X-WP-Total', total);
-    res.setHeader('X-WP-TotalPages', Math.ceil(total / take));
+    res.setHeader('X-WP-Total', count || 0);
+    res.setHeader('X-WP-TotalPages', Math.ceil((count || 0) / limit));
 
-    return res.status(200).json(pages);
+    return res.status(200).json(pages || []);
   } catch (error) {
+    console.error('Error fetching pages:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
 
 async function createPage(req, res) {
+  const supabase = supabaseAdmin();
+
   try {
     const { title, slug, content, status, seoTitle, seoDescription, publishedAt } = req.body;
 
-    const page = await prisma.pages.create({
-      data: {
-        title,
-        slug,
-        content,
-        status: status || 'DRAFT',
-        seoTitle,
-        seoDescription,
-        publishedAt: publishedAt ? new Date(publishedAt) : null,
-      },
-    });
+    const pageData = {
+      title,
+      slug,
+      content,
+      status: status || 'DRAFT',
+      seo_title: seoTitle,
+      seo_description: seoDescription,
+      published_at: publishedAt ? new Date(publishedAt).toISOString() : null,
+    };
+
+    const { data: page, error } = await supabase
+      .from('pages')
+      .insert([pageData])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating page:', error);
+      return res.status(500).json({ message: 'Failed to create page' });
+    }
 
     return res.status(201).json(page);
   } catch (error) {
+    console.error('Error creating page:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

@@ -1,15 +1,18 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
-const prisma = new PrismaClient();
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const supabase = supabaseAdmin();
+
   if (req.method === 'GET') {
     try {
-      const lists = await prisma.contact_lists.findMany({
-        orderBy: { createdAt: 'desc' },
-      });
+      const { data: lists, error } = await supabase
+        .from('contact_lists')
+        .select('*')
+        .order('createdAt', { ascending: false });
+
+      if (error) throw error;
 
       return res.status(200).json(lists);
     } catch (error) {
@@ -25,17 +28,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: 'Name and type are required' });
       }
 
-      const list = await prisma.contact_lists.create({
-        data: {
+      const { data: list, error } = await supabase
+        .from('contact_lists')
+        .insert({
           id: uuidv4(),
           name,
           description,
           type,
           filters: filters || null,
           memberCount: 0,
-          updatedAt: new Date(),
-        },
-      });
+          updatedAt: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
 
       return res.status(201).json(list);
     } catch (error) {

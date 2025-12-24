@@ -1,10 +1,9 @@
 import { buffer } from 'micro';
 import { stripe } from '../../../lib/stripe';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../lib/supabase';
 import { createLogger } from '../../../lib/logger';
 
 const log = createLogger('StripeWebhook');
-const prisma = new PrismaClient();
 
 // Disable body parsing, need raw body for webhook signature verification
 export const config = {
@@ -82,14 +81,14 @@ async function handleSubscriptionCreated(subscription) {
   const customer = await stripe.customers.retrieve(customerId);
 
   // Check if Member exists by Stripe customer ID or email
-  let member = await prisma.members.findFirst({
-    where: {
-      OR: [
-        { stripeCustomerId: customerId },
-        { email: customer.email },
-      ],
-    },
-  });
+  const supabase = supabaseAdmin();
+  const { data: members } = await supabase
+    .from('members')
+    .select('*')
+    .or(`stripe_customer_id.eq.${customerId},email.eq.${customer.email}`)
+    .limit(1);
+
+  let member = members?.[0] || null;
 
   if (!member) {
     // Create new Member (this is a new customer)
@@ -97,63 +96,84 @@ async function handleSubscriptionCreated(subscription) {
     const name = customer.name || customer.email.split('@')[0];
     const nameParts = name.split(' ');
 
-    member = await prisma.members.create({
-      data: {
-        firstName: nameParts[0] || name,
-        lastName: nameParts.slice(1).join(' ') || '',
+    const { data: newMember } = await supabase
+      .from('members')
+      .insert({
+        first_name: nameParts[0] || name,
+        last_name: nameParts.slice(1).join(' ') || '',
         email: customer.email,
         phone: customer.phone || null,
-        stripeCustomerId: customerId,
-        membershipTier: 'SUCCESSPlus',
-        membershipStatus: 'Active',
-      },
-    });
+        stripe_customer_id: customerId,
+        membership_tier: 'SUCCESSPlus',
+        membership_status: 'Active',
+      })
+      .select()
+      .single();
+
+    member = newMember;
   } else {
     // Update existing member
-    await prisma.members.update({
-      where: { id: member.id },
-      data: {
-        stripeCustomerId: customerId,
-        membershipTier: 'SUCCESSPlus',
-        membershipStatus: 'Active',
-      },
-    });
+    const { data: updatedMember } = await supabase
+      .from('members')
+      .update({
+        stripe_customer_id: customerId,
+        membership_tier: 'SUCCESSPlus',
+        membership_status: 'Active',
+      })
+      .eq('id', member.id)
+      .select()
+      .single();
+
+    member = updatedMember;
   }
 
   // Create or update subscription record
-  await prisma.subscriptions.upsert({
-    where: { stripeSubscriptionId: subscription.id },
-    create: {
-      memberId: member.id,
-      stripeCustomerId: customerId,
-      stripeSubscriptionId: subscription.id,
-      stripePriceId: subscription.items.data[0].price.id,
-      status: subscription.status.toUpperCase(),
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
-      provider: 'stripe',
-    },
-    update: {
-      stripePriceId: subscription.items.data[0].price.id,
-      status: subscription.status.toUpperCase(),
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
-    },
-  });
+  const { data: existingSubscription } = await supabase
+    .from('subscriptions')
+    .select('id')
+    .eq('stripe_subscription_id', subscription.id)
+    .single();
+
+  if (!existingSubscription) {
+    await supabase
+      .from('subscriptions')
+      .insert({
+        member_id: member.id,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscription.id,
+        stripe_price_id: subscription.items.data[0].price.id,
+        status: subscription.status.toUpperCase(),
+        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        cancel_at_period_end: subscription.cancel_at_period_end,
+        provider: 'stripe',
+      });
+  } else {
+    await supabase
+      .from('subscriptions')
+      .update({
+        stripe_price_id: subscription.items.data[0].price.id,
+        status: subscription.status.toUpperCase(),
+        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        cancel_at_period_end: subscription.cancel_at_period_end,
+      })
+      .eq('stripe_subscription_id', subscription.id);
+  }
 
   // Check if this member is also a platform user
-  const platformUser = await prisma.users.findUnique({
-    where: { email: member.email },
-  });
+  const { data: platformUser } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', member.email)
+    .single();
 
-  if (platformUser && !platformUser.memberId) {
+  if (platformUser && !platformUser.member_id) {
     // Link platform user to member
-    await prisma.users.update({
-      where: { id: platformUser.id },
-      data: { memberId: member.id },
-    });
+    await supabase
+      .from('users')
+      .update({ member_id: member.id })
+      .eq('id', platformUser.id);
     log.info('Linked platform user to member', { email: platformUser.email });
   }
 
@@ -163,10 +183,15 @@ async function handleSubscriptionCreated(subscription) {
 // Handle subscription updated
 async function handleSubscriptionUpdated(subscription) {
   const customerId = subscription.customer;
+  const supabase = supabaseAdmin();
 
-  const member = await prisma.members.findFirst({
-    where: { stripeCustomerId: customerId },
-  });
+  const { data: members } = await supabase
+    .from('members')
+    .select('*')
+    .eq('stripe_customer_id', customerId)
+    .limit(1);
+
+  const member = members?.[0];
 
   if (!member) {
     log.error('Member not found for customer', { customerId });
@@ -174,25 +199,25 @@ async function handleSubscriptionUpdated(subscription) {
   }
 
   // Update subscription
-  await prisma.subscriptions.update({
-    where: { stripeSubscriptionId: subscription.id },
-    data: {
+  await supabase
+    .from('subscriptions')
+    .update({
       status: subscription.status.toUpperCase(),
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
-    },
-  });
+      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      cancel_at_period_end: subscription.cancel_at_period_end,
+    })
+    .eq('stripe_subscription_id', subscription.id);
 
   // Update member tier based on subscription status
   const newTier = subscription.status === 'active' ? 'SUCCESSPlus' : 'Customer';
-  await prisma.members.update({
-    where: { id: member.id },
-    data: {
-      membershipTier: newTier,
-      membershipStatus: subscription.status === 'active' ? 'Active' : 'Inactive',
-    },
-  });
+  await supabase
+    .from('members')
+    .update({
+      membership_tier: newTier,
+      membership_status: subscription.status === 'active' ? 'Active' : 'Inactive',
+    })
+    .eq('id', member.id);
 
   log.info('Subscription updated', { memberId: member.id });
 }
@@ -200,32 +225,37 @@ async function handleSubscriptionUpdated(subscription) {
 // Handle subscription deleted
 async function handleSubscriptionDeleted(subscription) {
   const customerId = subscription.customer;
+  const supabase = supabaseAdmin();
 
-  const member = await prisma.members.findFirst({
-    where: { stripeCustomerId: customerId },
-  });
+  const { data: members } = await supabase
+    .from('members')
+    .select('*')
+    .eq('stripe_customer_id', customerId)
+    .limit(1);
+
+  const member = members?.[0];
 
   if (!member) {
     log.error('Member not found for customer', { customerId });
     return;
   }
 
-  await prisma.subscriptions.update({
-    where: { stripeSubscriptionId: subscription.id },
-    data: {
+  await supabase
+    .from('subscriptions')
+    .update({
       status: 'CANCELED',
-      cancelAtPeriodEnd: false,
-    },
-  });
+      cancel_at_period_end: false,
+    })
+    .eq('stripe_subscription_id', subscription.id);
 
   // Downgrade member tier
-  await prisma.members.update({
-    where: { id: member.id },
-    data: {
-      membershipTier: 'Customer',
-      membershipStatus: 'Cancelled',
-    },
-  });
+  await supabase
+    .from('members')
+    .update({
+      membership_tier: 'Customer',
+      membership_status: 'Cancelled',
+    })
+    .eq('id', member.id);
 
   log.info('Subscription deleted', { memberId: member.id });
 }
@@ -233,11 +263,15 @@ async function handleSubscriptionDeleted(subscription) {
 // Handle successful payment
 async function handlePaymentSucceeded(invoice) {
   const customerId = invoice.customer;
+  const supabase = supabaseAdmin();
 
-  const member = await prisma.members.findFirst({
-    where: { stripeCustomerId: customerId },
-    include: { subscriptions: true },
-  });
+  const { data: members } = await supabase
+    .from('members')
+    .select('*, subscriptions(*)')
+    .eq('stripe_customer_id', customerId)
+    .limit(1);
+
+  const member = members?.[0];
 
   if (!member) {
     log.error('Member not found for customer', { customerId });
@@ -246,37 +280,37 @@ async function handlePaymentSucceeded(invoice) {
 
   // Create transaction record
   const amount = invoice.amount_paid / 100;
-  await prisma.transactions.create({
-    data: {
-      memberId: member.id,
+  await supabase
+    .from('transactions')
+    .insert({
+      member_id: member.id,
       amount: amount,
       currency: invoice.currency.toUpperCase(),
       status: 'succeeded',
       type: 'subscription',
       description: invoice.description || 'SUCCESS+ Subscription Payment',
-      paymentMethod: invoice.payment_method_types?.[0] || 'card',
+      payment_method: invoice.payment_method_types?.[0] || 'card',
       provider: 'stripe',
-      providerTxnId: invoice.id,
+      provider_txn_id: invoice.id,
       metadata: {
         invoiceId: invoice.id,
         subscriptionId: invoice.subscription,
       },
-    },
-  });
+    });
 
   // Update member's total spent and lifetime value
-  await prisma.members.update({
-    where: { id: member.id },
-    data: {
-      totalSpent: { increment: amount },
-      lifetimeValue: { increment: amount },
-    },
-  });
+  await supabase
+    .from('members')
+    .update({
+      total_spent: (member.total_spent || 0) + amount,
+      lifetime_value: (member.lifetime_value || 0) + amount,
+    })
+    .eq('id', member.id);
 
   // Send confirmation email
   const { sendEmail, getSubscriptionConfirmationHTML } = require('../../../lib/email');
-  const fullName = `${member.firstName} ${member.lastName}`.trim();
-  const plan = member.subscriptions?.[0]?.stripePriceId || 'SUCCESS+';
+  const fullName = `${member.first_name} ${member.last_name}`.trim();
+  const plan = member.subscriptions?.[0]?.stripe_price_id || 'SUCCESS+';
 
   await sendEmail({
     to: member.email,
@@ -290,49 +324,54 @@ async function handlePaymentSucceeded(invoice) {
 // Handle failed payment
 async function handlePaymentFailed(invoice) {
   const customerId = invoice.customer;
+  const supabase = supabaseAdmin();
 
-  const member = await prisma.members.findFirst({
-    where: { stripeCustomerId: customerId },
-  });
+  const { data: members } = await supabase
+    .from('members')
+    .select('*')
+    .eq('stripe_customer_id', customerId)
+    .limit(1);
+
+  const member = members?.[0];
 
   if (!member) {
     log.error('Member not found for customer', { customerId });
     return;
   }
 
-  await prisma.subscriptions.update({
-    where: { stripeSubscriptionId: invoice.subscription },
-    data: {
+  await supabase
+    .from('subscriptions')
+    .update({
       status: 'PAST_DUE',
-    },
-  });
+    })
+    .eq('stripe_subscription_id', invoice.subscription);
 
   // Update member status
-  await prisma.members.update({
-    where: { id: member.id },
-    data: {
-      membershipStatus: 'Inactive',
-    },
-  });
+  await supabase
+    .from('members')
+    .update({
+      membership_status: 'Inactive',
+    })
+    .eq('id', member.id);
 
   // Create failed transaction record
   const amount = invoice.amount_due / 100;
-  await prisma.transactions.create({
-    data: {
-      memberId: member.id,
+  await supabase
+    .from('transactions')
+    .insert({
+      member_id: member.id,
       amount: amount,
       currency: invoice.currency.toUpperCase(),
       status: 'failed',
       type: 'subscription',
       description: 'Failed subscription payment',
       provider: 'stripe',
-      providerTxnId: invoice.id,
-    },
-  });
+      provider_txn_id: invoice.id,
+    });
 
   // Send payment failed email
   const { sendEmail, getPaymentFailedHTML } = require('../../../lib/email');
-  const fullName = `${member.firstName} ${member.lastName}`.trim();
+  const fullName = `${member.first_name} ${member.last_name}`.trim();
 
   await sendEmail({
     to: member.email,

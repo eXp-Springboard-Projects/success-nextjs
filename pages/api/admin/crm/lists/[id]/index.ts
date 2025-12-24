@@ -1,10 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
+  const supabase = supabaseAdmin();
 
   if (typeof id !== 'string') {
     return res.status(400).json({ error: 'Invalid list ID' });
@@ -12,12 +11,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'GET') {
     try {
-      const list = await prisma.contact_lists.findUnique({
-        where: { id },
-      });
+      const { data: list, error } = await supabase
+        .from('contact_lists')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-      if (!list) {
-        return res.status(404).json({ error: 'List not found' });
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return res.status(404).json({ error: 'List not found' });
+        }
+        throw error;
       }
 
       return res.status(200).json(list);
@@ -30,14 +34,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const { name, description } = req.body;
 
-      const list = await prisma.contact_lists.update({
-        where: { id },
-        data: {
+      const { data: list, error } = await supabase
+        .from('contact_lists')
+        .update({
           name,
           description,
-          updatedAt: new Date(),
-        },
-      });
+          updatedAt: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
 
       return res.status(200).json(list);
     } catch (error) {
@@ -47,9 +55,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'DELETE') {
     try {
-      await prisma.contact_lists.delete({
-        where: { id },
-      });
+      const { error } = await supabase
+        .from('contact_lists')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
 
       return res.status(204).end();
     } catch (error) {

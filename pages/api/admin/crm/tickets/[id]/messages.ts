@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -18,6 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    const supabase = supabaseAdmin();
     const { id } = req.query;
     const { message, isInternal = false } = req.body;
 
@@ -31,24 +30,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const messageId = nanoid();
 
-    await prisma.$executeRaw`
-      INSERT INTO ticket_messages (
-        id, ticket_id, sender_id, sender_type, message, is_internal
-      ) VALUES (
-        ${messageId}, ${id}, ${session.user.id}, 'staff', ${message}, ${isInternal}
-      )
-    `;
+    const { data: createdMessage, error: messageError } = await supabase
+      .from('ticket_messages')
+      .insert({
+        id: messageId,
+        ticket_id: id,
+        sender_id: session.user.id,
+        sender_type: 'staff',
+        message,
+        is_internal: isInternal,
+      })
+      .select()
+      .single();
+
+    if (messageError) {
+      return res.status(500).json({ error: 'Failed to add message' });
+    }
 
     // Update ticket updated_at
-    await prisma.$executeRaw`
-      UPDATE tickets SET updated_at = CURRENT_TIMESTAMP WHERE id = ${id}
-    `;
+    await supabase
+      .from('tickets')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', id);
 
-    const createdMessage = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM ticket_messages WHERE id = ${messageId}
-    `;
-
-    return res.status(201).json(createdMessage[0]);
+    return res.status(201).json(createdMessage);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to add message' });
   }

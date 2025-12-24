@@ -1,7 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '@/lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -9,15 +7,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    const supabase = supabaseAdmin();
     const { path } = req.query;
 
     if (!path || typeof path !== 'string') {
       return res.status(400).json({ error: 'Path parameter required' });
     }
 
-    const redirect = await prisma.url_redirects.findUnique({
-      where: { oldUrl: path, isActive: true }
-    });
+    const { data: redirect } = await supabase
+      .from('url_redirects')
+      .select('*')
+      .eq('oldUrl', path)
+      .eq('isActive', true)
+      .single();
 
     if (redirect) {
       return res.status(200).json({

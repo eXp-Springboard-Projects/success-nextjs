@@ -1,9 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -41,13 +39,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Get analytics data
-    const analytics = await prisma.content_analytics.findMany({
-      where: {
-        createdAt: {
-          gte: startDate,
-        },
-      },
-    });
+    const supabase = supabaseAdmin();
+
+    const { data: analytics, error } = await supabase
+      .from('content_analytics')
+      .select('*')
+      .gte('createdAt', startDate.toISOString());
+
+    if (error) {
+      throw error;
+    }
 
     // Aggregate statistics
     const totalViews = analytics.reduce((sum, a) => sum + a.views, 0);

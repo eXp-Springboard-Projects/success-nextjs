@@ -1,8 +1,6 @@
 import { GetStaticProps, GetStaticPaths } from 'next';
 import Head from 'next/head';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../lib/supabase';
 
 interface Block {
   id: string;
@@ -191,20 +189,24 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const slug = params?.slug as string;
 
   try {
-    const pages = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM landing_pages WHERE slug = ${slug} AND status = 'published'
-    `;
+    const supabase = supabaseAdmin();
+    const { data: pages, error } = await supabase
+      .from('landing_pages')
+      .select('*')
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .limit(1);
 
-    if (pages.length === 0) {
+    if (error || !pages || pages.length === 0) {
       return { notFound: true };
     }
 
     // Track view
-    await prisma.$executeRaw`
-      UPDATE landing_pages SET views = views + 1 WHERE slug = ${slug}
-    `.catch(() => {
-      // Ignore tracking errors
-    });
+    await supabase
+      .rpc('increment_landing_page_views', { page_slug: slug })
+      .catch(() => {
+        // Ignore tracking errors
+      });
 
     return {
       props: {

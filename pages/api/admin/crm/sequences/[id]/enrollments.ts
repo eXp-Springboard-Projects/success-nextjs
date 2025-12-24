@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -23,34 +21,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    const supabase = supabaseAdmin();
     const { status = '' } = req.query;
 
-    let whereClause = '';
-    const params: any[] = [id];
-    let paramIndex = 2;
+    let query = supabase
+      .from('sequence_enrollments')
+      .select(`
+        *,
+        contacts (
+          email,
+          first_name,
+          last_name,
+          company
+        ),
+        deals (
+          name
+        )
+      `)
+      .eq('sequence_id', id)
+      .order('enrolled_at', { ascending: false });
 
-    if (status) {
-      whereClause += ` AND se.status = $${paramIndex}`;
-      params.push(status);
-      paramIndex++;
+    if (status && typeof status === 'string') {
+      query = query.eq('status', status);
     }
 
-    const enrollments = await prisma.$queryRawUnsafe(`
-      SELECT
-        se.*,
-        c.email,
-        c.first_name,
-        c.last_name,
-        c.company,
-        d.name as deal_name
-      FROM sequence_enrollments se
-      JOIN contacts c ON se.contact_id = c.id
-      LEFT JOIN deals d ON se.deal_id = d.id
-      WHERE se.sequence_id = $1 ${whereClause}
-      ORDER BY se.enrolled_at DESC
-    `, ...params);
+    const { data: enrollments, error } = await query;
 
-    return res.status(200).json({ enrollments });
+    if (error) {
+      throw error;
+    }
+
+    // Transform the data to match the original format
+    const formattedEnrollments = enrollments?.map(e => ({
+      ...e,
+      email: e.contacts?.email,
+      first_name: e.contacts?.first_name,
+      last_name: e.contacts?.last_name,
+      company: e.contacts?.company,
+      deal_name: e.deals?.name,
+    }));
+
+    return res.status(200).json({ enrollments: formattedEnrollments });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to fetch enrollments' });
   }

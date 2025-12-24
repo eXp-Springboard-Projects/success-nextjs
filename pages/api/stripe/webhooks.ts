@@ -1,17 +1,16 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { buffer } from 'micro';
 import Stripe from 'stripe';
-import { PrismaClient } from '@prisma/client';
+
 import { randomUUID } from 'crypto';
 import { createLogger } from '@/lib/logger';
+import { supabaseAdmin } from '@/lib/supabase';
 
 const log = createLogger('StripeWebhook');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-09-30.clover',
 });
-
-const prisma = new PrismaClient();
 
 // Disable body parsing, need raw body for webhook signature verification
 export const config = {
@@ -24,6 +23,7 @@ export const config = {
  * Send magazine subscription to C+W fulfillment system
  */
 async function sendToCWFulfillment(subscription: any, customer: any) {
+  const supabase = supabaseAdmin();
   const cwWebhookUrl = process.env.CW_WEBHOOK_URL;
   const cwWebhookSecret = process.env.CW_WEBHOOK_SECRET;
 
@@ -63,8 +63,9 @@ async function sendToCWFulfillment(subscription: any, customer: any) {
   } catch (error) {
     log.error('Failed to send to C+W fulfillment', error);
     // Log to database for manual retry
-    await prisma.activity_logs.create({
-      data: {
+    await supabase
+      .from('activity_logs')
+      .insert({
         id: randomUUID(),
         userId: subscription.metadata.userId || 'system',
         action: 'CW_FULFILLMENT_FAILED',
@@ -74,8 +75,7 @@ async function sendToCWFulfillment(subscription: any, customer: any) {
           error: error instanceof Error ? error.message : 'Unknown error',
         }),
         ipAddress: '',
-      },
-    });
+      });
   }
 }
 
@@ -126,22 +126,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             session.customer as string
           ) as Stripe.Customer;
 
+          const supabase = supabaseAdmin();
           const tier = session.metadata?.tier || 'collective';
           const billingCycle = session.metadata?.billingCycle || 'monthly';
           const userId = session.metadata?.userId;
 
           // Find or create member for subscription
-          let member = await prisma.members.findFirst({
-            where: { stripeCustomerId: customer.id },
-          });
+          let { data: memberResults } = await supabase
+            .from('members')
+            .select('*')
+            .eq('stripeCustomerId', customer.id)
+            .limit(1);
+
+          let member = memberResults && memberResults.length > 0 ? memberResults[0] : null;
+
           if (!member && customer.email) {
-            member = await prisma.members.findFirst({
-              where: { email: customer.email },
-            });
+            const { data: emailResults } = await supabase
+              .from('members')
+              .select('*')
+              .eq('email', customer.email)
+              .limit(1);
+            member = emailResults && emailResults.length > 0 ? emailResults[0] : null;
           }
+
           if (!member && customer.email) {
-            member = await prisma.members.create({
-              data: {
+            const { data: newMember } = await supabase
+              .from('members')
+              .insert({
                 id: randomUUID(),
                 email: customer.email,
                 firstName: customer.name?.split(' ')[0] || customer.email.split('@')[0],
@@ -151,45 +162,64 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 membershipStatus: 'Active',
                 totalSpent: 0,
                 lifetimeValue: 0,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              },
-            });
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              })
+              .select()
+              .single();
+            member = newMember;
           }
 
           // Create or update subscription in database
           const subscriptionAny = subscription as any;
           const currentPeriodStart = subscriptionAny.current_period_start
-            ? new Date(subscriptionAny.current_period_start * 1000)
-            : new Date();
+            ? new Date(subscriptionAny.current_period_start * 1000).toISOString()
+            : new Date().toISOString();
           const currentPeriodEnd = subscriptionAny.current_period_end
-            ? new Date(subscriptionAny.current_period_end * 1000)
-            : new Date();
+            ? new Date(subscriptionAny.current_period_end * 1000).toISOString()
+            : new Date().toISOString();
 
-          const dbSubscription = await prisma.subscriptions.upsert({
-            where: {
-              stripeSubscriptionId: subscription.id,
-            },
-            update: {
-              status: subscription.status,
-              currentPeriodStart,
-              currentPeriodEnd,
-              cancelAtPeriodEnd: subscriptionAny.cancel_at_period_end || false,
-            },
-            create: {
-              id: randomUUID(),
-              memberId: member!.id,
-              stripeCustomerId: customer.id,
-              stripeSubscriptionId: subscription.id,
-              tier,
-              billingCycle,
-              status: subscription.status,
-              currentPeriodStart,
-              currentPeriodEnd,
-              cancelAtPeriodEnd: subscriptionAny.cancel_at_period_end || false,
-              updatedAt: new Date(),
-            },
-          });
+          // Check if subscription exists
+          const { data: existingSub } = await supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('stripeSubscriptionId', subscription.id)
+            .single();
+
+          let dbSubscription;
+          if (existingSub) {
+            const { data } = await supabase
+              .from('subscriptions')
+              .update({
+                status: subscription.status,
+                currentPeriodStart,
+                currentPeriodEnd,
+                cancelAtPeriodEnd: subscriptionAny.cancel_at_period_end || false,
+              })
+              .eq('stripeSubscriptionId', subscription.id)
+              .select()
+              .single();
+            dbSubscription = data;
+          } else {
+            const { data } = await supabase
+              .from('subscriptions')
+              .insert({
+                id: randomUUID(),
+                memberId: member!.id,
+                stripeCustomerId: customer.id,
+                stripeSubscriptionId: subscription.id,
+                tier,
+                billingCycle,
+                status: subscription.status,
+                currentPeriodStart,
+                currentPeriodEnd,
+                cancelAtPeriodEnd: subscriptionAny.cancel_at_period_end || false,
+                updatedAt: new Date().toISOString(),
+              })
+              .select()
+              .single();
+            dbSubscription = data;
+          }
 
           // If Insider tier, send to C+W for magazine fulfillment
           if (tier === 'insider') {
@@ -199,15 +229,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const shippingAddress = JSON.parse(JSON.stringify(
               customer.shipping || customer.address || {}
             ));
-            await prisma.magazine_subscriptions.create({
-              data: {
+            await supabase
+              .from('magazine_subscriptions')
+              .insert({
                 id: randomUUID(),
                 subscriptionId: dbSubscription.id,
                 shippingAddress,
                 status: 'active',
-                updatedAt: new Date(),
-              },
-            });
+                updatedAt: new Date().toISOString(),
+              });
           }
 
           // Send welcome email
@@ -215,16 +245,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
           // Log activity
           if (userId && userId !== 'guest') {
-            await prisma.activity_logs.create({
-              data: {
+            await supabase
+              .from('activity_logs')
+              .insert({
                 id: randomUUID(),
                 userId,
                 action: 'SUBSCRIPTION_CREATED',
                 entity: 'subscription',
                 details: `SUCCESS+ ${tier} - ${billingCycle}`,
                 ipAddress: '',
-              },
-            });
+              });
           }
 
           log.info('Subscription created', { subscriptionId: subscription.id });
@@ -233,34 +263,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       case 'customer.subscription.updated': {
+        const supabase = supabaseAdmin();
         const subscription = event.data.object as Stripe.Subscription;
         const subscriptionAny = subscription as any;
 
         const currentPeriodStart = subscriptionAny.current_period_start
-          ? new Date(subscriptionAny.current_period_start * 1000)
+          ? new Date(subscriptionAny.current_period_start * 1000).toISOString()
           : undefined;
         const currentPeriodEnd = subscriptionAny.current_period_end
-          ? new Date(subscriptionAny.current_period_end * 1000)
+          ? new Date(subscriptionAny.current_period_end * 1000).toISOString()
           : undefined;
 
         // Update subscription in database
-        await prisma.subscriptions.update({
-          where: {
-            stripeSubscriptionId: subscription.id,
-          },
-          data: {
+        await supabase
+          .from('subscriptions')
+          .update({
             status: subscription.status,
             currentPeriodStart,
             currentPeriodEnd,
             cancelAtPeriodEnd: subscriptionAny.cancel_at_period_end || false,
-          },
-        });
+          })
+          .eq('stripeSubscriptionId', subscription.id);
 
         // Check if tier changed
-        const dbSub = await prisma.subscriptions.findUnique({
-          where: { stripeSubscriptionId: subscription.id },
-          include: { magazine_subscriptions: true },
-        });
+        const { data: dbSub } = await supabase
+          .from('subscriptions')
+          .select(`
+            *,
+            magazine_subscriptions(*)
+          `)
+          .eq('stripeSubscriptionId', subscription.id)
+          .single();
 
         if (dbSub) {
           const newTier = subscription.metadata?.tier as string | undefined;
@@ -276,33 +309,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const shippingAddress = JSON.parse(JSON.stringify(
               customer.shipping || customer.address || {}
             ));
-            await prisma.magazine_subscriptions.create({
-              data: {
+            await supabase
+              .from('magazine_subscriptions')
+              .insert({
                 id: randomUUID(),
                 subscriptionId: dbSub.id,
                 shippingAddress,
                 status: 'active',
-                updatedAt: new Date(),
-              },
-            });
+                updatedAt: new Date().toISOString(),
+              });
           }
 
           // If downgraded from Insider to Collective, cancel magazine
           if (newTier === 'collective' && dbSub.tier === 'insider' && dbSub.magazine_subscriptions) {
-            await prisma.magazine_subscriptions.update({
-              where: { subscriptionId: dbSub.id },
-              data: { status: 'canceled' },
-            });
+            await supabase
+              .from('magazine_subscriptions')
+              .update({ status: 'canceled' })
+              .eq('subscriptionId', dbSub.id);
 
             // TODO: Send cancellation to C+W
           }
 
           // Update tier in database
           if (newTier !== dbSub.tier) {
-            await prisma.subscriptions.update({
-              where: { id: dbSub.id },
-              data: { tier: newTier },
-            });
+            await supabase
+              .from('subscriptions')
+              .update({ tier: newTier })
+              .eq('id', dbSub.id);
           }
         }
 
@@ -311,27 +344,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       case 'customer.subscription.deleted': {
+        const supabase = supabaseAdmin();
         const subscription = event.data.object as Stripe.Subscription;
 
         // Update subscription status to canceled
-        const dbSub = await prisma.subscriptions.update({
-          where: {
-            stripeSubscriptionId: subscription.id,
-          },
-          data: {
+        const { data: dbSub } = await supabase
+          .from('subscriptions')
+          .update({
             status: 'canceled',
-          },
-          include: {
-            magazine_subscriptions: true,
-          },
-        });
+          })
+          .eq('stripeSubscriptionId', subscription.id)
+          .select(`
+            *,
+            magazine_subscriptions(*)
+          `)
+          .single();
 
         // Cancel magazine subscription if exists
-        if (dbSub.magazine_subscriptions) {
-          await prisma.magazine_subscriptions.update({
-            where: { subscriptionId: dbSub.id },
-            data: { status: 'canceled' },
-          });
+        if (dbSub?.magazine_subscriptions) {
+          await supabase
+            .from('magazine_subscriptions')
+            .update({ status: 'canceled' })
+            .eq('subscriptionId', dbSub.id);
 
           // TODO: Send cancellation to C+W
         }
@@ -341,30 +375,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       case 'invoice.payment_succeeded': {
+        const supabase = supabaseAdmin();
         const invoice = event.data.object as any;
 
         if (invoice.subscription) {
           // Log successful recurring payment
-          const dbSub = await prisma.subscriptions.findUnique({
-            where: { stripeSubscriptionId: invoice.subscription as string },
-          });
+          const { data: dbSub } = await supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('stripeSubscriptionId', invoice.subscription as string)
+            .single();
 
           if (dbSub?.memberId) {
             // Find user linked to this member
-            const linkedUser = await prisma.users.findFirst({
-              where: { memberId: dbSub.memberId },
-            });
+            const { data: linkedUsers } = await supabase
+              .from('users')
+              .select('*')
+              .eq('memberId', dbSub.memberId)
+              .limit(1);
+
+            const linkedUser = linkedUsers && linkedUsers.length > 0 ? linkedUsers[0] : null;
             if (linkedUser) {
-              await prisma.activity_logs.create({
-                data: {
+              await supabase
+                .from('activity_logs')
+                .insert({
                   id: randomUUID(),
                   userId: linkedUser.id,
                   action: 'SUBSCRIPTION_PAYMENT_SUCCEEDED',
                   entity: 'subscription',
                   details: `Amount: $${(invoice.amount_paid / 100).toFixed(2)}`,
                   ipAddress: '',
-                },
-              });
+                });
             }
           }
         }
@@ -372,30 +413,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       case 'invoice.payment_failed': {
+        const supabase = supabaseAdmin();
         const invoice = event.data.object as any;
 
         if (invoice.subscription) {
           // Log failed payment
-          const dbSub = await prisma.subscriptions.findUnique({
-            where: { stripeSubscriptionId: invoice.subscription as string },
-          });
+          const { data: dbSub } = await supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('stripeSubscriptionId', invoice.subscription as string)
+            .single();
 
           if (dbSub?.memberId) {
             // Find user linked to this member
-            const linkedUser = await prisma.users.findFirst({
-              where: { memberId: dbSub.memberId },
-            });
+            const { data: linkedUsers } = await supabase
+              .from('users')
+              .select('*')
+              .eq('memberId', dbSub.memberId)
+              .limit(1);
+
+            const linkedUser = linkedUsers && linkedUsers.length > 0 ? linkedUsers[0] : null;
             if (linkedUser) {
-              await prisma.activity_logs.create({
-                data: {
+              await supabase
+                .from('activity_logs')
+                .insert({
                   id: randomUUID(),
                   userId: linkedUser.id,
                   action: 'SUBSCRIPTION_PAYMENT_FAILED',
                   entity: 'subscription',
                   details: `Amount: $${(invoice.amount_due / 100).toFixed(2)}`,
                   ipAddress: '',
-                },
-              });
+                });
             }
           }
 

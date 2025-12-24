@@ -1,11 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
+  const supabase = supabaseAdmin();
 
   if (typeof id !== 'string') {
     return res.status(400).json({ error: 'Invalid list ID' });
@@ -16,48 +15,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { page = '1', perPage = '20', search = '', export: exportCsv } = req.query;
       const pageNum = parseInt(page as string, 10);
       const perPageNum = parseInt(perPage as string, 10);
-      const skip = (pageNum - 1) * perPageNum;
+      const from = (pageNum - 1) * perPageNum;
+      const to = from + perPageNum - 1;
 
-      const where: any = {
-        listId: id,
-      };
+      // Build the query
+      let query = supabase
+        .from('list_members')
+        .select(`
+          addedAt,
+          contact:contacts (
+            id,
+            email,
+            firstName,
+            lastName,
+            status
+          )
+        `, { count: 'exact' })
+        .eq('listId', id);
 
+      // Add search filter if provided
       if (search) {
-        where.contact = {
-          OR: [
-            { email: { contains: search as string, mode: 'insensitive' } },
-            { firstName: { contains: search as string, mode: 'insensitive' } },
-            { lastName: { contains: search as string, mode: 'insensitive' } },
-          ],
-        };
+        query = query.or(
+          `email.ilike.%${search}%,firstName.ilike.%${search}%,lastName.ilike.%${search}%`,
+          { foreignTable: 'contacts' }
+        );
       }
 
-      const [members, total] = await Promise.all([
-        prisma.list_members.findMany({
-          where,
-          include: {
-            contact: {
-              select: {
-                id: true,
-                email: true,
-                firstName: true,
-                lastName: true,
-                status: true,
-              },
-            },
-          },
-          skip: exportCsv ? undefined : skip,
-          take: exportCsv ? undefined : perPageNum,
-          orderBy: { addedAt: 'desc' },
-        }),
-        prisma.list_members.count({ where }),
-      ]);
+      // Apply pagination and ordering
+      if (!exportCsv) {
+        query = query.range(from, to);
+      }
+      query = query.order('addedAt', { ascending: false });
+
+      const { data: members, count, error } = await query;
+
+      if (error) throw error;
 
       // Export CSV
       if (exportCsv) {
         const csv = [
           'Email,First Name,Last Name,Status,Added Date',
-          ...members.map((m) => {
+          ...(members || []).map((m: any) => {
             const contact = m.contact;
             return `${contact.email},${contact.firstName || ''},${contact.lastName || ''},${contact.status},${new Date(m.addedAt).toISOString()}`;
           }),
@@ -68,7 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(200).send(csv);
       }
 
-      const formattedMembers = members.map((m) => ({
+      const formattedMembers = (members || []).map((m: any) => ({
         id: m.contact.id,
         email: m.contact.email,
         firstName: m.contact.firstName,
@@ -79,7 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({
         members: formattedMembers,
-        total,
+        total: count || 0,
         page: pageNum,
         perPage: perPageNum,
       });
@@ -97,45 +95,56 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Find contact by email
-      const contact = await prisma.contacts.findUnique({
-        where: { email },
-      });
+      const { data: contact, error: contactError } = await supabase
+        .from('contacts')
+        .select('id')
+        .eq('email', email)
+        .single();
 
-      if (!contact) {
+      if (contactError || !contact) {
         return res.status(404).json({ error: 'Contact not found' });
       }
 
       // Check if already in list
-      const existing = await prisma.list_members.findFirst({
-        where: {
-          listId: id,
-          contactId: contact.id,
-        },
-      });
+      const { data: existing } = await supabase
+        .from('list_members')
+        .select('id')
+        .eq('listId', id)
+        .eq('contactId', contact.id)
+        .single();
 
       if (existing) {
         return res.status(400).json({ error: 'Contact already in list' });
       }
 
       // Add to list
-      await prisma.list_members.create({
-        data: {
+      const { error: insertError } = await supabase
+        .from('list_members')
+        .insert({
           id: uuidv4(),
           listId: id,
           contactId: contact.id,
-        },
-      });
+        });
+
+      if (insertError) throw insertError;
+
+      // Get current member count
+      const { data: currentList } = await supabase
+        .from('contact_lists')
+        .select('memberCount')
+        .eq('id', id)
+        .single();
 
       // Update member count
-      await prisma.contact_lists.update({
-        where: { id },
-        data: {
-          memberCount: {
-            increment: 1,
-          },
-          updatedAt: new Date(),
-        },
-      });
+      const { error: updateError } = await supabase
+        .from('contact_lists')
+        .update({
+          memberCount: (currentList?.memberCount || 0) + 1,
+          updatedAt: new Date().toISOString(),
+        })
+        .eq('id', id);
+
+      if (updateError) throw updateError;
 
       return res.status(201).json({ success: true });
     } catch (error) {

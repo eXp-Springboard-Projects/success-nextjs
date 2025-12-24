@@ -1,11 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { randomUUID } from 'crypto';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -68,8 +66,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       : 'Other';
 
     // Create analytics event
-    await prisma.content_analytics.create({
-      data: {
+    const supabase = supabaseAdmin();
+
+    const { error } = await supabase
+      .from('content_analytics')
+      .insert({
         id: randomUUID(),
         contentId: metadata.postId || page,
         contentType: metadata.contentType || 'page',
@@ -79,7 +80,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         uniqueVisitors: 1, // Will be aggregated in dashboard queries
         avgTimeOnPage: metadata.timeOnPage || 0,
         bounceRate: metadata.bounced ? 1 : 0,
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
         metadata: JSON.stringify({
           event,
           page,
@@ -93,8 +94,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           ipAddress,
           ...metadata,
         }),
-      },
-    });
+      });
+
+    if (error) {
+      throw error;
+    }
 
     return res.status(200).json({ success: true });
   } catch (error) {

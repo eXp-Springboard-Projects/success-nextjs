@@ -1,10 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '@/lib/supabase';
 import { Resend } from 'resend';
 
-const prisma = new PrismaClient();
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -31,18 +30,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Invalid staff ID' });
     }
 
-    // Get staff member
-    const staffMember = await prisma.users.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-      },
-    });
+    const supabase = supabaseAdmin();
 
-    if (!staffMember) {
+    // Get staff member
+    const { data: staffMember, error: staffError } = await supabase
+      .from('users')
+      .select('id, name, email, role')
+      .eq('id', id)
+      .single();
+
+    if (staffError || !staffMember) {
       return res.status(404).json({ error: 'Staff member not found' });
     }
 
@@ -92,17 +89,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Log activity
-      await prisma.activity_logs.create({
-        data: {
+      await supabase
+        .from('activity_logs')
+        .insert({
           id: `activity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          userId: session.user.id,
+          user_id: session.user.id,
           action: 'STAFF_EMAIL_SENT',
           entity: 'users',
-          entityId: staffMember.id,
+          entity_id: staffMember.id,
           details: `Sent email to ${staffMember.name} (${staffMember.email}): "${subject}"`,
-          createdAt: new Date(),
-        },
-      });
+          created_at: new Date().toISOString(),
+        });
 
       return res.status(200).json({
         message: 'Email sent successfully',
@@ -122,7 +119,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (error) {
     console.error('Send email API error:', error);
     return res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    await prisma.$disconnect();
   }
 }

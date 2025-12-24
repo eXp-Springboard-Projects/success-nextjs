@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../lib/supabase';
 import { randomUUID } from 'crypto';
-
-const prisma = new PrismaClient();
 
 export default async function handler(
   req: NextApiRequest,
@@ -16,12 +14,20 @@ export default async function handler(
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
+  const supabase = supabaseAdmin();
+
   try {
     if (req.method === 'GET') {
-      const contacts = await prisma.contacts.findMany({
-        orderBy: { createdAt: 'desc' },
-      });
-      return res.status(200).json(contacts);
+      const { data: contacts, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .order('createdAt', { ascending: false });
+
+      if (error) {
+        return res.status(500).json({ message: 'Failed to fetch contacts' });
+      }
+
+      return res.status(200).json(contacts || []);
     }
 
     if (req.method === 'POST') {
@@ -32,16 +38,19 @@ export default async function handler(
       }
 
       // Check if contact already exists
-      const existingContact = await prisma.contacts.findUnique({
-        where: { email },
-      });
+      const { data: existingContact } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('email', email)
+        .single();
 
       if (existingContact) {
         return res.status(400).json({ message: 'Contact with this email already exists' });
       }
 
-      const contact = await prisma.contacts.create({
-        data: {
+      const { data: contact, error } = await supabase
+        .from('contacts')
+        .insert({
           id: randomUUID(),
           email,
           firstName: firstName || null,
@@ -51,9 +60,15 @@ export default async function handler(
           tags: tags || [],
           source: source || 'manual',
           status: 'ACTIVE',
-          updatedAt: new Date(),
-        },
-      });
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) {
+        return res.status(500).json({ message: 'Failed to create contact' });
+      }
 
       return res.status(201).json(contact);
     }

@@ -9,7 +9,7 @@
  * Super admins can change roles later in the admin dashboard
  */
 
-import { PrismaClient } from '@prisma/client';
+
 import { createInviteCode } from '../lib/auth-utils';
 import { sendInviteCodeEmail } from '../lib/resend-email';
 

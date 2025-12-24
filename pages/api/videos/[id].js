@@ -1,4 +1,4 @@
-import { prisma } from '../../../lib/prisma';
+import { createClient } from '../../../lib/supabase-server';
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -17,12 +17,16 @@ export default async function handler(req, res) {
 }
 
 async function getVideo(req, res, id) {
-  try {
-    const video = await prisma.videos.findUnique({
-      where: { id },
-    });
+  const supabase = createClient(req, res);
 
-    if (!video) {
+  try {
+    const { data: video, error } = await supabase
+      .from('videos')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !video) {
       return res.status(404).json({ message: 'Video not found' });
     }
 
@@ -33,22 +37,31 @@ async function getVideo(req, res, id) {
 }
 
 async function updateVideo(req, res, id) {
+  const supabase = createClient(req, res);
+
   try {
     const { title, slug, description, videoUrl, thumbnail, duration, status, publishedAt } = req.body;
 
-    const video = await prisma.videos.update({
-      where: { id },
-      data: {
-        title,
-        slug,
-        description,
-        videoUrl,
-        thumbnail,
-        duration,
-        status,
-        publishedAt: publishedAt ? new Date(publishedAt) : null,
-      },
-    });
+    const updateData = {};
+    if (title) updateData.title = title;
+    if (slug) updateData.slug = slug;
+    if (description) updateData.description = description;
+    if (videoUrl) updateData.video_url = videoUrl;
+    if (thumbnail) updateData.thumbnail = thumbnail;
+    if (duration) updateData.duration = duration;
+    if (status) updateData.status = status;
+    if (publishedAt) updateData.published_at = new Date(publishedAt).toISOString();
+
+    const { data: video, error } = await supabase
+      .from('videos')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(500).json({ message: 'Failed to update video' });
+    }
 
     return res.status(200).json(video);
   } catch (error) {
@@ -57,10 +70,17 @@ async function updateVideo(req, res, id) {
 }
 
 async function deleteVideo(req, res, id) {
+  const supabase = createClient(req, res);
+
   try {
-    await prisma.videos.delete({
-      where: { id },
-    });
+    const { error } = await supabase
+      .from('videos')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      return res.status(500).json({ message: 'Failed to delete video' });
+    }
 
     return res.status(200).json({ message: 'Video deleted successfully' });
   } catch (error) {

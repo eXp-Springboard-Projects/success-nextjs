@@ -1,12 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
+    const supabase = supabaseAdmin();
     const session = await getServerSession(req, res, authOptions);
 
     if (!session || !session.user) {
@@ -19,31 +18,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { contentType, limit = '20', onlyInProgress } = req.query;
 
-    const where: any = {
-      userId: session.user.id,
-    };
+    let query = supabase
+      .from('watch_history')
+      .select('*')
+      .eq('userId', session.user.id);
 
     // Filter by content type if provided
     if (contentType && (contentType === 'video' || contentType === 'podcast')) {
-      where.contentType = contentType;
+      query = query.eq('contentType', contentType);
     }
 
     // Filter for in-progress items only
     if (onlyInProgress === 'true') {
-      where.completed = false;
-      where.position = { gt: 0 };
+      query = query
+        .eq('completed', false)
+        .gt('position', 0);
     }
 
-    const watchHistory = await prisma.watch_history.findMany({
-      where,
-      orderBy: {
-        lastWatchedAt: 'desc',
-      },
-      take: parseInt(limit as string),
-    });
+    const { data: watchHistory, error } = await query
+      .order('lastWatchedAt', { ascending: false })
+      .limit(parseInt(limit as string));
+
+    if (error) {
+      throw error;
+    }
 
     // Calculate progress percentage
-    const historyWithProgress = watchHistory.map((item) => ({
+    const historyWithProgress = (watchHistory || []).map((item) => ({
       ...item,
       progressPercent: item.duration && item.duration > 0
         ? Math.round((item.position / item.duration) * 100)
@@ -52,12 +53,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({
       watchHistory: historyWithProgress,
-      total: watchHistory.length,
+      total: historyWithProgress.length,
     });
   } catch (error) {
     console.error('Watch history API error:', error);
     return res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    await prisma.$disconnect();
   }
 }

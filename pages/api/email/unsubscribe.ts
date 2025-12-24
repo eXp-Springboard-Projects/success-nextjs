@@ -1,13 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  const supabase = supabaseAdmin();
 
   try {
     const { token, optInMarketing, optInTransactional, reason } = req.body;
@@ -17,46 +17,59 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Find email by token
-    const prefs = await prisma.$queryRaw<Array<{ email: string }>>`
-      SELECT email FROM email_preferences WHERE unsubscribe_token = ${token}
-    `;
+    const { data: prefs, error: prefsError } = await supabase
+      .from('email_preferences')
+      .select('email')
+      .eq('unsubscribe_token', token)
+      .single();
 
-    if (prefs.length === 0) {
+    if (prefsError || !prefs) {
       return res.status(404).json({ error: 'Invalid token' });
     }
 
-    const email = prefs[0].email;
+    const email = prefs.email;
 
     // Update preferences
-    await prisma.$executeRaw`
-      UPDATE email_preferences
-      SET
-        opt_in_marketing = ${optInMarketing},
-        opt_in_transactional = ${optInTransactional},
-        unsubscribed = ${!optInMarketing && !optInTransactional},
-        unsubscribe_reason = ${reason || null},
-        updated_at = CURRENT_TIMESTAMP
-      WHERE unsubscribe_token = ${token}
-    `;
+    const { error: updateError } = await supabase
+      .from('email_preferences')
+      .update({
+        opt_in_marketing: optInMarketing,
+        opt_in_transactional: optInTransactional,
+        unsubscribed: !optInMarketing && !optInTransactional,
+        unsubscribe_reason: reason || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('unsubscribe_token', token);
+
+    if (updateError) {
+      return res.status(500).json({ error: 'Failed to update preferences' });
+    }
 
     // Update contact status if they unsubscribed from everything
     if (!optInMarketing && !optInTransactional) {
-      await prisma.$executeRaw`
-        UPDATE crm_contacts
-        SET email_status = 'unsubscribed'
-        WHERE email = ${email}
-      `;
+      await supabase
+        .from('crm_contacts')
+        .update({ email_status: 'unsubscribed' })
+        .eq('email', email);
 
       // Add activity
-      await prisma.$executeRaw`
-        INSERT INTO crm_contact_activities (id, contact_id, type, description, metadata)
-        SELECT
-          ${nanoid()}, id, 'unsubscribed',
-          'Unsubscribed from all emails',
-          ${JSON.stringify({ reason })}::jsonb
-        FROM crm_contacts
-        WHERE email = ${email}
-      `;
+      const { data: contact } = await supabase
+        .from('crm_contacts')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (contact) {
+        await supabase
+          .from('crm_contact_activities')
+          .insert({
+            id: nanoid(),
+            contact_id: contact.id,
+            type: 'unsubscribed',
+            description: 'Unsubscribed from all emails',
+            metadata: { reason },
+          });
+      }
     }
 
     return res.status(200).json({ success: true, email });

@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '@/lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -22,19 +20,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const pendingUsers = await prisma.$queryRaw<Array<any>>`
-      SELECT
-        id,
-        email,
-        first_name as "firstName",
-        last_name as "lastName",
-        created_at as "createdAt"
-      FROM users
-      WHERE role = 'PENDING'
-      ORDER BY created_at DESC
-    `;
+    const supabase = supabaseAdmin();
 
-    return res.status(200).json(pendingUsers);
+    const { data: pendingUsers, error } = await supabase
+      .from('users')
+      .select('id, email, first_name, last_name, created_at')
+      .eq('role', 'PENDING')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    // Transform to match expected format
+    const transformedUsers = pendingUsers?.map(user => ({
+      id: user.id,
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      createdAt: user.created_at
+    }));
+
+    return res.status(200).json(transformedUsers);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to fetch pending users' });
   }

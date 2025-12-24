@@ -1,10 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../lib/supabase';
 import { fetchWordPressData } from '../../../lib/wordpress';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -45,21 +43,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ]);
 
       // Get database stats
+      const supabase = supabaseAdmin();
+
       const [
-        totalUsers,
-        activeSubscribers,
-        totalBookmarks,
-        newsletterSubscribers,
-        magazineIssues,
-        editorialItems,
+        usersResult,
+        activeSubscribersResult,
+        totalBookmarksResult,
+        newsletterSubscribersResult,
+        magazineIssuesResult,
+        editorialItemsResult,
       ] = await Promise.all([
-        prisma.users.count(),
-        prisma.subscriptions.count({ where: { status: 'ACTIVE' } }),
-        prisma.bookmarks.count(),
-        prisma.newsletter_subscribers.count({ where: { status: 'ACTIVE' } }),
-        prisma.magazines.count(),
-        prisma.editorial_calendar.count(),
+        supabase.from('users').select('*', { count: 'exact', head: true }),
+        supabase.from('subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'ACTIVE'),
+        supabase.from('bookmarks').select('*', { count: 'exact', head: true }),
+        supabase.from('newsletter_subscribers').select('*', { count: 'exact', head: true }).eq('status', 'ACTIVE'),
+        supabase.from('magazines').select('*', { count: 'exact', head: true }),
+        supabase.from('editorial_calendar').select('*', { count: 'exact', head: true }),
       ]);
+
+      const totalUsers = usersResult.count || 0;
+      const activeSubscribers = activeSubscribersResult.count || 0;
+      const totalBookmarks = totalBookmarksResult.count || 0;
+      const newsletterSubscribers = newsletterSubscribersResult.count || 0;
+      const magazineIssues = magazineIssuesResult.count || 0;
+      const editorialItems = editorialItemsResult.count || 0;
 
 // Calculate content stats
       const now = new Date();
@@ -72,12 +79,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const recentPodcasts = podcasts.filter((p: any) => new Date(p.date) >= startDate);
 
       // Get editorial calendar stats
-      const editorialStats = await prisma.editorial_calendar.groupBy({
-        by: ['status'],
-        _count: {
-          status: true,
-        },
-      });
+      const { data: editorialData } = await supabase
+        .from('editorial_calendar')
+        .select('status');
+
+      const editorialStats = (editorialData || []).reduce((acc: any, item: any) => {
+        const status = item.status;
+        if (!acc[status]) {
+          acc[status] = { status, _count: { status: 0 } };
+        }
+        acc[status]._count.status += 1;
+        return acc;
+      }, {});
+
+      const editorialStatsArray = Object.values(editorialStats);
 
       const dashboardData = {
         overview: {
@@ -97,7 +112,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
         editorial: {
           totalItems: editorialItems,
-          byStatus: editorialStats.reduce((acc: any, stat) => {
+          byStatus: editorialStatsArray.reduce((acc: any, stat: any) => {
             acc[stat.status] = stat._count.status;
             return acc;
           }, {}),

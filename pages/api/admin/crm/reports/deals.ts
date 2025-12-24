@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -21,82 +19,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const daysAgo = parseInt(String(days));
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
+    const supabase = supabaseAdmin();
 
     // Pipeline value over time
-    const pipelineOverTime = await prisma.$queryRaw<Array<{
-      date: string;
-      value: number;
-    }>>`
-      SELECT
-        DATE("createdAt") as date,
-        SUM(value) as value
-      FROM deals
-      WHERE "createdAt" >= ${cutoffDate}
-      GROUP BY DATE("createdAt")
-      ORDER BY date ASC
-    `;
+    const { data: pipelineOverTime } = await supabase.rpc('get_pipeline_over_time', {
+      cutoff_date: cutoffDate.toISOString(),
+    });
 
     // Win/Loss rate
-    const winLossRate = await prisma.$queryRaw<Array<{
-      stage: string;
-      count: bigint;
-    }>>`
-      SELECT
-        CASE
-          WHEN "stageId" IN (SELECT id FROM deal_stages WHERE name = 'Closed Won') THEN 'won'
-          WHEN "stageId" IN (SELECT id FROM deal_stages WHERE name = 'Closed Lost') THEN 'lost'
-          ELSE 'other'
-        END as stage,
-        COUNT(*) as count
-      FROM deals
-      WHERE "closedAt" >= ${cutoffDate}
-      GROUP BY stage
-    `;
+    const { data: winLossRate } = await supabase.rpc('get_win_loss_rate', {
+      cutoff_date: cutoffDate.toISOString(),
+    });
 
-    const wonCount = Number(winLossRate.find(r => r.stage === 'won')?.count || 0);
-    const lostCount = Number(winLossRate.find(r => r.stage === 'lost')?.count || 0);
+    const wonCount = Number(winLossRate?.find((r: any) => r.stage === 'won')?.count || 0);
+    const lostCount = Number(winLossRate?.find((r: any) => r.stage === 'lost')?.count || 0);
 
     // Average deal size
-    const avgDealSizeResult = await prisma.$queryRaw<Array<{ avg: number }>>`
-      SELECT AVG(value) as avg
-      FROM deals
-      WHERE "closedAt" >= ${cutoffDate}
-        AND "stageId" IN (SELECT id FROM deal_stages WHERE name = 'Closed Won')
-    `;
+    const { data: avgDealSizeResult } = await supabase.rpc('get_avg_deal_size', {
+      cutoff_date: cutoffDate.toISOString(),
+    });
 
-    const avgDealSize = avgDealSizeResult[0]?.avg || 0;
+    const avgDealSize = avgDealSizeResult?.[0]?.avg || 0;
 
     // Average sales cycle length
-    const avgSalesCycleResult = await prisma.$queryRaw<Array<{ avg: number }>>`
-      SELECT AVG(EXTRACT(EPOCH FROM ("closedAt" - "createdAt")) / 86400) as avg
-      FROM deals
-      WHERE "closedAt" >= ${cutoffDate}
-        AND "closedAt" IS NOT NULL
-    `;
+    const { data: avgSalesCycleResult } = await supabase.rpc('get_avg_sales_cycle', {
+      cutoff_date: cutoffDate.toISOString(),
+    });
 
-    const avgSalesCycle = Math.round(avgSalesCycleResult[0]?.avg || 0);
+    const avgSalesCycle = Math.round(avgSalesCycleResult?.[0]?.avg || 0);
 
     // Revenue by owner
-    const revenueByOwner = await prisma.$queryRaw<Array<{
-      owner_id: string;
-      owner_name: string;
-      revenue: number;
-    }>>`
-      SELECT
-        d."ownerId" as owner_id,
-        u.name as owner_name,
-        SUM(d.value) as revenue
-      FROM deals d
-      LEFT JOIN users u ON d."ownerId" = u.id
-      WHERE d."closedAt" >= ${cutoffDate}
-        AND d."stageId" IN (SELECT id FROM deal_stages WHERE name = 'Closed Won')
-      GROUP BY d."ownerId", u.name
-      ORDER BY revenue DESC
-      LIMIT 10
-    `;
+    const { data: revenueByOwner } = await supabase.rpc('get_revenue_by_owner', {
+      cutoff_date: cutoffDate.toISOString(),
+    });
 
     return res.status(200).json({
-      pipelineOverTime: pipelineOverTime.map(p => ({
+      pipelineOverTime: (pipelineOverTime || []).map((p: any) => ({
         date: p.date,
         value: Number(p.value),
       })),
@@ -106,7 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       avgDealSize: Number(avgDealSize),
       avgSalesCycle,
-      revenueByOwner: revenueByOwner.map(r => ({
+      revenueByOwner: (revenueByOwner || []).map((r: any) => ({
         owner: r.owner_name || 'Unassigned',
         revenue: Number(r.revenue),
       })),

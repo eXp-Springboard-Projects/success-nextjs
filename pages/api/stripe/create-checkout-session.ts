@@ -1,10 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
-import { createCheckoutSession, getOrCreateStripeCustomer, STRIPE_PRICES } from '@/lib/stripe';
 
-const prisma = new PrismaClient();
+import { createCheckoutSession, getOrCreateStripeCustomer, STRIPE_PRICES } from '@/lib/stripe';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -12,6 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    const supabase = supabaseAdmin();
     const session = await getServerSession(req, res, authOptions);
 
     if (!session || !session.user) {
@@ -26,30 +26,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Get user from database
-    const user = await prisma.users.findUnique({
-      where: { email: session.user.email! },
-      include: {
-        member: {
-          select: {
-            id: true,
-            stripeCustomerId: true,
-            trialEndsAt: true,
-            subscriptions: {
-              where: {
-                status: 'ACTIVE',
-              },
-            },
-          },
-        },
-      },
-    });
+    const { data: user } = await supabase
+      .from('users')
+      .select(`
+        *,
+        members!users_memberId_fkey(
+          id,
+          stripeCustomerId,
+          trialEndsAt,
+          subscriptions!subscriptions_memberId_fkey(*)
+        )
+      `)
+      .eq('email', session.user.email!)
+      .single();
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    const member = user.members;
+
     // Check if user already has an active subscription
-    if (user.member?.subscriptions && user.member.subscriptions.length > 0) {
+    const activeSubscriptions = member?.subscriptions?.filter((sub: any) => sub.status === 'ACTIVE') || [];
+    if (activeSubscriptions.length > 0) {
       return res.status(400).json({
         error: 'You already have an active subscription',
         hasSubscription: true,
@@ -57,15 +56,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Get or create Stripe customer
-    const stripeCustomerId = user.member?.stripeCustomerId ||
+    const stripeCustomerId = member?.stripeCustomerId ||
       await getOrCreateStripeCustomer(user.email, user.name);
 
     // Update member with Stripe customer ID if not set
-    if (user.member && !user.member.stripeCustomerId) {
-      await prisma.members.update({
-        where: { id: user.member.id },
-        data: { stripeCustomerId },
-      });
+    if (member && !member.stripeCustomerId) {
+      await supabase
+        .from('members')
+        .update({ stripeCustomerId })
+        .eq('id', member.id);
     }
 
     // Determine if user is converting from trial
@@ -95,9 +94,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     // Log activity
-    if (user.member) {
-      await prisma.user_activities.create({
-        data: {
+    if (member) {
+      await supabase
+        .from('user_activities')
+        .insert({
           id: require('nanoid').nanoid(),
           userId: user.id,
           activityType: 'SUBSCRIPTION_STARTED',
@@ -109,10 +109,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             isTrialConversion,
             trialPeriodDays,
           }),
-        },
-      }).catch(() => {
-        // Ignore activity logging errors
-      });
+        })
+        .then(() => {})
+        .catch(() => {
+          // Ignore activity logging errors
+        });
     }
 
     return res.status(200).json({
@@ -124,7 +125,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       error: 'Failed to create checkout session',
       details: error instanceof Error ? error.message : 'Unknown error',
     });
-  } finally {
-    await prisma.$disconnect();
   }
 }

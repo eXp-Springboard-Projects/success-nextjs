@@ -1,15 +1,13 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../lib/supabase';
 import { uploadAndOptimizeImage, validateImageFile } from '../../../lib/media';
 import { saveFileLocally, shouldUseLocalStorage } from '../../../lib/mediaLocal';
 import formidable from 'formidable';
 import fs from 'fs';
 import { randomUUID } from 'crypto';
 import sizeOf from 'image-size';
-
-const prisma = new PrismaClient();
 
 // Disable Next.js body parser to handle multipart form data
 export const config = {
@@ -28,6 +26,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!session || !['ADMIN', 'SUPER_ADMIN', 'EDITOR', 'AUTHOR'].includes(session.user.role)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
+
+  const supabase = supabaseAdmin();
 
   try {
     // Parse form data
@@ -109,9 +109,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Save to database
-    const media = await prisma.media.create({
-      data: {
-        id: randomUUID(),
+    const mediaId = randomUUID();
+    const { data: media, error: mediaError } = await supabase
+      .from('media')
+      .insert({
+        id: mediaId,
         filename: uploadedFile.originalFilename || 'upload.jpg',
         url: mediaUrl,
         mimeType: uploadedFile.mimetype || 'image/jpeg',
@@ -121,12 +123,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         alt: (Array.isArray(fields.alt) ? fields.alt[0] : fields.alt) || '',
         caption: (Array.isArray(fields.caption) ? fields.caption[0] : fields.caption) || null,
         uploadedBy: session.user.id,
-      },
-    });
+      })
+      .select()
+      .single();
+
+    if (mediaError) {
+      throw mediaError;
+    }
 
     // Log activity
-    await prisma.activity_logs.create({
-      data: {
+    await supabase
+      .from('activity_logs')
+      .insert({
         id: randomUUID(),
         userId: session.user.id,
         action: 'UPLOAD',
@@ -137,8 +145,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           size: media.size,
           variants: variants.length,
         }),
-      },
-    });
+      });
 
     // Clean up temp file
     fs.unlinkSync(uploadedFile.filepath);
@@ -152,7 +159,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       width: media.width,
       height: media.height,
       alt: media.alt,
-      createdAt: media.createdAt.toISOString(),
+      createdAt: media.createdAt,
       variants,
     });
   } catch (error) {

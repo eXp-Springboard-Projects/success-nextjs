@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -24,29 +22,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getSequences(req: NextApiRequest, res: NextApiResponse) {
   try {
+    const supabase = supabaseAdmin();
     const { status = '' } = req.query;
 
-    let whereClause = '';
-    const params: any[] = [];
-    let paramIndex = 1;
+    let query = supabase
+      .from('sequences')
+      .select('*')
+      .order('created_at', { ascending: false });
 
     if (status) {
-      whereClause += ` AND status = $${paramIndex}`;
-      params.push(status);
-      paramIndex++;
+      query = query.eq('status', status);
     }
 
-    const sequences = await prisma.$queryRawUnsafe(`
-      SELECT
-        s.*,
-        CASE
-          WHEN s.total_enrolled > 0 THEN (s.total_replied::float / s.total_enrolled * 100)
-          ELSE 0
-        END as reply_rate
-      FROM sequences s
-      WHERE 1=1 ${whereClause}
-      ORDER BY s.created_at DESC
-    `, ...params);
+    const { data: sequencesData, error } = await query;
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to fetch sequences' });
+    }
+
+    // Add reply_rate calculation
+    const sequences = sequencesData?.map(s => ({
+      ...s,
+      reply_rate: s.total_enrolled > 0 ? (s.total_replied / s.total_enrolled * 100) : 0,
+    }));
 
     return res.status(200).json({ sequences });
   } catch (error) {
@@ -56,6 +54,7 @@ async function getSequences(req: NextApiRequest, res: NextApiResponse) {
 
 async function createSequence(req: NextApiRequest, res: NextApiResponse, session: any) {
   try {
+    const supabase = supabaseAdmin();
     const {
       name,
       description,
@@ -69,20 +68,25 @@ async function createSequence(req: NextApiRequest, res: NextApiResponse, session
 
     const sequenceId = nanoid();
 
-    await prisma.$executeRaw`
-      INSERT INTO sequences (
-        id, name, description, steps, status, auto_unenroll_on_reply, created_by
-      ) VALUES (
-        ${sequenceId}, ${name}, ${description || null}, ${JSON.stringify(steps)}::jsonb,
-        'draft', ${autoUnenrollOnReply}, ${session.user.id}
-      )
-    `;
+    const { data: sequence, error } = await supabase
+      .from('sequences')
+      .insert({
+        id: sequenceId,
+        name,
+        description: description || null,
+        steps,
+        status: 'draft',
+        auto_unenroll_on_reply: autoUnenrollOnReply,
+        created_by: session.user.id,
+      })
+      .select()
+      .single();
 
-    const sequence = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM sequences WHERE id = ${sequenceId}
-    `;
+    if (error) {
+      return res.status(500).json({ error: 'Failed to create sequence' });
+    }
 
-    return res.status(201).json(sequence[0]);
+    return res.status(201).json(sequence);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to create sequence' });
   }

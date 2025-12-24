@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import { nanoid } from 'nanoid';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -24,29 +22,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getTemplates(req: NextApiRequest, res: NextApiResponse) {
   try {
+    const supabase = supabaseAdmin();
     const { category = '', search = '' } = req.query;
 
-    let whereClause = '';
-    const params: any[] = [];
-    let paramIndex = 1;
+    let query = supabase
+      .from('email_templates')
+      .select('*')
+      .order('updated_at', { ascending: false });
 
     if (category) {
-      whereClause += ` AND category = $${paramIndex}`;
-      params.push(category);
-      paramIndex++;
+      query = query.eq('category', category);
     }
 
     if (search) {
-      whereClause += ` AND (name ILIKE $${paramIndex} OR subject ILIKE $${paramIndex})`;
-      params.push(`%${search}%`);
-      paramIndex++;
+      query = query.or(`name.ilike.%${search}%,subject.ilike.%${search}%`);
     }
 
-    const templates = await prisma.$queryRawUnsafe(`
-      SELECT * FROM email_templates
-      WHERE 1=1 ${whereClause}
-      ORDER BY "updatedAt" DESC
-    `, ...params);
+    const { data: templates, error } = await query;
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to fetch templates' });
+    }
 
     return res.status(200).json({ templates });
   } catch (error) {
@@ -56,6 +52,7 @@ async function getTemplates(req: NextApiRequest, res: NextApiResponse) {
 
 async function createTemplate(req: NextApiRequest, res: NextApiResponse, session: any) {
   try {
+    const supabase = supabaseAdmin();
     const {
       name,
       subject,
@@ -74,23 +71,28 @@ async function createTemplate(req: NextApiRequest, res: NextApiResponse, session
 
     const templateId = nanoid();
 
-    await prisma.$executeRaw`
-      INSERT INTO email_templates (
-        id, name, subject, preview_text, html_content, json_content,
-        category, variables, is_active, created_by
-      ) VALUES (
-        ${templateId}, ${name}, ${subject}, ${previewText || null},
-        ${htmlContent}, ${JSON.stringify(jsonContent)}::jsonb,
-        ${category}, ${JSON.stringify(variables)}::jsonb, true,
-        ${session.user.id}
-      )
-    `;
+    const { data: template, error } = await supabase
+      .from('email_templates')
+      .insert({
+        id: templateId,
+        name,
+        subject,
+        preview_text: previewText || null,
+        html_content: htmlContent,
+        json_content: jsonContent,
+        category,
+        variables,
+        is_active: true,
+        created_by: session.user.id,
+      })
+      .select()
+      .single();
 
-    const template = await prisma.$queryRaw<Array<any>>`
-      SELECT * FROM email_templates WHERE id = ${templateId}
-    `;
+    if (error) {
+      return res.status(500).json({ error: 'Failed to create template' });
+    }
 
-    return res.status(201).json(template[0]);
+    return res.status(201).json(template);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to create template' });
   }
