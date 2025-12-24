@@ -1,7 +1,7 @@
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { Department } from '@prisma/client';
+import { Department } from '../types';
 
 interface WithDepartmentAccessOptions {
   department: Department;
