@@ -75,25 +75,19 @@ export default async function handler(
     const userId = uuidv4();
     const now = new Date().toISOString();
 
-    // Split name into first and last name
-    const nameParts = name.trim().split(' ');
-    const firstName = nameParts[0] || name;
-    const lastName = nameParts.slice(1).join(' ') || '';
-
-    // Create user - matching staff/create.ts pattern that works
+    // Create user - using camelCase to match database schema
     const { error: createError } = await supabase
       .from('users')
       .insert({
         id: userId,
         email: email.toLowerCase(),
         password: hashedPassword,
-        first_name: firstName,
-        last_name: lastName,
+        name: name,
         role: userRole,
-        primary_department: null,
-        email_verified: true, // Always true for registration
-        created_at: now,
-        updated_at: now
+        primaryDepartment: null,
+        emailVerified: true, // Always true for registration
+        createdAt: now,
+        updatedAt: now
       });
 
     if (createError) {
@@ -107,11 +101,10 @@ export default async function handler(
       console.error('Attempted Insert Data:', {
         id: userId,
         email: email.toLowerCase(),
-        first_name: firstName,
-        last_name: lastName,
+        name: name,
         role: userRole,
-        primary_department: null,
-        email_verified: true
+        primaryDepartment: null,
+        emailVerified: true
       });
 
       // Check for duplicate email constraint
@@ -139,9 +132,8 @@ export default async function handler(
     }
 
     // Send welcome email (without password since they created their own)
-    const fullName = `${firstName} ${lastName}`.trim();
     try {
-      const emailResult = await sendStaffWelcomeEmail(email.toLowerCase(), fullName, '');
+      const emailResult = await sendStaffWelcomeEmail(email.toLowerCase(), name, '');
       if (!emailResult.success) {
         // Don't fail registration if email fails
       }
@@ -155,7 +147,7 @@ export default async function handler(
       user: {
         id: userId,
         email: email.toLowerCase(),
-        name: fullName,
+        name: name,
         role: userRole
       }
     });

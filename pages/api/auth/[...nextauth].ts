@@ -20,11 +20,11 @@ export const authOptions: AuthOptions = {
           throw new Error('Email and password required');
         }
 
-        // Use Supabase to query users - using snake_case column names
+        // Use Supabase to query users
         const supabase = supabaseAdmin();
         const { data: users, error } = await supabase
           .from('users')
-          .select('id, email, first_name, last_name, password, role, avatar, has_changed_default_password, last_login_at')
+          .select('id, email, name, password, role, avatar, hasChangedDefaultPassword, lastLoginAt')
           .eq('email', credentials.email)
           .limit(1);
 
@@ -64,24 +64,23 @@ export const authOptions: AuthOptions = {
         console.log('[NextAuth] Password valid, user authenticated:', user.email, user.role);
         logger.info('User authenticated', { email: user.email, role: user.role });
 
-        // Update last login timestamp with Supabase - using snake_case
+        // Update last login timestamp with Supabase
         await supabase
           .from('users')
           .update({
-            last_login_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            lastLoginAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           })
           .eq('id', user.id);
 
-        const userName = user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : user.email;
         console.log('[NextAuth] Returning user object:', { id: user.id, email: user.email, role: user.role });
         return {
           id: user.id,
           email: user.email,
-          name: userName,
+          name: user.name,
           role: user.role,
           avatar: user.avatar,
-          hasChangedDefaultPassword: user.has_changed_default_password || false,
+          hasChangedDefaultPassword: user.hasChangedDefaultPassword || false,
           membershipTier: 'FREE', // Default for now
         };
       },
