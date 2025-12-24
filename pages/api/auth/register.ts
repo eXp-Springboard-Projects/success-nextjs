@@ -99,15 +99,35 @@ export default async function handler(
       .single();
 
     if (createError) {
-      console.error('Failed to create user:', createError);
-      console.error('Error details:', JSON.stringify(createError, null, 2));
+      console.error('=== REGISTRATION ERROR ===');
+      console.error('Email:', email);
+      console.error('Error Code:', createError.code);
+      console.error('Error Message:', createError.message);
+      console.error('Error Details:', createError.details);
+      console.error('Error Hint:', createError.hint);
+      console.error('Full Error:', JSON.stringify(createError, null, 2));
+      console.error('Attempted Insert Data:', {
+        id: userId,
+        email: email.toLowerCase(),
+        first_name: firstName,
+        last_name: lastName,
+        role: userRole,
+        primary_department: null,
+        email_verified: true
+      });
+
       // Check for duplicate email constraint
       if (createError.code === '23505') {
         return res.status(400).json({ error: 'An account with this email already exists' });
       }
+
+      // Return detailed error in production for debugging
       return res.status(500).json({
-        error: 'Database schema error. Please contact support.',
-        details: process.env.NODE_ENV === 'development' ? createError.message : undefined
+        error: 'Database error',
+        code: createError.code,
+        message: createError.message,
+        details: createError.details,
+        hint: createError.hint
       });
     }
 
