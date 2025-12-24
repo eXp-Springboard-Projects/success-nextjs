@@ -70,7 +70,8 @@ export default async function handler(
     // Hash user's chosen password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user with their chosen password (use snake_case for Supabase)
+    // Create user with their chosen password
+    // Try with snake_case column names (Supabase standard)
     const userId = uuidv4();
     const now = new Date().toISOString();
     const { data: user, error: createError } = await supabase
@@ -81,14 +82,14 @@ export default async function handler(
         name,
         password: hashedPassword,
         role: userRole,
-        emailVerified: isSuccessStaff, // Auto-verify @success.com emails
-        hasChangedDefaultPassword: true, // They set their own password
-        inviteCode: inviteCode || null,
+        email_verified: isSuccessStaff, // Auto-verify @success.com emails
+        has_changed_default_password: true, // They set their own password
+        invite_code: inviteCode || null,
         interests: [], // Required array field
-        isActive: true,
-        onboardingCompleted: false,
-        createdAt: now,
-        updatedAt: now
+        is_active: true,
+        onboarding_completed: false,
+        created_at: now,
+        updated_at: now
       })
       .select()
       .single();
