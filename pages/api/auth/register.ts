@@ -70,8 +70,9 @@ export default async function handler(
     // Hash user's chosen password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user with their chosen password
+    // Create user with their chosen password (use snake_case for Supabase)
     const userId = uuidv4();
+    const now = new Date().toISOString();
     const { data: user, error: createError } = await supabase
       .from('users')
       .insert({
@@ -85,18 +86,24 @@ export default async function handler(
         inviteCode: inviteCode || null,
         interests: [], // Required array field
         isActive: true,
-        onboardingCompleted: false
+        onboardingCompleted: false,
+        createdAt: now,
+        updatedAt: now
       })
       .select()
       .single();
 
     if (createError) {
       console.error('Failed to create user:', createError);
+      console.error('Error details:', JSON.stringify(createError, null, 2));
       // Check for duplicate email constraint
       if (createError.code === '23505') {
         return res.status(400).json({ error: 'An account with this email already exists' });
       }
-      throw createError;
+      return res.status(500).json({
+        error: 'Database schema error. Please contact support.',
+        details: process.env.NODE_ENV === 'development' ? createError.message : undefined
+      });
     }
 
     // Mark invite code as used if provided
