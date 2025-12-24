@@ -80,7 +80,8 @@ export default async function handler(
     const firstName = nameParts[0] || name;
     const lastName = nameParts.slice(1).join(' ') || '';
 
-    const { data: user, error: createError } = await supabase
+    // Use minimal fields only - exactly like staff/create.ts which works
+    const { data: user, error: createError} = await supabase
       .from('users')
       .insert({
         id: userId,
@@ -89,11 +90,8 @@ export default async function handler(
         first_name: firstName,
         last_name: lastName,
         role: userRole,
-        primary_department: null, // Will be set later if needed
-        email_verified: isSuccessStaff, // Auto-verify @success.com emails
-        has_changed_default_password: true, // They set their own password
-        invite_code: inviteCode || null,
-        is_active: true,
+        primary_department: null,
+        email_verified: true, // Always true for registration
         created_at: now,
         updated_at: now
       })
