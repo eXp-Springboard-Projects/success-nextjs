@@ -67,21 +67,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Count valid recipients
-    const validContacts = listMembers?.filter(member => {
+    const validContacts = listMembers?.filter((member: any) => {
       const contact = member.contacts;
 
       // Skip excluded
-      if (exclusionContactIds.has(contact.id)) {
+      if (exclusionContactIds.has(contact?.id)) {
         return false;
       }
 
       // Skip recently emailed
-      if (recentContactIds.has(contact.id)) {
+      if (recentContactIds.has(contact?.id)) {
         return false;
       }
 
       // Skip inactive
-      if (contact.status !== 'ACTIVE') {
+      if (contact?.status !== 'ACTIVE') {
         return false;
       }
 
