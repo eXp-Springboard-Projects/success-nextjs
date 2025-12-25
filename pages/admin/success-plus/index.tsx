@@ -141,11 +141,11 @@ export default function SuccessPlusDashboard() {
               </div>
             </Link>
 
-            <Link href="/admin/crm/campaigns" className={styles.actionCard}>
+            <Link href="/admin/success-plus/newsletters" className={styles.actionCard}>
               <div className={styles.actionIcon}>📧</div>
-              <div className={styles.actionTitle}>Communications</div>
+              <div className={styles.actionTitle}>Newsletters</div>
               <div className={styles.actionDescription}>
-                Send emails and manage templates
+                Create and send newsletters to members
               </div>
             </Link>
 
