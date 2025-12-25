@@ -92,7 +92,7 @@ export default async function handler(
         email: email,
         phone: cleanPhone || null,
         membershipTier: 'SUCCESSPlus',
-        membershipStatus: 'ACTIVE',
+        membershipStatus: 'Active',
         joinDate: joinDate.toISOString(),
         totalSpent: 0,
         lifetimeValue: 0,
