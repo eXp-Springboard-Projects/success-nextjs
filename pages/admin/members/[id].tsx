@@ -364,92 +364,46 @@ export default function MemberDetailPage() {
 
           {/* Subscription Information */}
           <div className={styles.card}>
-            <h2>Subscription Details</h2>
-            {member.subscription ? (
-              <div className={styles.infoGrid}>
-                <div className={styles.infoItem}>
-                  <span className={styles.label}>Status</span>
-                  <span className={styles.value}>
-                    {(member.subscription.status === 'ACTIVE' || member.subscription.status === 'active') && (
-                      <span className={styles.statusActive}>Active</span>
-                    )}
-                    {member.subscription.status === 'PAST_DUE' && (
-                      <span className={styles.statusPastDue}>Past Due</span>
-                    )}
-                    {(member.subscription.status === 'CANCELED' || member.subscription.status === 'canceled') && (
-                      <span className={styles.statusCanceled}>Canceled</span>
-                    )}
-                    {member.subscription.status === 'INACTIVE' && (
-                      <span className={styles.statusInactive}>Inactive</span>
-                    )}
-                  </span>
-                </div>
-                {member.subscription.currentPeriodStart && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.label}>Current Period Start</span>
-                    <span className={styles.value}>
-                      {new Date(member.subscription.currentPeriodStart).toLocaleDateString(
-                        'en-US',
-                        {
-                          month: 'long',
-                          day: 'numeric',
-                          year: 'numeric',
-                        }
-                      )}
-                    </span>
-                  </div>
-                )}
-                {member.subscription.currentPeriodEnd && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.label}>Next Billing Date</span>
-                    <span className={styles.value}>
-                      {new Date(member.subscription.currentPeriodEnd).toLocaleDateString(
-                        'en-US',
-                        {
-                          month: 'long',
-                          day: 'numeric',
-                          year: 'numeric',
-                        }
-                      )}
-                    </span>
-                  </div>
-                )}
-                {member.subscription.cancelAtPeriodEnd && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.label}>Cancel at Period End</span>
-                    <span className={styles.valueWarning}>
-                      Yes - Will cancel on{' '}
-                      {member.subscription.currentPeriodEnd
-                        ? new Date(member.subscription.currentPeriodEnd).toLocaleDateString()
-                        : 'N/A'}
-                    </span>
-                  </div>
-                )}
-                {member.subscription.stripeSubscriptionId && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.label}>Stripe Subscription ID</span>
-                    <span className={styles.valueCode}>
-                      {member.subscription.stripeSubscriptionId}
-                    </span>
-                  </div>
-                )}
-                {member.subscription.stripeCustomerId && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.label}>Stripe Customer ID</span>
-                    <span className={styles.valueCode}>
-                      {member.subscription.stripeCustomerId}
-                    </span>
-                  </div>
-                )}
+            <h2>SUCCESS+ Subscription</h2>
+            <div className={styles.infoGrid}>
+              <div className={styles.infoItem}>
+                <span className={styles.label}>Membership Tier</span>
+                <span className={styles.value}>
+                  <span className={styles.badgePremium}>SUCCESS+ Insider</span>
+                </span>
               </div>
-            ) : (
-              <p className={styles.noSubscription}>
-                No active subscription found
-              </p>
-            )}
+              <div className={styles.infoItem}>
+                <span className={styles.label}>Status</span>
+                <span className={styles.value}>
+                  {hasActiveSubscription ? (
+                    <span className={styles.statusActive}>Active</span>
+                  ) : (
+                    <span className={styles.statusInactive}>Inactive</span>
+                  )}
+                </span>
+              </div>
+              <div className={styles.infoItem}>
+                <span className={styles.label}>Member Since</span>
+                <span className={styles.value}>
+                  {new Date(member.createdAt).toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </span>
+              </div>
+              <div className={styles.infoItem}>
+                <span className={styles.label}>Total Spent</span>
+                <span className={styles.value}>${member.totalSpent?.toFixed(2) || '0.00'}</span>
+              </div>
+              <div className={styles.infoItem}>
+                <span className={styles.label}>Lifetime Value</span>
+                <span className={styles.value}>${member.lifetimeValue?.toFixed(2) || '0.00'}</span>
+              </div>
+            </div>
 
             {member.subscription?.stripeCustomerId && (
-              <div className={styles.actions}>
+              <div className={styles.actions} style={{ marginTop: '1rem' }}>
                 <a
                   href={`https://dashboard.stripe.com/customers/${member.subscription.stripeCustomerId}`}
                   target="_blank"
