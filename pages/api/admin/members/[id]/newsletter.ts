@@ -33,34 +33,38 @@ export default async function handler(
       return res.status(404).json({ error: 'Member not found' });
     }
 
-    // Log the newsletter send
+    // Add member to newsletter list
+    await supabase.from('newsletter_subscribers').insert({
+      id: nanoid(),
+      memberId: id as string,
+      email: member.email,
+      firstName: member.firstName,
+      lastName: member.lastName,
+      status: 'subscribed',
+      source: 'admin_add',
+      subscribedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    });
+
+    // Log the newsletter subscription
     await supabase.from('member_activities').insert({
       id: nanoid(),
       memberId: id as string,
-      type: 'newsletter_sent',
-      description: 'SUCCESS Magazine Newsletter sent',
+      type: 'newsletter_subscribed',
+      description: 'Added to SUCCESS Magazine Newsletter list',
       metadata: {
-        sentBy: session.user.email,
-        sentAt: new Date().toISOString(),
+        addedBy: session.user.email,
+        addedAt: new Date().toISOString(),
       },
       createdAt: new Date().toISOString(),
     });
 
-    // Update last contact date
-    await supabase
-      .from('members')
-      .update({ lastContactDate: new Date().toISOString() })
-      .eq('id', id);
-
-    // In a real implementation, you would integrate with your newsletter service
-    console.log('Newsletter would be sent to:', member.email);
-
     return res.status(200).json({
       success: true,
-      message: 'Newsletter sent successfully',
+      message: 'Added to newsletter list successfully',
     });
   } catch (error) {
-    console.error('Error sending newsletter:', error);
-    return res.status(500).json({ error: 'Failed to send newsletter' });
+    console.error('Error adding to newsletter:', error);
+    return res.status(500).json({ error: 'Failed to add to newsletter list' });
   }
 }

@@ -351,6 +351,32 @@
   border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
+.badgeStaff {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background-color: rgba(103, 58, 183, 0.2);
+  color: #e1bee7;
+  border: 2px solid rgba(225, 190, 231, 0.5);
+}
+
+.badgeAgent {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background-color: rgba(33, 150, 243, 0.2);
+  color: #bbdefb;
+  border: 2px solid rgba(187, 222, 251, 0.5);
+}
+
 /* Content Grid */
 .contentGrid {
   display: grid;

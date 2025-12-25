@@ -175,8 +175,8 @@ export default function MemberDetailPage() {
     }
   };
 
-  const sendNewsletter = async () => {
-    if (!confirm('Send latest newsletter to this member?')) return;
+  const addToNewsletterList = async () => {
+    if (!confirm('Add this member to the newsletter list?')) return;
 
     try {
       const response = await fetch(`/api/admin/members/${id}/newsletter`, {
@@ -184,13 +184,13 @@ export default function MemberDetailPage() {
       });
 
       if (response.ok) {
-        showToast('Newsletter sent!', 'success');
+        showToast('Added to newsletter list!', 'success');
       } else {
-        showToast('Failed to send newsletter', 'error');
+        showToast('Failed to add to newsletter list', 'error');
       }
     } catch (error) {
-      console.error('Error sending newsletter:', error);
-      showToast('Error sending newsletter', 'error');
+      console.error('Error adding to newsletter list:', error);
+      showToast('Error adding to newsletter list', 'error');
     }
   };
 
@@ -211,6 +211,24 @@ export default function MemberDetailPage() {
   }
 
   const hasActiveSubscription = member.subscription?.status === 'ACTIVE' || member.subscription?.status === 'active';
+
+  // Determine member type based on email domain
+  const getMemberType = (email: string): 'staff' | 'agent' | 'member' => {
+    const domain = email.split('@')[1]?.toLowerCase();
+    if (!domain) return 'member';
+
+    if (['exprealty.net', 'success.com', 'expworldholdings.com'].includes(domain)) {
+      return 'staff';
+    }
+
+    if (domain === 'exprealty.com') {
+      return 'agent';
+    }
+
+    return 'member';
+  };
+
+  const memberType = getMemberType(member.email);
 
   return (
     <AdminLayout>
@@ -233,6 +251,12 @@ export default function MemberDetailPage() {
                 <span className={styles.badgeActive}>Active Subscriber</span>
               ) : (
                 <span className={styles.badgeInactive}>Inactive</span>
+              )}
+              {memberType === 'staff' && (
+                <span className={styles.badgeStaff}>Staff</span>
+              )}
+              {memberType === 'agent' && (
+                <span className={styles.badgeAgent}>Agent</span>
               )}
               {member.priorityLevel && member.priorityLevel !== 'Standard' && (
                 <span className={styles.badgePriority}>{member.priorityLevel}</span>
@@ -488,8 +512,8 @@ export default function MemberDetailPage() {
             <button onClick={() => setShowCampaignModal(true)} className={styles.actionButton}>
               🎯 Add to Campaign
             </button>
-            <button onClick={sendNewsletter} className={styles.actionButton}>
-              📰 Send Newsletter
+            <button onClick={addToNewsletterList} className={styles.actionButton}>
+              📰 Add to Newsletter List
             </button>
             <Link href={`/admin/subscriptions`} className={styles.actionButton}>
               Manage Subscriptions
