@@ -23,7 +23,7 @@ export default async function handler(
     const supabase = supabaseAdmin();
 
     try {
-      // Fetch all members with subscriptions and platform user info
+      // Fetch all members with subscriptions
       // FILTER: Only show members who have actually made purchases or subscriptions
       const { data: members, error } = await supabase
         .from('members')
@@ -37,11 +37,6 @@ export default async function handler(
             provider,
             tier,
             createdAt
-          ),
-          users!members_linkedMemberId_fkey(
-            id,
-            role,
-            name
           )
         `)
         .or('totalSpent.gt.0,membershipTier.neq.Free')
@@ -73,8 +68,9 @@ export default async function handler(
           createdAt: member.createdAt,
           joinDate: member.joinDate,
           subscription: latestSubscription,
-          platformRole: member.users?.role || null,
-          isPlatformUser: !!member.users,
+          trialEndsAt: member.trialEndsAt,
+          stripeCustomerId: member.stripeCustomerId,
+          stripeSubscriptionId: latestSubscription?.id || null,
         };
       });
 

@@ -60,6 +60,11 @@ export default function MemberDetailPage() {
   const [notesText, setNotesText] = useState('');
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -118,6 +123,75 @@ export default function MemberDetailPage() {
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const sendEmail = async () => {
+    if (!emailSubject || !emailBody) {
+      showToast('Please fill in subject and body', 'error');
+      return;
+    }
+
+    setSending(true);
+    try {
+      const response = await fetch(`/api/admin/members/${id}/email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject: emailSubject, body: emailBody }),
+      });
+
+      if (response.ok) {
+        showToast('Email sent successfully!', 'success');
+        setShowEmailModal(false);
+        setEmailSubject('');
+        setEmailBody('');
+      } else {
+        showToast('Failed to send email', 'error');
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+      showToast('Error sending email', 'error');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const addToCampaign = async (campaignType: string) => {
+    try {
+      const response = await fetch(`/api/admin/members/${id}/campaign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campaignType }),
+      });
+
+      if (response.ok) {
+        showToast(`Added to ${campaignType} campaign!`, 'success');
+        setShowCampaignModal(false);
+      } else {
+        showToast('Failed to add to campaign', 'error');
+      }
+    } catch (error) {
+      console.error('Error adding to campaign:', error);
+      showToast('Error adding to campaign', 'error');
+    }
+  };
+
+  const sendNewsletter = async () => {
+    if (!confirm('Send latest newsletter to this member?')) return;
+
+    try {
+      const response = await fetch(`/api/admin/members/${id}/newsletter`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        showToast('Newsletter sent!', 'success');
+      } else {
+        showToast('Failed to send newsletter', 'error');
+      }
+    } catch (error) {
+      console.error('Error sending newsletter:', error);
+      showToast('Error sending newsletter', 'error');
+    }
   };
 
   if (status === 'loading' || loading) {
@@ -454,12 +528,99 @@ export default function MemberDetailPage() {
             <Link href={`/admin/members`} className={styles.actionButton}>
               ← Back to List
             </Link>
+            <button onClick={() => setShowEmailModal(true)} className={styles.actionButton}>
+              📧 Send Email
+            </button>
+            <button onClick={() => setShowCampaignModal(true)} className={styles.actionButton}>
+              🎯 Add to Campaign
+            </button>
+            <button onClick={sendNewsletter} className={styles.actionButton}>
+              📰 Send Newsletter
+            </button>
             <Link href={`/admin/subscriptions`} className={styles.actionButton}>
               Manage Subscriptions
             </Link>
           </div>
         </div>
       </div>
+
+      {/* Email Modal */}
+      {showEmailModal && (
+        <div className={styles.modal} onClick={() => setShowEmailModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>Send Email to {member.name}</h2>
+              <button className={styles.closeBtn} onClick={() => setShowEmailModal(false)}>×</button>
+            </div>
+            <div className={styles.modalBody}>
+              <div className={styles.formGroup}>
+                <label>Subject</label>
+                <input
+                  type="text"
+                  className={styles.input}
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  placeholder="Email subject..."
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Message</label>
+                <textarea
+                  className={styles.textarea}
+                  rows={10}
+                  value={emailBody}
+                  onChange={(e) => setEmailBody(e.target.value)}
+                  placeholder="Your message..."
+                />
+              </div>
+            </div>
+            <div className={styles.modalFooter}>
+              <button className={styles.cancelButton} onClick={() => setShowEmailModal(false)}>
+                Cancel
+              </button>
+              <button
+                className={styles.saveButton}
+                onClick={sendEmail}
+                disabled={sending}
+              >
+                {sending ? 'Sending...' : 'Send Email'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Campaign Modal */}
+      {showCampaignModal && (
+        <div className={styles.modal} onClick={() => setShowCampaignModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>Add to Drip Campaign</h2>
+              <button className={styles.closeBtn} onClick={() => setShowCampaignModal(false)}>×</button>
+            </div>
+            <div className={styles.modalBody}>
+              <div className={styles.campaignList}>
+                <div className={styles.campaignCard} onClick={() => addToCampaign('welcome')}>
+                  <h4>Welcome Series</h4>
+                  <p>5-email onboarding sequence for new members</p>
+                </div>
+                <div className={styles.campaignCard} onClick={() => addToCampaign('engagement')}>
+                  <h4>Engagement Booster</h4>
+                  <p>Re-engage inactive members</p>
+                </div>
+                <div className={styles.campaignCard} onClick={() => addToCampaign('upsell')}>
+                  <h4>Premium Upsell</h4>
+                  <p>Upgrade members to higher tiers</p>
+                </div>
+                <div className={styles.campaignCard} onClick={() => addToCampaign('retention')}>
+                  <h4>Retention Campaign</h4>
+                  <p>Keep members subscribed</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Notification */}
       {toast && (
