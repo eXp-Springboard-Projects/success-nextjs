@@ -17,6 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log(`[Pages API] Received ${wpPages?.length || 0} pages from WordPress`);
 
     // Format WordPress pages - filter out admin pages
+    // These pages are what's live on your Next.js site at /[slug]
     const formattedPages = (wpPages || [])
       .filter((page: any) => {
         const isAdmin = page.slug?.startsWith('admin');
@@ -29,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ...page,
         type: 'pages',
         link: `/${page.slug}`,
-        source: 'wordpress',
+        source: 'site', // This is what's on your Next.js site
         editable: false,
       }));
 
