@@ -44,32 +44,65 @@ export default function ContentViewer() {
 
       const promises = endpoints.map(async endpoint => {
         try {
-          const res = await fetch(`/api/${endpoint}?per_page=20&status=all&_embed=true`);
+          // Note: pages/videos/podcasts APIs don't support status parameter, only posts does
+          const url = endpoint === 'posts'
+            ? `/api/${endpoint}?per_page=20&_embed=true`
+            : `/api/${endpoint}?per_page=20&_embed=true`;
+
+          console.log(`Fetching ${endpoint} from ${url}`);
+          const res = await fetch(url);
+
           if (!res.ok) {
-            console.warn(`Failed to fetch ${endpoint}: ${res.status} ${res.statusText}`);
-            return [];
+            console.error(`Failed to fetch ${endpoint}: ${res.status} ${res.statusText}`);
+            return { endpoint, data: [], error: `${res.status} ${res.statusText}` };
           }
+
           const data = await res.json();
-          console.log(`Fetched ${data.length} items from ${endpoint}`);
-          return data.map((item: any) => ({
-            ...item,
-            type: item.type || endpoint,
-            title: { rendered: item.title?.rendered || item.title },
-            date: item.date || item.publishedAt || item.createdAt || item.published_at || new Date().toISOString(),
-            link: item.link || (endpoint === 'posts' ? `/blog/${item.slug}` : `/${endpoint.slice(0, -1)}/${item.slug}`),
-          }));
+          console.log(`✓ Fetched ${data.length} items from ${endpoint}`, data);
+
+          const mappedData = data.map((item: any) => {
+            // Handle title field - WordPress returns { rendered: "..." }, Supabase returns string
+            const titleText = typeof item.title === 'string'
+              ? item.title
+              : item.title?.rendered || 'Untitled';
+
+            return {
+              ...item,
+              type: item.type || endpoint,
+              title: { rendered: titleText },
+              date: item.date || item.publishedAt || item.createdAt || item.published_at || new Date().toISOString(),
+              link: item.link || (endpoint === 'posts' ? `/blog/${item.slug}` : `/${endpoint.slice(0, -1)}/${item.slug}`),
+            };
+          });
+
+          return { endpoint, data: mappedData, error: null };
         } catch (err) {
-          console.error(`Error fetching ${endpoint}:`, err);
-          return [];
+          console.error(`Exception fetching ${endpoint}:`, err);
+          return { endpoint, data: [], error: err instanceof Error ? err.message : 'Unknown error' };
         }
       });
 
       const results = await Promise.all(promises);
-      const allContent = results.flat().sort((a, b) =>
-        new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
 
-      console.log(`Total content items: ${allContent.length}`);
+      // Log errors for any failed endpoints
+      const errors = results.filter(r => r.error);
+      if (errors.length > 0) {
+        console.warn('Some endpoints failed:', errors);
+      }
+
+      // Flatten successful results
+      const allContent = results
+        .flatMap(r => r.data)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      console.log(`✓ Total content items loaded: ${allContent.length}`);
+      console.log('Content breakdown:', {
+        posts: allContent.filter(c => c.type === 'posts').length,
+        pages: allContent.filter(c => c.type === 'pages').length,
+        videos: allContent.filter(c => c.type === 'videos').length,
+        podcasts: allContent.filter(c => c.type === 'podcasts').length,
+      });
+
       setContent(allContent);
     } catch (error) {
       console.error('Error in fetchContent:', error);
@@ -121,7 +154,12 @@ export default function ContentViewer() {
           <div className={styles.loading}>Loading content...</div>
         ) : content.length === 0 ? (
           <div className={styles.empty}>
-            <p>No content found. This viewer displays posts, pages, videos, and podcasts from your database.</p>
+            <p>No content found.</p>
+            <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}>
+              This viewer displays posts and pages from WordPress.
+              <br />
+              Check the browser console for detailed API response information.
+            </p>
           </div>
         ) : (
           <div className={styles.grid}>
