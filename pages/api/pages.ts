@@ -38,14 +38,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })()
     ]);
 
-    // Format WordPress pages (external source)
-    const formattedWpPages = (wpPages || []).map((page: any) => ({
-      ...page,
-      type: 'pages',
-      link: `/${page.slug}`,
-      source: 'wordpress',
-      editable: false,
-    }));
+    // Format WordPress pages (external source) - filter out admin pages
+    const formattedWpPages = (wpPages || [])
+      .filter((page: any) => !page.slug?.startsWith('admin'))
+      .map((page: any) => ({
+        ...page,
+        type: 'pages',
+        link: `/${page.slug}`,
+        source: 'wordpress',
+        editable: false,
+      }));
 
     // Format local pages (editable)
     const formattedLocalPages = (localPages || []).map((page: any) => ({

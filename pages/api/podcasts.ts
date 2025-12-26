@@ -16,16 +16,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       endpoint += `&status=${status}`;
     }
 
-    const podcasts = await fetchWordPressData(endpoint);
+    try {
+      const podcasts = await fetchWordPressData(endpoint);
 
-    // Add type and link to each podcast
-    const formattedPodcasts = (podcasts || []).map((podcast: any) => ({
-      ...podcast,
-      type: 'podcasts',
-      link: `/podcast/${podcast.slug}`,
-    }));
+      // Add type and link to each podcast
+      const formattedPodcasts = (podcasts || []).map((podcast: any) => ({
+        ...podcast,
+        type: 'podcasts',
+        link: `/podcast/${podcast.slug}`,
+        source: 'wordpress',
+        editable: false,
+      }));
 
-    return res.status(200).json(formattedPodcasts);
+      return res.status(200).json(formattedPodcasts);
+    } catch (wpError) {
+      // If WordPress endpoint doesn't exist, return empty array
+      console.log('WordPress podcasts endpoint not available, returning empty array');
+      return res.status(200).json([]);
+    }
   } catch (error) {
     console.error('Error fetching podcasts:', error);
     return res.status(500).json({ error: 'Failed to fetch podcasts' });

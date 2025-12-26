@@ -16,16 +16,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       endpoint += `&status=${status}`;
     }
 
-    const videos = await fetchWordPressData(endpoint);
+    try {
+      const videos = await fetchWordPressData(endpoint);
 
-    // Add type and link to each video
-    const formattedVideos = (videos || []).map((video: any) => ({
-      ...video,
-      type: 'videos',
-      link: `/video/${video.slug}`,
-    }));
+      // Add type and link to each video
+      const formattedVideos = (videos || []).map((video: any) => ({
+        ...video,
+        type: 'videos',
+        link: `/video/${video.slug}`,
+        source: 'wordpress',
+        editable: false,
+      }));
 
-    return res.status(200).json(formattedVideos);
+      return res.status(200).json(formattedVideos);
+    } catch (wpError) {
+      // If WordPress endpoint doesn't exist, return empty array
+      console.log('WordPress videos endpoint not available, returning empty array');
+      return res.status(200).json([]);
+    }
   } catch (error) {
     console.error('Error fetching videos:', error);
     return res.status(500).json({ error: 'Failed to fetch videos' });
