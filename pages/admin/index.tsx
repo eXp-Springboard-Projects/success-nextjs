@@ -51,7 +51,6 @@ export default function AdminDashboard() {
     { label: 'New Page', href: '/admin/pages/new', icon: FileText, color: '#764ba2' },
     { label: 'Editorial Calendar', href: '/admin/editorial-calendar', icon: Calendar, color: '#8b5cf6' },
     { label: 'SEO Manager', href: '/admin/seo', icon: Target, color: '#10b981' },
-    { label: 'SUCCESS+ Members', href: '/admin/members', icon: Star, color: '#d32f2f' },
     { label: 'Media Library', href: '/admin/media', icon: Image, color: '#f093fb' },
     { label: 'Analytics', href: '/admin/analytics', icon: TrendingUp, color: '#4facfe' },
     { label: 'Site Monitor', href: '/admin/site-monitor', icon: Search, color: '#ff6b6b' },
