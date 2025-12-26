@@ -46,10 +46,10 @@ export default function ContentViewer() {
         const data = await res.json();
         return data.map((item: any) => ({
           ...item,
-          type: endpoint,
+          type: item.type || endpoint,
           title: { rendered: item.title?.rendered || item.title },
           date: item.date || item.publishedAt || item.createdAt || item.published_at || new Date().toISOString(),
-          link: item.type === 'posts' ? `/blog/${item.slug}` : `/${endpoint.slice(0, -1)}/${item.slug}`,
+          link: item.link || (endpoint === 'posts' ? `/blog/${item.slug}` : `/${endpoint.slice(0, -1)}/${item.slug}`),
         }));
       });
 
@@ -123,9 +123,14 @@ export default function ContentViewer() {
                     </div>
                   )}
                   <div className={styles.cardContent}>
-                    <span className={`${styles.badge} ${styles[`badge-${item.type}`]}`}>
-                      {item.type}
-                    </span>
+                    <div className={styles.badges}>
+                      <span className={`${styles.badge} ${styles[`badge-${item.type}`]}`}>
+                        {item.type}
+                      </span>
+                      <span className={`${styles.badge} ${styles[`badge-source-${item.source || 'wordpress'}`]}`}>
+                        {item.source === 'local' ? '🏠 Local' : '🔗 WordPress'}
+                      </span>
+                    </div>
                     <h3 className={styles.cardTitle}>
                       {decodeHtmlEntities(item.title.rendered)}
                     </h3>
@@ -145,6 +150,27 @@ export default function ContentViewer() {
                       >
                         View Live
                       </a>
+                      {item.editable && (
+                        <>
+                          <button
+                            className={styles.editButton}
+                            onClick={() => window.location.href = `/admin/posts/edit/${item.id}`}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className={styles.deleteButton}
+                            onClick={() => {
+                              if (confirm('Are you sure you want to delete this item?')) {
+                                // TODO: Implement delete
+                                alert('Delete functionality coming soon');
+                              }
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
                       <span className={`${styles.status} ${styles[`status-${item.status}`]}`}>
                         {item.status}
                       </span>
