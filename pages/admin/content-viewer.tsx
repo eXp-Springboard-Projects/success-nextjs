@@ -43,16 +43,25 @@ export default function ContentViewer() {
         : [filter];
 
       const promises = endpoints.map(async endpoint => {
-        const res = await fetch(`/api/${endpoint}?per_page=20&status=all&_embed=true`);
-        if (!res.ok) return [];
-        const data = await res.json();
-        return data.map((item: any) => ({
-          ...item,
-          type: item.type || endpoint,
-          title: { rendered: item.title?.rendered || item.title },
-          date: item.date || item.publishedAt || item.createdAt || item.published_at || new Date().toISOString(),
-          link: item.link || (endpoint === 'posts' ? `/blog/${item.slug}` : `/${endpoint.slice(0, -1)}/${item.slug}`),
-        }));
+        try {
+          const res = await fetch(`/api/${endpoint}?per_page=20&status=all&_embed=true`);
+          if (!res.ok) {
+            console.warn(`Failed to fetch ${endpoint}: ${res.status} ${res.statusText}`);
+            return [];
+          }
+          const data = await res.json();
+          console.log(`Fetched ${data.length} items from ${endpoint}`);
+          return data.map((item: any) => ({
+            ...item,
+            type: item.type || endpoint,
+            title: { rendered: item.title?.rendered || item.title },
+            date: item.date || item.publishedAt || item.createdAt || item.published_at || new Date().toISOString(),
+            link: item.link || (endpoint === 'posts' ? `/blog/${item.slug}` : `/${endpoint.slice(0, -1)}/${item.slug}`),
+          }));
+        } catch (err) {
+          console.error(`Error fetching ${endpoint}:`, err);
+          return [];
+        }
       });
 
       const results = await Promise.all(promises);
@@ -60,8 +69,10 @@ export default function ContentViewer() {
         new Date(b.date).getTime() - new Date(a.date).getTime()
       );
 
+      console.log(`Total content items: ${allContent.length}`);
       setContent(allContent);
     } catch (error) {
+      console.error('Error in fetchContent:', error);
     } finally {
       setLoading(false);
     }
