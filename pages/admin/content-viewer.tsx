@@ -48,8 +48,8 @@ export default function ContentViewer() {
           ...item,
           type: endpoint,
           title: { rendered: item.title?.rendered || item.title },
-          date: item.publishedAt || item.createdAt,
-          link: `/${endpoint.slice(0, -1)}/${item.slug}`, // Convert 'posts' to 'post'
+          date: item.date || item.publishedAt || item.createdAt || item.published_at || new Date().toISOString(),
+          link: item.type === 'posts' ? `/blog/${item.slug}` : `/${endpoint.slice(0, -1)}/${item.slug}`,
         }));
       });
 
@@ -106,6 +106,10 @@ export default function ContentViewer() {
 
         {loading ? (
           <div className={styles.loading}>Loading content...</div>
+        ) : content.length === 0 ? (
+          <div className={styles.empty}>
+            <p>No content found. This viewer displays posts, pages, videos, and podcasts from your database.</p>
+          </div>
         ) : (
           <div className={styles.grid}>
             {content.map((item) => {
