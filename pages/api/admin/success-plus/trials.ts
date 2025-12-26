@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getSession } from 'next-auth/react';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../../auth/[...nextauth]';
 import { Department } from '@/lib/types';
 import { supabaseAdmin } from '@/lib/supabase';
 import { hasDepartmentAccess } from '@/lib/departmentAuth';
@@ -13,7 +14,7 @@ export default async function handler(
   }
 
   try {
-    const session = await getSession({ req }) as any;
+    const session = await getServerSession(req, res, authOptions);
 
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Unauthorized' });
