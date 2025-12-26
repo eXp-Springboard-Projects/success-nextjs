@@ -82,16 +82,7 @@ export default function ContentViewer() {
     <AdminLayout>
       <div className={styles.container}>
         <div className={styles.header}>
-          <div className={styles.headerTop}>
-            <h1>Live Site Content</h1>
-            <button
-              onClick={fetchContent}
-              className={styles.syncButton}
-              disabled={loading}
-            >
-              {loading ? '⟳ Syncing...' : '⟳ Sync from WordPress'}
-            </button>
-          </div>
+          <h1>Live Site Content</h1>
           <div className={styles.filters}>
             <button
               onClick={() => setFilter('all')}
