@@ -1,9 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { Department } from '@/lib/types';
 import { supabaseAdmin } from '@/lib/supabase';
-import { hasDepartmentAccess } from '@/lib/departmentAuth';
 
 export default async function handler(
   req: NextApiRequest,
@@ -20,8 +18,8 @@ export default async function handler(
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Check department access
-    if (!hasDepartmentAccess(session.user.role, session.user.primaryDepartment, Department.SUCCESS_PLUS)) {
+    // Check admin access
+    if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
