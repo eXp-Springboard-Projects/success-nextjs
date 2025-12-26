@@ -13,6 +13,8 @@ interface ContentItem {
   date: string;
   status: string;
   type: string;
+  source?: 'wordpress' | 'local';
+  editable?: boolean;
   _embedded?: any;
 }
 
