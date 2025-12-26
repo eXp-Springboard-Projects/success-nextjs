@@ -9,21 +9,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { per_page = '20' } = req.query;
 
-    // Fetch pages from WordPress
-    const wpPages = await fetchWordPressData(`pages?_embed&per_page=${per_page}`);
+    try {
+      // Fetch pages from WordPress
+      const wpPages = await fetchWordPressData(`pages?_embed&per_page=${per_page}`);
 
-    // Format WordPress pages - filter out admin pages
-    const formattedPages = (wpPages || [])
-      .filter((page: any) => !page.slug?.startsWith('admin'))
-      .map((page: any) => ({
-        ...page,
-        type: 'pages',
-        link: `/${page.slug}`,
-        source: 'wordpress',
-        editable: false,
-      }));
+      // Format WordPress pages - filter out admin pages
+      const formattedPages = (wpPages || [])
+        .filter((page: any) => !page.slug?.startsWith('admin'))
+        .map((page: any) => ({
+          ...page,
+          type: 'pages',
+          link: `/${page.slug}`,
+          source: 'wordpress',
+          editable: false,
+        }));
 
-    return res.status(200).json(formattedPages);
+      return res.status(200).json(formattedPages);
+    } catch (wpError) {
+      // If WordPress endpoint fails, return empty array
+      console.log('WordPress pages endpoint not available, returning empty array');
+      return res.status(200).json([]);
+    }
   } catch (error) {
     console.error('Error fetching pages:', error);
     return res.status(500).json({ error: 'Failed to fetch pages', message: error instanceof Error ? error.message : 'Unknown error' });
