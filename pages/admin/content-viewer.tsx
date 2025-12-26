@@ -23,8 +23,6 @@ export default function ContentViewer() {
   const router = useRouter();
   const [content, setContent] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'posts' | 'pages' | 'videos' | 'podcasts'>('all');
-
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/admin/login');
@@ -33,14 +31,12 @@ export default function ContentViewer() {
 
   useEffect(() => {
     fetchContent();
-  }, [filter]);
+  }, []);
 
   const fetchContent = async () => {
     setLoading(true);
     try {
-      const endpoints = filter === 'all'
-        ? ['posts', 'pages', 'videos', 'podcasts']
-        : [filter];
+      const endpoints = ['posts', 'pages', 'videos', 'podcasts'];
 
       const promises = endpoints.map(async endpoint => {
         try {
@@ -116,38 +112,6 @@ export default function ContentViewer() {
       <div className={styles.container}>
         <div className={styles.header}>
           <h1>Live Site Content</h1>
-          <div className={styles.filters}>
-            <button
-              onClick={() => setFilter('all')}
-              className={filter === 'all' ? styles.filterActive : styles.filter}
-            >
-              All Content
-            </button>
-            <button
-              onClick={() => setFilter('posts')}
-              className={filter === 'posts' ? styles.filterActive : styles.filter}
-            >
-              Posts
-            </button>
-            <button
-              onClick={() => setFilter('pages')}
-              className={filter === 'pages' ? styles.filterActive : styles.filter}
-            >
-              Pages
-            </button>
-            <button
-              onClick={() => setFilter('videos')}
-              className={filter === 'videos' ? styles.filterActive : styles.filter}
-            >
-              Videos
-            </button>
-            <button
-              onClick={() => setFilter('podcasts')}
-              className={filter === 'podcasts' ? styles.filterActive : styles.filter}
-            >
-              Podcasts
-            </button>
-          </div>
         </div>
 
         {loading ? (
