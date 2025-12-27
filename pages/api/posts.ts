@@ -7,15 +7,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { per_page = '20' } = req.query;
+    const { per_page = '20', page = '1', _embed } = req.query;
 
-    console.log('[Posts API] Fetching posts that are already on the site');
+    console.log('[Posts API] Fetching posts page', page, 'per_page', per_page);
+
+    // Build query parameters
+    const params = new URLSearchParams({
+      per_page: String(per_page),
+      page: String(page),
+    });
+
+    if (_embed) {
+      params.append('_embed', 'true');
+    }
 
     // Fetch posts from WordPress (these are already cached/rendered on the site via ISR)
     // The site pulls from WordPress during build/ISR, so this gets what's live on the site
-    const wpPosts = await fetchWordPressData(`posts?_embed&per_page=${per_page}`);
+    const wpPosts = await fetchWordPressData(`posts?${params.toString()}`);
 
-    console.log('[Posts API] Got', wpPosts?.length || 0, 'posts');
+    console.log('[Posts API] Got', wpPosts?.length || 0, 'posts for page', page);
 
     // Format WordPress posts - these are what's live on the site at /blog/[slug]
     const formattedPosts = (wpPosts || []).map((post: any) => ({

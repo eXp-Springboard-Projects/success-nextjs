@@ -7,14 +7,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { per_page = '20', status = 'all' } = req.query;
+    const { per_page = '20', page = '1', status = 'all', _embed } = req.query;
 
-    // Build WordPress API endpoint for custom post type 'podcast'
-    let endpoint = `podcast?_embed&per_page=${per_page}`;
+    // Build query parameters
+    const params = new URLSearchParams({
+      per_page: String(per_page),
+      page: String(page),
+    });
+
+    if (_embed) {
+      params.append('_embed', 'true');
+    }
 
     if (status !== 'all') {
-      endpoint += `&status=${status}`;
+      params.append('status', String(status));
     }
+
+    // Build WordPress API endpoint for custom post type 'podcast'
+    const endpoint = `podcast?${params.toString()}`;
 
     try {
       const podcasts = await fetchWordPressData(endpoint);

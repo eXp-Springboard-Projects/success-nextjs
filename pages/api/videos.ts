@@ -7,14 +7,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { per_page = '20', status = 'all' } = req.query;
+    const { per_page = '20', page = '1', status = 'all', _embed } = req.query;
 
-    // Build WordPress API endpoint for custom post type 'video'
-    let endpoint = `video?_embed&per_page=${per_page}`;
+    // Build query parameters
+    const params = new URLSearchParams({
+      per_page: String(per_page),
+      page: String(page),
+    });
+
+    if (_embed) {
+      params.append('_embed', 'true');
+    }
 
     if (status !== 'all') {
-      endpoint += `&status=${status}`;
+      params.append('status', String(status));
     }
+
+    // Build WordPress API endpoint for custom post type 'video'
+    const endpoint = `video?${params.toString()}`;
 
     try {
       const videos = await fetchWordPressData(endpoint);

@@ -7,14 +7,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { per_page = '20' } = req.query;
+    const { per_page = '20', page = '1', _embed } = req.query;
 
-    console.log(`[Pages API] Fetching pages with per_page=${per_page}`);
+    console.log(`[Pages API] Fetching pages page ${page} with per_page=${per_page}`);
+
+    // Build query parameters
+    const params = new URLSearchParams({
+      per_page: String(per_page),
+      page: String(page),
+    });
+
+    if (_embed) {
+      params.append('_embed', 'true');
+    }
 
     // Fetch pages from WordPress
-    const wpPages = await fetchWordPressData(`pages?_embed&per_page=${per_page}`);
+    const wpPages = await fetchWordPressData(`pages?${params.toString()}`);
 
-    console.log(`[Pages API] Received ${wpPages?.length || 0} pages from WordPress`);
+    console.log(`[Pages API] Received ${wpPages?.length || 0} pages from WordPress for page ${page}`);
 
     // Format WordPress pages - filter out admin pages
     // These pages are what's live on your Next.js site at /[slug]
