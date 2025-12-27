@@ -285,12 +285,7 @@ function getNavigationSections(role: UserRole, primaryDepartment?: Department | 
       title: 'SUCCESS+',
       items: [
         { label: 'SUCCESS+ Dashboard', href: '/admin/success-plus' },
-        { label: 'Trial Users', href: '/admin/success-plus/trials' },
-        { label: 'Premium Content', href: '/admin/success-plus/content' },
         { label: 'Dashboard Content', href: '/admin/dashboard-content' },
-        { label: 'Events', href: '/admin/dashboard-content/events' },
-        { label: 'Courses', href: '/admin/dashboard-content/courses' },
-        { label: 'Resources', href: '/admin/dashboard-content/resources' },
       ]
     });
   }
@@ -309,19 +304,12 @@ function getNavigationSections(role: UserRole, primaryDepartment?: Department | 
       title: 'CRM & EMAIL',
       items: [
         { label: 'CRM Dashboard', href: '/admin/crm' },
-        { label: 'Campaigns', href: '/admin/crm/campaigns' },
         { label: 'Contacts', href: '/admin/crm/contacts' },
-        { label: 'Email Templates', href: '/admin/crm/templates' },
-        { label: 'Automations', href: '/admin/crm/automations' },
-        { label: 'Help Desk', href: '/admin/crm/tickets' },
+        { label: 'Campaigns', href: '/admin/crm/campaigns' },
         { label: 'Deals', href: '/admin/crm/deals' },
-        { label: 'Lists', href: '/admin/crm/lists' },
-        { label: 'Forms', href: '/admin/crm/forms' },
-        { label: 'Landing Pages', href: '/admin/crm/landing-pages' },
-        { label: 'Sequences', href: '/admin/crm/sequences' },
-        { label: 'Promotions', href: '/admin/crm/promotions' },
-        { label: 'Analytics', href: '/admin/crm/analytics' },
-        { label: 'Unsubscribes', href: '/admin/crm/unsubscribes' },
+        { label: 'Help Desk', href: '/admin/crm/tickets' },
+        { label: 'Social Media', href: '/admin/social-media' },
+        { label: 'CRM Analytics', href: '/admin/crm/analytics' },
       ]
     });
   }
@@ -347,7 +335,7 @@ function getNavigationSections(role: UserRole, primaryDepartment?: Department | 
       items: [
         { label: 'Settings', href: '/admin/settings' },
         { label: 'Plugins', href: '/admin/plugins' },
-        { label: 'Analytics', href: '/admin/analytics' },
+        { label: 'Site Analytics', href: '/admin/analytics' },
         { label: 'Realtime Analytics', href: '/admin/analytics/realtime' },
         { label: 'Site Monitor', href: '/admin/site-monitor' },
         { label: 'Paylinks', href: '/admin/paylinks' },

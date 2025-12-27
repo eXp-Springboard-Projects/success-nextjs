@@ -110,15 +110,15 @@ export default function CustomerServiceDashboard() {
               </div>
             </Link>
 
-            <Link href="/admin/subscriptions" className={styles.actionCard}>
-              <div className={styles.actionIcon}>💳</div>
+            <Link href="/admin/customer-service/subscriptions" className={styles.actionCard}>
+              <div className={styles.actionIcon}>💎</div>
               <div className={styles.actionTitle}>Manage Subscriptions</div>
               <div className={styles.actionDescription}>
-                View and modify subscriptions
+                View and modify all subscriptions
               </div>
             </Link>
 
-            <Link href="/admin/refunds" className={styles.actionCard}>
+            <Link href="/admin/customer-service/refunds" className={styles.actionCard}>
               <div className={styles.actionIcon}>💵</div>
               <div className={styles.actionTitle}>Process Refund</div>
               <div className={styles.actionDescription}>
@@ -142,11 +142,11 @@ export default function CustomerServiceDashboard() {
               </div>
             </Link>
 
-            <Link href="/admin/customer-service/subscriptions" className={styles.actionCard}>
-              <div className={styles.actionIcon}>💎</div>
-              <div className={styles.actionTitle}>View Subscriptions</div>
+            <Link href="/admin/revenue-analytics" className={styles.actionCard}>
+              <div className={styles.actionIcon}>📈</div>
+              <div className={styles.actionTitle}>Revenue Analytics</div>
               <div className={styles.actionDescription}>
-                Browse all active subscriptions
+                View financial reports and metrics
               </div>
             </Link>
           </div>
