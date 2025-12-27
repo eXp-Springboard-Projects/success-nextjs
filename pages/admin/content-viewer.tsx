@@ -126,7 +126,7 @@ export default function ContentViewer() {
       }
 
       // Remove from local state
-      setContent(prev => prev.filter(item => item.id !== id));
+      setContent(prev => prev.filter(item => String(item.id) !== String(id)));
     } catch (error) {
       alert('Failed to delete item. Please try again.');
       console.error('Delete error:', error);
