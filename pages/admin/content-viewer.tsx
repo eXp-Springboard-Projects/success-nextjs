@@ -111,7 +111,10 @@ export default function ContentViewer() {
     <AdminLayout>
       <div className={styles.container}>
         <div className={styles.header}>
-          <h1>Live Site Content</h1>
+          <div>
+            <h1>Live Site Content</h1>
+            <p className={styles.subtitle}>Posts, Pages, Videos, and Podcasts from success.com</p>
+          </div>
         </div>
 
         {loading ? (
