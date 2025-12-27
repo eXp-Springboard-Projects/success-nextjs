@@ -43,23 +43,45 @@ export default function ContentViewer() {
 
       const promises = endpoints.map(async endpoint => {
         try {
-          // Note: pages/videos/podcasts APIs don't support status parameter, only posts does
-          const url = endpoint === 'posts'
-            ? `/api/${endpoint}?per_page=20&_embed=true`
-            : `/api/${endpoint}?per_page=20&_embed=true`;
+          let allData: any[] = [];
+          let page = 1;
+          let hasMore = true;
+          const perPage = 100; // WordPress max is 100
 
-          console.log(`Fetching ${endpoint} from ${url}`);
-          const res = await fetch(url);
+          while (hasMore) {
+            const url = `/api/${endpoint}?per_page=${perPage}&page=${page}&_embed=true`;
+            console.log(`Fetching ${endpoint} page ${page} from ${url}`);
 
-          if (!res.ok) {
-            console.error(`Failed to fetch ${endpoint}: ${res.status} ${res.statusText}`);
-            return { endpoint, data: [], error: `${res.status} ${res.statusText}` };
+            const res = await fetch(url);
+
+            if (!res.ok) {
+              if (res.status === 400 && page > 1) {
+                // No more pages
+                hasMore = false;
+                break;
+              }
+              console.error(`Failed to fetch ${endpoint}: ${res.status} ${res.statusText}`);
+              return { endpoint, data: [], error: `${res.status} ${res.statusText}` };
+            }
+
+            const data = await res.json();
+            console.log(`✓ Fetched ${data.length} items from ${endpoint} page ${page}`);
+
+            if (data.length === 0 || data.length < perPage) {
+              hasMore = false;
+            }
+
+            allData = [...allData, ...data];
+            page++;
+
+            // Safety limit to prevent infinite loops
+            if (page > 50) {
+              console.warn(`Reached page limit for ${endpoint}`);
+              hasMore = false;
+            }
           }
 
-          const data = await res.json();
-          console.log(`✓ Fetched ${data.length} items from ${endpoint}`, data);
-
-          const mappedData = data.map((item: any) => {
+          const mappedData = allData.map((item: any) => {
             // Handle title field - WordPress returns { rendered: "..." }, Supabase returns string
             const titleText = typeof item.title === 'string'
               ? item.title
@@ -74,6 +96,7 @@ export default function ContentViewer() {
             };
           });
 
+          console.log(`✓ Total ${endpoint} fetched: ${mappedData.length}`);
           return { endpoint, data: mappedData, error: null };
         } catch (err) {
           console.error(`Exception fetching ${endpoint}:`, err);
