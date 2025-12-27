@@ -4,7 +4,7 @@
  * Routes platform-specific operations to the correct client
  */
 
-import { Platform, PlatformClient, SocialAccount, SocialPost, MediaItem } from '@/types/social';
+import { Platform, PlatformClient, SocialAccount, SocialPost, MediaItem, PlatformPostResult } from '@/types/social';
 import { twitterClient } from './twitter';
 import { linkedInClient } from './linkedin';
 
@@ -74,7 +74,7 @@ export async function publishToPlatform(
   account: SocialAccount,
   post: SocialPost,
   media: MediaItem[]
-): Promise<{ success: boolean; platformPostId?: string; error?: string }> {
+): Promise<PlatformPostResult> {
   const client = getPlatformClient(account.platform);
   return await client.publishPost(account, post, media);
 }

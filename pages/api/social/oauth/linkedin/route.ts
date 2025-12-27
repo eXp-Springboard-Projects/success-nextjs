@@ -5,6 +5,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { buildLinkedInAuthUrl } from '@/lib/social/platforms/linkedin';
 import { generateOAuthState } from '@/lib/social/encryption';
 
@@ -12,7 +13,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const session = await getServerSession(req, res, {} as any);
+  const session: any = await getServerSession(req, res, authOptions);
 
   if (!session || !session.user) {
     return res.status(401).json({ error: 'Unauthorized' });

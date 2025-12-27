@@ -5,6 +5,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { supabaseAdmin } from '@/lib/supabase';
 import { exchangeCodeForTokens, getTwitterUserInfo } from '@/lib/social/platforms/twitter';
 import { verifyOAuthState } from '@/lib/social/encryption';
@@ -14,7 +15,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const session = await getServerSession(req, res, {} as any);
+  const session: any = await getServerSession(req, res, authOptions);
 
   if (!session || !session.user) {
     return res.redirect('/admin/login?error=unauthorized');

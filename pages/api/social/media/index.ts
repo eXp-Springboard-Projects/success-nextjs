@@ -6,6 +6,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { supabaseAdmin } from '@/lib/supabase';
 import { MediaItem, ApiResponse } from '@/types/social';
 import formidable from 'formidable';
@@ -23,7 +24,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ApiResponse<MediaItem[] | MediaItem>>
 ) {
-  const session = await getServerSession(req, res, {} as any);
+  const session: any = await getServerSession(req, res, authOptions);
 
   if (!session || !session.user) {
     return res.status(401).json({ success: false, error: 'Unauthorized' });
@@ -124,7 +125,7 @@ async function handlePost(
     // Save to database
     const altText = Array.isArray(fields.altText) ? fields.altText[0] : fields.altText;
     const tags = fields.tags
-      ? (Array.isArray(fields.tags) ? fields.tags : fields.tags.split(','))
+      ? (Array.isArray(fields.tags) ? fields.tags : String(fields.tags).split(','))
       : [];
     const folder = Array.isArray(fields.folder) ? fields.folder[0] : fields.folder || 'general';
 

@@ -157,14 +157,14 @@ export default function PostComposerPage() {
               <button
                 onClick={() => handleSave('draft')}
                 className={styles.secondaryButton}
-                disabled={saving || isOverLimit}
+                disabled={saving || Boolean(isOverLimit)}
               >
                 Save as Draft
               </button>
               <button
                 onClick={() => handleSave('scheduled')}
                 className={styles.primaryButton}
-                disabled={saving || isOverLimit || !scheduledDate || !scheduledTime}
+                disabled={saving || Boolean(isOverLimit) || !scheduledDate || !scheduledTime}
               >
                 {saving ? 'Scheduling...' : 'Schedule Post'}
               </button>
