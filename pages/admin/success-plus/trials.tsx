@@ -36,16 +36,26 @@ export default function TrialUsersPage() {
     trialUsers: [],
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'active' | 'expired' | 'converted'>('all');
 
   useEffect(() => {
     fetch('/api/admin/success-plus/trials')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          return res.json().then(data => {
+            throw new Error(data.details || data.error || 'Failed to load trial data');
+          });
+        }
+        return res.json();
+      })
       .then((data) => {
         setStats(data);
         setLoading(false);
       })
       .catch((error) => {
+        console.error('Error loading trials:', error);
+        setError(error.message || 'An error occurred loading trial data');
         setLoading(false);
       });
   }, []);
@@ -78,6 +88,12 @@ export default function TrialUsersPage() {
       description="Track and manage SUCCESS+ trial users and conversions"
     >
       <div className={styles.dashboard}>
+        {error && (
+          <div className={styles.errorBanner}>
+            <strong>Error:</strong> {error}
+          </div>
+        )}
+
         {/* Quick Stats */}
         <div className={styles.statsGrid}>
           <div className={styles.statCard}>

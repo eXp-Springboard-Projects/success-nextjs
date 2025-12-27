@@ -4,6 +4,15 @@
   gap: 2rem;
 }
 
+.errorBanner {
+  background: #fee2e2;
+  border: 1px solid #ef4444;
+  border-radius: 0.5rem;
+  padding: 1rem 1.5rem;
+  color: #991b1b;
+  margin-bottom: 1rem;
+}
+
 /* Stats Grid */
 .statsGrid {
   display: grid;
