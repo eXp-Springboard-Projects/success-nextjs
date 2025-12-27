@@ -18,7 +18,7 @@ interface ContentItem {
   _embedded?: any;
 }
 
-type ContentType = 'all' | 'posts' | 'pages' | 'videos' | 'podcasts';
+type ContentType = 'all' | 'posts' | 'pages' | 'videos' | 'podcasts' | 'premium';
 
 export default function ContentViewer() {
   const { data: session, status } = useSession();
@@ -27,11 +27,20 @@ export default function ContentViewer() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ContentType>('all');
   const [deleting, setDeleting] = useState<string | null>(null);
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/admin/login');
     }
   }, [status, router]);
+
+  // Check URL params for filter
+  useEffect(() => {
+    const filterParam = router.query.filter as string;
+    if (filterParam === 'premium') {
+      setActiveTab('premium');
+    }
+  }, [router.query]);
 
   useEffect(() => {
     fetchContent();
@@ -137,6 +146,8 @@ export default function ContentViewer() {
 
   const filteredContent = activeTab === 'all'
     ? content
+    : activeTab === 'premium'
+    ? content.filter(item => (item as any).accessTier === 'success_plus' || (item as any).accessTier === 'insider')
     : content.filter(item => item.type === activeTab);
 
   const contentCounts = {
@@ -145,10 +156,12 @@ export default function ContentViewer() {
     pages: content.filter(c => c.type === 'pages').length,
     videos: content.filter(c => c.type === 'videos').length,
     podcasts: content.filter(c => c.type === 'podcasts').length,
+    premium: content.filter(c => (c as any).accessTier === 'success_plus' || (c as any).accessTier === 'insider').length,
   };
 
   const getAddNewUrl = () => {
     if (activeTab === 'all') return '/admin/posts/new';
+    if (activeTab === 'premium') return '/admin/posts/new?contentType=premium';
     return `/admin/${activeTab}/new`;
   };
 
@@ -195,6 +208,12 @@ export default function ContentViewer() {
             onClick={() => setActiveTab('podcasts')}
           >
             Podcasts ({contentCounts.podcasts})
+          </button>
+          <button
+            className={activeTab === 'premium' ? styles.tabActive : styles.tab}
+            onClick={() => setActiveTab('premium')}
+          >
+            💎 SUCCESS+ ({contentCounts.premium})
           </button>
         </div>
 

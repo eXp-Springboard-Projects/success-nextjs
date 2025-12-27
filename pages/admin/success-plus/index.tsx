@@ -133,6 +133,14 @@ export default function SuccessPlusDashboard() {
               </div>
             </Link>
 
+            <Link href="/admin/content-viewer?filter=premium" className={styles.actionCard}>
+              <div className={styles.actionIcon}>💎</div>
+              <div className={styles.actionTitle}>Premium Content</div>
+              <div className={styles.actionDescription}>
+                Manage articles and resources for SUCCESS+ members
+              </div>
+            </Link>
+
             <Link href="/admin/success-plus/newsletters" className={styles.actionCard}>
               <div className={styles.actionIcon}>📧</div>
               <div className={styles.actionTitle}>Newsletters</div>
