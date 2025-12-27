@@ -1,4 +1,5 @@
 {
+  "buildCommand": "next build --webpack",
   "crons": [{
     "path": "/api/social/cron/publish",
     "schedule": "*/5 * * * *"
