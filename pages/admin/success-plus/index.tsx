@@ -164,6 +164,103 @@ export default function SuccessPlusDashboard() {
                 Manage payments and subscriptions
               </div>
             </Link>
+
+            <Link href="/admin/success-plus/manage-subscriptions" className={styles.actionCard}>
+              <div className={styles.actionIcon}>⚙️</div>
+              <div className={styles.actionTitle}>Manage Subscriptions</div>
+              <div className={styles.actionDescription}>
+                Update member tiers and renewal dates
+              </div>
+            </Link>
+          </div>
+        </div>
+
+        {/* Member Dashboard Access */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Member Dashboard Access</h2>
+          <p className={styles.sectionDescription}>
+            View the member experience on mysuccessplus.com
+          </p>
+          <div className={styles.actionsGrid}>
+            <Link href="/dashboard" className={styles.actionCard}>
+              <div className={styles.actionIcon}>📊</div>
+              <div className={styles.actionTitle}>Member Dashboard</div>
+              <div className={styles.actionDescription}>
+                View main member dashboard
+              </div>
+            </Link>
+
+            <Link href="/dashboard/courses" className={styles.actionCard}>
+              <div className={styles.actionIcon}>🎓</div>
+              <div className={styles.actionTitle}>Courses</div>
+              <div className={styles.actionDescription}>
+                See course catalog and member progress
+              </div>
+            </Link>
+
+            <Link href="/dashboard/disc-profile" className={styles.actionCard}>
+              <div className={styles.actionIcon}>🎯</div>
+              <div className={styles.actionTitle}>DISC Profile</div>
+              <div className={styles.actionDescription}>
+                View DISC assessment page
+              </div>
+            </Link>
+
+            <Link href="/dashboard/resources" className={styles.actionCard}>
+              <div className={styles.actionIcon}>📚</div>
+              <div className={styles.actionTitle}>Resource Library</div>
+              <div className={styles.actionDescription}>
+                Browse downloadable resources
+              </div>
+            </Link>
+
+            <Link href="/dashboard/community" className={styles.actionCard}>
+              <div className={styles.actionIcon}>👥</div>
+              <div className={styles.actionTitle}>Community</div>
+              <div className={styles.actionDescription}>
+                View community forums and discussions
+              </div>
+            </Link>
+
+            <Link href="/dashboard/events" className={styles.actionCard}>
+              <div className={styles.actionIcon}>📅</div>
+              <div className={styles.actionTitle}>Events Calendar</div>
+              <div className={styles.actionDescription}>
+                See upcoming member events
+              </div>
+            </Link>
+
+            <Link href="/dashboard/magazines" className={styles.actionCard}>
+              <div className={styles.actionIcon}>📖</div>
+              <div className={styles.actionTitle}>Magazine</div>
+              <div className={styles.actionDescription}>
+                Access digital magazine issues
+              </div>
+            </Link>
+
+            <Link href="/dashboard/shop" className={styles.actionCard}>
+              <div className={styles.actionIcon}>🛍️</div>
+              <div className={styles.actionTitle}>Shop</div>
+              <div className={styles.actionDescription}>
+                View member shop with discounts
+              </div>
+            </Link>
+
+            <Link href="/dashboard/help" className={styles.actionCard}>
+              <div className={styles.actionIcon}>❓</div>
+              <div className={styles.actionTitle}>Help Center</div>
+              <div className={styles.actionDescription}>
+                See help resources and FAQs
+              </div>
+            </Link>
+
+            <Link href="/dashboard/billing" className={styles.actionCard}>
+              <div className={styles.actionIcon}>💳</div>
+              <div className={styles.actionTitle}>Billing & Orders</div>
+              <div className={styles.actionDescription}>
+                View billing and order history
+              </div>
+            </Link>
           </div>
         </div>
 

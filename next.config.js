@@ -38,6 +38,7 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
 
   // Disable Turbopack explicitly - it causes symlink errors with bcryptjs/jspdf
+  turbopack: {},
   webpack: (config) => {
     return config;
   },

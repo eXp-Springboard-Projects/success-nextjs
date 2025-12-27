@@ -18,7 +18,7 @@ interface ContentItem {
   _embedded?: any;
 }
 
-type ContentType = 'all' | 'posts' | 'pages' | 'videos' | 'podcasts' | 'premium';
+type ContentType = 'all' | 'posts' | 'pages' | 'videos' | 'podcasts' | 'premium' | 'archived';
 
 export default function ContentViewer() {
   const { data: session, status } = useSession();
@@ -27,6 +27,8 @@ export default function ContentViewer() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ContentType>('all');
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [archiving, setArchiving] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -119,8 +121,45 @@ export default function ContentViewer() {
     }
   };
 
+  const handleArchive = async (id: string | number, type: string, currentStatus: string) => {
+    const isArchived = currentStatus === 'ARCHIVED';
+    const action = isArchived ? 'unarchive' : 'archive';
+
+    if (!confirm(`Are you sure you want to ${action} this ${type.slice(0, -1)}?`)) {
+      return;
+    }
+
+    setArchiving(String(id));
+    try {
+      const newStatus = isArchived ? 'PUBLISHED' : 'ARCHIVED';
+      const res = await fetch(`/api/admin/${type}/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to ${action}`);
+      }
+
+      // Update local state
+      setContent(prev => prev.map(item =>
+        String(item.id) === String(id)
+          ? { ...item, status: newStatus }
+          : item
+      ));
+
+      alert(`Successfully ${action}d!`);
+    } catch (error) {
+      alert(`Failed to ${action} item. Please try again.`);
+      console.error(`${action} error:`, error);
+    } finally {
+      setArchiving(null);
+    }
+  };
+
   const handleDelete = async (id: string | number, type: string) => {
-    if (!confirm(`Are you sure you want to delete this ${type.slice(0, -1)}?`)) {
+    if (!confirm(`Are you sure you want to PERMANENTLY DELETE this ${type.slice(0, -1)}? This cannot be undone. Consider archiving instead.`)) {
       return;
     }
 
@@ -144,19 +183,29 @@ export default function ContentViewer() {
     }
   };
 
-  const filteredContent = activeTab === 'all'
+  // Filter out archived content by default, unless viewing archived tab
+  const baseContent = activeTab === 'archived'
+    ? content.filter(item => item.status === 'ARCHIVED')
+    : showArchived
     ? content
+    : content.filter(item => item.status !== 'ARCHIVED');
+
+  const filteredContent = activeTab === 'all'
+    ? baseContent
     : activeTab === 'premium'
-    ? content.filter(item => (item as any).accessTier === 'success_plus' || (item as any).accessTier === 'insider')
-    : content.filter(item => item.type === activeTab);
+    ? baseContent.filter(item => (item as any).accessTier === 'success_plus' || (item as any).accessTier === 'insider')
+    : activeTab === 'archived'
+    ? content.filter(item => item.status === 'ARCHIVED')
+    : baseContent.filter(item => item.type === activeTab);
 
   const contentCounts = {
-    all: content.length,
-    posts: content.filter(c => c.type === 'posts').length,
-    pages: content.filter(c => c.type === 'pages').length,
-    videos: content.filter(c => c.type === 'videos').length,
-    podcasts: content.filter(c => c.type === 'podcasts').length,
-    premium: content.filter(c => (c as any).accessTier === 'success_plus' || (c as any).accessTier === 'insider').length,
+    all: content.filter(c => c.status !== 'ARCHIVED').length,
+    posts: content.filter(c => c.type === 'posts' && c.status !== 'ARCHIVED').length,
+    pages: content.filter(c => c.type === 'pages' && c.status !== 'ARCHIVED').length,
+    videos: content.filter(c => c.type === 'videos' && c.status !== 'ARCHIVED').length,
+    podcasts: content.filter(c => c.type === 'podcasts' && c.status !== 'ARCHIVED').length,
+    premium: content.filter(c => ((c as any).accessTier === 'success_plus' || (c as any).accessTier === 'insider') && c.status !== 'ARCHIVED').length,
+    archived: content.filter(c => c.status === 'ARCHIVED').length,
   };
 
   const getAddNewUrl = () => {
@@ -215,7 +264,26 @@ export default function ContentViewer() {
           >
             💎 SUCCESS+ ({contentCounts.premium})
           </button>
+          <button
+            className={activeTab === 'archived' ? styles.tabActive : styles.tab}
+            onClick={() => setActiveTab('archived')}
+          >
+            📁 Archived ({contentCounts.archived})
+          </button>
         </div>
+
+        {activeTab !== 'archived' && (
+          <div className={styles.filterToggle}>
+            <label>
+              <input
+                type="checkbox"
+                checked={showArchived}
+                onChange={(e) => setShowArchived(e.target.checked)}
+              />
+              <span style={{ marginLeft: '8px' }}>Show archived content</span>
+            </label>
+          </div>
+        )}
 
         {loading ? (
           <div className={styles.loading}>Loading content...</div>
@@ -275,6 +343,17 @@ export default function ContentViewer() {
                             onClick={() => window.location.href = `/admin/${item.type}/${item.id}/edit`}
                           >
                             Edit
+                          </button>
+                          <button
+                            className={item.status === 'ARCHIVED' ? styles.unarchiveButton : styles.archiveButton}
+                            onClick={() => handleArchive(item.id, item.type, item.status)}
+                            disabled={archiving === String(item.id)}
+                          >
+                            {archiving === String(item.id)
+                              ? 'Processing...'
+                              : item.status === 'ARCHIVED'
+                              ? 'Unarchive'
+                              : 'Archive'}
                           </button>
                           <button
                             className={styles.deleteButton}

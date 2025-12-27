@@ -47,6 +47,28 @@
   box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
 }
 
+.filterToggle {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.filterToggle label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.filterToggle input[type="checkbox"] {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
 .tabs {
   display: flex;
   gap: 0.5rem;
@@ -261,6 +283,38 @@
 
 .editButton:hover {
   background: #1565c0;
+}
+
+.archiveButton {
+  background: #f57c00;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.archiveButton:hover {
+  background: #ef6c00;
+}
+
+.unarchiveButton {
+  background: #43a047;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.unarchiveButton:hover {
+  background: #388e3c;
 }
 
 .deleteButton {

@@ -116,24 +116,28 @@ export default async function handler(
       // Get current post
       const { data: currentPost } = await supabase
         .from('posts')
-        .select('publishedAt')
+        .select('*')
         .eq('id', id as string)
         .single();
 
-      const newStatus = status?.toUpperCase() || 'DRAFT';
+      if (!currentPost) {
+        return res.status(404).json({ error: 'Post not found' });
+      }
+
+      const newStatus = status?.toUpperCase() || currentPost.status;
       const isBeingPublished = newStatus === 'PUBLISHED' || newStatus === 'PUBLISH';
 
-      const updateData: any = {
-        title,
-        slug,
-        content,
-        excerpt,
-        status: newStatus,
-        featuredImage,
-        featuredImageAlt,
-        seoTitle,
-        seoDescription,
-      };
+      // For PATCH requests, only update fields that are provided
+      const updateData: any = {};
+      if (title !== undefined) updateData.title = title;
+      if (slug !== undefined) updateData.slug = slug;
+      if (content !== undefined) updateData.content = content;
+      if (excerpt !== undefined) updateData.excerpt = excerpt;
+      if (status !== undefined) updateData.status = newStatus;
+      if (featuredImage !== undefined) updateData.featuredImage = featuredImage;
+      if (featuredImageAlt !== undefined) updateData.featuredImageAlt = featuredImageAlt;
+      if (seoTitle !== undefined) updateData.seoTitle = seoTitle;
+      if (seoDescription !== undefined) updateData.seoDescription = seoDescription;
 
       if (isBeingPublished) {
         updateData.publishedAt = publishedAt

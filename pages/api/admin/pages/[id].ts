@@ -43,7 +43,7 @@ export default async function handler(
     }
   }
 
-  if (req.method === 'PUT') {
+  if (req.method === 'PUT' || req.method === 'PATCH') {
     try {
       const {
         title,
