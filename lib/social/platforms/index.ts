@@ -70,11 +70,11 @@ export async function refreshAccountToken(account: SocialAccount) {
 /**
  * Publish a post to a specific platform
  */
-export async function publishToPlat form(
+export async function publishToPlatform(
   account: SocialAccount,
   post: SocialPost,
   media: MediaItem[]
-) {
+): Promise<{ success: boolean; platformPostId?: string; error?: string }> {
   const client = getPlatformClient(account.platform);
   return await client.publishPost(account, post, media);
 }
