@@ -110,12 +110,12 @@ export default function ContentViewer() {
     }
   };
 
-  const handleDelete = async (id: string, type: string) => {
+  const handleDelete = async (id: string | number, type: string) => {
     if (!confirm(`Are you sure you want to delete this ${type.slice(0, -1)}?`)) {
       return;
     }
 
-    setDeleting(id);
+    setDeleting(String(id));
     try {
       const res = await fetch(`/api/admin/${type}/${id}`, {
         method: 'DELETE',
@@ -260,9 +260,9 @@ export default function ContentViewer() {
                           <button
                             className={styles.deleteButton}
                             onClick={() => handleDelete(item.id, item.type)}
-                            disabled={deleting === item.id}
+                            disabled={deleting === String(item.id)}
                           >
-                            {deleting === item.id ? 'Deleting...' : 'Delete'}
+                            {deleting === String(item.id) ? 'Deleting...' : 'Delete'}
                           </button>
                         </>
                       )}
