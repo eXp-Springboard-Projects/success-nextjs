@@ -20,11 +20,11 @@ async function addMagazines() {
 
   const magazines = [
     {
-      id: 'mag_dec_2024',
-      title: 'SUCCESS Magazine - December 2024',
-      slug: 'december-2024',
-      publishedText: '2024-12-01T00:00:00.000Z',
-      description: 'The December 2024 issue of SUCCESS Magazine featuring inspiring stories, expert advice, and actionable strategies for personal and professional growth.',
+      id: 'mag_dec_2025',
+      title: 'SUCCESS Magazine - December 2025',
+      slug: 'december-2025',
+      publishedText: '2025-12-01T00:00:00.000Z',
+      description: 'The December 2025 issue of SUCCESS Magazine featuring inspiring stories, expert advice, and actionable strategies for personal and professional growth.',
       coverImageUrl: 'https://read.mysuccessplus.com/success/20251202/cover.jpg',
       flipbookUrl: 'https://read.mysuccessplus.com/success/20251202/index.html',
       fileSize: 0,
@@ -32,11 +32,11 @@ async function addMagazines() {
       status: 'PUBLISHED'
     },
     {
-      id: 'mag_nov_2024',
-      title: 'SUCCESS Magazine - November 2024',
-      slug: 'november-2024',
-      publishedText: '2024-11-01T00:00:00.000Z',
-      description: 'The November 2024 issue of SUCCESS Magazine with exclusive interviews, business insights, and strategies for achieving your goals.',
+      id: 'mag_nov_2025',
+      title: 'SUCCESS Magazine - November 2025',
+      slug: 'november-2025',
+      publishedText: '2025-11-01T00:00:00.000Z',
+      description: 'The November 2025 issue of SUCCESS Magazine with exclusive interviews, business insights, and strategies for achieving your goals.',
       coverImageUrl: 'https://read.mysuccessplus.com/success/20251104/cover.jpg',
       flipbookUrl: 'https://read.mysuccessplus.com/success/20251104/index.html',
       fileSize: 0,
@@ -44,11 +44,11 @@ async function addMagazines() {
       status: 'PUBLISHED'
     },
     {
-      id: 'mag_oct_2024',
-      title: 'SUCCESS Magazine - October 2024',
-      slug: 'october-2024',
-      publishedText: '2024-10-01T00:00:00.000Z',
-      description: 'The October 2024 issue of SUCCESS Magazine featuring cutting-edge content on leadership, entrepreneurship, and personal development.',
+      id: 'mag_oct_2025',
+      title: 'SUCCESS Magazine - October 2025',
+      slug: 'october-2025',
+      publishedText: '2025-10-01T00:00:00.000Z',
+      description: 'The October 2025 issue of SUCCESS Magazine featuring cutting-edge content on leadership, entrepreneurship, and personal development.',
       coverImageUrl: 'https://read.mysuccessplus.com/success/20251007/cover.jpg',
       flipbookUrl: 'https://read.mysuccessplus.com/success/20251007/index.html',
       fileSize: 0,
