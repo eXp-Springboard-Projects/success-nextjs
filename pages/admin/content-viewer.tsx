@@ -18,11 +18,14 @@ interface ContentItem {
   _embedded?: any;
 }
 
+type ContentType = 'all' | 'posts' | 'pages' | 'videos' | 'podcasts';
+
 export default function ContentViewer() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [content, setContent] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<ContentType>('all');
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/admin/login');
@@ -107,6 +110,18 @@ export default function ContentViewer() {
     }
   };
 
+  const filteredContent = activeTab === 'all'
+    ? content
+    : content.filter(item => item.type === activeTab);
+
+  const contentCounts = {
+    all: content.length,
+    posts: content.filter(c => c.type === 'posts').length,
+    pages: content.filter(c => c.type === 'pages').length,
+    videos: content.filter(c => c.type === 'videos').length,
+    podcasts: content.filter(c => c.type === 'podcasts').length,
+  };
+
   return (
     <AdminLayout>
       <div className={styles.container}>
@@ -117,11 +132,44 @@ export default function ContentViewer() {
           </div>
         </div>
 
+        <div className={styles.tabs}>
+          <button
+            className={activeTab === 'all' ? styles.tabActive : styles.tab}
+            onClick={() => setActiveTab('all')}
+          >
+            All Content ({contentCounts.all})
+          </button>
+          <button
+            className={activeTab === 'posts' ? styles.tabActive : styles.tab}
+            onClick={() => setActiveTab('posts')}
+          >
+            Posts ({contentCounts.posts})
+          </button>
+          <button
+            className={activeTab === 'pages' ? styles.tabActive : styles.tab}
+            onClick={() => setActiveTab('pages')}
+          >
+            Pages ({contentCounts.pages})
+          </button>
+          <button
+            className={activeTab === 'videos' ? styles.tabActive : styles.tab}
+            onClick={() => setActiveTab('videos')}
+          >
+            Videos ({contentCounts.videos})
+          </button>
+          <button
+            className={activeTab === 'podcasts' ? styles.tabActive : styles.tab}
+            onClick={() => setActiveTab('podcasts')}
+          >
+            Podcasts ({contentCounts.podcasts})
+          </button>
+        </div>
+
         {loading ? (
           <div className={styles.loading}>Loading content...</div>
-        ) : content.length === 0 ? (
+        ) : filteredContent.length === 0 ? (
           <div className={styles.empty}>
-            <p>No content found.</p>
+            <p>No {activeTab === 'all' ? 'content' : activeTab} found.</p>
             <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}>
               This viewer displays posts and pages from WordPress.
               <br />
@@ -130,7 +178,7 @@ export default function ContentViewer() {
           </div>
         ) : (
           <div className={styles.grid}>
-            {content.map((item) => {
+            {filteredContent.map((item) => {
               const imageUrl = item._embedded?.['wp:featuredmedia']?.[0]?.source_url;
 
               return (
