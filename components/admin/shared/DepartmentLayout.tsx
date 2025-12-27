@@ -285,7 +285,6 @@ function getNavigationSections(role: UserRole, primaryDepartment?: Department | 
       title: 'SUCCESS+',
       items: [
         { label: 'SUCCESS+ Dashboard', href: '/admin/success-plus' },
-        { label: 'Dashboard Content', href: '/admin/dashboard-content' },
       ]
     });
   }

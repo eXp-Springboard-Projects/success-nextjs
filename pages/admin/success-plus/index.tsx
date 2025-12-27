@@ -133,14 +133,6 @@ export default function SuccessPlusDashboard() {
               </div>
             </Link>
 
-            <Link href="/admin/success-plus/content" className={styles.actionCard}>
-              <div className={styles.actionIcon}>🔒</div>
-              <div className={styles.actionTitle}>Content Access</div>
-              <div className={styles.actionDescription}>
-                Manage gated content and drip schedules
-              </div>
-            </Link>
-
             <Link href="/admin/success-plus/newsletters" className={styles.actionCard}>
               <div className={styles.actionIcon}>📧</div>
               <div className={styles.actionTitle}>Newsletters</div>
