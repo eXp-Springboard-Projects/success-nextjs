@@ -26,6 +26,7 @@ export default function ContentViewer() {
   const [content, setContent] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ContentType>('all');
+  const [deleting, setDeleting] = useState<string | null>(null);
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/admin/login');
@@ -109,6 +110,31 @@ export default function ContentViewer() {
     }
   };
 
+  const handleDelete = async (id: string, type: string) => {
+    if (!confirm(`Are you sure you want to delete this ${type.slice(0, -1)}?`)) {
+      return;
+    }
+
+    setDeleting(id);
+    try {
+      const res = await fetch(`/api/admin/${type}/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to delete');
+      }
+
+      // Remove from local state
+      setContent(prev => prev.filter(item => item.id !== id));
+    } catch (error) {
+      alert('Failed to delete item. Please try again.');
+      console.error('Delete error:', error);
+    } finally {
+      setDeleting(null);
+    }
+  };
+
   const filteredContent = activeTab === 'all'
     ? content
     : content.filter(item => item.type === activeTab);
@@ -121,6 +147,11 @@ export default function ContentViewer() {
     podcasts: content.filter(c => c.type === 'podcasts').length,
   };
 
+  const getAddNewUrl = () => {
+    if (activeTab === 'all') return '/admin/posts/new';
+    return `/admin/${activeTab}/new`;
+  };
+
   return (
     <AdminLayout>
       <div className={styles.container}>
@@ -129,6 +160,9 @@ export default function ContentViewer() {
             <h1>Live Site Content</h1>
             <p className={styles.subtitle}>Posts, Pages, Videos, and Podcasts from success.com</p>
           </div>
+          <a href={getAddNewUrl()} className={styles.addButton}>
+            + Add New {activeTab === 'all' ? 'Post' : activeTab.slice(0, -1).charAt(0).toUpperCase() + activeTab.slice(1, -1)}
+          </a>
         </div>
 
         <div className={styles.tabs}>
@@ -219,20 +253,16 @@ export default function ContentViewer() {
                         <>
                           <button
                             className={styles.editButton}
-                            onClick={() => window.location.href = `/admin/posts/edit/${item.id}`}
+                            onClick={() => window.location.href = `/admin/${item.type}/${item.id}/edit`}
                           >
                             Edit
                           </button>
                           <button
                             className={styles.deleteButton}
-                            onClick={() => {
-                              if (confirm('Are you sure you want to delete this item?')) {
-                                // TODO: Implement delete
-                                alert('Delete functionality coming soon');
-                              }
-                            }}
+                            onClick={() => handleDelete(item.id, item.type)}
+                            disabled={deleting === item.id}
                           >
-                            Delete
+                            {deleting === item.id ? 'Deleting...' : 'Delete'}
                           </button>
                         </>
                       )}
