@@ -43,8 +43,8 @@ export default function ContentViewer() {
 
       const promises = endpoints.map(async endpoint => {
         try {
-          const perPage = 100; // WordPress max is 100
-          const url = `/api/${endpoint}?per_page=${perPage}&_embed=true`;
+          const perPage = 100;
+          const url = `/api/admin/${endpoint}?per_page=${perPage}`;
           console.log(`Fetching ${endpoint} from ${url}`);
 
           const res = await fetch(url);
