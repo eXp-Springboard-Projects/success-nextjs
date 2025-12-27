@@ -43,43 +43,19 @@ export default function ContentViewer() {
 
       const promises = endpoints.map(async endpoint => {
         try {
-          let allData: any[] = [];
-          let page = 1;
-          let hasMore = true;
           const perPage = 100; // WordPress max is 100
+          const url = `/api/${endpoint}?per_page=${perPage}&_embed=true`;
+          console.log(`Fetching ${endpoint} from ${url}`);
 
-          while (hasMore) {
-            const url = `/api/${endpoint}?per_page=${perPage}&page=${page}&_embed=true`;
-            console.log(`Fetching ${endpoint} page ${page} from ${url}`);
+          const res = await fetch(url);
 
-            const res = await fetch(url);
-
-            if (!res.ok) {
-              if (res.status === 400 && page > 1) {
-                // No more pages
-                hasMore = false;
-                break;
-              }
-              console.error(`Failed to fetch ${endpoint}: ${res.status} ${res.statusText}`);
-              return { endpoint, data: [], error: `${res.status} ${res.statusText}` };
-            }
-
-            const data = await res.json();
-            console.log(`✓ Fetched ${data.length} items from ${endpoint} page ${page}`);
-
-            if (data.length === 0 || data.length < perPage) {
-              hasMore = false;
-            }
-
-            allData = [...allData, ...data];
-            page++;
-
-            // Safety limit to prevent infinite loops
-            if (page > 50) {
-              console.warn(`Reached page limit for ${endpoint}`);
-              hasMore = false;
-            }
+          if (!res.ok) {
+            console.error(`Failed to fetch ${endpoint}: ${res.status} ${res.statusText}`);
+            return { endpoint, data: [], error: `${res.status} ${res.statusText}` };
           }
+
+          const allData = await res.json();
+          console.log(`✓ Fetched ${allData.length} items from ${endpoint}`);
 
           const mappedData = allData.map((item: any) => {
             // Handle title field - WordPress returns { rendered: "..." }, Supabase returns string
