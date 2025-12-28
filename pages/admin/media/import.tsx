@@ -59,22 +59,29 @@ export default function MediaImport() {
     addLog('Starting dry run...');
 
     try {
+      addLog('Making API request to /api/admin/media/scrape-wordpress...');
       const res = await fetch('/api/admin/media/scrape-wordpress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ page: 1, perPage, dryRun: true })
       });
 
+      addLog(`Response status: ${res.status} ${res.statusText}`);
+
       if (!res.ok) {
-        throw new Error('Dry run failed');
+        const errorData = await res.json().catch(() => ({ message: res.statusText }));
+        addLog(`ERROR Response: ${JSON.stringify(errorData)}`);
+        throw new Error(`Dry run failed: ${errorData.message || res.statusText}`);
       }
 
       const data = await res.json();
+      addLog(`Success! Response data: ${JSON.stringify(data).substring(0, 200)}...`);
       setDryRunStats(data);
       addLog(`Dry run complete: ${data.stats.total} total media items found across ${data.stats.totalPages} pages`);
     } catch (error: any) {
-      addLog(`ERROR: ${error.message}`);
-      alert('Dry run failed. Check console for details.');
+      addLog(`EXCEPTION: ${error.message}`);
+      console.error('Dry run error:', error);
+      alert(`Dry run failed: ${error.message}\n\nCheck the Import Log below for details.`);
     } finally {
       setLoading(false);
     }
@@ -90,7 +97,9 @@ export default function MediaImport() {
     });
 
     if (!res.ok) {
-      throw new Error(`Failed to import page ${page}`);
+      const errorData = await res.json().catch(() => ({ message: res.statusText }));
+      addLog(`ERROR: API returned ${res.status}: ${JSON.stringify(errorData)}`);
+      throw new Error(`Failed to import page ${page}: ${errorData.message || res.statusText}`);
     }
 
     return await res.json();
