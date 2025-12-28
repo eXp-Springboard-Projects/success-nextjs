@@ -181,6 +181,7 @@ export default function PostsListWithFilters() {
     const confirmMessages: { [key: string]: string } = {
       'publish': `Publish ${selectedPosts.size} post(s)?`,
       'draft': `Move ${selectedPosts.size} post(s) to draft?`,
+      'archive': `Archive ${selectedPosts.size} post(s)? Archived posts won't appear on the site.`,
       'delete': `⚠️ DELETE ${selectedPosts.size} post(s)? This cannot be undone!`,
       'trash': `Move ${selectedPosts.size} post(s) to trash?`,
     };
@@ -246,6 +247,7 @@ export default function PostsListWithFilters() {
       draft: posts.filter(p => p.status === 'draft').length,
       pending: posts.filter(p => p.status === 'pending').length,
       future: posts.filter(p => p.status === 'future').length,
+      archived: posts.filter(p => p.status === 'archived' || p.status === 'ARCHIVED').length,
     };
     return counts;
   };
@@ -302,6 +304,14 @@ export default function PostsListWithFilters() {
             onClick={() => setStatusFilter('future')}
           >
             Scheduled ({statusCounts.future})
+          </button>
+        )}
+        {statusCounts.archived > 0 && (
+          <button
+            className={statusFilter === 'archived' ? styles.activeTab : styles.tab}
+            onClick={() => setStatusFilter('archived')}
+          >
+            Archived ({statusCounts.archived})
           </button>
         )}
       </div>
@@ -377,6 +387,7 @@ export default function PostsListWithFilters() {
             <option value="">Bulk Actions</option>
             <option value="publish">Publish</option>
             <option value="draft">Move to Draft</option>
+            <option value="archive">Archive</option>
             <option value="trash">Move to Trash</option>
             <option value="delete">Delete Permanently</option>
           </select>
@@ -501,6 +512,29 @@ export default function PostsListWithFilters() {
                       <a href={`/${post.slug}`} target="_blank" rel="noopener noreferrer">
                         View
                       </a>
+                      {post.status !== 'archived' && post.status !== 'ARCHIVED' && (
+                        <>
+                          <span className={styles.separator}>|</span>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Archive "${post.title.rendered}"? It won't appear on the site.`)) {
+                                alert('Archive functionality will be implemented with the API integration.');
+                              }
+                            }}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#d97706',
+                              cursor: 'pointer',
+                              padding: 0,
+                              font: 'inherit',
+                              textDecoration: 'none'
+                            }}
+                          >
+                            Archive
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                   <td>{author?.name || 'Unknown'}</td>
