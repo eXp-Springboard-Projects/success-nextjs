@@ -3,7 +3,8 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
-import styles from './dashboard.module.css';
+import { Download, FileText, FileSpreadsheet, File, Archive, Search, Filter } from 'lucide-react';
+import styles from './Resources.module.css';
 
 interface Resource {
   id: string;
@@ -11,10 +12,12 @@ interface Resource {
   description: string;
   category: string;
   fileUrl: string;
+  linkUrl?: string;
   fileType: string;
-  fileSize: number;
-  thumbnail: string;
+  fileSize?: number;
+  thumbnail?: string;
   downloads: number;
+  createdAt: string;
 }
 
 export default function ResourcesPage() {
@@ -31,7 +34,14 @@ export default function ResourcesPage() {
     } else if (status === 'authenticated') {
       fetchResources();
     }
-  }, [status, categoryFilter, search]);
+  }, [status]);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      const timer = setTimeout(() => fetchResources(), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [categoryFilter, search]);
 
   const fetchResources = async () => {
     try {
@@ -51,8 +61,9 @@ export default function ResourcesPage() {
       }
 
       const data = await response.json();
-      setResources(data);
+      setResources(data.resources || []);
     } catch (error) {
+      console.error('Failed to load resources:', error);
     } finally {
       setLoading(false);
     }
@@ -61,84 +72,78 @@ export default function ResourcesPage() {
   const handleDownload = async (resource: Resource) => {
     try {
       // Track the download
-      await fetch('/api/dashboard/resources', {
+      await fetch('/api/dashboard/resources/download', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resourceId: resource.id }),
       });
 
-      // Open the file in a new tab
-      window.open(resource.fileUrl, '_blank');
+      // Open the file or link
+      const url = resource.linkUrl || resource.fileUrl;
+      window.open(url, '_blank');
     } catch (error) {
+      console.error('Download error:', error);
     }
   };
 
-  const formatFileSize = (bytes: number) => {
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return '';
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
+  const getFileIcon = (fileType: string) => {
+    switch (fileType.toLowerCase()) {
+      case 'pdf':
+        return <FileText className={styles.fileIcon} />;
+      case 'docx':
+      case 'doc':
+        return <FileText className={styles.fileIcon} />;
+      case 'xlsx':
+      case 'xls':
+        return <FileSpreadsheet className={styles.fileIcon} />;
+      case 'zip':
+      case 'rar':
+        return <Archive className={styles.fileIcon} />;
+      case 'link':
+        return <File className={styles.fileIcon} />;
+      default:
+        return <File className={styles.fileIcon} />;
+    }
+  };
+
   const categories = ['TEMPLATES', 'GUIDES', 'WORKSHEETS', 'EBOOKS', 'TOOLS', 'CHECKLISTS'];
 
   if (status === 'loading' || loading) {
-    return <div className={styles.loading}>Loading...</div>;
+    return (
+      <div className={styles.loadingContainer}>
+        <div className={styles.spinner}></div>
+        <p>Loading resources...</p>
+      </div>
+    );
   }
 
   return (
     <>
       <Head>
         <title>Resources - SUCCESS+ Dashboard</title>
+        <meta name="description" content="Access exclusive downloadable templates, guides, and tools" />
       </Head>
 
-      <div className={styles.dashboardLayout}>
-        <aside className={styles.sidebar}>
-          <div className={styles.logo}>
-            <Link href="/dashboard">
-              <img src="/success-logo.png" alt="SUCCESS" />
-            </Link>
-          </div>
-          <nav className={styles.nav}>
-            <Link href="/dashboard">
-              <button><span className={styles.icon}>📊</span> Dashboard</button>
-            </Link>
-            <Link href="/dashboard/premium">
-              <button><span className={styles.icon}>⭐</span> Premium Content</button>
-            </Link>
-            <Link href="/dashboard/courses">
-              <button><span className={styles.icon}>🎓</span> Courses</button>
-            </Link>
-            <Link href="/dashboard/resources">
-              <button className={styles.active}><span className={styles.icon}>📚</span> Resources</button>
-            </Link>
-            <Link href="/dashboard/labs">
-              <button><span className={styles.icon}>🔬</span> Success Labs</button>
-            </Link>
-            <Link href="/dashboard/events">
-              <button><span className={styles.icon}>📅</span> Events</button>
-            </Link>
-            <Link href="/dashboard/videos">
-              <button><span className={styles.icon}>🎥</span> Videos</button>
-            </Link>
-            <Link href="/dashboard/podcasts">
-              <button><span className={styles.icon}>🎙️</span> Podcasts</button>
-            </Link>
-            <Link href="/dashboard/magazines">
-              <button><span className={styles.icon}>📖</span> Magazines</button>
-            </Link>
-            <Link href="/dashboard/settings">
-              <button><span className={styles.icon}>⚙️</span> Settings</button>
-            </Link>
-          </nav>
-        </aside>
-
-        <main className={styles.mainContent}>
-          <div className={styles.header}>
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <div>
             <h1>Resource Library</h1>
-            <p className={styles.subtitle}>Downloadable templates, guides, and tools</p>
+            <p className={styles.subtitle}>
+              Exclusive downloads, templates, and tools for SUCCESS+ members
+            </p>
           </div>
+        </div>
 
-          <div className={styles.searchFilters}>
+        <div className={styles.filters}>
+          <div className={styles.searchBox}>
+            <Search className={styles.searchIcon} />
             <input
               type="text"
               placeholder="Search resources..."
@@ -146,7 +151,10 @@ export default function ResourcesPage() {
               onChange={(e) => setSearch(e.target.value)}
               className={styles.searchInput}
             />
+          </div>
 
+          <div className={styles.categoryFilter}>
+            <Filter className={styles.filterIcon} />
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
@@ -160,54 +168,67 @@ export default function ResourcesPage() {
               ))}
             </select>
           </div>
+        </div>
 
+        {resources.length === 0 && !loading ? (
+          <div className={styles.emptyState}>
+            <File className={styles.emptyIcon} />
+            <h2>No resources found</h2>
+            <p>Try adjusting your search or filters</p>
+          </div>
+        ) : (
           <div className={styles.resourcesGrid}>
             {resources.map((resource) => (
               <div key={resource.id} className={styles.resourceCard}>
-                <div className={styles.resourceIcon}>
+                <div className={styles.cardHeader}>
                   {resource.thumbnail ? (
-                    <img src={resource.thumbnail} alt={resource.title} />
+                    <img
+                      src={resource.thumbnail}
+                      alt={resource.title}
+                      className={styles.thumbnail}
+                    />
                   ) : (
-                    <div className={styles.fileIcon}>
-                      {resource.fileType === 'pdf' && '📄'}
-                      {resource.fileType === 'docx' && '📝'}
-                      {resource.fileType === 'xlsx' && '📊'}
-                      {resource.fileType === 'zip' && '📦'}
-                      {!['pdf', 'docx', 'xlsx', 'zip'].includes(resource.fileType) && '📁'}
+                    <div className={styles.iconPlaceholder}>
+                      {getFileIcon(resource.fileType)}
                     </div>
                   )}
-                </div>
-
-                <div className={styles.resourceContent}>
-                  <div className={styles.resourceCategory}>
+                  <div className={styles.categoryBadge}>
                     {resource.category.charAt(0) + resource.category.slice(1).toLowerCase()}
                   </div>
-                  <h3>{resource.title}</h3>
-                  <p>{resource.description}</p>
-
-                  <div className={styles.resourceMeta}>
-                    <span>{resource.fileType.toUpperCase()}</span>
-                    <span>{formatFileSize(resource.fileSize || 0)}</span>
-                    <span>{resource.downloads} downloads</span>
-                  </div>
-
-                  <button
-                    className={styles.downloadBtn}
-                    onClick={() => handleDownload(resource)}
-                  >
-                    Download
-                  </button>
                 </div>
+
+                <div className={styles.cardContent}>
+                  <h3 className={styles.title}>{resource.title}</h3>
+                  <p className={styles.description}>{resource.description}</p>
+
+                  <div className={styles.meta}>
+                    {resource.fileType && (
+                      <span className={styles.metaItem}>
+                        {resource.fileType.toUpperCase()}
+                      </span>
+                    )}
+                    {resource.fileSize && (
+                      <span className={styles.metaItem}>
+                        {formatFileSize(resource.fileSize)}
+                      </span>
+                    )}
+                    <span className={styles.metaItem}>
+                      {resource.downloads} downloads
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  className={styles.downloadButton}
+                  onClick={() => handleDownload(resource)}
+                >
+                  <Download size={18} />
+                  {resource.linkUrl ? 'Open Link' : 'Download'}
+                </button>
               </div>
             ))}
           </div>
-
-          {resources.length === 0 && !loading && (
-            <div className={styles.emptyState}>
-              <p>No resources found matching your search.</p>
-            </div>
-          )}
-        </main>
+        )}
       </div>
     </>
   );
