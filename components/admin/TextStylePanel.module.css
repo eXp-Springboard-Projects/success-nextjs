@@ -293,3 +293,84 @@
   padding: 0.5rem 1rem;
   white-space: nowrap;
 }
+
+/* Recent Colors */
+.recentColorsSection {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.recentLabel {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.recentColors {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.recentColors .colorButton {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+/* Custom Color Section */
+.customColorSection {
+  margin-top: 0.75rem;
+}
+
+.pickerToggle {
+  width: 100%;
+  padding: 0.625rem;
+  border: 2px dashed #d0d0d0;
+  background: white;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #667eea;
+}
+
+.pickerToggle:hover {
+  border-color: #667eea;
+  background: #f5f5ff;
+}
+
+.pickerContainer {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+/* react-colorful styles */
+.colorPicker {
+  width: 100% !important;
+  height: 200px !important;
+  margin-bottom: 0.75rem;
+}
+
+.colorPicker .react-colorful__saturation {
+  border-radius: 6px 6px 0 0;
+}
+
+.colorPicker .react-colorful__hue {
+  border-radius: 6px;
+  height: 12px;
+  margin-top: 12px;
+}
+
+.colorPicker .react-colorful__pointer {
+  width: 20px;
+  height: 20px;
+}

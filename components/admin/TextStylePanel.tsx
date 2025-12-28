@@ -1,5 +1,6 @@
 import { Editor } from '@tiptap/react';
 import { useState, useEffect } from 'react';
+import { HexColorPicker } from 'react-colorful';
 import styles from './TextStylePanel.module.css';
 
 interface TextStylePanelProps {
@@ -65,6 +66,9 @@ const FONT_WEIGHTS = [
   { label: 'Black', value: '900' },
 ];
 
+const RECENT_COLORS_KEY = 'editor_recent_colors';
+const MAX_RECENT_COLORS = 5;
+
 export default function TextStylePanel({ editor }: TextStylePanelProps) {
   const [loadedFonts, setLoadedFonts] = useState<Set<string>>(new Set());
   const [customFontUrl, setCustomFontUrl] = useState('');
@@ -72,6 +76,9 @@ export default function TextStylePanel({ editor }: TextStylePanelProps) {
   const [showCustomFontInput, setShowCustomFontInput] = useState(false);
   const [customTextColor, setCustomTextColor] = useState('#000000');
   const [customHighlightColor, setCustomHighlightColor] = useState('#FFFF00');
+  const [showTextColorPicker, setShowTextColorPicker] = useState(false);
+  const [showHighlightColorPicker, setShowHighlightColorPicker] = useState(false);
+  const [recentColors, setRecentColors] = useState<string[]>([]);
 
   // Load Google Fonts dynamically
   useEffect(() => {
@@ -83,6 +90,29 @@ export default function TextStylePanel({ editor }: TextStylePanelProps) {
       document.head.appendChild(link);
     }
   }, []);
+
+  // Load recent colors from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(RECENT_COLORS_KEY);
+      if (saved) {
+        setRecentColors(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error('Failed to load recent colors:', error);
+    }
+  }, []);
+
+  // Save color to recent colors
+  const saveRecentColor = (color: string) => {
+    try {
+      const updated = [color, ...recentColors.filter(c => c !== color)].slice(0, MAX_RECENT_COLORS);
+      setRecentColors(updated);
+      localStorage.setItem(RECENT_COLORS_KEY, JSON.stringify(updated));
+    } catch (error) {
+      console.error('Failed to save recent color:', error);
+    }
+  };
 
   const setFontSize = (size: number) => {
     editor.chain().focus().setMark('textStyle', { fontSize: `${size}px` }).run();
@@ -146,12 +176,16 @@ export default function TextStylePanel({ editor }: TextStylePanelProps) {
   const applyCustomTextColor = () => {
     if (customTextColor) {
       editor.chain().focus().setColor(customTextColor).run();
+      saveRecentColor(customTextColor);
+      setShowTextColorPicker(false);
     }
   };
 
   const applyCustomHighlightColor = () => {
     if (customHighlightColor) {
       editor.chain().focus().toggleHighlight({ color: customHighlightColor }).run();
+      saveRecentColor(customHighlightColor);
+      setShowHighlightColorPicker(false);
     }
   };
 
@@ -257,70 +291,126 @@ export default function TextStylePanel({ editor }: TextStylePanelProps) {
 
         <div className={styles.field}>
           <label>Text Color</label>
+
+          {/* Preset Colors */}
           <div className={styles.colorGrid}>
             {['#000000', '#333333', '#666666', '#999999', '#CCCCCC', '#FFFFFF',
               '#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899'].map(color => (
               <button
                 key={color}
-                onClick={() => setTextColor(color)}
+                onClick={() => {
+                  setTextColor(color);
+                  saveRecentColor(color);
+                }}
                 className={styles.colorButton}
                 style={{ background: color }}
                 title={color}
               />
             ))}
           </div>
-          <div className={styles.customColorPicker}>
-            <input
-              type="color"
-              value={customTextColor}
-              onChange={(e) => setCustomTextColor(e.target.value)}
-              className={styles.colorInput}
-            />
-            <input
-              type="text"
-              value={customTextColor}
-              onChange={(e) => setCustomTextColor(e.target.value)}
-              placeholder="#000000"
-              className={styles.hexInput}
-              maxLength={7}
-            />
-            <button onClick={applyCustomTextColor} className={styles.applyButton}>
-              Apply
+
+          {/* Recent Colors */}
+          {recentColors.length > 0 && (
+            <div className={styles.recentColorsSection}>
+              <label className={styles.recentLabel}>Recent</label>
+              <div className={styles.recentColors}>
+                {recentColors.map((color, index) => (
+                  <button
+                    key={`recent-${index}-${color}`}
+                    onClick={() => setTextColor(color)}
+                    className={styles.colorButton}
+                    style={{ background: color }}
+                    title={color}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Custom Color Picker */}
+          <div className={styles.customColorSection}>
+            <button
+              onClick={() => setShowTextColorPicker(!showTextColorPicker)}
+              className={styles.pickerToggle}
+            >
+              {showTextColorPicker ? '− Hide' : '+ Custom Color'}
             </button>
+
+            {showTextColorPicker && (
+              <div className={styles.pickerContainer}>
+                <HexColorPicker
+                  color={customTextColor}
+                  onChange={setCustomTextColor}
+                  className={styles.colorPicker}
+                />
+                <div className={styles.customColorPicker}>
+                  <input
+                    type="text"
+                    value={customTextColor}
+                    onChange={(e) => setCustomTextColor(e.target.value)}
+                    placeholder="#000000"
+                    className={styles.hexInput}
+                    maxLength={7}
+                  />
+                  <button onClick={applyCustomTextColor} className={styles.applyButton}>
+                    Apply
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         <div className={styles.field}>
           <label>Highlight Color</label>
+
+          {/* Preset Colors */}
           <div className={styles.colorGrid}>
             {['#FEF3C7', '#DBEAFE', '#D1FAE5', '#FCE7F3', '#E0E7FF', '#F3E8FF'].map(color => (
               <button
                 key={color}
-                onClick={() => setBackgroundColor(color)}
+                onClick={() => {
+                  setBackgroundColor(color);
+                  saveRecentColor(color);
+                }}
                 className={styles.colorButton}
                 style={{ background: color }}
                 title={color}
               />
             ))}
           </div>
-          <div className={styles.customColorPicker}>
-            <input
-              type="color"
-              value={customHighlightColor}
-              onChange={(e) => setCustomHighlightColor(e.target.value)}
-              className={styles.colorInput}
-            />
-            <input
-              type="text"
-              value={customHighlightColor}
-              onChange={(e) => setCustomHighlightColor(e.target.value)}
-              placeholder="#FFFF00"
-              className={styles.hexInput}
-              maxLength={7}
-            />
-            <button onClick={applyCustomHighlightColor} className={styles.applyButton}>
-              Apply
+
+          {/* Custom Color Picker */}
+          <div className={styles.customColorSection}>
+            <button
+              onClick={() => setShowHighlightColorPicker(!showHighlightColorPicker)}
+              className={styles.pickerToggle}
+            >
+              {showHighlightColorPicker ? '− Hide' : '+ Custom Color'}
             </button>
+
+            {showHighlightColorPicker && (
+              <div className={styles.pickerContainer}>
+                <HexColorPicker
+                  color={customHighlightColor}
+                  onChange={setCustomHighlightColor}
+                  className={styles.colorPicker}
+                />
+                <div className={styles.customColorPicker}>
+                  <input
+                    type="text"
+                    value={customHighlightColor}
+                    onChange={(e) => setCustomHighlightColor(e.target.value)}
+                    placeholder="#FFFF00"
+                    className={styles.hexInput}
+                    maxLength={7}
+                  />
+                  <button onClick={applyCustomHighlightColor} className={styles.applyButton}>
+                    Apply
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

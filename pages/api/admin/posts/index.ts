@@ -70,41 +70,56 @@ export default async function handler(
       }
 
       // Format response similar to WordPress API
-      const formattedPosts = (posts || []).map(post => ({
-        id: post.id,
-        title: { rendered: post.title },
-        slug: post.slug,
-        content: { rendered: post.content },
-        excerpt: { rendered: post.excerpt || '' },
-        status: post.status.toLowerCase(),
-        date: post.publishedAt || post.createdAt,
-        modified: post.updatedAt,
-        featured_media: post.featuredImage ? {
-          source_url: post.featuredImage,
-          alt_text: post.featuredImageAlt || '',
-        } : null,
-        _embedded: {
-          author: [{
-            id: post.users.id,
-            name: post.users.name,
-            email: post.users.email,
-          }],
-          'wp:term': [
-            (post.categories || []).map((cat: any) => ({
-              id: cat.id,
-              name: cat.name,
-              slug: cat.slug,
-              taxonomy: 'category'
-            })),
-            (post.tags || []).map((tag: any) => ({
-              id: tag.id,
-              name: tag.name,
-              slug: tag.slug,
-              taxonomy: 'post_tag'
-            }))
-          ]
-        }
-      }));
+      const formattedPosts = (posts || []).map(post => {
+        // Handle author data - could be from join or separate query
+        const authorData = post.users || null;
+        const author = authorData ? {
+          id: authorData.id || post.authorId,
+          name: authorData.name || 'Unknown Author',
+          email: authorData.email || '',
+        } : {
+          id: post.authorId,
+          name: 'Unknown Author',
+          email: '',
+        };
+
+        return {
+          id: post.id,
+          title: { rendered: post.title },
+          slug: post.slug,
+          content: { rendered: post.content },
+          excerpt: { rendered: post.excerpt || '' },
+          status: post.status.toLowerCase(),
+          date: post.publishedAt || post.createdAt,
+          modified: post.updatedAt,
+          featured_media: post.featuredImage ? {
+            source_url: post.featuredImage,
+            alt_text: post.featuredImageAlt || '',
+          } : null,
+          _embedded: {
+            author: [author],
+            'wp:author': [author], // Add both for compatibility
+            'wp:featuredmedia': post.featuredImage ? [{
+              source_url: post.featuredImage,
+              alt_text: post.featuredImageAlt || '',
+            }] : [],
+            'wp:term': [
+              (post.categories || []).map((cat: any) => ({
+                id: cat.id,
+                name: cat.name,
+                slug: cat.slug,
+                taxonomy: 'category'
+              })),
+              (post.tags || []).map((tag: any) => ({
+                id: tag.id,
+                name: tag.name,
+                slug: tag.slug,
+                taxonomy: 'post_tag'
+              }))
+            ]
+          }
+        };
+      });
 
       // Add pagination headers
       res.setHeader('X-WP-Total', (count || 0).toString());

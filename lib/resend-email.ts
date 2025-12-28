@@ -35,10 +35,11 @@ export async function sendMail(to: string, subject: string, html: string) {
     }
 
     const result = await client.emails.send({
-      from: process.env.RESEND_FROM_EMAIL!,
+      from: `SUCCESS Magazine <${process.env.RESEND_FROM_EMAIL!}>`,
       to,
       subject,
       html,
+      reply_to: 'noreply@success.com',
     });
 
     console.log('[sendMail] Resend API response:', JSON.stringify(result));

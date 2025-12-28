@@ -272,7 +272,6 @@ function getNavigationSections(role: UserRole, primaryDepartment?: Department | 
         { label: 'Tags', href: '/admin/tags' },
         { label: 'Media Library', href: '/admin/media' },
         { label: 'Editorial Calendar', href: '/admin/editorial-calendar' },
-        { label: 'Magazine Manager', href: '/admin/magazine-manager' },
         { label: 'SEO', href: '/admin/seo' },
         { label: 'Comments', href: '/admin/comments' },
       ]
