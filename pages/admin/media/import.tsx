@@ -135,6 +135,25 @@ export default function MediaImport() {
     });
 
     addLog('Starting full import...');
+    addLog('Preparing database schema...');
+
+    try {
+      // First, prepare the database
+      const prepareRes = await fetch('/api/admin/media/prepare-database', {
+        method: 'POST'
+      });
+
+      if (!prepareRes.ok) {
+        const prepareError = await prepareRes.json().catch(() => ({ message: prepareRes.statusText }));
+        addLog(`⚠️ Database preparation warning: ${prepareError.message}`);
+        addLog('Continuing with import anyway...');
+      } else {
+        addLog('✅ Database schema prepared');
+      }
+    } catch (prepError: any) {
+      addLog(`⚠️ Database preparation error: ${prepError.message}`);
+      addLog('Continuing with import anyway...');
+    }
 
     try {
       if (useBulkImport) {
