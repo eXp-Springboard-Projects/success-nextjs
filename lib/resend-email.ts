@@ -39,7 +39,7 @@ export async function sendMail(to: string, subject: string, html: string) {
       to,
       subject,
       html,
-      reply_to: 'noreply@success.com',
+      replyTo: 'noreply@success.com',
     });
 
     console.log('[sendMail] Resend API response:', JSON.stringify(result));

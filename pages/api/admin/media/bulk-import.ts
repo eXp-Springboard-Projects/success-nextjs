@@ -75,7 +75,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         // Import media from this page
-        const pageResult = await importMediaBatch(wpMedia, session.user?.email);
+        const pageResult = await importMediaBatch(wpMedia, session.user?.email || undefined);
 
         results.pagesProcessed++;
         results.totalImported += pageResult.imported;

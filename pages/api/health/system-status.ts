@@ -218,9 +218,9 @@ async function checkSSL() {
       };
 
       const req = https.request(options, (res) => {
-        const cert = res.socket.getPeerCertificate();
+        const cert = (res.socket as any).getPeerCertificate();
 
-        if (res.socket.authorized === false) {
+        if ((res.socket as any).authorized === false) {
           resolve({
             status: 'critical' as const,
             message: 'SSL certificate invalid',

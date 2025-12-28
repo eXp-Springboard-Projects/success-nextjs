@@ -33,7 +33,7 @@ export default function TemplatePreview() {
   const renderBlock = (block: any) => {
     switch (block.type) {
       case 'heading':
-        const HeadingTag = `h${block.content.level || 2}` as keyof JSX.IntrinsicElements;
+        const HeadingTag = `h${block.content.level || 2}` as keyof React.JSX.IntrinsicElements;
         return <HeadingTag className={styles.heading}>{block.content.text}</HeadingTag>;
 
       case 'paragraph':
