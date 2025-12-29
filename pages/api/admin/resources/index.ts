@@ -6,7 +6,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
 
-  if (!session || session.user.role !== 'admin') {
+  if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
     return res.status(403).json({ message: 'Unauthorized' });
   }
 
