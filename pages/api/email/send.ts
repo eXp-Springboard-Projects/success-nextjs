@@ -1,18 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import { sendMail } from '@/lib/resend-email';
 
 /**
  * Email Sending API
  *
- * This API endpoint handles sending emails via SendGrid, Resend, or other email providers.
- * For now, it's a placeholder that logs to console for development.
- *
- * To integrate with a real email service:
- * 1. Install the email provider SDK:
- *    - SendGrid: npm install @sendgrid/mail
- *    - Resend: npm install resend
- * 2. Add API keys to .env.local:
- *    - SENDGRID_API_KEY or RESEND_API_KEY
- * 3. Implement the actual sending logic below
+ * Generic email endpoint using Resend.
+ * For specialized emails (password reset, welcome, etc.), use the dedicated functions in lib/resend-email.ts
  */
 
 interface EmailPayload {
@@ -21,8 +14,6 @@ interface EmailPayload {
   subject: string;
   text?: string;
   html?: string;
-  template?: string;
-  templateData?: Record<string, any>;
 }
 
 export default async function handler(
@@ -34,7 +25,7 @@ export default async function handler(
   }
 
   try {
-    const { to, from, subject, text, html, template, templateData }: EmailPayload = req.body;
+    const { to, subject, text, html }: EmailPayload = req.body;
 
     // Validation
     if (!to || !subject) {
@@ -43,46 +34,40 @@ export default async function handler(
       });
     }
 
-    if (!text && !html && !template) {
+    if (!text && !html) {
       return res.status(400).json({
-        error: 'Email must have text, html, or template content'
+        error: 'Email must have text or html content'
       });
     }
 
-    // For development: Log email to console instead of sending
-    // TODO: Implement actual email sending when ready
-    // Example with SendGrid:
-    /*
-    const sgMail = require('@sendgrid/mail');
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    // Convert text to html if needed
+    const emailHtml = html || `<p>${text?.replace(/\n/g, '<br>')}</p>`;
 
-    await sgMail.send({
-      to,
-      from: from || 'noreply@success.com',
-      subject,
-      text,
-      html,
-    });
-    */
+    // Handle multiple recipients
+    const recipients = Array.isArray(to) ? to : [to];
+    const results = [];
 
-    // Example with Resend:
-    /*
-    const { Resend } = require('resend');
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    for (const recipient of recipients) {
+      const result = await sendMail(recipient, subject, emailHtml);
+      results.push({ to: recipient, ...result });
+    }
 
-    await resend.emails.send({
-      from: from || 'SUCCESS <noreply@success.com>',
-      to,
-      subject,
-      html: html || text,
-    });
-    */
+    // Check if all emails succeeded
+    const allSucceeded = results.every(r => r.success);
 
-    return res.status(200).json({
-      success: true,
-      message: 'Email queued for delivery (development mode - logged to console)',
-      development: true,
-    });
+    if (allSucceeded) {
+      return res.status(200).json({
+        success: true,
+        message: `Email sent successfully to ${recipients.length} recipient(s)`,
+        results,
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        message: 'Some emails failed to send',
+        results,
+      });
+    }
 
   } catch (error) {
     return res.status(500).json({
