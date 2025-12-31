@@ -22,14 +22,13 @@ export default function SubscriptionsPage() {
         </section>
 
         <section className={styles.heroContent}>
-          <h1 className={styles.heroTitle}><em>Bring the Legacy Home.</em></h1>
+          <h1 className={styles.heroTitle}>Bring the Legacy Home.</h1>
           <div className={styles.heroText}>
-            <p>Since 1897, SUCCESS magazine has been the definitive source for inspiration, achievement and personal growth.</p>
+            <p>Since 1897, <em>SUCCESS</em> magazine has been the definitive source for inspiration, achievement and personal growth.</p>
             <p>Every issue delivers timeless lessons and modern strategies from the world's top thought leaders, entrepreneurs and visionaries—empowering you to design a life of purpose, prosperity and fulfillment.</p>
-            <p>Subscribe to SUCCESS magazine and get every issue delivered straight to your door—filled with expert advice on business, money, mindset and leadership.</p>
+            <p>Subscribe to <em>SUCCESS</em> magazine and get every issue delivered straight to your door—filled with expert advice on business, money, mindset and leadership.</p>
             <p className={styles.ctaText}>Start your subscription today—step into a community built for growth, ambition and impact.</p>
           </div>
-          <p className={styles.tagline}><em>Stay connected to the ideas that move you forward.</em></p>
         </section>
 
         <section className={styles.subscribeSection}>
