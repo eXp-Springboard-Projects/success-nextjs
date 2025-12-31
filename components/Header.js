@@ -54,7 +54,7 @@ export default function Header() {
               width={800}
               height={200}
               priority
-              style={{ width: 'auto', height: '200px', maxHeight: '200px' }}
+              style={{ width: 'auto', height: '280px', maxHeight: '280px' }}
             />
           </Link>
         </div>
