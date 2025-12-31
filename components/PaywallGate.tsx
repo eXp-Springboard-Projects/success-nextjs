@@ -107,7 +107,7 @@ export default function PaywallGate({
   }
 
   function handleSubscribe() {
-    router.push('/subscribe');
+    router.push('/subscriptions');
   }
 
   function handleLogin() {
@@ -167,7 +167,7 @@ export default function PaywallGate({
                   <li>✓ E-books, guides & resources</li>
                   <li>✓ Insider Newsletter (4/month)</li>
                 </ul>
-                <Link href="/subscribe?plan=monthly" className={styles.button}>
+                <Link href="/subscriptions" className={styles.button}>
                   Subscribe Monthly
                 </Link>
               </div>
@@ -188,7 +188,7 @@ export default function PaywallGate({
                   <li>✓ Insider Newsletter (4/month)</li>
                   <li>✓ Legacy video training library</li>
                 </ul>
-                <Link href="/subscribe?plan=annual" className={styles.button}>
+                <Link href="/subscriptions" className={styles.button}>
                   Subscribe Annually
                 </Link>
               </div>

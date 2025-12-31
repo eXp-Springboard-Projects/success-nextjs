@@ -57,7 +57,7 @@ export default function SubscriptionStatusWidget() {
         </div>
         <div className={styles.upgradePrompt}>
           <p>You don't have an active SUCCESS+ subscription.</p>
-          <Link href="/subscribe" className={styles.upgradeBtn}>
+          <Link href="/subscriptions" className={styles.upgradeBtn}>
             Subscribe to SUCCESS+
           </Link>
         </div>

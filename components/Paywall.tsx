@@ -14,7 +14,7 @@ export default function Paywall({ requiredTier = 'collective', articleTitle, exc
   const router = useRouter();
 
   const handleUpgrade = (tier: 'collective' | 'insider', billingCycle: 'monthly' | 'annual') => {
-    router.push(`/subscribe?tier=${tier}&billing=${billingCycle}`);
+    router.push('/subscriptions');
   };
 
   const handleLogin = () => {
