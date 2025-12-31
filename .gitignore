@@ -46,3 +46,4 @@ check-admin.mjs
 /data/*.csv
 /data/*.json
 !/data/README.md
+pnpm-lock.yaml
