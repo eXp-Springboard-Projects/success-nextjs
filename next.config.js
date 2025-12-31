@@ -55,6 +55,18 @@ const nextConfig = {
         permanent: true,
       },
       
+      // SUCCESS+ BOGO Gamechanger offer - Nov/Dec magazine QR code
+      {
+        source: '/gamechanger',
+        destination: 'https://offer.success.com/bogo/?utm_medium=qr-code&utm_source=magazine&utm_campaign=success-plus&utm_content=dts&utm_term=nov-dec-house-ad-bogo-blow-in-tip-on-gamechanger',
+        permanent: true,
+      },
+      {
+        source: '/gamechanger/',
+        destination: 'https://offer.success.com/bogo/?utm_medium=qr-code&utm_source=magazine&utm_campaign=success-plus&utm_content=dts&utm_term=nov-dec-house-ad-bogo-blow-in-tip-on-gamechanger',
+        permanent: true,
+      },
+      
       // ============================================
       // ADD MORE REDIRECTS BELOW
       // Format:
