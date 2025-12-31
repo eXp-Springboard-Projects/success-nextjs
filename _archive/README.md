@@ -14,3 +14,4 @@ This folder contains archived files that are no longer needed in the main projec
 These files are safe to delete if you want to reduce repository size. They do not affect the application.
 
 
+
