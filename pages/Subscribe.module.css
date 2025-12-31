@@ -13,64 +13,69 @@
 
 /* Magazine Showcase */
 .magazineShowcase {
-  padding: 3rem 1rem;
+  padding: 0;
   background-color: #fff;
 }
 
 .magazineBanner {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 2rem;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 .bannerImage {
   width: 100%;
   height: auto;
   display: block;
-  border-radius: 8px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
 }
 
 /* Hero Content Section */
 .heroContent {
   max-width: 900px;
   margin: 0 auto;
-  padding: 4rem 2rem;
+  padding: 3rem 2rem 2rem;
   text-align: center;
 }
 
 .heroTitle {
-  font-size: 3.5rem;
+  font-size: 3rem;
   font-weight: 400;
   font-style: italic;
   color: #000;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
   line-height: 1.2;
+  font-family: Georgia, 'Times New Roman', serif;
 }
 
 .heroText {
-  text-align: left;
-  margin-bottom: 2.5rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
 }
 
 .heroText p {
   font-size: 1.125rem;
   line-height: 1.8;
-  color: #333;
-  margin-bottom: 1.25rem;
+  color: #000;
+  margin-bottom: 1.5rem;
+}
+
+.heroText p em {
+  font-style: italic;
 }
 
 .ctaText {
-  font-weight: 600;
+  font-weight: 700;
   color: #000 !important;
 }
 
 .tagline {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-style: italic;
   color: #000;
-  margin-top: 2rem;
+  margin-top: 1rem;
   text-align: center;
+  display: none;
 }
 
 /* Subscribe Section with Iframe */
