@@ -2,13 +2,6 @@ import Layout from '../components/Layout';
 import SEO from '../components/SEO';
 import styles from './Subscribe.module.css';
 
-const magazineCovers = [
-  { src: 'https://successcom.wpenginepowered.com/wp-content/uploads/2024/10/SM_NovDec2024_Cover.jpg', alt: 'SUCCESS Magazine - Tony Robbins' },
-  { src: 'https://successcom.wpenginepowered.com/wp-content/uploads/2024/08/SM_SeptOct2024_Cover.jpg', alt: 'SUCCESS Magazine - Eva Longoria' },
-  { src: 'https://successcom.wpenginepowered.com/wp-content/uploads/2024/06/SM_JulyAug2024_Cover.jpg', alt: 'SUCCESS Magazine - Daymond John' },
-  { src: 'https://successcom.wpenginepowered.com/wp-content/uploads/2024/04/SM_MayJun2024_Cover.jpg', alt: 'SUCCESS Magazine - Mel Robbins' },
-];
-
 export default function SubscriptionsPage() {
   return (
     <Layout>
@@ -19,12 +12,12 @@ export default function SubscriptionsPage() {
       />
       <div className={styles.subscriptionsPage}>
         <section className={styles.magazineShowcase}>
-          <div className={styles.magazineGrid}>
-            {magazineCovers.map((cover, index) => (
-              <div key={index} className={styles.magazineCover}>
-                <img src={cover.src} alt={cover.alt} className={styles.coverImage} />
-              </div>
-            ))}
+          <div className={styles.magazineBanner}>
+            <img 
+              src="/images/magazine-covers.webp" 
+              alt="SUCCESS Magazine Covers featuring Tony Robbins, Eva Longoria, Daymond John, and Mel Robbins" 
+              className={styles.bannerImage} 
+            />
           </div>
         </section>
 
