@@ -3,9 +3,9 @@
 }
 
 .hero {
-  background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
-  color: #fff;
-  padding: 5rem 1rem;
+  background: #fff;
+  color: #000;
+  padding: 3rem 1rem;
   text-align: center;
 }
 
@@ -15,17 +15,40 @@
 }
 
 .heroTitle {
-  font-size: 3.5rem;
+  font-size: 3rem;
   font-weight: 900;
   margin: 0 0 1rem 0;
   line-height: 1.1;
-  color: #fff;
+  color: #000;
 }
 
 .heroSubtitle {
-  font-size: 1.25rem;
-  color: #ccc;
+  font-size: 1.125rem;
+  color: #333;
   line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.heroDescription {
+  font-size: 1rem;
+  color: #444;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.heroCTA {
+  display: inline-block;
+  background: #000;
+  color: #fff;
+  padding: 1rem 2rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.heroCTA:hover {
+  background: #333;
 }
 
 .section {
