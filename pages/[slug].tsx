@@ -122,9 +122,36 @@ export async function getServerSideProps({ params, req, res }: any) {
       };
     }
 
-    // If no Page found, try to fetch from WordPress as a blog post
+    // If no Page found in database, try WordPress PAGES first (like /daily-sms/)
+    const wpPages = await fetchWordPressData(`pages?slug=${slug}&_embed`);
+    const wpPage = wpPages?.[0];
+
+    if (wpPage) {
+      // WordPress page found - render it
+      const formattedPage = {
+        id: String(wpPage.id),
+        title: wpPage.title?.rendered || wpPage.title || 'Untitled',
+        content: wpPage.content?.rendered || wpPage.content || '',
+        slug: wpPage.slug,
+        seoTitle: wpPage.yoast_head_json?.title || wpPage.title?.rendered || null,
+        seoDescription: wpPage.yoast_head_json?.description || wpPage.excerpt?.rendered?.replace(/<[^>]*>/g, '').trim() || null,
+        featuredImage: wpPage._embedded?.['wp:featuredmedia']?.[0]?.source_url || null,
+        featuredImageAlt: wpPage._embedded?.['wp:featuredmedia']?.[0]?.alt_text || null,
+        publishedAt: wpPage.date || new Date().toISOString(),
+        updatedAt: wpPage.modified || new Date().toISOString(),
+      };
+
+      return {
+        props: {
+          page: formattedPage,
+          isPost: false
+        }
+      };
+    }
+
+    // If no WordPress page found, try WordPress POSTS (blog posts)
     const posts = await fetchWordPressData(`posts?slug=${slug}&_embed`);
-    const post = posts[0];
+    const post = posts?.[0];
 
     if (!post) {
       return { notFound: true };
