@@ -384,8 +384,8 @@
   }
 
   .logo img {
-    height: 140px;
-    max-height: 140px;
+    height: 200px !important;
+    max-height: 200px !important;
   }
 }
 
@@ -395,7 +395,7 @@
   }
 
   .logo img {
-    height: 120px;
-    max-height: 120px;
+    height: 160px !important;
+    max-height: 160px !important;
   }
 }
