@@ -49,7 +49,7 @@ export default function Header() {
         <div className={styles.container}>
           <Link href="/" className={styles.logo}>
             <Image
-              src="/images/success-logo.png"
+              src="/images/success-logo.svg"
               alt="SUCCESS Magazine"
               width={800}
               height={200}
