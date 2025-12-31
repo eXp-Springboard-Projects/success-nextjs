@@ -162,26 +162,6 @@
   }
 }
 
-.hero {
-  background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
-  color: #fff;
-  padding: 5rem 1rem;
-  text-align: center;
-}
-
-.heroContent {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.heroTitle {
-  font-size: 4rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: -1px;
-  margin: 0 0 1rem 0;
-  color: #fff;
-}
 
 .heroSubtitle {
   font-size: 1.5rem;

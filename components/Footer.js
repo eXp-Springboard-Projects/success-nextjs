@@ -90,7 +90,7 @@ export default function Footer() {
             <h4>Magazine</h4>
             <Link href="/magazine">Current Issue</Link>
             <Link href="/magazine">Past Issues</Link>
-            <Link href="/subscribe">Subscribe</Link>
+            <Link href="/subscriptions">Subscribe</Link>
             <Link href="/advertise">Advertise</Link>
           </div>
 

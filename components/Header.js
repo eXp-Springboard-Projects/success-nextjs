@@ -37,7 +37,7 @@ export default function Header() {
             <Link href="/login" className={styles.signInButton}>
               SIGN IN
             </Link>
-            <Link href="/subscribe" className={styles.subscribeButton}>
+            <Link href="/subscriptions" className={styles.subscribeButton}>
               SUBSCRIBE
             </Link>
           </div>
