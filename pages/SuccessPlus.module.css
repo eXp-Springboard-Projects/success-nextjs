@@ -1,11 +1,12 @@
 .successPlus {
-  background-color: #fff;
+  background-color: #f5f5f5;
 }
 
+/* Hero Section */
 .hero {
   background: #fff;
   color: #000;
-  padding: 3rem 1rem;
+  padding: 5rem 2rem;
   text-align: center;
 }
 
@@ -15,35 +16,39 @@
 }
 
 .heroTitle {
-  font-size: 3rem;
-  font-weight: 900;
-  margin: 0 0 1rem 0;
-  line-height: 1.1;
+  font-size: 2.75rem;
+  font-weight: 700;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.2;
   color: #000;
+}
+
+.heroAccent {
+  color: #8B5CF6;
+  font-style: italic;
 }
 
 .heroSubtitle {
   font-size: 1.125rem;
-  color: #333;
-  line-height: 1.6;
-  margin-bottom: 1rem;
-}
-
-.heroDescription {
-  font-size: 1rem;
   color: #444;
-  line-height: 1.6;
-  margin-bottom: 1.5rem;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .heroCTA {
   display: inline-block;
   background: #000;
   color: #fff;
-  padding: 1rem 2rem;
-  border-radius: 4px;
+  padding: 1rem 2.5rem;
+  border-radius: 50px;
   text-decoration: none;
   font-weight: 600;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   transition: background 0.2s;
 }
 
@@ -51,8 +56,10 @@
   background: #333;
 }
 
-.section {
-  padding: 5rem 1rem;
+/* Features Section */
+.featuresSection {
+  padding: 5rem 2rem;
+  background: #fff;
 }
 
 .container {
@@ -61,260 +68,374 @@
 }
 
 .sectionTitle {
-  font-size: 2.5rem;
+  font-size: 2.25rem;
   font-weight: 700;
+  text-align: center;
+  margin: 0 0 0.5rem 0;
+  color: #000;
+}
+
+.sectionSubtitle {
+  font-size: 1.125rem;
+  color: #666;
   text-align: center;
   margin: 0 0 3rem 0;
 }
 
-.benefits {
-  max-width: 800px;
-  margin: 0 auto;
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
 }
 
-.benefit {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  align-items: flex-start;
+.featureCard {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 2rem;
+  transition: box-shadow 0.2s;
 }
 
-.bullet {
-  color: #d32f2f;
-  font-size: 1.5rem;
+.featureCard:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.featureCard:nth-child(4),
+.featureCard:nth-child(5) {
+  grid-column: span 1;
+}
+
+.featureIconBlue {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  filter: hue-rotate(200deg) saturate(2);
+}
+
+.featureIconYellow {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.featureIconRed {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  filter: hue-rotate(-30deg) saturate(1.5);
+}
+
+.featureIconGreen {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  filter: hue-rotate(100deg) saturate(1.5);
+}
+
+.featureTitle {
+  font-size: 1.25rem;
   font-weight: 700;
-  line-height: 1.6;
+  margin: 0 0 1rem 0;
+  color: #000;
 }
 
-.benefit p {
+.featureDescription {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #444;
   margin: 0;
-  font-size: 1.0625rem;
-  line-height: 1.6;
+}
+
+.leadershipList {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e5e5;
+}
+
+.leadershipList p {
+  margin: 0.5rem 0;
+  font-size: 0.9375rem;
   color: #333;
 }
 
-.plansSection {
-  padding: 5rem 1rem;
-  background-color: #f9f9f9;
+/* Pricing Section */
+.pricingSection {
+  padding: 5rem 2rem;
+  background: linear-gradient(135deg, #1a1a1a 0%, #000 100%);
+  color: #fff;
+}
+
+.pricingSectionTitle {
+  font-size: 2.25rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 1rem 0;
+  color: #fff;
+}
+
+.pricingSubtitle {
+  font-size: 1.125rem;
+  color: #ccc;
+  text-align: center;
+  margin: 0 0 3rem 0;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.pricingCard {
+  background: #fff;
+  border-radius: 16px;
+  padding: 3rem;
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.pricingCardTitle {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #000;
+  margin: 0 0 0.5rem 0;
+}
+
+.pricingCardSubtitle {
+  font-size: 1rem;
+  color: #666;
+  margin: 0 0 2rem 0;
 }
 
 .plansGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 3rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.plan {
-  background-color: #fff;
-  border: 3px solid #e5e5e5;
-  border-radius: 8px;
-  padding: 2.5rem;
-  position: relative;
-}
-
-.recommended {
-  border-color: #d32f2f;
-}
-
-.planBadge {
-  background-color: #000;
-  color: #fff;
-  padding: 0.5rem 1.5rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  display: inline-block;
-  margin-bottom: 1.5rem;
-}
-
-.recommendedBadge {
-  background-color: #d32f2f;
-}
-
-.planName {
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin: 0 0 1rem 0;
-}
-
-.planDescription {
-  font-size: 0.9375rem;
-  line-height: 1.6;
-  color: #3a3a3a;
+  gap: 1.5rem;
   margin-bottom: 2rem;
 }
 
-.planFeatures {
-  margin-bottom: 2.5rem;
-  border-top: 2px solid #e5e5e5;
-  padding-top: 2rem;
+.planCard {
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  position: relative;
 }
 
-.feature {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid #f0f0f0;
+.planCardFeatured {
+  border-color: #3B82F6;
+  background: #EFF6FF;
 }
 
-.feature:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
-}
-
-.value {
+.bestValue {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #3B82F6;
+  color: #fff;
+  padding: 0.25rem 1rem;
+  border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #d32f2f;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 0.5rem;
 }
 
-.feature div {
-  font-size: 0.9375rem;
-  line-height: 1.5;
-  color: #333;
+.planName {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #666;
+  margin: 0 0 0.5rem 0;
 }
 
-.pricing {
-  text-align: center;
-  border-top: 2px solid #e5e5e5;
-  padding-top: 2rem;
+.planPrice {
+  margin: 0 0 0.5rem 0;
 }
 
-.totalValue {
-  font-size: 0.875rem;
-  color: #4a4a4a;
-  margin-bottom: 1rem;
-}
-
-.price {
-  font-size: 4rem;
-  font-weight: 900;
-  color: #000;
-  line-height: 1;
-  margin-bottom: 0.5rem;
-}
-
-.price::before {
-  content: '$';
-  font-size: 2rem;
-  vertical-align: super;
-}
-
-.billed {
-  font-size: 0.875rem;
-  color: #4a4a4a;
-  margin-bottom: 1.5rem;
-}
-
-.joinButton {
-  display: block;
-  width: 100%;
-  padding: 1rem 2rem;
-  background-color: #000;
-  color: #fff;
-  text-decoration: none;
+.amount {
+  font-size: 3rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-  margin-bottom: 1rem;
+  color: #000;
 }
 
-.joinButton:hover {
-  background-color: #333;
+.amountBlue {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #3B82F6;
 }
 
-.joinButtonPrimary {
-  background-color: #d32f2f;
+.period {
+  font-size: 1.25rem;
+  color: #666;
 }
 
-.joinButtonPrimary:hover {
-  background-color: #b71c1c;
-}
-
-.monthly {
+.planNote {
   font-size: 0.875rem;
-  color: #4a4a4a;
+  color: #888;
+  margin: 0 0 1.5rem 0;
 }
 
-.monthly a {
-  color: #d32f2f;
-  text-decoration: underline;
+.planButtonDark {
+  display: block;
+  background: #374151;
+  color: #fff;
+  padding: 1rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.2s;
 }
 
+.planButtonDark:hover {
+  background: #1F2937;
+}
+
+.planButtonBlue {
+  display: block;
+  background: #3B82F6;
+  color: #fff;
+  padding: 1rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.planButtonBlue:hover {
+  background: #2563EB;
+}
+
+.nextChapter {
+  font-size: 1rem;
+  color: #666;
+  margin: 0;
+}
+
+/* Why Section */
 .whySection {
-  padding: 5rem 1rem;
-  text-align: center;
-  background-color: #000;
-  color: #fff;
+  padding: 5rem 2rem;
+  background: #fff;
 }
 
-.whySection .sectionTitle {
-  color: #fff;
+.whyGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.whyImage img {
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+.whyContent {
+  padding: 2rem 0;
+}
+
+.whyTitle {
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin: 0 0 1.5rem 0;
+  color: #000;
 }
 
 .whyText {
-  max-width: 800px;
-  margin: 0 auto 1.5rem;
   font-size: 1.125rem;
   line-height: 1.7;
-  color: #ccc;
+  color: #444;
+  margin: 0 0 1.5rem 0;
 }
 
-.whyText:last-child {
-  margin-bottom: 0;
+/* Footer Tagline */
+.footerTagline {
+  padding: 5rem 2rem;
+  background: #f5f5f5;
+  text-align: center;
 }
 
+.brandTitle {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #000;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -1px;
+}
+
+.brandTitle::after {
+  content: '+';
+  color: #3B82F6;
+}
+
+.brandSubtitle {
+  font-size: 1.25rem;
+  color: #666;
+  margin: 0;
+}
+
+/* Responsive */
 @media (max-width: 992px) {
-  .plansGrid {
+  .featuresGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .featureCard:nth-child(5) {
+    grid-column: span 2;
+  }
+
+  .whyGrid {
     grid-template-columns: 1fr;
     gap: 2rem;
+  }
+
+  .heroTitle {
+    font-size: 2.25rem;
   }
 }
 
 @media (max-width: 768px) {
+  .featuresGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .featureCard:nth-child(4),
+  .featureCard:nth-child(5) {
+    grid-column: span 1;
+  }
+
+  .plansGrid {
+    grid-template-columns: 1fr;
+  }
+
   .heroTitle {
-    font-size: 2.5rem;
-  }
-
-  .heroSubtitle {
-    font-size: 1.125rem;
-  }
-
-  .section {
-    padding: 3rem 1rem;
-  }
-
-  .sectionTitle {
     font-size: 2rem;
   }
 
-  .plan {
-    padding: 2rem 1.5rem;
+  .hero {
+    padding: 3rem 1rem;
   }
 
-  .price {
-    font-size: 3rem;
+  .pricingCard {
+    padding: 2rem 1rem;
+  }
+
+  .sectionTitle,
+  .pricingSectionTitle {
+    font-size: 1.75rem;
+  }
+
+  .whyTitle {
+    font-size: 1.75rem;
+  }
+
+  .brandTitle {
+    font-size: 2.25rem;
   }
 }
 
 @media (max-width: 480px) {
   .heroTitle {
-    font-size: 2rem;
+    font-size: 1.75rem;
   }
 
-  .plan {
-    padding: 1.5rem 1rem;
-  }
-
-  .price {
+  .amount,
+  .amountBlue {
     font-size: 2.5rem;
   }
 }
