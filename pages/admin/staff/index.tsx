@@ -230,15 +230,22 @@ export default function StaffManagement() {
                     </span>
                   </td>
                   <td>
-                    <span
-                      className={styles.statusBadge}
-                      style={{
-                        background: member.emailVerified ? '#d1fae5' : '#fee',
-                        color: member.emailVerified ? '#065f46' : '#991b1b',
-                      }}
-                    >
-                      {member.emailVerified ? 'Active' : 'Inactive'}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span
+                        className={styles.statusBadge}
+                        style={{
+                          background: member.emailVerified ? '#d1fae5' : '#fee',
+                          color: member.emailVerified ? '#065f46' : '#991b1b',
+                        }}
+                      >
+                        {member.emailVerified ? 'Active' : 'Inactive'}
+                      </span>
+                      {member.lastLoginAt && (
+                        <span style={{ color: '#10b981', fontSize: '1.25rem' }} title={`Last login: ${formatDate(member.lastLoginAt)}`}>
+                          ✓
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td>{member.postsCount || 0}</td>
                   <td>{formatDate(member.createdAt)}</td>

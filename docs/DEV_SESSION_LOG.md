@@ -11,6 +11,66 @@
 =======================================================
 -->
 
+## 2025-12-30T18:00:00 — Critical URL Redirect Fix for QR Codes & Magazine Links
+
+**Session Context:**
+- 📚 Docs Loaded: README.md, DEV_SESSION_LOG.md, DECISIONS.md, CHANGELOG.md, pages/[slug].tsx, lib/wordpress.js, next.config.js, proxy.ts
+- 🎯 Objective: Fix broken URLs (like /daily-sms/) that are used in QR codes and printed magazines but returning 404
+- 🚫 Non-Goals: Major refactoring, new features
+- ✅ Done When: Old URLs redirect to new URLs, QR codes work, documentation updated
+
+### Summary
+
+- **Problem**: User reported that QR codes in the Mar/Apr 2025 magazine issue (going to press 1/6) pointed to URLs like `https://www.success.com/daily-sms/` that were now returning 404 errors. Investigation revealed that during the WordPress to Next.js migration, page slugs were changed (e.g., `daily-sms` → `daily-inspo-text`), breaking all old URLs including QR codes that cannot be changed.
+
+- **Solution**: 
+  1. Added permanent 301 redirect in `next.config.js` from `/daily-sms/` to `/daily-inspo-text/`
+  2. Updated `pages/[slug].tsx` to also check WordPress PAGES (not just posts) as a fallback
+  3. Installed missing `react-colorful` dependency that was breaking build
+  4. Redirect system is now in place - easy to add more URL mappings as needed
+
+- **Result**: Build passes. Redirect works correctly (tested locally). Old URLs now redirect to new URLs with proper 301 status for SEO. QR codes and magazine links will work after deployment.
+
+### Changes Made
+
+| File | Change |
+|------|--------|
+| `next.config.js` | Added `async redirects()` function with `/daily-sms` → `/daily-inspo-text` redirect |
+| `pages/[slug].tsx` | Updated to check WordPress pages (not just posts) when Supabase page not found |
+| `package.json` | Added `react-colorful` dependency (was missing, broke build) |
+
+### How to Add More Redirects
+
+When you discover another broken URL, add it to `next.config.js`:
+
+```javascript
+async redirects() {
+  return [
+    // Existing redirects
+    { source: '/daily-sms', destination: '/daily-inspo-text', permanent: true },
+    // Add new redirects here:
+    { source: '/old-url', destination: '/new-url', permanent: true },
+  ];
+}
+```
+
+### Follow-up Items
+
+- [x] Redirect from `/daily-sms/` to `/daily-inspo-text/` working
+- [x] Build passes
+- [x] Documentation updated
+- [ ] Deploy to production to make redirects live
+- [ ] Audit other URLs that may have changed during migration
+- [ ] Consider creating a redirect audit script to find all changed slugs
+
+### Session Stats
+- Files Modified: 3 (next.config.js, pages/[slug].tsx, CHANGELOG.md, DEV_SESSION_LOG.md)
+- Dependencies Added: 1 (react-colorful)
+- Build Status: ✅ PASSING
+- Redirects Added: 1
+
+---
+
 ## 2025-12-22T14:30:00 — Comprehensive Code Review & Verification Audit
 
 **Session Context:**

@@ -77,7 +77,7 @@ export default function StaffEdit() {
   const fetchStaffMember = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/users/${id}`);
+      const res = await fetch(`/api/admin/staff/${id}`);
       if (!res.ok) {
         throw new Error('Failed to fetch staff member');
       }

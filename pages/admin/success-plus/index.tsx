@@ -133,19 +133,19 @@ export default function SuccessPlusDashboard() {
               </div>
             </Link>
 
-            <Link href="/admin/success-plus/content" className={styles.actionCard}>
-              <div className={styles.actionIcon}>🔒</div>
-              <div className={styles.actionTitle}>Content Access</div>
+            <Link href="/admin/content-viewer?filter=premium" className={styles.actionCard}>
+              <div className={styles.actionIcon}>💎</div>
+              <div className={styles.actionTitle}>Premium Content</div>
               <div className={styles.actionDescription}>
-                Manage gated content and drip schedules
+                Manage articles and resources for SUCCESS+ members
               </div>
             </Link>
 
-            <Link href="/admin/crm/campaigns" className={styles.actionCard}>
+            <Link href="/admin/success-plus/newsletters" className={styles.actionCard}>
               <div className={styles.actionIcon}>📧</div>
-              <div className={styles.actionTitle}>Communications</div>
+              <div className={styles.actionTitle}>Newsletters</div>
               <div className={styles.actionDescription}>
-                Send emails and manage templates
+                Create and send newsletters to members
               </div>
             </Link>
 
@@ -162,6 +162,87 @@ export default function SuccessPlusDashboard() {
               <div className={styles.actionTitle}>Billing</div>
               <div className={styles.actionDescription}>
                 Manage payments and subscriptions
+              </div>
+            </Link>
+
+            <Link href="/admin/success-plus/manage-subscriptions" className={styles.actionCard}>
+              <div className={styles.actionIcon}>⚙️</div>
+              <div className={styles.actionTitle}>Manage Subscriptions</div>
+              <div className={styles.actionDescription}>
+                Update member tiers and renewal dates
+              </div>
+            </Link>
+          </div>
+        </div>
+
+        {/* Content Management */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Content Management</h2>
+          <p className={styles.sectionDescription}>
+            Manage SUCCESS+ content, courses, events, and member resources
+          </p>
+          <div className={styles.actionsGrid}>
+            <Link href="/admin/success-plus/courses" className={styles.actionCard}>
+              <div className={styles.actionIcon}>🎓</div>
+              <div className={styles.actionTitle}>Courses Manager</div>
+              <div className={styles.actionDescription}>
+                Add and manage courses, lessons, and modules
+              </div>
+            </Link>
+
+            <Link href="/admin/resources" className={styles.actionCard}>
+              <div className={styles.actionIcon}>📚</div>
+              <div className={styles.actionTitle}>Resource Library</div>
+              <div className={styles.actionDescription}>
+                Upload PDFs, docs, and manage downloadable resources
+              </div>
+            </Link>
+
+            <Link href="/admin/success-plus/events" className={styles.actionCard}>
+              <div className={styles.actionIcon}>📅</div>
+              <div className={styles.actionTitle}>Events Manager</div>
+              <div className={styles.actionDescription}>
+                Create webinars, workshops, and member events
+              </div>
+            </Link>
+
+            <Link href="/admin/success-plus/shop" className={styles.actionCard}>
+              <div className={styles.actionIcon}>🛍️</div>
+              <div className={styles.actionTitle}>Shop Manager</div>
+              <div className={styles.actionDescription}>
+                Manage products, pricing, and inventory
+              </div>
+            </Link>
+
+            <Link href="/admin/success-plus/help" className={styles.actionCard}>
+              <div className={styles.actionIcon}>❓</div>
+              <div className={styles.actionTitle}>Help Center</div>
+              <div className={styles.actionDescription}>
+                Manage FAQs, guides, and support articles
+              </div>
+            </Link>
+
+            <Link href="/admin/success-plus/community" className={styles.actionCard}>
+              <div className={styles.actionIcon}>👥</div>
+              <div className={styles.actionTitle}>Community Manager</div>
+              <div className={styles.actionDescription}>
+                Moderate discussions and manage forums
+              </div>
+            </Link>
+
+            <Link href="/dashboard/magazines" className={styles.actionCard}>
+              <div className={styles.actionIcon}>📖</div>
+              <div className={styles.actionTitle}>Magazine Issues</div>
+              <div className={styles.actionDescription}>
+                Manage digital magazine content
+              </div>
+            </Link>
+
+            <Link href="/dashboard" className={styles.actionCard}>
+              <div className={styles.actionIcon}>👁️</div>
+              <div className={styles.actionTitle}>Preview Member View</div>
+              <div className={styles.actionDescription}>
+                See the member dashboard experience
               </div>
             </Link>
           </div>

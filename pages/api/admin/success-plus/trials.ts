@@ -1,8 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getSession } from 'next-auth/react';
-import { Department } from '@/lib/types';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../../auth/[...nextauth]';
 import { supabaseAdmin } from '@/lib/supabase';
-import { hasDepartmentAccess } from '@/lib/departmentAuth';
 
 export default async function handler(
   req: NextApiRequest,
@@ -13,14 +12,14 @@ export default async function handler(
   }
 
   try {
-    const session = await getSession({ req }) as any;
+    const session = await getServerSession(req, res, authOptions);
 
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Check department access
-    if (!hasDepartmentAccess(session.user.role, session.user.primaryDepartment, Department.SUCCESS_PLUS)) {
+    // Check admin access
+    if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -30,15 +29,12 @@ export default async function handler(
     // Get all trial users from members table
     const { data: trialMembers, error: membersError } = await supabase
       .from('members')
-      .select(`
-        *,
-        subscriptions!inner(*)
-      `)
+      .select('*')
       .not('trial_ends_at', 'is', null)
-      .eq('subscriptions.tier', 'SUCCESS_PLUS_TRIAL')
       .order('trial_ends_at', { ascending: true });
 
     if (membersError) {
+      console.error('Error fetching trial members:', membersError);
       throw membersError;
     }
 
@@ -102,6 +98,10 @@ export default async function handler(
     return res.status(200).json(stats);
 
   } catch (error) {
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error('Trials API error:', error);
+    return res.status(500).json({
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }

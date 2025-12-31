@@ -30,8 +30,11 @@ export default function AccountPage() {
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login?redirect=/success-plus/account');
+    } else if (session?.user?.email?.endsWith('@success.com')) {
+      // SUCCESS.com staff have full access to SUCCESS+ dashboard
+      return;
     }
-  }, [status, router]);
+  }, [status, router, session]);
 
   useEffect(() => {
     if (session) {
@@ -102,6 +105,7 @@ export default function AccountPage() {
 
   const hasActiveSubscription = subscription && subscription.status === 'ACTIVE';
   const isOnTrial = trialStatus?.isTrialActive;
+  const isStaff = session?.user?.email?.endsWith('@success.com');
 
   return (
     <>
@@ -115,6 +119,23 @@ export default function AccountPage() {
           <h1>My Account</h1>
           <p>Manage your SUCCESS+ subscription and billing</p>
         </div>
+
+        {/* Staff Access Badge */}
+        {isStaff && (
+          <div className={styles.subscriptionCard} style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+            <div className={styles.subscriptionHeader}>
+              <div>
+                <h2>SUCCESS.com Staff Access</h2>
+                <span className={styles.statusBadge} style={{ background: 'rgba(255, 255, 255, 0.3)', color: 'white' }}>
+                  FULL ACCESS
+                </span>
+              </div>
+            </div>
+            <div className={styles.subscriptionDetails} style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+              <p>As a SUCCESS.com staff member, you have full access to all SUCCESS+ features and content.</p>
+            </div>
+          </div>
+        )}
 
         {/* Trial Status */}
         {isOnTrial && !hasActiveSubscription && (

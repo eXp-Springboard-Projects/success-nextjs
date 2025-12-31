@@ -66,31 +66,66 @@ export default function MemberDashboard() {
               </button>
             </Link>
 
-            <Link href="/dashboard/resources">
-              <button className={router.pathname === '/dashboard/resources' ? styles.active : ''}>
-                <span className={styles.icon}>📚</span>
-                Resources
+            <Link href="/dashboard/disc-profile">
+              <button className={router.pathname === '/dashboard/disc-profile' ? styles.active : ''}>
+                <span className={styles.icon}>🎯</span>
+                My DISC Profile
               </button>
             </Link>
 
-            <a href="https://labs.success.com/" target="_blank" rel="noopener noreferrer">
-              <button>
-                <span className={styles.icon}>🔬</span>
-                SUCCESS Labs
+            <Link href="/dashboard/resources">
+              <button className={router.pathname === '/dashboard/resources' ? styles.active : ''}>
+                <span className={styles.icon}>📚</span>
+                Resource Library
               </button>
-            </a>
+            </Link>
+
+            <Link href="/dashboard/community">
+              <button className={router.pathname === '/dashboard/community' ? styles.active : ''}>
+                <span className={styles.icon}>👥</span>
+                Community
+              </button>
+            </Link>
 
             <Link href="/dashboard/events">
               <button className={router.pathname === '/dashboard/events' ? styles.active : ''}>
                 <span className={styles.icon}>📅</span>
-                Events
+                Events Calendar
               </button>
             </Link>
 
             <Link href="/dashboard/magazines">
               <button className={router.pathname === '/dashboard/magazines' ? styles.active : ''}>
                 <span className={styles.icon}>📖</span>
-                Magazines
+                Magazine
+              </button>
+            </Link>
+
+            <Link href="/dashboard/podcasts">
+              <button className={router.pathname === '/dashboard/podcasts' ? styles.active : ''}>
+                <span className={styles.icon}>🎙️</span>
+                Podcast
+              </button>
+            </Link>
+
+            <Link href="/dashboard/shop">
+              <button className={router.pathname === '/dashboard/shop' ? styles.active : ''}>
+                <span className={styles.icon}>🛍️</span>
+                Shop
+              </button>
+            </Link>
+
+            <Link href="/dashboard/help">
+              <button className={router.pathname === '/dashboard/help' ? styles.active : ''}>
+                <span className={styles.icon}>❓</span>
+                Help Center
+              </button>
+            </Link>
+
+            <Link href="/dashboard/billing">
+              <button className={router.pathname === '/dashboard/billing' ? styles.active : ''}>
+                <span className={styles.icon}>💳</span>
+                Billing & Orders
               </button>
             </Link>
 

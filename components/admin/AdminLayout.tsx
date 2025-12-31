@@ -31,7 +31,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                path.includes('/admin/media') ||
                path.includes('/admin/comments')) {
       setCurrentDept(Department.EDITORIAL);
-    } else if (path.includes('/admin/success-plus')) {
+    } else if (path.includes('/admin/success-plus') ||
+               path.includes('/admin/resources')) {
       setCurrentDept(Department.SUCCESS_PLUS);
     } else if (path.includes('/admin/dev') || path.includes('/admin/devops')) {
       setCurrentDept(Department.DEV);

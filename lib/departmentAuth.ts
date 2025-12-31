@@ -1,5 +1,6 @@
 import { GetServerSidePropsContext, GetServerSidePropsResult } from 'next';
-import { getSession } from 'next-auth/react';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { Department, UserRole } from '@/lib/types';
 
 export interface DepartmentSession {
@@ -64,7 +65,7 @@ export function requireDepartmentAuth(
   return async (
     context: GetServerSidePropsContext
   ): Promise<GetServerSidePropsResult<any>> => {
-    const session = (await getSession(context)) as DepartmentSession | null;
+    const session = (await getServerSession(context.req, context.res, authOptions)) as DepartmentSession | null;
 
     // Not logged in
     if (!session || !session.user) {
@@ -92,7 +93,11 @@ export function requireDepartmentAuth(
     const serializableSession = {
       ...session,
       user: {
-        ...session.user,
+        id: session.user.id,
+        email: session.user.email,
+        name: session.user.name,
+        role: session.user.role,
+        primaryDepartment: session.user.primaryDepartment || null,
       },
     };
 

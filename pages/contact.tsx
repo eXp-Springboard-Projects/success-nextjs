@@ -100,7 +100,8 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h3 className={styles.detailTitle}>Phone</h3>
-                      <p className={styles.detailText}>1-800-SUCCESS</p>
+                      <p className={styles.detailText}>866-782-2377</p>
+                      <p className={styles.detailText} style={{ fontSize: '0.9em', opacity: 0.8 }}>1-866-SUCCESS</p>
                     </div>
                   </div>
 
@@ -114,8 +115,9 @@ export default function ContactPage() {
                     <div>
                       <h3 className={styles.detailTitle}>Address</h3>
                       <p className={styles.detailText}>
-                        SUCCESS Enterprises<br />
-                        Dallas, TX 75001
+                        SUCCESS Enterprises LLC<br />
+                        5473 Blair Rd., Suite 100, PMB 30053<br />
+                        Dallas, TX 75231
                       </p>
                     </div>
                   </div>

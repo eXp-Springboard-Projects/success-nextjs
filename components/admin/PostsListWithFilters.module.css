@@ -318,6 +318,13 @@
   color: #9f1239;
 }
 
+.status.archived,
+.status.ARCHIVED {
+  background: #fef3c7;
+  color: #d97706;
+  border: 1px solid #fbbf24;
+}
+
 /* Loading State */
 .loading {
   display: flex;

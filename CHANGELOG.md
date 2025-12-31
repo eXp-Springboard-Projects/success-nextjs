@@ -14,6 +14,23 @@ Based on [Keep a Changelog](https://keepachangelog.com/) • Uses [ISO 8601](htt
 =======================================================
 -->
 
+### [Fixed] - 2025-12-30T18:00:00 - Critical URL Redirect Fix for QR Codes & Magazine Links
+
+**Fixed broken URLs that were changed during WordPress migration (QR codes in magazines)**
+
+- **Why**: QR codes printed in magazines (including Mar/Apr 2025 issue going to press 1/6) and marketing materials pointed to old URLs like `/daily-sms/` that no longer worked because the slugs were changed during migration. This was causing 404 errors for users scanning QR codes.
+- **What**: 
+  - Added permanent 301 redirects in `next.config.js` to redirect old URLs to new ones
+  - `/daily-sms/` → `/daily-inspo-text/` (Daily SMS signup - Mar/Apr issue)
+  - `/yourenotatree/` → Amazon product page (Jim Rohn children's book)
+  - `/jan-feb-house-ad-jim-rohn-children-book/` → Amazon product page
+  - Updated `pages/[slug].tsx` to also check WordPress pages (not just posts) for better fallback
+  - Redirect system is now in place for adding more URL mappings as needed
+- **Files**: `next.config.js`, `pages/[slug].tsx`
+- **Impact**: QR codes and magazine links will now work correctly. Old URLs redirect to new ones with proper SEO signals.
+
+---
+
 ### [Fixed] - 2025-12-22T10:00:00 - Critical Admin Login & Build Fix
 
 **Fixed admin authentication and build failures**

@@ -9,6 +9,63 @@ const nextConfig = {
     // TypeScript validation enabled - all errors fixed
     ignoreBuildErrors: false,
   },
+
+  // URL Redirects for old WordPress URLs that changed during migration
+  // CRITICAL: These redirects preserve QR codes and printed magazine URLs
+  async redirects() {
+    return [
+      // ============================================
+      // MAGAZINE QR CODE REDIRECTS - DO NOT REMOVE
+      // ============================================
+      
+      // Daily SMS signup page - QR code in Mar/Apr 2025 magazine (going to press 1/6)
+      {
+        source: '/daily-sms',
+        destination: '/daily-inspo-text',
+        permanent: true,
+      },
+      {
+        source: '/daily-sms/',
+        destination: '/daily-inspo-text',
+        permanent: true,
+      },
+      
+      // Jim Rohn Children's Book - QR code in Jan/Feb 2025 magazine
+      // /yourenotatree → Amazon product page
+      {
+        source: '/yourenotatree',
+        destination: 'https://www.amazon.com/dp/1733831339',
+        permanent: true,
+      },
+      {
+        source: '/yourenotatree/',
+        destination: 'https://www.amazon.com/dp/1733831339',
+        permanent: true,
+      },
+      
+      // Jan/Feb house ad for Jim Rohn Children's Book
+      {
+        source: '/jan-feb-house-ad-jim-rohn-children-book',
+        destination: 'https://www.amazon.com/dp/1733831339',
+        permanent: true,
+      },
+      {
+        source: '/jan-feb-house-ad-jim-rohn-children-book/',
+        destination: 'https://www.amazon.com/dp/1733831339',
+        permanent: true,
+      },
+      
+      // ============================================
+      // ADD MORE REDIRECTS BELOW
+      // Format:
+      // {
+      //   source: '/old-url',
+      //   destination: '/new-url-or-external-url',
+      //   permanent: true,
+      // },
+      // ============================================
+    ];
+  },
   images: {
     remotePatterns: [
       {
@@ -38,6 +95,7 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
 
   // Disable Turbopack explicitly - it causes symlink errors with bcryptjs/jspdf
+  turbopack: {},
   webpack: (config) => {
     return config;
   },

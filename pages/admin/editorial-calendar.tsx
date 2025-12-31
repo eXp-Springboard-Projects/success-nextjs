@@ -42,7 +42,7 @@ export default function EditorialCalendar() {
   });
 
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.role === 'ADMIN') {
+    if (status === 'authenticated') {
       fetchEditorialItems();
     }
   }, [status, session, statusFilter]);

@@ -60,6 +60,11 @@ export default function MemberDetailPage() {
   const [notesText, setNotesText] = useState('');
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -120,6 +125,75 @@ export default function MemberDetailPage() {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const sendEmail = async () => {
+    if (!emailSubject || !emailBody) {
+      showToast('Please fill in subject and body', 'error');
+      return;
+    }
+
+    setSending(true);
+    try {
+      const response = await fetch(`/api/admin/members/${id}/email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject: emailSubject, body: emailBody }),
+      });
+
+      if (response.ok) {
+        showToast('Email sent successfully!', 'success');
+        setShowEmailModal(false);
+        setEmailSubject('');
+        setEmailBody('');
+      } else {
+        showToast('Failed to send email', 'error');
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+      showToast('Error sending email', 'error');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const addToCampaign = async (campaignType: string) => {
+    try {
+      const response = await fetch(`/api/admin/members/${id}/campaign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campaignType }),
+      });
+
+      if (response.ok) {
+        showToast(`Added to ${campaignType} campaign!`, 'success');
+        setShowCampaignModal(false);
+      } else {
+        showToast('Failed to add to campaign', 'error');
+      }
+    } catch (error) {
+      console.error('Error adding to campaign:', error);
+      showToast('Error adding to campaign', 'error');
+    }
+  };
+
+  const addToNewsletterList = async () => {
+    if (!confirm('Add this member to the newsletter list?')) return;
+
+    try {
+      const response = await fetch(`/api/admin/members/${id}/newsletter`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        showToast('Added to newsletter list!', 'success');
+      } else {
+        showToast('Failed to add to newsletter list', 'error');
+      }
+    } catch (error) {
+      console.error('Error adding to newsletter list:', error);
+      showToast('Error adding to newsletter list', 'error');
+    }
+  };
+
   if (status === 'loading' || loading) {
     return (
       <AdminLayout>
@@ -137,6 +211,24 @@ export default function MemberDetailPage() {
   }
 
   const hasActiveSubscription = member.subscription?.status === 'ACTIVE' || member.subscription?.status === 'active';
+
+  // Determine member type based on email domain
+  const getMemberType = (email: string): 'staff' | 'agent' | 'member' => {
+    const domain = email.split('@')[1]?.toLowerCase();
+    if (!domain) return 'member';
+
+    if (['exprealty.net', 'success.com', 'expworldholdings.com'].includes(domain)) {
+      return 'staff';
+    }
+
+    if (domain === 'exprealty.com') {
+      return 'agent';
+    }
+
+    return 'member';
+  };
+
+  const memberType = getMemberType(member.email);
 
   return (
     <AdminLayout>
@@ -159,6 +251,12 @@ export default function MemberDetailPage() {
                 <span className={styles.badgeActive}>Active Subscriber</span>
               ) : (
                 <span className={styles.badgeInactive}>Inactive</span>
+              )}
+              {memberType === 'staff' && (
+                <span className={styles.badgeStaff}>Staff</span>
+              )}
+              {memberType === 'agent' && (
+                <span className={styles.badgeAgent}>Agent</span>
               )}
               {member.priorityLevel && member.priorityLevel !== 'Standard' && (
                 <span className={styles.badgePriority}>{member.priorityLevel}</span>
@@ -290,92 +388,46 @@ export default function MemberDetailPage() {
 
           {/* Subscription Information */}
           <div className={styles.card}>
-            <h2>Subscription Details</h2>
-            {member.subscription ? (
-              <div className={styles.infoGrid}>
-                <div className={styles.infoItem}>
-                  <span className={styles.label}>Status</span>
-                  <span className={styles.value}>
-                    {(member.subscription.status === 'ACTIVE' || member.subscription.status === 'active') && (
-                      <span className={styles.statusActive}>Active</span>
-                    )}
-                    {member.subscription.status === 'PAST_DUE' && (
-                      <span className={styles.statusPastDue}>Past Due</span>
-                    )}
-                    {(member.subscription.status === 'CANCELED' || member.subscription.status === 'canceled') && (
-                      <span className={styles.statusCanceled}>Canceled</span>
-                    )}
-                    {member.subscription.status === 'INACTIVE' && (
-                      <span className={styles.statusInactive}>Inactive</span>
-                    )}
-                  </span>
-                </div>
-                {member.subscription.currentPeriodStart && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.label}>Current Period Start</span>
-                    <span className={styles.value}>
-                      {new Date(member.subscription.currentPeriodStart).toLocaleDateString(
-                        'en-US',
-                        {
-                          month: 'long',
-                          day: 'numeric',
-                          year: 'numeric',
-                        }
-                      )}
-                    </span>
-                  </div>
-                )}
-                {member.subscription.currentPeriodEnd && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.label}>Next Billing Date</span>
-                    <span className={styles.value}>
-                      {new Date(member.subscription.currentPeriodEnd).toLocaleDateString(
-                        'en-US',
-                        {
-                          month: 'long',
-                          day: 'numeric',
-                          year: 'numeric',
-                        }
-                      )}
-                    </span>
-                  </div>
-                )}
-                {member.subscription.cancelAtPeriodEnd && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.label}>Cancel at Period End</span>
-                    <span className={styles.valueWarning}>
-                      Yes - Will cancel on{' '}
-                      {member.subscription.currentPeriodEnd
-                        ? new Date(member.subscription.currentPeriodEnd).toLocaleDateString()
-                        : 'N/A'}
-                    </span>
-                  </div>
-                )}
-                {member.subscription.stripeSubscriptionId && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.label}>Stripe Subscription ID</span>
-                    <span className={styles.valueCode}>
-                      {member.subscription.stripeSubscriptionId}
-                    </span>
-                  </div>
-                )}
-                {member.subscription.stripeCustomerId && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.label}>Stripe Customer ID</span>
-                    <span className={styles.valueCode}>
-                      {member.subscription.stripeCustomerId}
-                    </span>
-                  </div>
-                )}
+            <h2>SUCCESS+ Subscription</h2>
+            <div className={styles.infoGrid}>
+              <div className={styles.infoItem}>
+                <span className={styles.label}>Membership Tier</span>
+                <span className={styles.value}>
+                  <span className={styles.badgePremium}>SUCCESS+ Insider</span>
+                </span>
               </div>
-            ) : (
-              <p className={styles.noSubscription}>
-                No active subscription found
-              </p>
-            )}
+              <div className={styles.infoItem}>
+                <span className={styles.label}>Status</span>
+                <span className={styles.value}>
+                  {hasActiveSubscription ? (
+                    <span className={styles.statusActive}>Active</span>
+                  ) : (
+                    <span className={styles.statusInactive}>Inactive</span>
+                  )}
+                </span>
+              </div>
+              <div className={styles.infoItem}>
+                <span className={styles.label}>Member Since</span>
+                <span className={styles.value}>
+                  {new Date(member.createdAt).toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </span>
+              </div>
+              <div className={styles.infoItem}>
+                <span className={styles.label}>Total Spent</span>
+                <span className={styles.value}>${member.totalSpent?.toFixed(2) || '0.00'}</span>
+              </div>
+              <div className={styles.infoItem}>
+                <span className={styles.label}>Lifetime Value</span>
+                <span className={styles.value}>${member.lifetimeValue?.toFixed(2) || '0.00'}</span>
+              </div>
+            </div>
 
             {member.subscription?.stripeCustomerId && (
-              <div className={styles.actions}>
+              <div className={styles.actions} style={{ marginTop: '1rem' }}>
                 <a
                   href={`https://dashboard.stripe.com/customers/${member.subscription.stripeCustomerId}`}
                   target="_blank"
@@ -454,12 +506,99 @@ export default function MemberDetailPage() {
             <Link href={`/admin/members`} className={styles.actionButton}>
               ← Back to List
             </Link>
+            <button onClick={() => setShowEmailModal(true)} className={styles.actionButton}>
+              📧 Send Email
+            </button>
+            <button onClick={() => setShowCampaignModal(true)} className={styles.actionButton}>
+              🎯 Add to Campaign
+            </button>
+            <button onClick={addToNewsletterList} className={styles.actionButton}>
+              📰 Add to Newsletter List
+            </button>
             <Link href={`/admin/subscriptions`} className={styles.actionButton}>
               Manage Subscriptions
             </Link>
           </div>
         </div>
       </div>
+
+      {/* Email Modal */}
+      {showEmailModal && (
+        <div className={styles.modal} onClick={() => setShowEmailModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>Send Email to {member.name}</h2>
+              <button className={styles.closeBtn} onClick={() => setShowEmailModal(false)}>×</button>
+            </div>
+            <div className={styles.modalBody}>
+              <div className={styles.formGroup}>
+                <label>Subject</label>
+                <input
+                  type="text"
+                  className={styles.input}
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  placeholder="Email subject..."
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Message</label>
+                <textarea
+                  className={styles.textarea}
+                  rows={10}
+                  value={emailBody}
+                  onChange={(e) => setEmailBody(e.target.value)}
+                  placeholder="Your message..."
+                />
+              </div>
+            </div>
+            <div className={styles.modalFooter}>
+              <button className={styles.cancelButton} onClick={() => setShowEmailModal(false)}>
+                Cancel
+              </button>
+              <button
+                className={styles.saveButton}
+                onClick={sendEmail}
+                disabled={sending}
+              >
+                {sending ? 'Sending...' : 'Send Email'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Campaign Modal */}
+      {showCampaignModal && (
+        <div className={styles.modal} onClick={() => setShowCampaignModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>Add to Drip Campaign</h2>
+              <button className={styles.closeBtn} onClick={() => setShowCampaignModal(false)}>×</button>
+            </div>
+            <div className={styles.modalBody}>
+              <div className={styles.campaignList}>
+                <div className={styles.campaignCard} onClick={() => addToCampaign('welcome')}>
+                  <h4>Welcome Series</h4>
+                  <p>5-email onboarding sequence for new members</p>
+                </div>
+                <div className={styles.campaignCard} onClick={() => addToCampaign('engagement')}>
+                  <h4>Engagement Booster</h4>
+                  <p>Re-engage inactive members</p>
+                </div>
+                <div className={styles.campaignCard} onClick={() => addToCampaign('upsell')}>
+                  <h4>Premium Upsell</h4>
+                  <p>Upgrade members to higher tiers</p>
+                </div>
+                <div className={styles.campaignCard} onClick={() => addToCampaign('retention')}>
+                  <h4>Retention Campaign</h4>
+                  <p>Keep members subscribed</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Notification */}
       {toast && (

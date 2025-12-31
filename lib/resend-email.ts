@@ -35,14 +35,24 @@ export async function sendMail(to: string, subject: string, html: string) {
     }
 
     const result = await client.emails.send({
-      from: process.env.RESEND_FROM_EMAIL!,
+      from: `SUCCESS Magazine <${process.env.RESEND_FROM_EMAIL!}>`,
       to,
       subject,
       html,
+      replyTo: 'noreply@success.com',
     });
+
+    console.log('[sendMail] Resend API response:', JSON.stringify(result));
+
+    // Resend returns { data: { id: '...' }, error: null } on success
+    // or { data: null, error: { ... } } on failure
+    if (result.error) {
+      return { success: false, error: JSON.stringify(result.error) };
+    }
 
     return { success: true, data: result.data };
   } catch (error: any) {
+    console.error('[sendMail] Exception:', error);
     return { success: false, error: error.message };
   }
 }

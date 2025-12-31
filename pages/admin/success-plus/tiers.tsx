@@ -16,8 +16,8 @@ interface Tier {
 export default function TiersManagement() {
   const tiers: Tier[] = [
     {
-      id: 'collective',
-      name: 'SUCCESS+ Collective',
+      id: 'insider',
+      name: 'SUCCESS+ Insider',
       price: 7.99,
       interval: 'month',
       stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY || 'price_monthly',
@@ -27,11 +27,13 @@ export default function TiersManagement() {
         'Digital tools and resources',
         'Members-only webinars',
         'Community access',
+        'Physical SUCCESS Magazine subscription',
+        'Priority support',
       ],
     },
     {
-      id: 'collective-annual',
-      name: 'SUCCESS+ Collective (Annual)',
+      id: 'insider-annual',
+      name: 'SUCCESS+ Insider (Annual)',
       price: 79.99,
       interval: 'year',
       stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY || 'price_yearly',
@@ -41,21 +43,9 @@ export default function TiersManagement() {
         'Digital tools and resources',
         'Members-only webinars',
         'Community access',
-        'Save $15.89/year vs monthly',
-      ],
-    },
-    {
-      id: 'insider',
-      name: 'SUCCESS+ Insider',
-      price: 14.99,
-      interval: 'month',
-      stripePriceId: 'price_insider_monthly',
-      features: [
-        'Everything in Collective, plus:',
         'Physical SUCCESS Magazine subscription',
         'Priority support',
-        'Exclusive insider content',
-        'Early access to new features',
+        'Save $15.89/year vs monthly',
       ],
     },
   ];

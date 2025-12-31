@@ -40,11 +40,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (req.method === 'GET') {
-      // Get all magazines with user's reading progress
+      // Get all published magazines with user's reading progress
       const { data: magazines, error: magazinesError } = await supabase
         .from('magazines')
         .select('*')
-        .order('createdAt', { ascending: false });
+        .eq('status', 'PUBLISHED')
+        .order('publishedText', { ascending: false });
 
       if (magazinesError) {
         throw magazinesError;

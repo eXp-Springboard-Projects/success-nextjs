@@ -59,8 +59,8 @@ export default function SuccessPlusSubscribers() {
             member.membershipTier !== 'free'
         );
 
-        const activeCount = successPlusMembers.filter((m: Subscriber) => m.membershipStatus === 'ACTIVE').length;
-        const canceledCount = successPlusMembers.filter((m: Subscriber) => m.membershipStatus === 'CANCELED').length;
+        const activeCount = successPlusMembers.filter((m: Subscriber) => m.membershipStatus === 'Active').length;
+        const canceledCount = successPlusMembers.filter((m: Subscriber) => m.membershipStatus === 'Cancelled').length;
         const trialCount = successPlusMembers.filter((m: Subscriber) => m.trialEndsAt && new Date(m.trialEndsAt) > new Date()).length;
 
         setStats({
@@ -82,9 +82,9 @@ export default function SuccessPlusSubscribers() {
     // Apply status filter
     let matchesFilter = true;
     if (filter === 'active') {
-      matchesFilter = subscriber.membershipStatus === 'ACTIVE';
+      matchesFilter = subscriber.membershipStatus === 'Active';
     } else if (filter === 'canceled') {
-      matchesFilter = subscriber.membershipStatus === 'CANCELED';
+      matchesFilter = subscriber.membershipStatus === 'Cancelled';
     } else if (filter === 'trial') {
       matchesFilter = !!(subscriber.trialEndsAt && new Date(subscriber.trialEndsAt) > new Date());
     }
@@ -100,12 +100,14 @@ export default function SuccessPlusSubscribers() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'ACTIVE':
+      case 'Active':
         return <span className={styles.statusPublished}>Active</span>;
-      case 'CANCELED':
+      case 'Cancelled':
         return <span className={styles.statusDraft}>Canceled</span>;
-      case 'PAST_DUE':
-        return <span className={styles.statusPending}>Past Due</span>;
+      case 'Inactive':
+        return <span className={styles.statusPending}>Inactive</span>;
+      case 'Suspended':
+        return <span className={styles.statusPending}>Suspended</span>;
       default:
         return <span className={styles.statusDraft}>{status}</span>;
     }

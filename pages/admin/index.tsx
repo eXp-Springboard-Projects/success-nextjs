@@ -47,13 +47,12 @@ export default function AdminDashboard() {
   }
 
   const quickActions: Array<{ label: string; href: string; icon: LucideIcon; color: string }> = [
-    { label: 'New Post', href: '/admin/posts/new', icon: Pencil, color: '#667eea' },
-    { label: 'New Page', href: '/admin/pages/new', icon: FileText, color: '#764ba2' },
+    { label: 'View Content', href: '/admin/content-viewer', icon: FileText, color: '#667eea' },
+    { label: 'New Post', href: '/admin/posts/new', icon: Pencil, color: '#764ba2' },
     { label: 'Editorial Calendar', href: '/admin/editorial-calendar', icon: Calendar, color: '#8b5cf6' },
+    { label: 'SUCCESS+', href: '/success-plus/account', icon: Star, color: '#c41e3a' },
     { label: 'SEO Manager', href: '/admin/seo', icon: Target, color: '#10b981' },
-    { label: 'SUCCESS+ Members', href: '/admin/members', icon: Star, color: '#d32f2f' },
-    { label: 'Media Library', href: '/admin/media', icon: Image, color: '#f093fb' },
-    { label: 'Analytics', href: '/admin/analytics', icon: TrendingUp, color: '#4facfe' },
+    { label: 'Site Analytics', href: '/admin/analytics', icon: TrendingUp, color: '#4facfe' },
     { label: 'Site Monitor', href: '/admin/site-monitor', icon: Search, color: '#ff6b6b' },
   ];
 
@@ -100,7 +99,7 @@ export default function AdminDashboard() {
           <div className={styles.recentSection}>
             <div className={styles.sectionHeader}>
               <h2>Recent Posts</h2>
-              <Link href="/admin/posts" className={styles.viewAllLink}>View All</Link>
+              <Link href="/admin/content-viewer" className={styles.viewAllLink}>View All</Link>
             </div>
             {recentPosts.length > 0 ? (
               <div className={styles.recentList}>

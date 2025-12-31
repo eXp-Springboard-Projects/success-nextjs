@@ -255,7 +255,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       salePrice: 97.00,
       image: 'https://mysuccessplus.com/wp-content/uploads/nc/s-3rvn7wzn3w/product_images/e/848/jr_book-bundle__68973.jpg',
       category: 'Bundles',
-      link: 'https://mysuccessplus.com/shop/',
+      link: '/store',
       featured: true
     },
 
@@ -267,7 +267,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://mysuccessplus.com/wp-content/uploads/nc/s-3rvn7wzn3w/product_images/i/808/jr010-002__12948.jpg',
       category: 'Books',
       subcategory: 'Jim Rohn',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'book-2',
@@ -276,7 +276,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://mysuccessplus.com/wp-content/uploads/nc/s-3rvn7wzn3w/product_images/n/765/jr010-008_1_1__09293.jpg',
       category: 'Books',
       subcategory: 'Jim Rohn',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'book-3',
@@ -285,7 +285,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://mysuccessplus.com/wp-content/uploads/nc/s-3rvn7wzn3w/product_images/f/057/jr010-010_1__00354.jpg',
       category: 'Books',
       subcategory: 'Jim Rohn',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'book-4',
@@ -294,7 +294,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://mysuccessplus.com/wp-content/uploads/nc/s-3rvn7wzn3w/product_images/w/124/jr010-004__26100.jpg',
       category: 'Books',
       subcategory: 'Jim Rohn',
-      link: 'https://mysuccessplus.com/shop/',
+      link: '/store',
       featured: true
     },
     {
@@ -304,7 +304,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://mysuccessplus.com/wp-content/uploads/2024/07/jr010-007__74951-1.jpg',
       category: 'Books',
       subcategory: 'Jim Rohn',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'book-6',
@@ -313,7 +313,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://mysuccessplus.com/wp-content/uploads/2024/07/The_Art_of_Exceptinal_Living_MP3_product_image__39905-1.jpg',
       category: 'Books',
       subcategory: 'Jim Rohn',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'book-7',
@@ -322,7 +322,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://mysuccessplus.com/wp-content/uploads/nc/s-3rvn7wzn3w/product_images/z/244/jr-thetreasuryofquotes-lg__76474.jpg',
       category: 'Books',
       subcategory: 'Jim Rohn',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'book-8',
@@ -331,7 +331,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://mysuccessplus.com/wp-content/uploads/nc/s-3rvn7wzn3w/product_images/h/235/jr010-006__17735.jpg',
       category: 'Books',
       subcategory: 'Jim Rohn',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'book-9',
@@ -340,7 +340,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://mysuccessplus.com/wp-content/uploads/2024/07/sm24-04-july-aug-featured-1.jpg',
       category: 'Books',
       subcategory: 'Jim Rohn',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'book-10',
@@ -349,7 +349,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://mysuccessplus.com/wp-content/uploads/nc/s-3rvn7wzn3w/product_images/x/826/jr010-009_1__98084.jpg',
       category: 'Books',
       subcategory: 'Jim Rohn',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
 
     // COURSES
@@ -360,7 +360,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400&h=400&fit=crop',
       category: 'Courses',
       subcategory: 'Personal Development',
-      link: 'https://mysuccessplus.com/shop/',
+      link: '/store',
       featured: true
     },
     {
@@ -370,7 +370,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=400&fit=crop',
       category: 'Courses',
       subcategory: 'Leadership',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'course-3',
@@ -379,7 +379,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=400&fit=crop',
       category: 'Courses',
       subcategory: 'Personal Development',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'course-4',
@@ -388,7 +388,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://images.unsplash.com/photo-1501139083538-0139583c060f?w=400&h=400&fit=crop',
       category: 'Courses',
       subcategory: 'Productivity',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'course-5',
@@ -397,7 +397,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=400&h=400&fit=crop',
       category: 'Courses',
       subcategory: 'Personal Development',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'course-6',
@@ -406,7 +406,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://images.unsplash.com/photo-1560439513-74b037a25d84?w=400&h=400&fit=crop',
       category: 'Courses',
       subcategory: 'Leadership',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
 
     // MERCHANDISE
@@ -418,7 +418,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://mysuccessplus.com/wp-content/uploads/2024/07/S23_Journal_SUCCESS-STARTS-HERE__48992-1.png',
       category: 'Merchandise',
       subcategory: 'Journals & Planners',
-      link: 'https://mysuccessplus.com/shop/',
+      link: '/store',
       featured: true
     },
     {
@@ -428,7 +428,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://mysuccessplus.com/wp-content/uploads/nc/s-3rvn7wzn3w/product_images/z/364/JRohn_One_Year_Success_Planner_strapped__74510.png',
       category: 'Merchandise',
       subcategory: 'Journals & Planners',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'book-guides-1',
@@ -437,7 +437,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://mysuccessplus.com/wp-content/uploads/nc/s-3rvn7wzn3w/product_images/s/745/jr_complete-guide-set-3d__33414.jpg',
       category: 'Books',
       subcategory: 'Jim Rohn',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'merch-2',
@@ -446,7 +446,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=400&fit=crop',
       category: 'Merchandise',
       subcategory: 'Apparel',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'merch-3',
@@ -455,7 +455,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=400&h=400&fit=crop',
       category: 'Merchandise',
       subcategory: 'Drinkware',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'merch-4',
@@ -464,7 +464,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop',
       category: 'Merchandise',
       subcategory: 'Apparel',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'merch-5',
@@ -473,7 +473,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://images.unsplash.com/photo-1562157873-818bc0726f68?w=400&h=400&fit=crop',
       category: 'Merchandise',
       subcategory: 'Apparel',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'merch-6',
@@ -482,7 +482,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&h=400&fit=crop',
       category: 'Merchandise',
       subcategory: 'Apparel',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'merch-7',
@@ -491,7 +491,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://images.unsplash.com/photo-1517842645767-c639042777db?w=400&h=400&fit=crop',
       category: 'Merchandise',
       subcategory: 'Office Supplies',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'merch-8',
@@ -500,7 +500,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=400&fit=crop',
       category: 'Merchandise',
       subcategory: 'Drinkware',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'merch-9',
@@ -509,7 +509,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=400&h=400&fit=crop',
       category: 'Merchandise',
       subcategory: 'Bags & Accessories',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'merch-10',
@@ -518,7 +518,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       image: 'https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&h=400&fit=crop',
       category: 'Merchandise',
       subcategory: 'Office Supplies',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
 
     // MAGAZINES
@@ -528,7 +528,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       price: 9.99,
       image: 'https://mysuccessplus.com/wp-content/uploads/2024/10/SUCCESS-NovDec-2024-Eva-Longoria-Digital-Cover.jpg',
       category: 'Magazines',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'mag-2',
@@ -536,7 +536,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       price: 9.99,
       image: 'https://mysuccessplus.com/wp-content/uploads/2024/07/SM23_02_MARAPR_LEWIS_HOWES_NO_BARCODE_WEB_r1__33203-1.jpg',
       category: 'Magazines',
-      link: 'https://mysuccessplus.com/shop/',
+      link: '/store',
       featured: true
     },
     {
@@ -545,7 +545,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       price: 9.99,
       image: 'https://mysuccessplus.com/wp-content/uploads/2024/09/SUCCESS-SeptOct-2024-Shark-Tank-Digital-Cover.jpg',
       category: 'Magazines',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'mag-4',
@@ -553,7 +553,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       price: 9.99,
       image: 'https://mysuccessplus.com/wp-content/uploads/2024/07/sm24-04-july-aug-featured-1.jpg',
       category: 'Magazines',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'mag-5',
@@ -561,7 +561,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       price: 9.99,
       image: 'https://mysuccessplus.com/wp-content/uploads/2024/05/SUCCESS-MayJun-2024-Bethany-Hamilton-Digital-Cover.jpg',
       category: 'Magazines',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
     {
       id: 'mag-6',
@@ -569,7 +569,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       price: 9.99,
       image: 'https://mysuccessplus.com/wp-content/uploads/2024/03/SUCCESS-MarApr-2024-Emily-Calandrelli-Digital-Cover.jpg',
       category: 'Magazines',
-      link: 'https://mysuccessplus.com/shop/'
+      link: '/store'
     },
   ];
 

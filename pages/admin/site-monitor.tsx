@@ -24,6 +24,7 @@ interface SystemStatus {
   staticGeneration: HealthCheck;
   cdn: HealthCheck;
   ssl: HealthCheck;
+  wordpressAPI: HealthCheck;
 }
 
 export default function SiteMonitor() {
@@ -88,6 +89,11 @@ export default function SiteMonitor() {
             status: 'healthy',
             message: 'SSL certificate valid',
             lastChecked: new Date().toISOString()
+          },
+          wordpressAPI: {
+            status: 'healthy',
+            message: 'WordPress API responding',
+            lastChecked: new Date().toISOString()
           }
         });
       }
@@ -134,6 +140,44 @@ export default function SiteMonitor() {
       alert('Health check failed. Please try again.');
     } finally {
       setChecking(false);
+    }
+  };
+
+  const clearCache = async () => {
+    if (!confirm('Are you sure you want to clear all cached content? This may temporarily slow down page loads.')) {
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/admin/clear-cache', { method: 'POST' });
+      if (res.ok) {
+        alert('Cache cleared successfully!');
+      } else {
+        alert('Failed to clear cache. Please try again.');
+      }
+    } catch (error) {
+      alert('Error clearing cache. Please try again.');
+    }
+  };
+
+  const exportLogs = async () => {
+    try {
+      const res = await fetch('/api/admin/export-logs');
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `system-logs-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        alert('Failed to export logs. Please try again.');
+      }
+    } catch (error) {
+      alert('Error exporting logs. Please try again.');
     }
   };
 
@@ -345,6 +389,27 @@ export default function SiteMonitor() {
                   Last checked: {new Date(systemStatus.ssl.lastChecked).toLocaleTimeString()}
                 </span>
               </div>
+
+              <div className={styles.statusCard}>
+                <div className={styles.statusHeader}>
+                  <div className={styles.statusTitle}>
+                    <span className={styles.statusIcon}>
+                      {getStatusIcon(systemStatus.wordpressAPI.status)}
+                    </span>
+                    <h3>WordPress REST API</h3>
+                  </div>
+                  <span
+                    className={styles.statusBadge}
+                    style={{ background: getStatusColor(systemStatus.wordpressAPI.status) }}
+                  >
+                    {systemStatus.wordpressAPI.status}
+                  </span>
+                </div>
+                <p className={styles.statusMessage}>{systemStatus.wordpressAPI.message}</p>
+                <span className={styles.statusTime}>
+                  Last checked: {new Date(systemStatus.wordpressAPI.lastChecked).toLocaleTimeString()}
+                </span>
+              </div>
             </div>
           </div>
         )}
@@ -381,32 +446,32 @@ export default function SiteMonitor() {
         <div className={styles.actionsSection}>
           <h2>⚙️ Quick Actions</h2>
           <div className={styles.actionButtons}>
-            <button className={styles.actionButton}>
+            <button className={styles.actionButton} onClick={runHealthCheck} disabled={checking}>
               <span>🔄</span>
               <div>
-                <strong>Restart Services</strong>
-                <p>Restart application services</p>
+                <strong>Run Health Check</strong>
+                <p>Check all system components</p>
               </div>
             </button>
-            <button className={styles.actionButton}>
+            <button className={styles.actionButton} onClick={clearCache}>
               <span>🗑️</span>
               <div>
                 <strong>Clear Cache</strong>
                 <p>Clear all cached content</p>
               </div>
             </button>
-            <button className={styles.actionButton}>
+            <button className={styles.actionButton} onClick={exportLogs}>
               <span>📥</span>
               <div>
                 <strong>Export Logs</strong>
                 <p>Download system logs</p>
               </div>
             </button>
-            <button className={styles.actionButton}>
+            <button className={styles.actionButton} onClick={() => window.location.href = '/api/revalidate?secret=' + prompt('Enter revalidate secret:')}>
               <span>🔧</span>
               <div>
-                <strong>Run Maintenance</strong>
-                <p>Perform system maintenance</p>
+                <strong>Revalidate Pages</strong>
+                <p>Trigger ISR revalidation</p>
               </div>
             </button>
           </div>

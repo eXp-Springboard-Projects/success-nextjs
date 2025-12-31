@@ -38,7 +38,7 @@ export default function Bestsellers({ books }: BestsellersProps) {
 
             return (
               <div key={book.id} className={styles.bookCard}>
-                <a href={book.link} target="_blank" rel="noopener noreferrer" className={styles.bookLink}>
+                <a href="/store" className={styles.bookLink}>
                   <div className={styles.bookCover}>
                     {imageUrl ? (
                       <img src={imageUrl} alt={imageAlt} loading="lazy" />

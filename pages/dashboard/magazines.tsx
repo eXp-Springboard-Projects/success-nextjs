@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
-import HTMLFlipBook from 'react-pageflip';
 import styles from './dashboard.module.css';
 import magazineStyles from './magazines.module.css';
 
@@ -13,14 +12,15 @@ interface Magazine {
   slug: string;
   publishedText: string;
   description: string;
-  pdfUrl: string;
+  pdfUrl?: string;
+  flipbookUrl?: string;
   coverImageUrl: string;
-  pages?: string[]; // Array of page image URLs
   fileSize: number;
   currentPage: number;
   totalPages: number;
   completed: boolean;
   lastReadAt: string | null;
+  status: string;
 }
 
 export default function MagazinesPage() {
@@ -29,10 +29,7 @@ export default function MagazinesPage() {
   const [magazines, setMagazines] = useState<Magazine[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMagazine, setSelectedMagazine] = useState<Magazine | null>(null);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [yearFilter, setYearFilter] = useState<string>('all');
-  const flipBookRef = useRef<any>(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -65,55 +62,18 @@ export default function MagazinesPage() {
 
   const handleOpenMagazine = (magazine: Magazine) => {
     setSelectedMagazine(magazine);
-    setCurrentPage(magazine.currentPage || 0);
   };
 
-  const handleCloseMagazine = async () => {
-    if (selectedMagazine) {
-      await updateProgress(selectedMagazine.id, currentPage);
-    }
+  const handleCloseMagazine = () => {
     setSelectedMagazine(null);
-    setIsFullscreen(false);
   };
 
-  const updateProgress = async (magazineId: string, page: number) => {
-    try {
-      await fetch('/api/dashboard/magazines', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          magazineId,
-          currentPage: page,
-          totalPages: selectedMagazine?.totalPages || 100,
-          completed: page >= (selectedMagazine?.totalPages || 100) - 1,
-        }),
-      });
-    } catch (error) {
-    }
-  };
-
-  const handlePageFlip = (e: any) => {
-    const newPage = e.data;
-    setCurrentPage(newPage);
-    if (selectedMagazine) {
-      updateProgress(selectedMagazine.id, newPage);
-    }
-  };
-
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
-
-  const goToNextPage = () => {
-    flipBookRef.current?.pageFlip().flipNext();
-  };
-
-  const goToPrevPage = () => {
-    flipBookRef.current?.pageFlip().flipPrev();
-  };
-
-  const formatFileSize = (bytes: number) => {
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  const formatPublishedDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+    });
   };
 
   // Get unique years from magazines
@@ -128,19 +88,6 @@ export default function MagazinesPage() {
         const date = new Date(m.publishedText);
         return date.getFullYear().toString() === yearFilter;
       });
-
-  // Generate placeholder pages if magazine doesn't have page images
-  const getMagazinePages = (magazine: Magazine) => {
-    if (magazine.pages && magazine.pages.length > 0) {
-      return magazine.pages;
-    }
-    // Generate placeholder pages from cover image
-    const pages = [magazine.coverImageUrl];
-    for (let i = 1; i < magazine.totalPages; i++) {
-      pages.push(magazine.coverImageUrl); // Use cover as placeholder
-    }
-    return pages;
-  };
 
   if (status === 'loading' || loading) {
     return <div className={styles.loading}>Loading...</div>;
@@ -243,11 +190,6 @@ export default function MagazinesPage() {
                         <p className={magazineStyles.description}>{magazine.description}</p>
                       )}
 
-                      <div className={magazineStyles.magazineMeta}>
-                        <span>{magazine.totalPages} pages</span>
-                        <span>{formatFileSize(magazine.fileSize)}</span>
-                      </div>
-
                       {magazine.lastReadAt && (
                         <p className={magazineStyles.lastRead}>
                           Last read: {new Date(magazine.lastReadAt).toLocaleDateString()}
@@ -262,15 +204,17 @@ export default function MagazinesPage() {
                           <span className={magazineStyles.icon}>📖</span>
                           {magazine.currentPage > 1 ? 'Continue Reading' : 'Read Now'}
                         </button>
-                        <a
-                          href={magazine.pdfUrl}
-                          download
-                          className={magazineStyles.downloadBtn}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <span className={magazineStyles.icon}>⬇️</span>
-                          Download PDF
-                        </a>
+                        {magazine.pdfUrl && (
+                          <a
+                            href={magazine.pdfUrl}
+                            download
+                            className={magazineStyles.downloadBtn}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <span className={magazineStyles.icon}>⬇️</span>
+                            Download PDF
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -284,94 +228,32 @@ export default function MagazinesPage() {
               )}
             </>
           ) : (
-            <div className={`${magazineStyles.flipbookReader} ${isFullscreen ? magazineStyles.fullscreen : ''}`}>
+            <div className={magazineStyles.flipbookReader}>
               <div className={magazineStyles.readerHeader}>
                 <button className={magazineStyles.closeBtn} onClick={handleCloseMagazine}>
                   ← Back to Library
                 </button>
                 <h2 className={magazineStyles.readerTitle}>{selectedMagazine.title}</h2>
-                <div className={magazineStyles.headerActions}>
-                  <span className={magazineStyles.pageIndicator}>
-                    Page {currentPage + 1} of {selectedMagazine.totalPages}
-                  </span>
-                  <button
-                    className={magazineStyles.fullscreenBtn}
-                    onClick={toggleFullscreen}
-                    title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-                  >
-                    {isFullscreen ? '⤓' : '⤢'}
-                  </button>
+              </div>
+
+              {selectedMagazine.flipbookUrl ? (
+                <iframe
+                  src={selectedMagazine.flipbookUrl}
+                  className={magazineStyles.flipbookIframe}
+                  title={selectedMagazine.title}
+                  allowFullScreen
+                />
+              ) : (
+                <div className={magazineStyles.noFlipbook}>
+                  <p>Magazine viewer not available</p>
+                  {selectedMagazine.pdfUrl && (
+                    <a href={selectedMagazine.pdfUrl} download className={magazineStyles.downloadBtn}>
+                      <span className={magazineStyles.icon}>⬇️</span>
+                      Download PDF Instead
+                    </a>
+                  )}
                 </div>
-              </div>
-
-              <div className={magazineStyles.flipbookContainer}>
-                <HTMLFlipBook
-                  ref={flipBookRef}
-                  width={550}
-                  height={733}
-                  size="stretch"
-                  minWidth={315}
-                  maxWidth={1000}
-                  minHeight={420}
-                  maxHeight={1350}
-                  maxShadowOpacity={0.5}
-                  showCover={true}
-                  mobileScrollSupport={true}
-                  onFlip={handlePageFlip}
-                  className={magazineStyles.flipbook}
-                  style={{}}
-                  startPage={currentPage}
-                  drawShadow={true}
-                  flippingTime={1000}
-                  usePortrait={true}
-                  startZIndex={0}
-                  autoSize={true}
-                  clickEventForward={true}
-                  useMouseEvents={true}
-                  swipeDistance={30}
-                  showPageCorners={true}
-                  disableFlipByClick={false}
-                >
-                  {getMagazinePages(selectedMagazine).map((pageUrl, index) => (
-                    <div key={index} className={magazineStyles.page}>
-                      <img
-                        src={pageUrl}
-                        alt={`Page ${index + 1}`}
-                        className={magazineStyles.pageImage}
-                      />
-                      <div className={magazineStyles.pageNumber}>{index + 1}</div>
-                    </div>
-                  ))}
-                </HTMLFlipBook>
-              </div>
-
-              <div className={magazineStyles.readerControls}>
-                <button
-                  className={magazineStyles.navBtn}
-                  onClick={goToPrevPage}
-                  disabled={currentPage === 0}
-                >
-                  ← Previous
-                </button>
-
-                <div className={magazineStyles.controlsCenter}>
-                  <span className={magazineStyles.pageInfo}>
-                    Page {currentPage + 1} / {selectedMagazine.totalPages}
-                  </span>
-                </div>
-
-                <button
-                  className={magazineStyles.navBtn}
-                  onClick={goToNextPage}
-                  disabled={currentPage >= selectedMagazine.totalPages - 1}
-                >
-                  Next →
-                </button>
-              </div>
-
-              <div className={magazineStyles.readerHint}>
-                💡 Click or drag pages to flip • Use arrow keys • Pinch to zoom on mobile
-              </div>
+              )}
             </div>
           )}
         </main>
