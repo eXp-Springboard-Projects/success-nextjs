@@ -1,0 +1,10 @@
+
+> success-nextjs@1.0.0 build
+> prisma generate && next build
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Error: 
+EPERM: operation not permitted, rename 'C:\Users\RachelNead\success-next\node_modules\.prisma\client\query_engine-windows.dll.node.tmp29644' -> 'C:\Users\RachelNead\success-next\node_modules\.prisma\client\query_engine-windows.dll.node'
+
+
