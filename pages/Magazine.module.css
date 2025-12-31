@@ -5,7 +5,7 @@
 .hero {
   background: #fff;
   color: #000;
-  padding: 3rem 1rem;
+  padding: 2rem 1rem 1.5rem 1rem;
   text-align: center;
 }
 
@@ -39,7 +39,11 @@
 }
 
 .section {
-  padding: 5rem 1rem;
+  padding: 3rem 1rem;
+}
+
+.introSection {
+  padding: 1.5rem 1rem 3rem 1rem;
 }
 
 .container {

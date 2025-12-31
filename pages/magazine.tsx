@@ -23,7 +23,7 @@ export default function MagazinePage({ currentIssue, pastIssues }: MagazinePageP
         </section>
 
         {/* Intro Text */}
-        <section className={styles.section}>
+        <section className={styles.introSection}>
           <div className={styles.container}>
             <p className={styles.introText}>
               Get proven life lessons from classic SUCCESS® magazine and topic-focused SUCCESS+ magazine.
