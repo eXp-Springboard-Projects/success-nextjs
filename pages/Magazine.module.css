@@ -3,9 +3,9 @@
 }
 
 .hero {
-  background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
-  color: #fff;
-  padding: 5rem 1rem;
+  background: #fff;
+  color: #000;
+  padding: 3rem 1rem;
   text-align: center;
 }
 
@@ -16,17 +16,17 @@
 
 .heroTitle {
   font-family: 'Bodoni Moda', Georgia, 'Times New Roman', serif;
-  font-size: 4rem;
+  font-size: 3.5rem;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: -1px;
   margin: 0 0 1rem 0;
-  color: #fff;
+  color: #000;
 }
 
 .heroSubtitle {
-  font-size: 1.5rem;
-  color: #ccc;
+  font-size: 1.25rem;
+  color: #333;
 }
 
 .introText {

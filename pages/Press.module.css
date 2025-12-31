@@ -7,9 +7,8 @@
 .hero {
   text-align: center;
   padding: 3rem 1rem;
-  background: linear-gradient(135deg, #111 0%, #333 100%);
-  color: white;
-  border-radius: 1rem;
+  background: #fff;
+  color: #000;
   margin-bottom: 3rem;
 }
 
@@ -17,11 +16,12 @@
   font-size: 3rem;
   font-weight: 700;
   margin: 0 0 1rem 0;
+  color: #000;
 }
 
 .subtitle {
   font-size: 1.25rem;
-  color: #ccc;
+  color: #333;
   margin: 0;
 }
 
