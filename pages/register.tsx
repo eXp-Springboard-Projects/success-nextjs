@@ -19,13 +19,11 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showInviteField, setShowInviteField] = useState(false);
 
   // Pre-fill invite code from URL
   useEffect(() => {
     if (urlCode && typeof urlCode === 'string') {
       setFormData(prev => ({ ...prev, inviteCode: urlCode }));
-      setShowInviteField(true);
     }
   }, [urlCode]);
 
@@ -140,18 +138,18 @@ export default function RegisterPage() {
           )}
 
           <div className={styles.formGroup}>
-            <label htmlFor="email">SUCCESS Email</label>
+            <label htmlFor="email">Email Address</label>
             <input
               type="email"
               id="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="your.name@success.com"
+              placeholder="your.email@example.com"
               disabled={loading}
               autoFocus
             />
             <small className={styles.helpText}>
-              Must be a @success.com email address
+              You must have a valid invite code from a Super Admin
             </small>
           </div>
 
@@ -195,28 +193,21 @@ export default function RegisterPage() {
             />
           </div>
 
-          {!formData.email.endsWith('@success.com') && (
-            <div className={styles.formGroup}>
-              <label htmlFor="inviteCode">
-                Invite Code {!showInviteField && <button type="button" onClick={() => setShowInviteField(true)} style={{ fontSize: '12px', marginLeft: '8px', textDecoration: 'underline', background: 'none', border: 'none', color: '#3182ce', cursor: 'pointer' }}>Have a code?</button>}
-              </label>
-              {showInviteField && (
-                <>
-                  <input
-                    type="text"
-                    id="inviteCode"
-                    value={formData.inviteCode}
-                    onChange={(e) => setFormData({ ...formData, inviteCode: e.target.value.toUpperCase() })}
-                    placeholder="SUCCESS-XXXX-XXXX-XXXX"
-                    disabled={loading}
-                  />
-                  <small className={styles.helpText}>
-                    Non-@success.com emails require an invite code
-                  </small>
-                </>
-              )}
-            </div>
-          )}
+          <div className={styles.formGroup}>
+            <label htmlFor="inviteCode">Invite Code (Required)</label>
+            <input
+              type="text"
+              id="inviteCode"
+              value={formData.inviteCode}
+              onChange={(e) => setFormData({ ...formData, inviteCode: e.target.value.toUpperCase() })}
+              placeholder="SUCCESS-XXXX-XXXX-XXXX"
+              disabled={loading}
+              required
+            />
+            <small className={styles.helpText}>
+              All new staff must be invited by a Super Admin
+            </small>
+          </div>
 
           <button
             type="submit"

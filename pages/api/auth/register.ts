@@ -31,26 +31,21 @@ export default async function handler(
       return res.status(400).json({ error: 'Password must be at least 8 characters long' });
     }
 
-    // Check if email is @success.com OR rachel.nead@exprealty.net OR valid invite code is provided
-    const isSuccessStaff = isSuccessEmail(email) || email.toLowerCase() === 'rachel.nead@exprealty.net';
-    let inviteRole = role;
-
-    if (!isSuccessStaff) {
-      // Non-SUCCESS email requires valid invite code
-      if (!inviteCode) {
-        return res.status(403).json({
-          error: 'Non-@success.com emails require an invite code'
-        });
-      }
-
-      const validation = await validateInviteCode(inviteCode, email);
-      if (!validation.valid) {
-        return res.status(403).json({ error: validation.error });
-      }
-
-      // Use role from invite code for non-staff users
-      inviteRole = validation.invite?.role || 'EDITOR';
+    // 🔒 SECURITY: ALL registrations now require a valid invite code
+    // This prevents unauthorized users from self-registering with @success.com emails
+    if (!inviteCode) {
+      return res.status(403).json({
+        error: 'Registration requires an invite code from a Super Admin'
+      });
     }
+
+    const validation = await validateInviteCode(inviteCode, email);
+    if (!validation.valid) {
+      return res.status(403).json({ error: validation.error });
+    }
+
+    // Use role from invite code
+    const inviteRole = validation.invite?.role || 'EDITOR';
 
     // Check if user already exists
     const { data: existingUser } = await supabase
