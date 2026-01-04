@@ -75,9 +75,13 @@ export default async function handler(
       });
 
       return res.status(200).json({ members: transformedMembers });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching members:', error);
-      return res.status(500).json({ message: 'Failed to fetch members', members: [] });
+      return res.status(500).json({
+        message: 'Failed to fetch members',
+        error: error?.message || 'Unknown error',
+        members: []
+      });
     }
   }
 

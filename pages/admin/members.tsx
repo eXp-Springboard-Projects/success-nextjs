@@ -81,10 +81,14 @@ export default function MembersPage() {
       const res = await fetch('/api/admin/members');
       if (res.ok) {
         const data = await res.json();
-        setMembers(data);
+        setMembers(data.members || []);
       } else {
+        console.error('Failed to fetch members:', await res.text());
+        setMembers([]);
       }
     } catch (error) {
+      console.error('Error fetching members:', error);
+      setMembers([]);
     } finally {
       setLoading(false);
     }
