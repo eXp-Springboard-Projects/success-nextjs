@@ -38,7 +38,7 @@ export default function ActivityLogPage() {
   }, [status, session, router]);
 
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.role === 'ADMIN') {
+    if (status === 'authenticated' && session?.user) {
       fetchLogs();
     }
   }, [status, session, page, filterAction, filterEntity]);
@@ -56,10 +56,17 @@ export default function ActivityLogPage() {
       const res = await fetch(`/api/activity-logs?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
-        setLogs(data.logs);
-        setTotal(data.total);
+        setLogs(data.logs || []);
+        setTotal(data.total || 0);
+      } else {
+        console.error('Failed to fetch activity logs:', await res.text());
+        setLogs([]);
+        setTotal(0);
       }
     } catch (error) {
+      console.error('Error fetching activity logs:', error);
+      setLogs([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
