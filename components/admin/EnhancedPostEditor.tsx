@@ -79,6 +79,7 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
   const [scheduledDate, setScheduledDate] = useState('');
   const [contentType, setContentType] = useState<'regular' | 'premium' | 'insider' | 'magazine' | 'press'>('regular');
   const [accessTier, setAccessTier] = useState<'free' | 'success_plus' | 'insider'>('free');
+  const [initialContent, setInitialContent] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const blockMenuRef = useRef<HTMLDivElement>(null);
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -143,6 +144,13 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
       fetchPost();
     }
   }, [postId]);
+
+  // Set editor content when editor is ready and we have initial content
+  useEffect(() => {
+    if (editor && initialContent && !editor.getText()) {
+      editor.commands.setContent(initialContent);
+    }
+  }, [editor, initialContent]);
 
   // Word count and character count
   useEffect(() => {
@@ -229,9 +237,11 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
 
       setTitle(post.title.rendered || post.title);
       setSlug(post.slug);
-      if (editor) {
-        editor.commands.setContent(post.content.rendered || post.content);
-      }
+
+      // Store content to be set when editor is ready
+      const content = post.content.rendered || post.content;
+      setInitialContent(content);
+
       setExcerpt(post.excerpt?.rendered || post.excerpt || '');
       setFeaturedImage(post._embedded?.['wp:featuredmedia']?.[0]?.source_url || post.featured_media_url || '');
       setFeaturedImageAlt(post._embedded?.['wp:featuredmedia']?.[0]?.alt_text || post.featuredImageAlt || '');
