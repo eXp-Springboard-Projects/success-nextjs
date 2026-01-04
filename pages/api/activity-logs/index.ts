@@ -17,6 +17,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const skip = (parseInt(page as string) - 1) * parseInt(perPage as string);
       const supabase = supabaseAdmin();
 
+      // Check if activity_logs table exists
+      const { data: tableCheck, error: tableError } = await supabase
+        .from('activity_logs')
+        .select('id')
+        .limit(1);
+
+      // If table doesn't exist or is empty, return empty array
+      if (tableError) {
+        console.log('Activity logs table not found or inaccessible:', tableError);
+        return res.status(200).json({
+          logs: [],
+          total: 0,
+          page: parseInt(page as string),
+          perPage: parseInt(perPage as string),
+          totalPages: 0,
+          message: 'Activity logging not yet configured',
+        });
+      }
+
       // Build query
       let query = supabase
         .from('activity_logs')
@@ -39,6 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { data: logs, count: total, error } = await query;
 
       if (error) {
+        console.error('Error fetching activity logs:', error);
         throw error;
       }
 
@@ -49,8 +69,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         perPage: parseInt(perPage as string),
         totalPages: Math.ceil((total || 0) / parseInt(perPage as string)),
       });
-    } catch (error) {
-      return res.status(500).json({ error: 'Failed to fetch activity logs' });
+    } catch (error: any) {
+      console.error('Activity logs fetch error:', error);
+      return res.status(500).json({
+        error: 'Failed to fetch activity logs',
+        details: error?.message || 'Unknown error'
+      });
     }
   }
 

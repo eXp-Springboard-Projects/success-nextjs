@@ -31,6 +31,7 @@ export default function ActivityLogPage() {
   const [total, setTotal] = useState(0);
   const [filterAction, setFilterAction] = useState('');
   const [filterEntity, setFilterEntity] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     // Auth is handled by requireAdminAuth in getServerSideProps
@@ -46,6 +47,7 @@ export default function ActivityLogPage() {
   const fetchLogs = async () => {
     try {
       setLoading(true);
+      setErrorMessage('');
       const params = new URLSearchParams({
         page: page.toString(),
         perPage: '50',
@@ -54,17 +56,23 @@ export default function ActivityLogPage() {
       if (filterEntity) params.append('entity', filterEntity);
 
       const res = await fetch(`/api/activity-logs?${params.toString()}`);
+      const data = await res.json();
+
       if (res.ok) {
-        const data = await res.json();
         setLogs(data.logs || []);
         setTotal(data.total || 0);
+        if (data.message) {
+          setErrorMessage(data.message);
+        }
       } else {
-        console.error('Failed to fetch activity logs:', await res.text());
+        console.error('Failed to fetch activity logs:', res.status, data);
+        setErrorMessage(data.error || 'Failed to load activity logs');
         setLogs([]);
         setTotal(0);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching activity logs:', error);
+      setErrorMessage('Network error: ' + (error?.message || 'Unable to connect'));
       setLogs([]);
       setTotal(0);
     } finally {
@@ -153,6 +161,20 @@ export default function ActivityLogPage() {
             Clear Filters
           </button>
         </div>
+
+        {/* Error Message */}
+        {errorMessage && (
+          <div style={{
+            background: '#fff3cd',
+            border: '1px solid #ffc107',
+            padding: '1rem',
+            borderRadius: '4px',
+            marginBottom: '1rem',
+            color: '#856404'
+          }}>
+            ⚠️ {errorMessage}
+          </div>
+        )}
 
         {/* Activity Log Table */}
         <div className={styles.tableContainer}>
