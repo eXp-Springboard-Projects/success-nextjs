@@ -139,7 +139,24 @@ export default async function handler(
 
     return res.status(200).json(stats);
 
-  } catch (error) {
-    return res.status(500).json({ error: 'Internal server error' });
+  } catch (error: any) {
+    console.error('SUCCESS+ Dashboard Stats Error:', {
+      message: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString(),
+    });
+
+    // Return safe fallback data instead of failing completely
+    return res.status(200).json({
+      activeMembers: 0,
+      newMembersThisMonth: 0,
+      churnRate: 0,
+      monthlyRecurringRevenue: 0,
+      activeTrials: 0,
+      totalTrials: 0,
+      recentActivity: [],
+      error: 'Failed to load some statistics',
+      partial: true,
+    });
   }
 }
