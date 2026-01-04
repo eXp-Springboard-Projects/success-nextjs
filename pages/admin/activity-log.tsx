@@ -50,17 +50,34 @@ export default function ActivityLogPage() {
       setErrorMessage('');
       const params = new URLSearchParams({
         page: page.toString(),
-        perPage: '50',
+        limit: '50',
       });
-      if (filterAction) params.append('action', filterAction);
-      if (filterEntity) params.append('entity', filterEntity);
+      if (filterAction) params.append('type', filterAction);
+      if (filterEntity) params.append('type', filterEntity);
 
-      const res = await fetch(`/api/activity-logs?${params.toString()}`);
+      const res = await fetch(`/api/admin/activity?${params.toString()}`);
       const data = await res.json();
 
       if (res.ok) {
-        setLogs(data.logs || []);
-        setTotal(data.total || 0);
+        // Map the staff_activity_feed data to match the expected ActivityLog interface
+        const mappedLogs = (data.activities || []).map((activity: any) => ({
+          id: activity.id,
+          action: activity.action,
+          entity: activity.entityType || 'unknown',
+          entityId: '',
+          details: activity.description,
+          ipAddress: '',
+          userAgent: '',
+          createdAt: activity.createdAt,
+          user: {
+            name: activity.userName,
+            email: '',
+            avatar: '',
+            role: ''
+          }
+        }));
+        setLogs(mappedLogs);
+        setTotal(data.pagination?.total || 0);
         if (data.message) {
           setErrorMessage(data.message);
         }
