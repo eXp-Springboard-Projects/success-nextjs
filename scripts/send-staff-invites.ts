@@ -1,121 +1,201 @@
 /**
- * Send invite codes to all staff members
+ * Send welcome emails to existing staff members
  *
  * Usage:
- * 1. Edit the STAFF_EMAILS array below with your staff email addresses
- * 2. Run: DATABASE_URL="..." npx tsx scripts/send-staff-invites.ts
- *
- * All staff will receive EDITOR role by default
- * Super admins can change roles later in the admin dashboard
+ * npx tsx scripts/send-staff-invites.ts
  */
 
-
-import { createInviteCode } from '../lib/auth-utils';
-import { sendInviteCodeEmail } from '../lib/resend-email';
-
-const prisma = new PrismaClient();
+import { sendMail } from '../lib/resend-email';
 
 // ============================================
-// EDIT THIS LIST WITH YOUR STAFF EMAILS
+// STAFF EMAILS (excluding Rachel and Tyler)
 // ============================================
 const STAFF_EMAILS = [
-  'staff1@example.com',
-  'staff2@example.com',
-  'staff3@example.com',
-  // Add more email addresses here
+  'belle.mitchum@success.com',
+  'carlos.gutierrez@success.com',
+  'courtland.warren@success.com',
+  'denise.long@success.com',
+  'destinie.orndoff@success.com',
+  'elly.kang@success.com',
+  'emily.holombek@success.com',
+  'emily.obrien@success.com',
+  'emily.tvelia@success.com',
+  'glenn.sanford@success.com',
+  'harmony.heslop@success.com',
+  'hugh.murphy@success.com',
+  'jamie.lyons@success.com',
+  'jazzlyn.torres@success.com',
+  'kerrie.brown@success.com',
+  'kristen.mcmahon@success.com',
+  'lauren.kerrigan@success.com',
+  'rena.machani@success.com',
+  'sarah.kuta@success.com',
+  'shawana.crayton@success.com',
+  'staci.parks@success.com',
+  'talitha.prospert@success.com',
+  'virginia.le@success.com',
 ];
 
-const SUPER_ADMIN_EMAIL = 'rachel.nead@exprealty.net'; // Change this to the current super admin email
+const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+      border-radius: 8px 8px 0 0;
+    }
+    .content {
+      background: #ffffff;
+      padding: 30px;
+      border: 1px solid #e5e7eb;
+      border-top: none;
+    }
+    .button {
+      display: inline-block;
+      background: #667eea;
+      color: white;
+      padding: 12px 30px;
+      text-decoration: none;
+      border-radius: 6px;
+      margin: 20px 0;
+      font-weight: 600;
+    }
+    .steps {
+      background: #f9fafb;
+      padding: 20px;
+      border-radius: 6px;
+      margin: 20px 0;
+    }
+    .steps ol {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    .steps li {
+      margin: 8px 0;
+    }
+    .features {
+      margin: 20px 0;
+    }
+    .features ul {
+      list-style: none;
+      padding: 0;
+    }
+    .features li {
+      padding: 8px 0;
+      padding-left: 24px;
+      position: relative;
+    }
+    .features li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #667eea;
+      font-weight: bold;
+    }
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1 style="margin: 0; font-size: 28px;">Welcome to SUCCESS.com</h1>
+    <p style="margin: 10px 0 0 0; opacity: 0.9;">Your Admin Dashboard is Ready</p>
+  </div>
+
+  <div class="content">
+    <p>Hello!</p>
+
+    <p>Your SUCCESS Magazine admin account has been created and is ready to use. You now have access to the new SUCCESS.com admin dashboard where you can manage content, create posts, edit pages, and more.</p>
+
+    <div class="steps">
+      <strong>To get started:</strong>
+      <ol>
+        <li>Visit: <a href="https://www.success.com/admin/login" style="color: #667eea;">www.success.com/admin/login</a></li>
+        <li>Use your SUCCESS email address to sign in</li>
+        <li>If this is your first time logging in, click "Forgot Password" to set up your password</li>
+      </ol>
+    </div>
+
+    <div style="text-align: center;">
+      <a href="https://www.success.com/admin/login" class="button">Access Admin Dashboard</a>
+    </div>
+
+    <div class="features">
+      <strong>Your account has been set up with EDITOR permissions, allowing you to:</strong>
+      <ul>
+        <li>Create and edit blog posts</li>
+        <li>Manage content with our enhanced visual editor</li>
+        <li>Upload and manage media</li>
+        <li>Preview content before publishing</li>
+      </ul>
+    </div>
+
+    <p>If you have any questions or need assistance getting started, please reach out to the admin team.</p>
+
+    <p><strong>Welcome to the platform!</strong></p>
+  </div>
+
+  <div class="footer">
+    <p>SUCCESS Magazine Team<br>
+    <a href="https://www.success.com" style="color: #667eea; text-decoration: none;">www.success.com</a></p>
+  </div>
+</body>
+</html>
+`;
 
 async function sendStaffInvites() {
-  console.log('📧 SENDING STAFF INVITATIONS\n');
+  console.log('\n📧 SENDING STAFF INVITATIONS');
   console.log('==========================================\n');
-
-  // Get super admin ID to attribute invites
-  const superAdmin = await prisma.users.findFirst({
-    where: { email: SUPER_ADMIN_EMAIL },
-    select: { id: true, name: true },
-  });
-
-  if (!superAdmin) {
-    console.error(`❌ Super admin not found with email: ${SUPER_ADMIN_EMAIL}`);
-    console.error('Please update SUPER_ADMIN_EMAIL in the script');
-    await prisma.$disconnect();
-    return;
-  }
-
-  const superAdminName = superAdmin.name || 'Admin';
-  console.log(`✅ Found super admin: ${superAdminName}\n`);
-
-  // Filter out emails that already have accounts
-  const existingUsers = await prisma.users.findMany({
-    where: {
-      email: {
-        in: STAFF_EMAILS,
-      },
-    },
-    select: { email: true },
-  });
-
-  const existingEmails = existingUsers.map(u => u.email);
-  const newStaffEmails = STAFF_EMAILS.filter(email => !existingEmails.includes(email));
-
-  if (existingEmails.length > 0) {
-    console.log('⚠️  SKIPPING EXISTING USERS:');
-    existingEmails.forEach(email => {
-      console.log(`   • ${email} (already has an account)`);
-    });
-    console.log('');
-  }
-
-  if (newStaffEmails.length === 0) {
-    console.log('✅ All staff members already have accounts. No invites needed.\n');
-    await prisma.$disconnect();
-    return;
-  }
-
-  console.log(`📋 SENDING INVITES TO ${newStaffEmails.length} STAFF MEMBERS:\n`);
+  console.log(`Total recipients: ${STAFF_EMAILS.length}\n`);
 
   const results = {
     success: [] as string[],
     failed: [] as { email: string; error: string }[],
   };
 
-  // Send invites one by one
-  for (const email of newStaffEmails) {
+  // Send emails one by one
+  for (const email of STAFF_EMAILS) {
     try {
-      console.log(`Processing: ${email}...`);
+      console.log(`Sending to: ${email}...`);
 
-      // Create invite code
-      const invite = await createInviteCode({
+      const result = await sendMail(
         email,
-        role: 'EDITOR', // All staff start as EDITOR
-        createdBy: superAdmin.id,
-        expiresInDays: 30, // 30 days to accept invite
-        maxUses: 1,
-      });
-
-      console.log(`   ✓ Invite code created: ${invite.code}`);
-
-      // Send email
-      const emailResult = await sendInviteCodeEmail(
-        email,
-        invite.code,
-        superAdminName
+        'Join the SUCCESS.com Admin Dashboard',
+        emailHtml
       );
 
-      if (emailResult.success) {
-        console.log(`   ✓ Email sent successfully\n`);
+      if (result.success) {
+        console.log(`   ✓ Sent (ID: ${result.data?.id})\n`);
         results.success.push(email);
       } else {
-        console.log(`   ✗ Email failed: ${emailResult.error}\n`);
-        results.failed.push({ email, error: emailResult.error || 'Unknown error' });
+        console.log(`   ✗ Failed: ${result.error}\n`);
+        results.failed.push({ email, error: result.error || 'Unknown error' });
       }
 
     } catch (error: any) {
-      console.log(`   ✗ Failed: ${error.message}\n`);
+      console.log(`   ✗ Error: ${error.message}\n`);
       results.failed.push({ email, error: error.message });
     }
+
+    // Small delay to avoid rate limiting
+    await new Promise(resolve => setTimeout(resolve, 200));
   }
 
   // Summary
@@ -126,7 +206,7 @@ async function sendStaffInvites() {
   console.log(`❌ Failed: ${results.failed.length}\n`);
 
   if (results.success.length > 0) {
-    console.log('Successfully invited:');
+    console.log('✅ Successfully sent to:');
     results.success.forEach(email => {
       console.log(`   • ${email}`);
     });
@@ -134,7 +214,7 @@ async function sendStaffInvites() {
   }
 
   if (results.failed.length > 0) {
-    console.log('❌ Failed to invite:');
+    console.log('❌ Failed to send to:');
     results.failed.forEach(({ email, error }) => {
       console.log(`   • ${email} - ${error}`);
     });
@@ -142,12 +222,9 @@ async function sendStaffInvites() {
   }
 
   console.log('📝 NEXT STEPS:');
-  console.log('1. Staff members will receive invitation emails');
-  console.log('2. They can register using their invite codes');
-  console.log('3. All start with EDITOR role');
-  console.log('4. Super admins can change roles at /admin/staff\n');
-
-  await prisma.$disconnect();
+  console.log('1. Staff members will receive welcome emails');
+  console.log('2. They can access the dashboard at www.success.com/admin/login');
+  console.log('3. First-time users should use "Forgot Password" to set their password\n');
 }
 
 sendStaffInvites().catch(console.error);

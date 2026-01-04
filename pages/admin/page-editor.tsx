@@ -345,3 +345,6 @@ export default function PageEditorPage() {
     </AdminLayout>
   );
 }
+
+// Server-side authentication check
+export const getServerSideProps = requireAdminAuth;

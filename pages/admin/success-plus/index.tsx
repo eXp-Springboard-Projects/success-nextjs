@@ -230,7 +230,7 @@ export default function SuccessPlusDashboard() {
               </div>
             </Link>
 
-            <Link href="/dashboard/magazines" className={styles.actionCard}>
+            <Link href="/admin/magazine-manager" className={styles.actionCard}>
               <div className={styles.actionIcon}>📖</div>
               <div className={styles.actionTitle}>Magazine Issues</div>
               <div className={styles.actionDescription}>
