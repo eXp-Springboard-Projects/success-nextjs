@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { requireAdminAuth } from '@/lib/adminAuth';
 import styles from './PageEditor.module.css';
 
 type PageOverride = {
