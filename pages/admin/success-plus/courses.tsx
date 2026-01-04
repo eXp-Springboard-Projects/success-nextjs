@@ -34,52 +34,72 @@ export default function CoursesManager() {
 
   const fetchCourses = async () => {
     setLoading(true);
-    // TODO: Replace with actual API call
-    // Mock data for now
-    setTimeout(() => {
-      setCourses([
-        {
-          id: '1',
-          title: 'Leadership Fundamentals',
-          description: 'Master the core principles of effective leadership',
-          instructor: 'John Maxwell',
-          duration: '6 weeks',
-          level: 'Beginner',
-          category: 'Leadership',
-          isPublished: true,
-          enrolledCount: 234,
-          createdAt: new Date().toISOString(),
-          modules: 12,
-        },
-        {
-          id: '2',
-          title: 'Advanced Time Management',
-          description: 'Productivity strategies for busy professionals',
-          instructor: 'Brian Tracy',
-          duration: '4 weeks',
-          level: 'Advanced',
-          category: 'Productivity',
-          isPublished: true,
-          enrolledCount: 156,
-          createdAt: new Date().toISOString(),
-          modules: 8,
-        },
-      ]);
+    try {
+      const params = new URLSearchParams();
+      if (filter !== 'all') params.append('filter', filter);
+
+      const res = await fetch(`/api/admin/success-plus/courses?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCourses(data.courses.map((c: any) => ({
+          id: c.id,
+          title: c.title,
+          description: c.description || '',
+          instructor: c.instructor || '',
+          duration: c.duration ? `${c.duration} mins` : 'N/A',
+          level: c.level || 'Beginner',
+          category: 'Course',
+          thumbnail: c.thumbnail,
+          isPublished: c.isPublished,
+          enrolledCount: c.enrolledCount,
+          createdAt: c.createdAt,
+          modules: c.modules,
+        })));
+      }
+    } catch (error) {
+      console.error('Failed to fetch courses:', error);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   const handleTogglePublish = async (id: string, currentStatus: boolean) => {
-    // TODO: API call to toggle publish status
-    setCourses(courses.map(c =>
-      c.id === id ? { ...c, isPublished: !currentStatus } : c
-    ));
+    try {
+      const res = await fetch(`/api/admin/success-plus/courses/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPublished: !currentStatus }),
+      });
+
+      if (res.ok) {
+        setCourses(courses.map(c =>
+          c.id === id ? { ...c, isPublished: !currentStatus } : c
+        ));
+      } else {
+        alert('Failed to update course');
+      }
+    } catch (error) {
+      alert('Failed to update course');
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this course?')) return;
-    // TODO: API call to delete
-    setCourses(courses.filter(c => c.id !== id));
+
+    try {
+      const res = await fetch(`/api/admin/success-plus/courses/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setCourses(courses.filter(c => c.id !== id));
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to delete course');
+      }
+    } catch (error) {
+      alert('Failed to delete course');
+    }
   };
 
   const filteredCourses = courses.filter(c => {

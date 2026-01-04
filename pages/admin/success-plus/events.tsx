@@ -36,55 +36,79 @@ export default function EventsManager() {
 
   const fetchEvents = async () => {
     setLoading(true);
-    // TODO: Replace with actual API call
-    // Mock data for now
-    setTimeout(() => {
-      setEvents([
-        {
-          id: '1',
-          title: 'SUCCESS Summit 2025',
-          description: 'Annual leadership and success conference',
-          speaker: 'John Maxwell',
-          date: '2025-03-15',
-          time: '9:00 AM EST',
-          duration: '3 days',
-          type: 'Hybrid',
-          location: 'Dallas, TX',
-          isPublished: true,
-          registeredCount: 487,
-          capacity: 500,
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          title: 'Entrepreneurship Workshop',
-          description: 'Building a sustainable business from scratch',
-          speaker: 'Sara Blakely',
-          date: '2025-02-20',
-          time: '2:00 PM EST',
-          duration: '2 hours',
-          type: 'Virtual',
-          isPublished: true,
-          registeredCount: 234,
-          capacity: 300,
-          createdAt: new Date().toISOString(),
-        },
-      ]);
+    try {
+      const params = new URLSearchParams();
+      if (filter !== 'all') params.append('filter', filter);
+
+      const res = await fetch(`/api/admin/success-plus/events?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setEvents(data.events.map((e: any) => {
+          const startDate = new Date(e.startDateTime);
+          return {
+            id: e.id,
+            title: e.title,
+            description: e.description || '',
+            speaker: e.hostName || '',
+            date: startDate.toISOString().split('T')[0],
+            time: startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+            duration: e.endDateTime
+              ? `${Math.round((new Date(e.endDateTime).getTime() - startDate.getTime()) / (1000 * 60))} mins`
+              : 'TBD',
+            type: e.eventType || 'Virtual',
+            location: e.location,
+            thumbnail: e.thumbnail,
+            isPublished: e.isPublished,
+            registeredCount: e.currentAttendees,
+            capacity: e.maxAttendees || 0,
+            createdAt: e.createdAt,
+          };
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch events:', error);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   const handleTogglePublish = async (id: string, currentStatus: boolean) => {
-    // TODO: API call to toggle publish status
-    setEvents(events.map(e =>
-      e.id === id ? { ...e, isPublished: !currentStatus } : e
-    ));
+    try {
+      const res = await fetch(`/api/admin/success-plus/events/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPublished: !currentStatus }),
+      });
+
+      if (res.ok) {
+        setEvents(events.map(e =>
+          e.id === id ? { ...e, isPublished: !currentStatus } : e
+        ));
+      } else {
+        alert('Failed to update event');
+      }
+    } catch (error) {
+      alert('Failed to update event');
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this event?')) return;
-    // TODO: API call to delete
-    setEvents(events.filter(e => e.id !== id));
+
+    try {
+      const res = await fetch(`/api/admin/success-plus/events/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setEvents(events.filter(e => e.id !== id));
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to delete event');
+      }
+    } catch (error) {
+      alert('Failed to delete event');
+    }
   };
 
   const filteredEvents = events.filter(e => {
