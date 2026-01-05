@@ -106,8 +106,8 @@
 
 .subscribeIframe {
   width: 100%;
-  height: 1650px;
-  min-height: 1650px;
+  height: 1750px;
+  min-height: 1750px;
   border: none;
 }
 
@@ -159,8 +159,8 @@
   }
 
   .subscribeIframe {
-    height: 1250px;
-    min-height: 1250px;
+    height: 1350px;
+    min-height: 1350px;
   }
 }
 
