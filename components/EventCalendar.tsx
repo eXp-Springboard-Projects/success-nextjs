@@ -4,11 +4,21 @@ import styles from './EventCalendar.module.css';
 interface Event {
   id: string;
   title: string;
+  slug: string;
+  description: string;
+  eventType: string;
   startDateTime: string;
   endDateTime: string;
-  eventType: string;
-  description: string;
+  timezone: string;
+  location: string;
+  thumbnail: string;
+  hostName: string;
+  hostBio: string;
+  hostImage: string;
+  maxAttendees: number | null;
+  currentAttendees: number;
   isRegistered: boolean;
+  registrationStatus: string | null;
 }
 
 interface EventCalendarProps {
