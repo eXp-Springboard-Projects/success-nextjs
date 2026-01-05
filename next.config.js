@@ -19,16 +19,17 @@ const nextConfig = {
       // ============================================
       
       // Daily SMS signup page - QR code in Mar/Apr 2025 magazine (going to press 1/6)
-      {
-        source: '/daily-sms',
-        destination: '/daily-inspo-text',
-        permanent: true,
-      },
-      {
-        source: '/daily-sms/',
-        destination: '/daily-inspo-text',
-        permanent: true,
-      },
+      // Redirect removed - page now exists at /daily-sms
+      // {
+      //   source: '/daily-sms',
+      //   destination: '/daily-inspo-text',
+      //   permanent: true,
+      // },
+      // {
+      //   source: '/daily-sms/',
+      //   destination: '/daily-inspo-text',
+      //   permanent: true,
+      // },
       
       // Jim Rohn Children's Book - QR code in Jan/Feb 2025 magazine
       // /yourenotatree → Amazon product page
