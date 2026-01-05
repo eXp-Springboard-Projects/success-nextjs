@@ -125,7 +125,7 @@ export default function RefundsPage() {
             <div className={styles.loading}>Loading refunds...</div>
           ) : refunds.length === 0 ? (
             <div className={styles.empty}>
-              <div className={styles.emptyIcon}>=�</div>
+              <div className={styles.emptyIcon}>💸</div>
               <div>No refunds found</div>
               <button
                 onClick={() => setShowRefundModal(true)}
