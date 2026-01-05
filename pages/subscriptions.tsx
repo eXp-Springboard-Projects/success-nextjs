@@ -34,7 +34,12 @@ export default function SubscriptionsPage() {
         <section className={styles.subscribeSection}>
           <h2 className={styles.subscribeTitle}>Subscribe Now</h2>
           <div className={styles.iframeContainer}>
-            <iframe src="https://subscribe.success.com/SCC/?f=paid" title="Subscribe" className={styles.subscribeIframe} />
+            <iframe
+              src="https://subscribe.success.com/SCC/?f=paid"
+              title="Subscribe"
+              className={styles.subscribeIframe}
+              scrolling="no"
+            />
           </div>
         </section>
       </div>
