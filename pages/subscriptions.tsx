@@ -38,7 +38,6 @@ export default function SubscriptionsPage() {
               src="https://subscribe.success.com/SCC/?f=paid"
               title="Subscribe"
               className={styles.subscribeIframe}
-              scrolling="no"
             />
           </div>
         </section>
