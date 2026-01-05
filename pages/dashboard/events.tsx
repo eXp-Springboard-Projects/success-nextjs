@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import styles from './dashboard.module.css';
+import EventCalendar from '../../components/EventCalendar';
 
 interface Event {
   id: string;
@@ -32,6 +33,8 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [showUpcoming, setShowUpcoming] = useState(true);
+  const [view, setView] = useState<'calendar' | 'list'>('calendar');
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -183,6 +186,21 @@ export default function EventsPage() {
           <div className={styles.filters}>
             <div className={styles.filterGroup}>
               <button
+                className={view === 'calendar' ? styles.activeFilter : ''}
+                onClick={() => setView('calendar')}
+              >
+                📅 Calendar View
+              </button>
+              <button
+                className={view === 'list' ? styles.activeFilter : ''}
+                onClick={() => setView('list')}
+              >
+                📋 List View
+              </button>
+            </div>
+
+            <div className={styles.filterGroup}>
+              <button
                 className={showUpcoming ? styles.activeFilter : ''}
                 onClick={() => setShowUpcoming(true)}
               >
@@ -210,7 +228,14 @@ export default function EventsPage() {
             </select>
           </div>
 
-          <div className={styles.eventsList}>
+          {view === 'calendar' && (
+            <EventCalendar
+              events={events}
+              onEventClick={(event) => setSelectedEvent(event)}
+            />
+          )}
+
+          <div className={styles.eventsList} style={{ display: view === 'list' ? 'block' : 'none' }}>
             {events.map((event) => (
               <div key={event.id} className={styles.eventCard}>
                 <div className={styles.eventDate}>
@@ -302,6 +327,73 @@ export default function EventsPage() {
           {events.length === 0 && !loading && (
             <div className={styles.emptyState}>
               <p>No events found matching your filters.</p>
+            </div>
+          )}
+
+          {/* Event Detail Modal */}
+          {selectedEvent && (
+            <div className={styles.modalOverlay} onClick={() => setSelectedEvent(null)}>
+              <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+                <button className={styles.modalClose} onClick={() => setSelectedEvent(null)}>×</button>
+
+                {selectedEvent.thumbnail && (
+                  <img src={selectedEvent.thumbnail} alt={selectedEvent.title} className={styles.modalImage} />
+                )}
+
+                <h2>{selectedEvent.title}</h2>
+                <div className={styles.eventType}>{selectedEvent.eventType.replace(/_/g, ' ')}</div>
+
+                <div className={styles.modalDetails}>
+                  <p><strong>📅 Date:</strong> {formatDate(selectedEvent.startDateTime)}</p>
+                  <p><strong>🕐 Time:</strong> {formatTime(selectedEvent.startDateTime)}</p>
+                  {selectedEvent.timezone && <p><strong>⏰ Timezone:</strong> {selectedEvent.timezone}</p>}
+                  {selectedEvent.hostName && <p><strong>👤 Host:</strong> {selectedEvent.hostName}</p>}
+                  {selectedEvent.maxAttendees && (
+                    <p><strong>👥 Capacity:</strong> {selectedEvent.currentAttendees} / {selectedEvent.maxAttendees}</p>
+                  )}
+                </div>
+
+                <p className={styles.modalDescription}>{selectedEvent.description}</p>
+
+                <div className={styles.modalActions}>
+                  {selectedEvent.isRegistered ? (
+                    <>
+                      <span className={styles.registeredBadge}>
+                        {selectedEvent.registrationStatus === 'WAITLISTED' ? 'Waitlisted' : 'Registered ✓'}
+                      </span>
+                      {selectedEvent.location && (
+                        <a
+                          href={selectedEvent.location}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.joinBtn}
+                        >
+                          Join Event
+                        </a>
+                      )}
+                      <button
+                        className={styles.cancelBtn}
+                        onClick={() => handleCancelRegistration(selectedEvent.id)}
+                      >
+                        Cancel Registration
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      className={styles.registerBtn}
+                      onClick={() => handleRegister(selectedEvent.id)}
+                      disabled={
+                        selectedEvent.maxAttendees !== null &&
+                        selectedEvent.currentAttendees >= selectedEvent.maxAttendees
+                      }
+                    >
+                      {selectedEvent.maxAttendees && selectedEvent.currentAttendees >= selectedEvent.maxAttendees
+                        ? 'Join Waitlist'
+                        : 'Register for Event'}
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </main>
