@@ -42,9 +42,20 @@ export default function AdminMedia() {
   const fetchMedia = async () => {
     try {
       const res = await fetch('/api/media?per_page=100');
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        // Check if it's a "table doesn't exist" error
+        if (res.status === 500 && errorData.error) {
+          alert(`Media library error: ${errorData.error}\n\nThe media table may not exist. Please contact your system administrator.`);
+        }
+        throw new Error(errorData.error || 'Failed to fetch media');
+      }
+
       const data = await res.json();
       setMedia(data);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Failed to load media:', error);
     } finally {
       setLoading(false);
     }
