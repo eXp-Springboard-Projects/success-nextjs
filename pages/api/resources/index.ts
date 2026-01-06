@@ -59,16 +59,25 @@ export default async function handler(
     const { resourceId } = req.body;
 
     try {
-      // Increment download count
-      const { error } = await supabase
-        .from('resources')
-        .update({
-          downloadCount: supabase.raw('download_count + 1')
-        })
-        .eq('id', resourceId);
+      // Use RPC function to increment download count
+      const { error } = await supabase.rpc('increment_resource_downloads', {
+        resource_id: resourceId,
+      });
 
       if (error) {
-        throw error;
+        // If function doesn't exist, fall back to manual update
+        const { data: resource } = await supabase
+          .from('resources')
+          .select('downloadCount')
+          .eq('id', resourceId)
+          .single();
+
+        if (resource) {
+          await supabase
+            .from('resources')
+            .update({ downloadCount: (resource.downloadCount || 0) + 1 })
+            .eq('id', resourceId);
+        }
       }
 
       return res.status(200).json({ success: true });
