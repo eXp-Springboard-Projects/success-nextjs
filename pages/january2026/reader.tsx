@@ -6,8 +6,8 @@ import styles from './reader.module.css';
 export default function January2026Reader() {
   const router = useRouter();
 
-  // Flipbook embed URL - to be updated with actual URL when available
-  const flipbookUrl = 'https://read.dmtmag.com/i/1555634-jan-feb-2026/0';
+  // PDF URL for the digital magazine
+  const pdfUrl = '/magazines/january2026-digital.pdf';
   const coverImageUrl = '/images/january2026-cover.jpg';
 
   return (
@@ -38,11 +38,10 @@ export default function January2026Reader() {
 
         <div className={styles.flipbookWrapper}>
           <iframe
-            src={flipbookUrl}
+            src={pdfUrl}
             className={styles.flipbookIframe}
-            title="SUCCESS Magazine - January/February 2026"
+            title="SUCCESS Magazine - January 2026 Digital Edition"
             allowFullScreen
-            allow="fullscreen"
           />
         </div>
       </div>
