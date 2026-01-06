@@ -36,7 +36,8 @@
       "Bash(cat:*)",
       "Bash(npm run dev:*)",
       "Bash(taskkill:*)",
-      "Bash(DATABASE_URL=\"postgres://e731f8c351f1974c788b739203b00113561ca6e26a0a8c0d7d5efcea8cf9b656:sk_LYHdgk8RomZonUpgI9S97@db.prisma.io:5432/postgres?sslmode=require\" npx tsx scripts/check-user-login.ts)"
+      "Bash(DATABASE_URL=\"postgres://e731f8c351f1974c788b739203b00113561ca6e26a0a8c0d7d5efcea8cf9b656:sk_LYHdgk8RomZonUpgI9S97@db.prisma.io:5432/postgres?sslmode=require\" npx tsx scripts/check-user-login.ts)",
+      "Bash(unzip:*)"
     ],
     "deny": [],
     "ask": []
