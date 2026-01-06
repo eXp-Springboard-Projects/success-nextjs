@@ -31,6 +31,8 @@ import RevisionHistory from './RevisionHistory';
 import ImageEditor from './ImageEditor';
 import TextStylePanel from './TextStylePanel';
 import BlockControls from './BlockControls';
+import ArticleTemplates from './ArticleTemplates';
+import { ArticleTemplate } from './article-templates/templateDefinitions';
 import styles from './EnhancedPostEditor.module.css';
 import blockStyles from './BlockEditor.module.css';
 
@@ -72,6 +74,7 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
   const [showTextStylePanel, setShowTextStylePanel] = useState(false);
   const [showBlockControls, setShowBlockControls] = useState(false);
   const [blockControlsPosition, setBlockControlsPosition] = useState({ top: 0, left: 0 });
+  const [showTemplates, setShowTemplates] = useState(false);
   const [wordCount, setWordCount] = useState(0);
   const [charCount, setCharCount] = useState(0);
   const [autoSaving, setAutoSaving] = useState(false);
@@ -531,6 +534,135 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
     }
   };
 
+  const applyTemplate = (template: ArticleTemplate) => {
+    if (!editor) return;
+
+    // Clear existing content
+    editor.commands.clearContent();
+
+    // Insert each block from the template
+    template.blocks.forEach((block, index) => {
+      // Add spacing between blocks
+      if (index > 0) {
+        editor.commands.insertContent('<p></p>');
+      }
+
+      switch (block.type) {
+        case 'heading':
+          editor.commands.insertContent({
+            type: 'heading',
+            attrs: { level: block.attrs?.level || 2 },
+            content: block.content ? [{ type: 'text', text: block.content }] : []
+          });
+          break;
+
+        case 'paragraph':
+          editor.commands.insertContent({
+            type: 'paragraph',
+            content: block.content ? [{ type: 'text', text: block.content }] : []
+          });
+          break;
+
+        case 'fullWidthImage':
+          (editor.chain() as any).setFullWidthImage({
+            src: block.attrs?.src || 'https://via.placeholder.com/1200x600',
+            alt: block.attrs?.alt || 'Placeholder image',
+            caption: block.attrs?.caption || ''
+          }).run();
+          break;
+
+        case 'imageTextLayout':
+          (editor.chain() as any).setImageTextLayout({
+            imagePosition: block.attrs?.imagePosition || 'left',
+            src: block.attrs?.src || 'https://via.placeholder.com/600x400',
+            alt: block.attrs?.alt || 'Placeholder image',
+            text: block.content || 'Add your text content here...'
+          }).run();
+          break;
+
+        case 'pullQuote':
+          (editor.chain() as any).setPullQuote({
+            quote: block.content || 'Add your quote here...',
+            author: block.attrs?.author
+          }).run();
+          break;
+
+        case 'calloutBox':
+          (editor.chain() as any).setCalloutBox({
+            variant: block.attrs?.variant || 'info',
+            title: block.attrs?.title,
+            content: block.content || 'Add your callout content here...'
+          }).run();
+          break;
+
+        case 'divider':
+          (editor.chain() as any).setDivider({
+            style: block.attrs?.style || 'solid'
+          }).run();
+          break;
+
+        case 'imageGallery':
+          (editor.chain() as any).setImageGallery({
+            images: block.attrs?.images || [
+              { src: 'https://via.placeholder.com/400x300', alt: 'Image 1' },
+              { src: 'https://via.placeholder.com/400x300', alt: 'Image 2' },
+              { src: 'https://via.placeholder.com/400x300', alt: 'Image 3' }
+            ],
+            columns: block.attrs?.columns || 3
+          }).run();
+          break;
+
+        case 'videoEmbed':
+          (editor.chain() as any).setVideoEmbed({
+            src: block.attrs?.src || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            provider: block.attrs?.provider || 'youtube'
+          }).run();
+          break;
+
+        case 'authorBio':
+          (editor.chain() as any).setAuthorBio({
+            name: block.attrs?.name || session?.user?.name || 'Author Name',
+            title: block.attrs?.title || 'Author',
+            bio: block.content || 'Author biography goes here...',
+            avatar: block.attrs?.avatar
+          }).run();
+          break;
+
+        case 'relatedArticles':
+          (editor.chain() as any).setRelatedArticles({
+            title: block.attrs?.title || 'Read More',
+            articles: block.attrs?.articles || [
+              { url: '#', title: 'Related Article 1', excerpt: 'Short description...' },
+              { url: '#', title: 'Related Article 2', excerpt: 'Short description...' }
+            ]
+          }).run();
+          break;
+
+        case 'buttonBlock':
+          (editor.chain() as any).setButtonBlock({
+            text: block.attrs?.text || 'Click Here',
+            url: block.attrs?.url || '#',
+            variant: block.attrs?.variant || 'primary'
+          }).run();
+          break;
+
+        case 'twoColumnText':
+          (editor.chain() as any).setTwoColumnText({
+            leftContent: block.attrs?.leftContent || 'Left column content...',
+            rightContent: block.attrs?.rightContent || 'Right column content...'
+          }).run();
+          break;
+
+        default:
+          // Unknown block type, skip
+          break;
+      }
+    });
+
+    // Move cursor to the beginning
+    editor.commands.focus('start');
+  };
+
   const handleSave = async (publishStatus: string) => {
     if (!title || !editor?.getHTML()) {
       alert('Title and content are required');
@@ -930,6 +1062,19 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
 
                 <div className={styles.toolbarDivider}></div>
 
+                {/* Templates Button */}
+                <div className={styles.toolbarGroup}>
+                  <button
+                    onClick={() => setShowTemplates(true)}
+                    className={styles.toolbarButton}
+                    title="Choose Article Template"
+                  >
+                    📑 Templates
+                  </button>
+                </div>
+
+                <div className={styles.toolbarDivider}></div>
+
                 {/* Block Menu */}
                 <div className={styles.toolbarGroup} style={{ position: 'relative' }}>
                   <button
@@ -1293,6 +1438,17 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
           editor={editor}
           position={blockControlsPosition}
           onClose={() => setShowBlockControls(false)}
+        />
+      )}
+
+      {/* Article Templates Modal */}
+      {showTemplates && (
+        <ArticleTemplates
+          onSelectTemplate={(template) => {
+            applyTemplate(template);
+            setShowTemplates(false);
+          }}
+          onClose={() => setShowTemplates(false)}
         />
       )}
     </div>
