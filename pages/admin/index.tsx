@@ -2,7 +2,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Pencil, FileText, Calendar, Target, Star, Image, TrendingUp, Search, CheckCircle, Lock, BarChart3, type LucideIcon } from 'lucide-react';
+import { Pencil, FileText, Calendar, Target, Star, Image, TrendingUp, Search, CheckCircle, Lock, BarChart3, Download, type LucideIcon } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import DashboardStats from '../../components/admin/DashboardStats';
 import styles from './Dashboard.module.css';
@@ -50,6 +50,7 @@ export default function AdminDashboard() {
     { label: 'View Content', href: '/admin/content-viewer', icon: FileText, color: '#667eea' },
     { label: 'New Post', href: '/admin/posts/new', icon: Pencil, color: '#764ba2' },
     { label: 'Editorial Calendar', href: '/admin/editorial-calendar', icon: Calendar, color: '#8b5cf6' },
+    { label: 'Resource Library', href: '/admin/resources', icon: Download, color: '#e65c00' },
     { label: 'SUCCESS+', href: '/success-plus/account', icon: Star, color: '#c41e3a' },
     { label: 'SEO Manager', href: '/admin/seo', icon: Target, color: '#10b981' },
     { label: 'Site Analytics', href: '/admin/analytics', icon: TrendingUp, color: '#4facfe' },
