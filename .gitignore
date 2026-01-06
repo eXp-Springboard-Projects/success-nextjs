@@ -47,3 +47,6 @@ check-admin.mjs
 /data/*.json
 !/data/README.md
 pnpm-lock.yaml
+
+# Large resource files (deploy via Vercel blob storage or CDN)
+/public/resources/success-plus/*.pdf
