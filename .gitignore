@@ -48,5 +48,4 @@ check-admin.mjs
 !/data/README.md
 pnpm-lock.yaml
 
-# Large resource files (deploy via Vercel blob storage or CDN)
-/public/resources/success-plus/*.pdf
+# Large resource files - now committed to git for deployment
