@@ -8,6 +8,7 @@ export default function January2026Reader() {
 
   // Flipbook embed URL - to be updated with actual URL when available
   const flipbookUrl = 'https://read.dmtmag.com/i/1555634-jan-feb-2026/0';
+  const coverImageUrl = '/images/january2026-cover.jpg';
 
   return (
     <>
@@ -15,11 +16,11 @@ export default function January2026Reader() {
         <title>January/February 2026 Digital Edition - SUCCESS Magazine</title>
         <meta
           name="description"
-          content="Read the January/February 2026 issue of SUCCESS Magazine featuring Dean & Lisa Graziosi on The Power of Partnership in Business & Life"
+          content="Read the January 2026 Digital Edition of SUCCESS Magazine featuring Amy Porterfield - Your Ultimate Guide to Reinvention"
         />
-        <meta property="og:title" content="January/February 2026 - SUCCESS Magazine" />
-        <meta property="og:description" content="Dean & Lisa Graziosi: The Power of Partnership in Business & Life" />
-        <meta property="og:image" content="https://successcom.wpenginepowered.com/wp-content/uploads/2025/12/SM26_JAN-FEB-_-COVER-_-DEAN-LISA-GRAZIOSI_NO-BARCODE_FLAT-scaled.jpg" />
+        <meta property="og:title" content="January 2026 Digital Edition - SUCCESS Magazine" />
+        <meta property="og:description" content="Amy Porterfield: Your Ultimate Guide to Reinvention - The Multimillion-Dollar Pivot" />
+        <meta property="og:image" content="https://www.success.com/images/january2026-cover.jpg" />
         <meta property="og:type" content="article" />
       </Head>
 
@@ -31,8 +32,8 @@ export default function January2026Reader() {
           >
             ← Back to Magazine
           </button>
-          <h1 className={styles.title}>January/February 2026</h1>
-          <div className={styles.subtitle}>SUCCESS Magazine - The Leadership Issue</div>
+          <h1 className={styles.title}>January 2026</h1>
+          <div className={styles.subtitle}>SUCCESS Magazine Digital Edition - Your Ultimate Guide to Reinvention</div>
         </div>
 
         <div className={styles.flipbookWrapper}>
