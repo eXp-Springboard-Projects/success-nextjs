@@ -149,20 +149,20 @@ export default async function handler(
         publishedAt
       } = req.body;
 
-      // Create new post
+      // Create new post (only include fields that exist in the database)
       const { data: newPost, error: postError } = await supabase
         .from('posts')
         .insert({
           id: `post_${Date.now()}`,
           title,
-          slug,
+          slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
           content,
           excerpt: excerpt || '',
           status: status?.toUpperCase() || 'DRAFT',
-          featuredImage,
-          featuredImageAlt,
-          seoTitle,
-          seoDescription,
+          featuredImage: featuredImage || null,
+          featuredImageAlt: featuredImageAlt || null,
+          seoTitle: seoTitle || null,
+          seoDescription: seoDescription || null,
           authorId: authorId || session.user.id,
           publishedAt: status === 'PUBLISHED' || status === 'published'
             ? (publishedAt ? new Date(publishedAt).toISOString() : new Date().toISOString())
