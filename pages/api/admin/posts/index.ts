@@ -172,27 +172,38 @@ export default async function handler(
         .single();
 
       if (postError) {
-        throw postError;
+        console.error('Post creation error:', postError);
+        return res.status(500).json({
+          error: 'Failed to create post',
+          message: postError.message,
+          details: postError.details,
+          hint: postError.hint
+        });
       }
 
-      // Create initial revision
-      await supabase
-        .from('post_revisions')
-        .insert({
-          id: `rev_${Date.now()}`,
-          postId: newPost.id,
-          title: newPost.title,
-          content: newPost.content,
-          excerpt: newPost.excerpt,
-          featuredImage: newPost.featuredImage,
-          featuredImageAlt: newPost.featuredImageAlt,
-          status: newPost.status,
-          seoTitle: newPost.seoTitle,
-          seoDescription: newPost.seoDescription,
-          authorId: session.user.id,
-          authorName: session.user.name || 'Unknown',
-          changeNote: 'Initial version',
-        });
+      // Create initial revision (don't fail if this doesn't work)
+      try {
+        await supabase
+          .from('post_revisions')
+          .insert({
+            id: `rev_${Date.now()}`,
+            postId: newPost.id,
+            title: newPost.title,
+            content: newPost.content,
+            excerpt: newPost.excerpt,
+            featuredImage: newPost.featuredImage,
+            featuredImageAlt: newPost.featuredImageAlt,
+            status: newPost.status,
+            seoTitle: newPost.seoTitle,
+            seoDescription: newPost.seoDescription,
+            authorId: session.user.id,
+            authorName: session.user.name || 'Unknown',
+            changeNote: 'Initial version',
+          });
+      } catch (revError: any) {
+        console.error('Failed to create revision (non-fatal):', revError.message);
+        // Continue anyway - revision is not critical
+      }
 
       return res.status(201).json({
         success: true,
@@ -204,8 +215,12 @@ export default async function handler(
           status: newPost.status,
         }
       });
-    } catch (error) {
-      return res.status(500).json({ error: 'Failed to create post' });
+    } catch (error: any) {
+      console.error('Post creation error:', error);
+      return res.status(500).json({
+        error: 'Failed to create post',
+        message: error.message || 'Unknown error'
+      });
     }
   }
 
