@@ -40,7 +40,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (error) throw error;
 
-    return res.status(200).json({ resources: data || [] });
+    // Transform data to match expected format
+    const transformedResources = (data || []).map(resource => ({
+      id: resource.id,
+      title: resource.title,
+      description: resource.description || '',
+      category: resource.category,
+      fileUrl: resource.fileUrl,
+      fileType: resource.fileType || 'pdf',
+      fileSize: resource.fileSize || 0,
+      fileName: resource.fileName,
+      downloads: resource.downloadCount || 0,
+      createdAt: resource.createdAt,
+      featured: resource.featured || false,
+    }));
+
+    return res.status(200).json({ resources: transformedResources });
   } catch (error: any) {
     console.error('Error fetching resources:', error);
     return res.status(500).json({ message: 'Failed to fetch resources' });
