@@ -32,14 +32,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // If function doesn't exist, fall back to manual update
       const { data: resource } = await supabase
         .from('resources')
-        .select('downloads')
+        .select('downloadCount')
         .eq('id', resourceId)
         .single();
 
       if (resource) {
         await supabase
           .from('resources')
-          .update({ downloads: (resource.downloads || 0) + 1 })
+          .update({ downloadCount: (resource.downloadCount || 0) + 1 })
           .eq('id', resourceId);
       }
     }
