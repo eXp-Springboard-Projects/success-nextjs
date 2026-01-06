@@ -95,11 +95,10 @@ export default function DailySMSPage() {
           <div className={styles.heroContent}>
             <div className={styles.heroText}>
               <h1 className={styles.heroTitle}>
-                Get Daily Inspirational Quotes
-                <span className={styles.highlight}> Texted to You</span>
+                Fuel Your Success
               </h1>
               <p className={styles.heroSubtitle}>
-                One quote that touches your heart or reminds you of your dreams can inspire steps that change everything.
+                Motivational Mantras Delivered Daily to Your Phone
               </p>
               <div className={styles.heroFeatures}>
                 <div className={styles.feature}>
@@ -136,10 +135,10 @@ export default function DailySMSPage() {
         <section className={styles.benefitsSection}>
           <div className={styles.container}>
             <h2 className={styles.sectionTitle}>
-              Why Daily Inspirational Quotes?
+              What You Can Expect
             </h2>
             <p className={styles.sectionSubtitle}>
-              Psychological research shows that regular exposure to positive, motivational content can transform your mindset and daily actions.
+              Daily motivational quotes designed to inspire action and transform your mindset
             </p>
 
             <div className={styles.benefitsGrid}>

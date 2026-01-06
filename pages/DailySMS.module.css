@@ -4,7 +4,7 @@
 
 /* Hero Section */
 .hero {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0066cc 0%, #004d99 100%);
   color: #fff;
   padding: 6rem 2rem;
   position: relative;
@@ -57,10 +57,7 @@
 
 .highlight {
   display: block;
-  background: linear-gradient(90deg, #ffd700, #ffed4e);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #fff;
 }
 
 .heroSubtitle {
@@ -98,8 +95,8 @@
 .heroCtaButton {
   margin-top: 2rem;
   padding: 1rem 3rem;
-  background: linear-gradient(90deg, #ffd700, #ffed4e);
-  color: #111827;
+  background: #fff;
+  color: #0066cc;
   font-size: 1.125rem;
   font-weight: 700;
   border: none;
@@ -108,13 +105,13 @@
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 1px;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .heroCtaButton:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 25px rgba(255, 215, 0, 0.6);
-  background: linear-gradient(90deg, #ffed4e, #ffd700);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
+  background: #f0f0f0;
 }
 
 .heroImage {
@@ -206,7 +203,7 @@
 /* Signup Section */
 .signupSection {
   padding: 6rem 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0066cc 0%, #004d99 100%);
 }
 
 .formWrapper {
@@ -270,8 +267,8 @@
 
 .formGroup input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #0066cc;
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
 }
 
 .formGroup input:disabled {
@@ -287,7 +284,7 @@
 .submitButton {
   width: 100%;
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0066cc 0%, #004d99 100%);
   color: #fff;
   font-size: 1.125rem;
   font-weight: 700;
@@ -302,7 +299,7 @@
 
 .submitButton:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 10px 20px rgba(0, 102, 204, 0.3);
 }
 
 .submitButton:disabled {
@@ -354,8 +351,8 @@
 .secondaryButton {
   padding: 0.75rem 1.5rem;
   background: #fff;
-  color: #667eea;
-  border: 2px solid #667eea;
+  color: #0066cc;
+  border: 2px solid #0066cc;
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
@@ -363,7 +360,7 @@
 }
 
 .secondaryButton:hover {
-  background: #667eea;
+  background: #0066cc;
   color: #fff;
 }
 
@@ -389,9 +386,9 @@
 }
 
 .topicCard:hover {
-  border-color: #667eea;
+  border-color: #0066cc;
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(102, 126, 234, 0.15);
+  box-shadow: 0 12px 24px rgba(0, 102, 204, 0.15);
 }
 
 .topicIcon {
