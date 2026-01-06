@@ -1,0 +1,350 @@
+.container {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding: 2rem;
+}
+
+.header {
+  max-width: 1400px;
+  margin: 0 auto 2rem;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.header h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2rem;
+  color: #111;
+}
+
+.subtitle {
+  margin: 0;
+  color: #666;
+  font-size: 1rem;
+}
+
+.backButton {
+  background: transparent;
+  border: 1px solid #ddd;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  color: #333;
+  transition: all 0.2s;
+}
+
+.backButton:hover {
+  background: #f5f5f5;
+  border-color: #999;
+}
+
+.content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.inputSection,
+.outputSection {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #111;
+  font-size: 1.125rem;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 500px;
+  padding: 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #000;
+}
+
+.inputActions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.parseButton {
+  flex: 1;
+  background: #000;
+  color: #fff;
+  border: none;
+  padding: 0.875rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.parseButton:hover:not(:disabled) {
+  background: #333;
+  transform: translateY(-1px);
+}
+
+.parseButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.clearButton {
+  background: #fff;
+  color: #666;
+  border: 1px solid #ddd;
+  padding: 0.875rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clearButton:hover {
+  background: #f5f5f5;
+  border-color: #999;
+}
+
+.previewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.previewHeader h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #111;
+}
+
+.outputActions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.copyButton {
+  background: #000;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.copyButton:hover {
+  background: #333;
+}
+
+.preview {
+  background: #fafafa;
+  padding: 2rem;
+  border-radius: 6px;
+  margin-bottom: 2rem;
+  border: 1px solid #e0e0e0;
+}
+
+.previewTitle {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0 0 1.5rem 0;
+  color: #111;
+  line-height: 1.2;
+}
+
+.previewHeading {
+  font-weight: 700;
+  margin: 1.5rem 0 1rem 0;
+  color: #111;
+}
+
+.previewHeading:first-child {
+  margin-top: 0;
+}
+
+.previewParagraph {
+  margin: 0 0 1rem 0;
+  line-height: 1.7;
+  color: #333;
+}
+
+.previewListItem {
+  margin: 0.5rem 0 0.5rem 2rem;
+  line-height: 1.6;
+  color: #333;
+}
+
+.previewQuote {
+  margin: 1.5rem 0;
+  padding: 1rem 1.5rem;
+  background: #fff;
+  border-left: 4px solid #000;
+  font-style: italic;
+  color: #555;
+}
+
+.imagesSection,
+.linksSection {
+  margin-bottom: 2rem;
+}
+
+.imagesSection h3,
+.linksSection h3,
+.htmlOutput h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  color: #111;
+}
+
+.imagesList,
+.linksList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.imagesList li,
+.linksList li {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #f9f9f9;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+}
+
+.thumbnailImage {
+  max-width: 200px;
+  height: auto;
+  display: block;
+  margin-bottom: 0.5rem;
+  border-radius: 4px;
+}
+
+.imagesList code,
+.linksList code {
+  display: block;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  color: #666;
+  word-break: break-all;
+}
+
+.linksList a {
+  color: #0066cc;
+  text-decoration: none;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.linksList a:hover {
+  text-decoration: underline;
+}
+
+.htmlOutput {
+  margin-top: 2rem;
+}
+
+.codeBlock {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 1.5rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.codeBlock code {
+  font-family: 'Courier New', monospace;
+  white-space: pre;
+}
+
+.unauthorized {
+  max-width: 600px;
+  margin: 4rem auto;
+  padding: 2rem;
+  text-align: center;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.unauthorized h1 {
+  color: #dc2626;
+  margin-bottom: 1rem;
+}
+
+.unauthorized p {
+  color: #666;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+
+  .inputSection {
+    margin-bottom: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .header,
+  .inputSection,
+  .outputSection {
+    padding: 1.5rem;
+  }
+
+  .previewHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .outputActions {
+    width: 100%;
+  }
+
+  .copyButton {
+    flex: 1;
+  }
+}
