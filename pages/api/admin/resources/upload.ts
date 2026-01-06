@@ -52,6 +52,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Upload to Supabase Storage
     const supabase = supabaseAdmin();
+
+    // Try to upload to resources bucket
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('resources')
       .upload(fileName, fileBuffer, {
@@ -61,7 +63,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
-      return res.status(500).json({ message: 'Failed to upload file' });
+      console.error('Upload error details:', {
+        message: uploadError.message,
+        name: uploadError.name,
+        fileName,
+        fileSize: file.size,
+        mimeType: file.mimetype
+      });
+      return res.status(500).json({
+        message: 'Failed to upload file to storage',
+        error: uploadError.message,
+        details: 'Check if the "resources" bucket exists in Supabase Storage and has proper permissions'
+      });
     }
 
     // Get public URL
