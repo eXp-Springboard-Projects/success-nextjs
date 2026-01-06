@@ -41,6 +41,7 @@ export default function AdminResourcesPage() {
   const [loading, setLoading] = useState(true);
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [seeding, setSeeding] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -156,6 +157,33 @@ export default function AdminResourcesPage() {
     }
   };
 
+  const handleSeedResources = async () => {
+    if (!confirm('This will catalog all PDF files from /public/resources/success-plus/ into the database. Continue?')) {
+      return;
+    }
+
+    setSeeding(true);
+    try {
+      const res = await fetch('/api/admin/resources/seed', {
+        method: 'POST',
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(`Success!\nInserted: ${data.summary.inserted}\nUpdated: ${data.summary.updated}\nSkipped: ${data.summary.skipped}`);
+        fetchResources();
+      } else {
+        alert(`Failed to seed resources: ${data.message || data.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to seed resources:', error);
+      alert('Failed to seed resources');
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   const formatFileSize = (bytes: number): string => {
     const mb = bytes / (1024 * 1024);
     return mb < 1 ? `${(bytes / 1024).toFixed(0)} KB` : `${mb.toFixed(1)} MB`;
@@ -190,9 +218,19 @@ export default function AdminResourcesPage() {
       <div className={styles.header}>
         <div className={styles.headerContent}>
           <h1 className={styles.title}>Resources Management</h1>
-          <button onClick={() => router.push('/admin')} className={styles.backButton}>
-            ← Back to Admin
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              onClick={handleSeedResources}
+              className={styles.backButton}
+              disabled={seeding}
+              style={{ background: '#0066cc', color: 'white' }}
+            >
+              {seeding ? '🔄 Cataloging...' : '📁 Catalog PDFs'}
+            </button>
+            <button onClick={() => router.push('/admin')} className={styles.backButton}>
+              ← Back to Admin
+            </button>
+          </div>
         </div>
 
         <div className={styles.stats}>
