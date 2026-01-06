@@ -143,7 +143,7 @@ export const articleTemplates: ArticleTemplate[] = [
       {
         type: 'heading',
         attrs: { level: 3 },
-        content: '[Subject's title and notable achievement or angle]'
+        content: '[Subject title and notable achievement or angle]'
       },
       {
         type: 'imageTextLayout',
@@ -164,7 +164,7 @@ export const articleTemplates: ArticleTemplate[] = [
       },
       {
         type: 'paragraph',
-        content: '[Subject's answer with engaging details and personal insights.]'
+        content: '[Subject answer with engaging details and personal insights.]'
       },
       {
         type: 'pullQuote',
@@ -351,7 +351,7 @@ export const articleTemplates: ArticleTemplate[] = [
       {
         type: 'heading',
         attrs: { level: 3 },
-        content: '[What you'll learn and why it matters]'
+        content: '[What you will learn and why it matters]'
       },
       {
         type: 'paragraph',
@@ -474,7 +474,7 @@ export const articleTemplates: ArticleTemplate[] = [
           src: 'https://via.placeholder.com/400x300/667eea/ffffff?text=News+Image',
           alt: '[News image]'
         },
-        content: '<p>[Lead paragraph covering the 5 W's: Who, What, When, Where, Why]</p>'
+        content: '<p>[Lead paragraph covering the 5 Ws: Who, What, When, Where, Why]</p>'
       },
       {
         type: 'paragraph',
@@ -545,7 +545,7 @@ export const articleTemplates: ArticleTemplate[] = [
       },
       {
         type: 'paragraph',
-        content: '[Opening paragraph that hooks readers with the most compelling aspect of this person's story.]'
+        content: '[Opening paragraph that hooks readers with the most compelling aspect of this person story.]'
       },
       {
         type: 'pullQuote',
@@ -603,7 +603,7 @@ export const articleTemplates: ArticleTemplate[] = [
       },
       {
         type: 'paragraph',
-        content: '[What they're doing now and the difference they're making.]'
+        content: '[What they are doing now and the difference they are making.]'
       },
       {
         type: 'imageGallery',
