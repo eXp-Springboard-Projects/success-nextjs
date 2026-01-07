@@ -104,7 +104,16 @@ export default function AuthorPage({ author, posts, totalPosts }: AuthorPageProp
           ) : (
             <div className={styles.articlesGrid}>
               {filteredPosts.map((post) => (
-                <PostCard key={post.id} id={post.id} title={post.title} slug={post.slug} excerpt={post.excerpt || ''} featuredImage={post.featuredImage} date={post.publishedAt || ''} author={author.name} readTime={post.readTime} />
+                <PostCard key={post.id} post={{
+                  ...post,
+                  title: { rendered: post.title },
+                  excerpt: { rendered: post.excerpt || '' },
+                  _embedded: {
+                    'wp:featuredmedia': post.featuredImage ? [{ source_url: post.featuredImage }] : [],
+                    'wp:term': [[{ name: post.contentPillar ? getContentPillarLabel(post.contentPillar) : 'Uncategorized' }]],
+                    author: [{ name: author.name }]
+                  }
+                }} />
               ))}
             </div>
           )}
