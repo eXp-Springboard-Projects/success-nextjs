@@ -23,11 +23,21 @@ export function getUnsubscribeUrl(email: string, token: string): string {
 }
 
 /**
+ * Email subscription types matching HubSpot replacement
+ */
+export type EmailSubscriptionType =
+  | 'inside_success'       // Stay informed with curated articles, trends, tips, and expert insights
+  | 'customer_service'     // Feedback requests and customer service information
+  | 'transactional'        // Account signup, purchase receipts, invoices, password changes (always allowed)
+  | 'success_updates'      // Latest opportunities, events, webinars, courses, resources
+  | 'one_to_one';          // Direct one-to-one emails
+
+/**
  * Check if email is allowed for a specific type
  */
 export async function checkEmailAllowed(
   email: string,
-  type: 'marketing' | 'transactional' | 'newsletter'
+  type: EmailSubscriptionType
 ): Promise<boolean> {
   const supabase = supabaseAdmin();
 
@@ -42,16 +52,21 @@ export async function checkEmailAllowed(
   }
 
   if (preferences.unsubscribed) {
-    return false; // Fully unsubscribed
+    // Transactional emails can always be sent regardless of unsubscribe status
+    return type === 'transactional';
   }
 
   switch (type) {
-    case 'marketing':
-      return preferences.optInMarketing ?? false;
+    case 'inside_success':
+      return preferences.optInInsideSuccess ?? true;
+    case 'customer_service':
+      return preferences.optInCustomerService ?? true;
     case 'transactional':
-      return preferences.optInTransactional ?? false;
-    case 'newsletter':
-      return preferences.optInNewsletter ?? false;
+      return true; // Always allowed - relationship-based
+    case 'success_updates':
+      return preferences.optInSuccessUpdates ?? true;
+    case 'one_to_one':
+      return preferences.optInOneToOne ?? true;
     default:
       return false;
   }
@@ -63,9 +78,10 @@ export async function checkEmailAllowed(
 export async function updatePreferences(
   token: string,
   preferences: {
-    optInMarketing?: boolean;
-    optInNewsletter?: boolean;
-    optInTransactional?: boolean;
+    optInInsideSuccess?: boolean;
+    optInCustomerService?: boolean;
+    optInSuccessUpdates?: boolean;
+    optInOneToOne?: boolean;
     unsubscribed?: boolean;
     unsubscribeReason?: string;
   }
