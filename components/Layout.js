@@ -2,6 +2,7 @@ import Head from 'next/head';
 import Header from './Header';
 import Footer from './Footer';
 import BackToTop from './BackToTop';
+import AdminBar from './AdminBar';
 
 export default function Layout({ children }) {
   return (
@@ -15,6 +16,7 @@ export default function Layout({ children }) {
         />
       </Head>
       <div style={{ margin: 0, padding: 0 }}>
+        <AdminBar />
         <Header />
 
         <main style={{ margin: 0, padding: 0 }}>

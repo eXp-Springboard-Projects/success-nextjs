@@ -46,7 +46,9 @@ export default async function handler(
 
       // Apply filters
       if (status !== 'all') {
-        query = query.eq('status', status.toString().toUpperCase());
+        // Convert WordPress-style status to database enum
+        const dbStatus = status.toString() === 'publish' ? 'PUBLISHED' : status.toString().toUpperCase();
+        query = query.eq('status', dbStatus);
       }
 
       if (search) {
@@ -89,7 +91,7 @@ export default async function handler(
           slug: post.slug,
           content: { rendered: post.content },
           excerpt: { rendered: post.excerpt || '' },
-          status: post.status.toLowerCase(),
+          status: post.status === 'PUBLISHED' ? 'publish' : post.status.toLowerCase(),
           date: post.publishedAt || post.createdAt,
           modified: post.updatedAt,
           featured_media: post.featuredImage ? {

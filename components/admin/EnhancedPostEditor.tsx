@@ -1316,25 +1316,6 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
               </div>
 
               <div className={styles.panelSection}>
-                <h3 className={styles.panelTitle}>Author</h3>
-                <select
-                  value={selectedAuthorId}
-                  onChange={(e) => setSelectedAuthorId(e.target.value)}
-                  className={styles.select}
-                >
-                  <option value="">-- Use your account name --</option>
-                  {authors.map((author) => (
-                    <option key={author.id} value={author.id}>
-                      {author.name}{author.title ? ` (${author.title})` : ''}
-                    </option>
-                  ))}
-                </select>
-                <small className={styles.helpText}>
-                  Select a custom author or leave blank to use your account name
-                </small>
-              </div>
-
-              <div className={styles.panelSection}>
                 <h3 className={styles.panelTitle}>Homepage Display</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <label className={styles.checkboxLabel}>
@@ -1498,16 +1479,42 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
               </div>
 
               <div className={styles.panelSection}>
-                <h3 className={styles.panelTitle}>Author / Byline</h3>
+                <h3 className={styles.panelTitle}>Author (Writer's Name)</h3>
+                {authors.length > 0 && (
+                  <select
+                    value={selectedAuthorId}
+                    onChange={(e) => {
+                      setSelectedAuthorId(e.target.value);
+                      const selectedAuthor = authors.find(a => a.id === e.target.value);
+                      if (selectedAuthor) {
+                        setAuthor(selectedAuthor.name);
+                      } else if (e.target.value === '') {
+                        setAuthor('');
+                      }
+                    }}
+                    className={styles.input}
+                    style={{ marginBottom: '0.75rem' }}
+                  >
+                    <option value="">Select existing author or type new name below...</option>
+                    {authors.map(authorOption => (
+                      <option key={authorOption.id} value={authorOption.id}>
+                        {authorOption.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <input
                   type="text"
                   value={author}
-                  onChange={(e) => setAuthor(e.target.value)}
-                  placeholder="Author name (optional)"
+                  onChange={(e) => {
+                    setAuthor(e.target.value);
+                    setSelectedAuthorId(''); // Clear selection when manually typing
+                  }}
+                  placeholder="Or type author name manually (e.g., John Smith)"
                   className={styles.input}
                 />
                 <small style={{ color: '#666', fontSize: '0.875rem', display: 'block', marginTop: '0.5rem' }}>
-                  Leave blank to use your account name
+                  ⚠️ This is the article WRITER's name (appears on frontend), NOT your admin username.
                 </small>
               </div>
             </div>

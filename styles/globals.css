@@ -95,6 +95,11 @@ body:has([class*="AdminLayout"]) {
   overflow: visible !important;
 }
 
+/* Add top padding when admin bar is visible */
+body.admin-logged-in {
+  padding-top: 50px !important;
+}
+
 #__next {
   overflow-x: hidden !important;
   width: 100%;
