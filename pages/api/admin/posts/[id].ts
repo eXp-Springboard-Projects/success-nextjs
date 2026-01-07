@@ -19,6 +19,7 @@ export default async function handler(
 
   if (req.method === 'GET') {
     try {
+      // First, try to fetch from Supabase
       const { data: post, error } = await supabase
         .from('posts')
         .select(`
@@ -34,64 +35,106 @@ export default async function handler(
         .eq('id', id as string)
         .single();
 
-      if (error || !post) {
-        return res.status(404).json({ error: 'Post not found' });
+      // If found in Supabase, return it
+      if (post && !error) {
+        const formattedPost = {
+          id: post.id,
+          title: { rendered: post.title },
+          slug: post.slug,
+          content: { rendered: post.content },
+          excerpt: { rendered: post.excerpt || '' },
+          status: post.status.toLowerCase(),
+          date: post.publishedAt || post.createdAt,
+          modified: post.updatedAt,
+          featured_media_url: post.featuredImage || '',
+          featuredImageAlt: post.featuredImageAlt || '',
+          seoTitle: post.seoTitle || '',
+          seoDescription: post.seoDescription || '',
+          readTime: post.readTime || 0,
+          _embedded: {
+            author: [{
+              id: post.users.id,
+              name: post.users.name,
+              email: post.users.email,
+            }],
+            'wp:term': [
+              (post.categories || []).map((cat: any) => ({
+                id: cat.id,
+                name: cat.name,
+                slug: cat.slug,
+                taxonomy: 'category'
+              })),
+              (post.tags || []).map((tag: any) => ({
+                id: tag.id,
+                name: tag.name,
+                slug: tag.slug,
+                taxonomy: 'post_tag'
+              }))
+            ],
+            'wp:featuredmedia': post.featuredImage ? [{
+              source_url: post.featuredImage,
+              alt_text: post.featuredImageAlt || '',
+            }] : []
+          },
+          categories: (post.categories || []).map((cat: any) => ({
+            id: cat.id,
+            name: cat.name,
+            slug: cat.slug
+          })),
+          tags: (post.tags || []).map((tag: any) => ({
+            id: tag.id,
+            name: tag.name,
+            slug: tag.slug
+          }))
+        };
+
+        return res.status(200).json(formattedPost);
       }
 
-      // Format response similar to WordPress API
-      const formattedPost = {
-        id: post.id,
-        title: { rendered: post.title },
-        slug: post.slug,
-        content: { rendered: post.content },
-        excerpt: { rendered: post.excerpt || '' },
-        status: post.status.toLowerCase(),
-        date: post.publishedAt || post.createdAt,
-        modified: post.updatedAt,
-        featured_media_url: post.featuredImage || '',
-        featuredImageAlt: post.featuredImageAlt || '',
-        seoTitle: post.seoTitle || '',
-        seoDescription: post.seoDescription || '',
-        readTime: post.readTime || 0,
-        _embedded: {
-          author: [{
-            id: post.users.id,
-            name: post.users.name,
-            email: post.users.email,
-          }],
-          'wp:term': [
-            (post.categories || []).map((cat: any) => ({
-              id: cat.id,
-              name: cat.name,
-              slug: cat.slug,
-              taxonomy: 'category'
-            })),
-            (post.tags || []).map((tag: any) => ({
-              id: tag.id,
-              name: tag.name,
-              slug: tag.slug,
-              taxonomy: 'post_tag'
-            }))
-          ],
-          'wp:featuredmedia': post.featuredImage ? [{
-            source_url: post.featuredImage,
-            alt_text: post.featuredImageAlt || '',
-          }] : []
-        },
-        categories: (post.categories || []).map((cat: any) => ({
-          id: cat.id,
-          name: cat.name,
-          slug: cat.slug
-        })),
-        tags: (post.tags || []).map((tag: any) => ({
-          id: tag.id,
-          name: tag.name,
-          slug: tag.slug
-        }))
-      };
+      // If not found in Supabase, try WordPress API
+      const WORDPRESS_API_URL = process.env.WORDPRESS_API_URL || 'https://successcom.wpenginepowered.com/wp-json/wp/v2';
 
-      return res.status(200).json(formattedPost);
+      try {
+        const wpResponse = await fetch(`${WORDPRESS_API_URL}/posts/${id}?_embed`, {
+          headers: {
+            'User-Agent': 'SUCCESS-Next.js',
+          },
+        });
+
+        if (wpResponse.ok) {
+          const wpPost = await wpResponse.json();
+
+          // Format WordPress post to match expected structure
+          const formattedWpPost = {
+            id: wpPost.id,
+            title: wpPost.title,
+            slug: wpPost.slug,
+            content: wpPost.content,
+            excerpt: wpPost.excerpt || { rendered: '' },
+            status: wpPost.status,
+            date: wpPost.date,
+            modified: wpPost.modified,
+            featured_media_url: wpPost._embedded?.['wp:featuredmedia']?.[0]?.source_url || '',
+            featuredImageAlt: wpPost._embedded?.['wp:featuredmedia']?.[0]?.alt_text || '',
+            seoTitle: wpPost.yoast_head_json?.title || '',
+            seoDescription: wpPost.yoast_head_json?.description || '',
+            readTime: 0,
+            _embedded: wpPost._embedded || {},
+            categories: wpPost._embedded?.['wp:term']?.[0] || [],
+            tags: wpPost._embedded?.['wp:term']?.[1] || [],
+            wordpressId: wpPost.id, // Mark as WordPress post
+          };
+
+          return res.status(200).json(formattedWpPost);
+        }
+      } catch (wpError) {
+        console.error('WordPress API fetch failed:', wpError);
+      }
+
+      // Not found in either Supabase or WordPress
+      return res.status(404).json({ error: 'Post not found' });
     } catch (error) {
+      console.error('Error fetching post:', error);
       return res.status(500).json({ error: 'Failed to fetch post' });
     }
   }
@@ -110,15 +153,89 @@ export default async function handler(
         seoDescription,
         categories: categoryIds,
         tags: tagIds,
-        publishedAt
+        publishedAt,
+        wordpressId
       } = req.body;
 
-      // Get current post
+      // Get current post from Supabase
       const { data: currentPost } = await supabase
         .from('posts')
         .select('*')
         .eq('id', id as string)
         .single();
+
+      // If post doesn't exist in Supabase but has wordpressId, create a new local copy
+      if (!currentPost && wordpressId) {
+        const newStatus = status?.toUpperCase() || 'DRAFT';
+        const isBeingPublished = newStatus === 'PUBLISHED' || newStatus === 'PUBLISH';
+
+        const newPost: any = {
+          id: id as string, // Use WordPress ID as the primary key
+          title: title || 'Untitled',
+          slug: slug || `post-${id}`,
+          content: content || '',
+          excerpt: excerpt || '',
+          status: newStatus,
+          featuredImage: featuredImage || null,
+          featuredImageAlt: featuredImageAlt || null,
+          seoTitle: seoTitle || null,
+          seoDescription: seoDescription || null,
+          authorId: session.user.id,
+          wordpressId: wordpressId,
+          readTime: 0,
+          views: 0,
+          canonicalUrl: null,
+          customExcerpt: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        if (isBeingPublished) {
+          newPost.publishedAt = publishedAt
+            ? new Date(publishedAt).toISOString()
+            : new Date().toISOString();
+        }
+
+        const { data: createdPost, error: createError } = await supabase
+          .from('posts')
+          .insert(newPost)
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Failed to create local copy of WordPress post:', createError);
+          throw createError;
+        }
+
+        // Create initial revision
+        await supabase
+          .from('post_revisions')
+          .insert({
+            id: `rev_${Date.now()}`,
+            postId: createdPost.id,
+            title: createdPost.title,
+            content: createdPost.content,
+            excerpt: createdPost.excerpt,
+            featuredImage: createdPost.featuredImage,
+            featuredImageAlt: createdPost.featuredImageAlt,
+            status: createdPost.status,
+            seoTitle: createdPost.seoTitle,
+            seoDescription: createdPost.seoDescription,
+            authorId: session.user.id,
+            authorName: session.user.name || 'Unknown',
+            changeNote: 'Created local copy from WordPress for editing',
+          });
+
+        return res.status(200).json({
+          success: true,
+          post: {
+            id: createdPost.id,
+            title: createdPost.title,
+            slug: createdPost.slug,
+            status: createdPost.status,
+          }
+        });
+      }
 
       if (!currentPost) {
         return res.status(404).json({ error: 'Post not found' });
@@ -185,6 +302,7 @@ export default async function handler(
         }
       });
     } catch (error) {
+      console.error('Error updating post:', error);
       return res.status(500).json({ error: 'Failed to update post' });
     }
   }
