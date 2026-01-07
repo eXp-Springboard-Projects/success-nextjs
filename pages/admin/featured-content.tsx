@@ -130,7 +130,7 @@ export default function FeaturedContent() {
   }
 
   function getPostById(postId: string) {
-    return posts.find(p => p.id === postId || p.id === parseInt(postId));
+    return posts.find(p => String(p.id) === postId || String(p.id) === String(parseInt(postId)));
   }
 
   function isPostInZone(postId: string, zone: string) {
