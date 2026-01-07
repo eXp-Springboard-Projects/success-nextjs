@@ -34,7 +34,7 @@ export default function PostCard({ post, isFeatured = false }: PostCardProps) {
   if (!post) return null;
 
   const category = decodeHtmlEntities(post._embedded?.['wp:term']?.[0]?.[0]?.name || 'Uncategorized');
-  const featuredImageUrl = post._embedded?.['wp:featuredmedia']?.[0]?.source_url || null;
+  const featuredImageUrl = post._embedded?.['wp:featuredmedia']?.[0]?.source_url || post.featured_image_src || null;
   const author = decodeHtmlEntities(post._embedded?.author?.[0]?.name || 'SUCCESS Staff');
   const title = decodeHtmlEntities(post.title?.rendered || post.title || 'Untitled');
 
