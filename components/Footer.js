@@ -116,7 +116,6 @@ export default function Footer() {
             <Link href="/about">About Us</Link>
             <Link href="/contact">Contact</Link>
             <Link href="/press">Press</Link>
-            <Link href="/press-releases">Press Releases</Link>
           </div>
 
           <div className={styles.column}>

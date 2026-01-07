@@ -183,6 +183,13 @@
   pointer-events: auto;
 }
 
+@media (max-width: 992px) {
+  .nav {
+    transform: none;
+    max-width: none;
+  }
+}
+
 .nav ul {
   list-style: none;
   margin: 0;

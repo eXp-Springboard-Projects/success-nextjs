@@ -52,6 +52,7 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [excerpt, setExcerpt] = useState('');
+  const [author, setAuthor] = useState('');
   const [featuredImage, setFeaturedImage] = useState('');
   const [featuredImageAlt, setFeaturedImageAlt] = useState('');
   const [status, setStatus] = useState('draft');
@@ -195,6 +196,7 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         slug,
         content: editor.getHTML(),
         excerpt,
+        author: author || null,
         featuredImage: featuredImage || null,
         featuredImageAlt: featuredImageAlt || null,
         status: status === 'publish' ? 'publish' : 'draft', // Maintain publish status
@@ -246,6 +248,7 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
       setInitialContent(content);
 
       setExcerpt(post.excerpt?.rendered || post.excerpt || '');
+      setAuthor(post._embedded?.author?.[0]?.name || post.author || '');
       setFeaturedImage(post._embedded?.['wp:featuredmedia']?.[0]?.source_url || post.featured_media_url || '');
       setFeaturedImageAlt(post._embedded?.['wp:featuredmedia']?.[0]?.alt_text || post.featuredImageAlt || '');
       setStatus(post.status);
@@ -682,6 +685,7 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         slug,
         content: editor.getHTML(),
         excerpt: excerpt,
+        author: author || null,
         featuredImage: featuredImage || null,
         featuredImageAlt: featuredImageAlt || null,
         status: publishStatus,
@@ -1296,6 +1300,20 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
                   rows={4}
                   className={styles.textarea}
                 />
+              </div>
+
+              <div className={styles.panelSection}>
+                <h3 className={styles.panelTitle}>Author / Byline</h3>
+                <input
+                  type="text"
+                  value={author}
+                  onChange={(e) => setAuthor(e.target.value)}
+                  placeholder="Author name (optional)"
+                  className={styles.input}
+                />
+                <small style={{ color: '#666', fontSize: '0.875rem', display: 'block', marginTop: '0.5rem' }}>
+                  Leave blank to use your account name
+                </small>
               </div>
             </div>
           )}
