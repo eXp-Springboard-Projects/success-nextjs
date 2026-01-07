@@ -35,11 +35,19 @@ import ArticleTemplates from './ArticleTemplates';
 import { ArticleTemplate } from './article-templates/templateDefinitions';
 import styles from './EnhancedPostEditor.module.css';
 import blockStyles from './BlockEditor.module.css';
+import { ContentPillar, getContentPillarLabel } from '../../lib/types';
 
 interface Category {
   id: string;
   name: string;
   slug: string;
+}
+
+interface Author {
+  id: string;
+  name: string;
+  slug: string;
+  title?: string;
 }
 
 interface EnhancedPostEditorProps {
@@ -58,6 +66,13 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
   const [status, setStatus] = useState('draft');
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [authors, setAuthors] = useState<Author[]>([]);
+  const [selectedAuthorId, setSelectedAuthorId] = useState<string>('');
+  const [contentPillar, setContentPillar] = useState<ContentPillar | ''>('');
+  const [featureOnHomepage, setFeatureOnHomepage] = useState(false);
+  const [featureInPillar, setFeatureInPillar] = useState(false);
+  const [featureTrending, setFeatureTrending] = useState(false);
+  const [mainFeaturedArticle, setMainFeaturedArticle] = useState(false);
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
   const [loading, setLoading] = useState(false);
@@ -144,6 +159,7 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
 
   useEffect(() => {
     fetchCategories();
+    fetchAuthors();
     if (postId) {
       fetchPost();
     }
@@ -207,6 +223,12 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         contentType,
         accessTier,
         scheduledDate: scheduledDate || null,
+        contentPillar: contentPillar || null,
+        customAuthorId: selectedAuthorId || null,
+        featureOnHomepage,
+        featureInPillar,
+        featureTrending,
+        mainFeaturedArticle,
       };
 
       const res = await fetch(`/api/admin/posts/${postId}`, {
@@ -229,6 +251,17 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
       const res = await fetch('/api/categories?per_page=100');
       const data = await res.json();
       setCategories(data);
+    } catch (error) {
+    }
+  };
+
+  const fetchAuthors = async () => {
+    try {
+      const res = await fetch('/api/admin/authors?active=true');
+      if (res.ok) {
+        const data = await res.json();
+        setAuthors(data);
+      }
     } catch (error) {
     }
   };
@@ -267,6 +300,14 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
       setContentType(post.contentType || 'regular');
       setAccessTier(post.accessTier || 'free');
       setScheduledDate(post.scheduledDate || '');
+
+      // Load new fields
+      setContentPillar(post.contentPillar || '');
+      setSelectedAuthorId(post.customAuthorId || '');
+      setFeatureOnHomepage(post.featureOnHomepage || false);
+      setFeatureInPillar(post.featureInPillar || false);
+      setFeatureTrending(post.featureTrending || false);
+      setMainFeaturedArticle(post.mainFeaturedArticle || false);
     } catch (error) {
       alert('Failed to load post');
     } finally {
@@ -672,6 +713,11 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
       return;
     }
 
+    if (!contentPillar) {
+      alert('Content Pillar is required');
+      return;
+    }
+
     if (!session?.user?.id) {
       alert('You must be logged in to save posts');
       return;
@@ -696,6 +742,12 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         contentType,
         accessTier,
         scheduledDate: scheduledDate || null,
+        contentPillar: contentPillar || null,
+        customAuthorId: selectedAuthorId || null,
+        featureOnHomepage,
+        featureInPillar,
+        featureTrending,
+        mainFeaturedArticle,
       };
 
       const method = postId ? 'PUT' : 'POST';
@@ -1207,6 +1259,90 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
           {/* Settings Panel */}
           {activePanel === 'settings' && (
             <div className={styles.panel}>
+              <div className={styles.panelSection}>
+                <h3 className={styles.panelTitle}>Content Pillar *</h3>
+                <select
+                  value={contentPillar}
+                  onChange={(e) => setContentPillar(e.target.value as ContentPillar)}
+                  className={styles.select}
+                  style={{ borderColor: !contentPillar ? '#ef4444' : undefined }}
+                >
+                  <option value="">-- Select a Content Pillar --</option>
+                  {Object.values(ContentPillar).map((pillar) => (
+                    <option key={pillar} value={pillar}>
+                      {getContentPillarLabel(pillar)}
+                    </option>
+                  ))}
+                </select>
+                <small className={styles.helpText}>
+                  {contentPillar ? '✓ Content pillar selected' : '⚠️ Required field'}
+                </small>
+              </div>
+
+              <div className={styles.panelSection}>
+                <h3 className={styles.panelTitle}>Author</h3>
+                <select
+                  value={selectedAuthorId}
+                  onChange={(e) => setSelectedAuthorId(e.target.value)}
+                  className={styles.select}
+                >
+                  <option value="">-- Use your account name --</option>
+                  {authors.map((author) => (
+                    <option key={author.id} value={author.id}>
+                      {author.name}{author.title ? ` (${author.title})` : ''}
+                    </option>
+                  ))}
+                </select>
+                <small className={styles.helpText}>
+                  Select a custom author or leave blank to use your account name
+                </small>
+              </div>
+
+              <div className={styles.panelSection}>
+                <h3 className={styles.panelTitle}>Homepage Display</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <label className={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      checked={featureOnHomepage}
+                      onChange={(e) => setFeatureOnHomepage(e.target.checked)}
+                      className={styles.checkbox}
+                    />
+                    <span>Feature on Homepage</span>
+                  </label>
+                  <label className={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      checked={featureInPillar}
+                      onChange={(e) => setFeatureInPillar(e.target.checked)}
+                      className={styles.checkbox}
+                    />
+                    <span>Feature in Pillar Section</span>
+                  </label>
+                  <label className={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      checked={featureTrending}
+                      onChange={(e) => setFeatureTrending(e.target.checked)}
+                      className={styles.checkbox}
+                    />
+                    <span>Show in Trending</span>
+                  </label>
+                  <label className={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      checked={mainFeaturedArticle}
+                      onChange={(e) => setMainFeaturedArticle(e.target.checked)}
+                      className={styles.checkbox}
+                    />
+                    <span style={{ fontWeight: 600 }}>Main Featured Article (Hero)</span>
+                  </label>
+                </div>
+                <small className={styles.helpText} style={{ marginTop: '0.5rem', display: 'block' }}>
+                  {mainFeaturedArticle && '⚠️ Only one article can be the main featured article at a time'}
+                </small>
+              </div>
+
               <div className={styles.panelSection}>
                 <h3 className={styles.panelTitle}>Content Type</h3>
                 <select

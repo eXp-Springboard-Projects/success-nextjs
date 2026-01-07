@@ -146,7 +146,13 @@ export default async function handler(
         categories: categoryIds,
         tags: tagIds,
         authorId,
-        publishedAt
+        publishedAt,
+        contentPillar,
+        customAuthorId,
+        featureOnHomepage,
+        featureInPillar,
+        featureTrending,
+        mainFeaturedArticle,
       } = req.body;
 
       // Create new post (only include fields that exist in the database)
@@ -167,6 +173,12 @@ export default async function handler(
           publishedAt: status === 'PUBLISHED' || status === 'published'
             ? (publishedAt ? new Date(publishedAt).toISOString() : new Date().toISOString())
             : null,
+          contentPillar: contentPillar || null,
+          customAuthorId: customAuthorId || null,
+          featureOnHomepage: featureOnHomepage || false,
+          featureInPillar: featureInPillar || false,
+          featureTrending: featureTrending || false,
+          mainFeaturedArticle: mainFeaturedArticle || false,
         })
         .select()
         .single();

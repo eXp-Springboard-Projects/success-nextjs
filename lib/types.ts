@@ -31,6 +31,19 @@ export enum PostStatus {
   ARCHIVED = 'ARCHIVED',
 }
 
+export enum ContentPillar {
+  AI_TECHNOLOGY = 'AI_TECHNOLOGY',
+  BUSINESS_BRANDING = 'BUSINESS_BRANDING',
+  CULTURE_WORKPLACE = 'CULTURE_WORKPLACE',
+  ENTREPRENEURSHIP = 'ENTREPRENEURSHIP',
+  LEADERSHIP = 'LEADERSHIP',
+  LONGEVITY_PERFORMANCE = 'LONGEVITY_PERFORMANCE',
+  MONEY = 'MONEY',
+  PHILANTHROPY = 'PHILANTHROPY',
+  PROFESSIONAL_GROWTH = 'PROFESSIONAL_GROWTH',
+  TRENDS_INSIGHTS = 'TRENDS_INSIGHTS',
+}
+
 export enum BulkStatus {
   PENDING = 'PENDING',
   PROCESSING = 'PROCESSING',
@@ -454,6 +467,12 @@ export interface Post {
   wordpressAuthor?: string | null;
   wordpressId?: number | null;
   wordpressSlug?: string | null;
+  contentPillar?: ContentPillar | null;
+  customAuthorId?: string | null;
+  featureOnHomepage: boolean;
+  featureInPillar: boolean;
+  featureTrending: boolean;
+  mainFeaturedArticle: boolean;
 }
 
 export interface Page {
@@ -640,6 +659,24 @@ export interface Announcement {
   linkText?: string | null;
 }
 
+export interface Author {
+  id: string;
+  name: string;
+  slug: string;
+  bio?: string | null;
+  photo?: string | null;
+  email?: string | null;
+  title?: string | null;
+  socialLinkedin?: string | null;
+  socialTwitter?: string | null;
+  socialFacebook?: string | null;
+  website?: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  isActive: boolean;
+  wordpressId?: number | null;
+}
+
 // Type guards for runtime checking
 export const isUserRole = (value: string): value is UserRole => {
   return Object.values(UserRole).includes(value as UserRole);
@@ -651,4 +688,25 @@ export const isDepartment = (value: string): value is Department => {
 
 export const isPostStatus = (value: string): value is PostStatus => {
   return Object.values(PostStatus).includes(value as PostStatus);
+};
+
+export const isContentPillar = (value: string): value is ContentPillar => {
+  return Object.values(ContentPillar).includes(value as ContentPillar);
+};
+
+// Helper function to get human-readable content pillar names
+export const getContentPillarLabel = (pillar: ContentPillar): string => {
+  const labels: Record<ContentPillar, string> = {
+    [ContentPillar.AI_TECHNOLOGY]: 'AI & Technology',
+    [ContentPillar.BUSINESS_BRANDING]: 'Business & Branding',
+    [ContentPillar.CULTURE_WORKPLACE]: 'Culture & Workplace',
+    [ContentPillar.ENTREPRENEURSHIP]: 'Entrepreneurship',
+    [ContentPillar.LEADERSHIP]: 'Leadership',
+    [ContentPillar.LONGEVITY_PERFORMANCE]: 'Longevity & Performance',
+    [ContentPillar.MONEY]: 'Money',
+    [ContentPillar.PHILANTHROPY]: 'Philanthropy',
+    [ContentPillar.PROFESSIONAL_GROWTH]: 'Professional Growth',
+    [ContentPillar.TRENDS_INSIGHTS]: 'Trends & Insights',
+  };
+  return labels[pillar];
 };

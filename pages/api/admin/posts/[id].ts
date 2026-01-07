@@ -256,6 +256,14 @@ export default async function handler(
       if (seoTitle !== undefined) updateData.seoTitle = seoTitle;
       if (seoDescription !== undefined) updateData.seoDescription = seoDescription;
 
+      // New fields for content management
+      if (req.body.contentPillar !== undefined) updateData.contentPillar = req.body.contentPillar;
+      if (req.body.customAuthorId !== undefined) updateData.customAuthorId = req.body.customAuthorId;
+      if (req.body.featureOnHomepage !== undefined) updateData.featureOnHomepage = req.body.featureOnHomepage;
+      if (req.body.featureInPillar !== undefined) updateData.featureInPillar = req.body.featureInPillar;
+      if (req.body.featureTrending !== undefined) updateData.featureTrending = req.body.featureTrending;
+      if (req.body.mainFeaturedArticle !== undefined) updateData.mainFeaturedArticle = req.body.mainFeaturedArticle;
+
       if (isBeingPublished) {
         updateData.publishedAt = publishedAt
           ? new Date(publishedAt).toISOString()
