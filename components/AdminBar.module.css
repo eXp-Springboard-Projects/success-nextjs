@@ -120,8 +120,3 @@
     font-size: 13px;
   }
 }
-
-/* Ensure site content doesn't go under admin bar */
-:global(body.admin-logged-in) {
-  padding-top: 50px !important;
-}
