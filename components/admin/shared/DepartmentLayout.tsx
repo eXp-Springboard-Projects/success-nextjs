@@ -43,6 +43,7 @@ export default function DepartmentLayout({
     return true;
   });
   const [notificationCount, setNotificationCount] = useState(0);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   // Save sidebar state when it changes
   useEffect(() => {
@@ -139,6 +140,59 @@ export default function DepartmentLayout({
             <div>
               <h1 className={styles.pageTitle}>{pageTitle}</h1>
               {description && <p className={styles.pageDescription}>{description}</p>}
+            </div>
+
+            {/* User Account Menu */}
+            <div className={styles.headerUserMenu}>
+              <button
+                className={styles.headerUserButton}
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                onBlur={() => setTimeout(() => setUserMenuOpen(false), 200)}
+              >
+                {user.avatar ? (
+                  <img src={user.avatar} alt={user.name} className={styles.headerUserAvatar} />
+                ) : (
+                  <div className={styles.headerUserAvatarPlaceholder}>
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className={styles.headerUserInfo}>
+                  <span className={styles.headerUserName}>{user.name}</span>
+                  <span className={styles.headerUserRole}>{user.role}</span>
+                </div>
+                <svg className={styles.headerUserChevron} width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+
+              {userMenuOpen && (
+                <div className={styles.headerUserDropdown}>
+                  <div className={styles.dropdownHeader}>
+                    <div className={styles.dropdownUserName}>{user.name}</div>
+                    <div className={styles.dropdownUserEmail}>{user.email}</div>
+                  </div>
+                  <div className={styles.dropdownDivider} />
+                  <Link href="/admin/account" className={styles.dropdownItem}>
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                    </svg>
+                    <span>Account Settings</span>
+                  </Link>
+                  <Link href="/admin/account/password" className={styles.dropdownItem}>
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                    </svg>
+                    <span>Change Password</span>
+                  </Link>
+                  <div className={styles.dropdownDivider} />
+                  <Link href="/api/auth/signout" className={styles.dropdownItem}>
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+                    </svg>
+                    <span>Sign Out</span>
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </header>

@@ -364,6 +364,124 @@
   padding: 2rem;
 }
 
+/* Header User Menu */
+.headerUserMenu {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.headerUserButton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.headerUserButton:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.headerUserAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.headerUserAvatarPlaceholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.headerUserInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.headerUserName {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.headerUserRole {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.headerUserChevron {
+  color: #9ca3af;
+}
+
+.headerUserDropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: 240px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+}
+
+.dropdownHeader {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dropdownUserName {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.dropdownUserEmail {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+.dropdownDivider {
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: #374151;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.dropdownItem:hover {
+  background: #f9fafb;
+}
+
+.dropdownItem svg {
+  flex-shrink: 0;
+  color: #6b7280;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .sidebar {
@@ -382,5 +500,13 @@
 
   .content {
     padding: 1rem;
+  }
+
+  .headerUserInfo {
+    display: none;
+  }
+
+  .headerUserButton {
+    padding: 0.5rem;
   }
 }
