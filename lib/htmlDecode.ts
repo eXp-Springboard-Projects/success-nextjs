@@ -33,7 +33,7 @@ export function decodeHtmlContent(html: string): string {
   if (!html) return html;
 
   // Decode all HTML entities including numeric ones (&#8217;, &#038;, etc.)
-  return html
+  let decoded = html
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
@@ -43,4 +43,26 @@ export function decodeHtmlContent(html: string): string {
     .replace(/&apos;/g, "'")
     .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))
     .replace(/&#x([0-9a-fA-F]+);/g, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
+
+  // Replace old WordPress site URLs with new site URLs
+  decoded = replaceOldSiteLinks(decoded);
+
+  return decoded;
+}
+
+/**
+ * Replaces old WordPress site URLs with new success.com URLs
+ * Handles both the staging WordPress site and old success.com URLs
+ */
+export function replaceOldSiteLinks(html: string): string {
+  if (!html) return html;
+
+  // Replace WordPress staging site links
+  html = html.replace(/https?:\/\/successcom\.wpenginepowered\.com\//g, 'https://www.success.com/');
+
+  // Also handle old www.success.com links that might be absolute
+  // This ensures internal links stay internal and don't cause full page reloads
+  html = html.replace(/https?:\/\/(www\.)?success\.com\//g, '/');
+
+  return html;
 }

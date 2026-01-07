@@ -15,19 +15,19 @@ type HomePageProps = {
   latestPosts: any[];
   aiTechPosts: any[];
   businessPosts: any[];
-  lifestylePosts: any[];
-  moneyPosts: any[];
-  futureOfWorkPosts: any[];
-  healthPosts: any[];
-  leadershipPosts: any[];
   cultureWorkplacePosts: any[];
   entrepreneurshipPosts: any[];
-  entertainmentPosts: any[];
+  leadershipPosts: any[];
+  longevityPosts: any[];
+  moneyPosts: any[];
+  philanthropyPosts: any[];
+  professionalGrowthPosts: any[];
+  trendsInsightsPosts: any[];
   latestMagazine: any;
   bestsellers: any[];
 };
 
-function HomePage({ featuredPost, secondaryPosts, trendingPosts, latestPosts, aiTechPosts, businessPosts, lifestylePosts, moneyPosts, futureOfWorkPosts, healthPosts, leadershipPosts, cultureWorkplacePosts, entrepreneurshipPosts, entertainmentPosts, latestMagazine, bestsellers }: HomePageProps) {
+function HomePage({ featuredPost, secondaryPosts, trendingPosts, latestPosts, aiTechPosts, businessPosts, cultureWorkplacePosts, entrepreneurshipPosts, leadershipPosts, longevityPosts, moneyPosts, philanthropyPosts, professionalGrowthPosts, trendsInsightsPosts, latestMagazine, bestsellers }: HomePageProps) {
   if (!featuredPost) {
     return <Layout><p>Loading...</p></Layout>;
   }
@@ -128,36 +128,6 @@ function HomePage({ featuredPost, secondaryPosts, trendingPosts, latestPosts, ai
         ctaLink="/success-plus"
       />
 
-      {/* Future of Work Section */}
-      <section className={styles.categorySectionGray}>
-        <div className={styles.sectionContainer}>
-          <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>Future of Work</h2>
-            <a href="/category/future-of-work" className={styles.viewAllLink}>View All →</a>
-          </div>
-          <div className={styles.postsGrid}>
-            {futureOfWorkPosts.map((post: any) => (
-              <PostCard key={post.id} post={post} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Lifestyle Section */}
-      <section className={styles.categorySection}>
-        <div className={styles.sectionContainer}>
-          <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>Lifestyle</h2>
-            <a href="/category/lifestyle" className={styles.viewAllLink}>View All →</a>
-          </div>
-          <div className={styles.postsGrid}>
-            {lifestylePosts.map((post: any) => (
-              <PostCard key={post.id} post={post} />
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Longevity & Performance Section */}
       <section className={styles.categorySectionGray}>
         <div className={styles.sectionContainer}>
@@ -166,7 +136,22 @@ function HomePage({ featuredPost, secondaryPosts, trendingPosts, latestPosts, ai
             <a href="/category/longevity-performance" className={styles.viewAllLink}>View All →</a>
           </div>
           <div className={styles.postsGrid}>
-            {healthPosts.map((post: any) => (
+            {longevityPosts.map((post: any) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Professional Growth Section */}
+      <section className={styles.categorySection}>
+        <div className={styles.sectionContainer}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Professional Growth</h2>
+            <a href="/category/professional-growth" className={styles.viewAllLink}>View All →</a>
+          </div>
+          <div className={styles.postsGrid}>
+            {professionalGrowthPosts.map((post: any) => (
               <PostCard key={post.id} post={post} />
             ))}
           </div>
@@ -182,15 +167,15 @@ function HomePage({ featuredPost, secondaryPosts, trendingPosts, latestPosts, ai
         ctaLink="/success-plus"
       />
 
-      {/* Personal Development Section */}
+      {/* Philanthropy Section */}
       <section className={styles.categorySection}>
         <div className={styles.sectionContainer}>
           <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>Personal Development</h2>
-            <a href="/category/personal-development" className={styles.viewAllLink}>View All →</a>
+            <h2 className={styles.sectionTitle}>Philanthropy</h2>
+            <a href="/category/philanthropy" className={styles.viewAllLink}>View All →</a>
           </div>
           <div className={styles.postsGrid}>
-            {latestPosts.slice(0, 3).map((post: any) => (
+            {philanthropyPosts.map((post: any) => (
               <PostCard key={post.id} post={post} />
             ))}
           </div>
@@ -282,15 +267,15 @@ function HomePage({ featuredPost, secondaryPosts, trendingPosts, latestPosts, ai
         </div>
       </section>
 
-      {/* Entertainment Section */}
+      {/* Trends & Insights Section */}
       <section className={styles.categorySectionGray}>
         <div className={styles.sectionContainer}>
           <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>Entertainment</h2>
-            <a href="/category/entertainment" className={styles.viewAllLink}>View All →</a>
+            <h2 className={styles.sectionTitle}>Trends & Insights</h2>
+            <a href="/category/trends-insights" className={styles.viewAllLink}>View All →</a>
           </div>
           <div className={styles.postsGrid}>
-            {entertainmentPosts.map((post: any) => (
+            {trendsInsightsPosts.map((post: any) => (
               <PostCard key={post.id} post={post} />
             ))}
           </div>
@@ -361,17 +346,17 @@ export async function getServerSideProps() {
   const trendingPosts = posts.slice(5, 8);
   const latestPosts = posts.slice(8, 14); // 6 more posts
 
-  // Fetch category-specific posts
+  // Fetch category-specific posts (10 new pillars)
   const aiTechPosts = await fetchWordPressData('posts?categories=14681&_embed&per_page=3');
   const businessPosts = await fetchWordPressData('posts?categories=4&_embed&per_page=3');
-  const lifestylePosts = await fetchWordPressData('posts?categories=14056&_embed&per_page=3');
-  const moneyPosts = await fetchWordPressData('posts?categories=14060&_embed&per_page=3');
-  const futureOfWorkPosts = await fetchWordPressData('posts?categories=14061&_embed&per_page=3');
-  const healthPosts = await fetchWordPressData('posts?categories=14059&_embed&per_page=3');
-  const leadershipPosts = await fetchWordPressData('posts?categories=14675&_embed&per_page=3');
   const cultureWorkplacePosts = await fetchWordPressData('posts?categories=14677&_embed&per_page=3');
   const entrepreneurshipPosts = await fetchWordPressData('posts?categories=14680&_embed&per_page=3');
-  const entertainmentPosts = await fetchWordPressData('posts?categories=14382&_embed&per_page=3');
+  const leadershipPosts = await fetchWordPressData('posts?categories=14675&_embed&per_page=3');
+  const longevityPosts = await fetchWordPressData('posts?categories=14059&_embed&per_page=3');
+  const moneyPosts = await fetchWordPressData('posts?categories=14060&_embed&per_page=3');
+  const philanthropyPosts = await fetchWordPressData('posts?categories=14682&_embed&per_page=3');
+  const professionalGrowthPosts = await fetchWordPressData('posts?categories=14383&_embed&per_page=3');
+  const trendsInsightsPosts = await fetchWordPressData('posts?categories=14676&_embed&per_page=3');
 
   // Fetch latest magazine issue
   const magazines = await fetchWordPressData('magazines?per_page=1&_embed');
@@ -387,15 +372,15 @@ export async function getServerSideProps() {
       trendingPosts,
       latestPosts,
       aiTechPosts: aiTechPosts || [],
-      businessPosts,
-      lifestylePosts,
-      moneyPosts,
-      futureOfWorkPosts,
-      healthPosts,
-      leadershipPosts: leadershipPosts || [],
+      businessPosts: businessPosts || [],
       cultureWorkplacePosts: cultureWorkplacePosts || [],
       entrepreneurshipPosts: entrepreneurshipPosts || [],
-      entertainmentPosts,
+      leadershipPosts: leadershipPosts || [],
+      longevityPosts: longevityPosts || [],
+      moneyPosts: moneyPosts || [],
+      philanthropyPosts: philanthropyPosts || [],
+      professionalGrowthPosts: professionalGrowthPosts || [],
+      trendsInsightsPosts: trendsInsightsPosts || [],
       latestMagazine,
       bestsellers: bestsellers || [],
     }
