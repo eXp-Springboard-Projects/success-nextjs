@@ -38,17 +38,29 @@ export default async function handler(
     }
 
     // Check if phone or email already subscribed
-    const { data: existingList, error: checkError } = await supabase
+    const { data: existingByPhone, error: phoneCheckError } = await supabase
       .from('sms_subscribers')
       .select('id, phone, email, active')
-      .or(`phone.eq.${phone},email.eq.${email}`);
+      .eq('phone', phone)
+      .maybeSingle();
 
-    if (checkError) {
-      console.error('Error checking existing subscriber:', checkError);
+    if (phoneCheckError) {
+      console.error('Error checking phone:', phoneCheckError);
       return res.status(500).json({ error: 'Failed to check existing subscription' });
     }
 
-    const existing = existingList && existingList.length > 0 ? existingList[0] : null;
+    const { data: existingByEmail, error: emailCheckError } = await supabase
+      .from('sms_subscribers')
+      .select('id, phone, email, active')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (emailCheckError) {
+      console.error('Error checking email:', emailCheckError);
+      return res.status(500).json({ error: 'Failed to check existing subscription' });
+    }
+
+    const existing = existingByPhone || existingByEmail;
 
     if (existing) {
       if (existing.active) {

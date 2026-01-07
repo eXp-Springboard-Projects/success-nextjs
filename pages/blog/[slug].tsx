@@ -176,6 +176,37 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
 
   const readTime = post.content?.rendered ? calculateReadTime(post.content.rendered) : '5 min read';
 
+  // Remove duplicate excerpt from content if present
+  // Some WordPress posts include the excerpt at the start of the content
+  const removeExcerptFromContent = (content: string, excerpt: string) => {
+    if (!excerpt) return content;
+
+    // Get plain text versions to compare
+    const excerptText = excerpt.replace(/<[^>]*>/g, '').trim();
+    const contentText = content.replace(/<[^>]*>/g, '').trim();
+
+    // If content starts with the excerpt text, try to remove it
+    if (contentText.startsWith(excerptText.substring(0, 100))) {
+      // Get first paragraph from content
+      const firstPMatch = content.match(/<p[^>]*>.*?<\/p>/s);
+      if (firstPMatch) {
+        const firstPText = firstPMatch[0].replace(/<[^>]*>/g, '').trim();
+        const excerptCompare = excerptText.substring(0, Math.min(excerptText.length, 200));
+
+        // If first paragraph matches excerpt (at least 80% similar), remove it
+        if (firstPText.substring(0, excerptCompare.length).includes(excerptCompare.substring(0, 100))) {
+          return content.replace(firstPMatch[0], '').trim();
+        }
+      }
+    }
+
+    return content;
+  };
+
+  const processedContent = post.excerpt?.rendered
+    ? removeExcerptFromContent(post.content.rendered, post.excerpt.rendered)
+    : post.content.rendered;
+
   // Extract plain text from excerpt for SEO
   const getPlainText = (html: string) => {
     return html?.replace(/<[^>]*>/g, '').trim() || '';
@@ -278,7 +309,7 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
         <div className={styles.content}>
           <div
             className={styles.body}
-            dangerouslySetInnerHTML={{ __html: decodeHtmlContent(post.content.rendered) }}
+            dangerouslySetInnerHTML={{ __html: decodeHtmlContent(processedContent) }}
           />
         </div>
 

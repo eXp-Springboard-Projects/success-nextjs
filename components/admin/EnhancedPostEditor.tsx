@@ -150,7 +150,7 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
 
   // Set editor content when editor is ready and we have initial content
   useEffect(() => {
-    if (editor && initialContent && !editor.getText()) {
+    if (editor && initialContent) {
       editor.commands.setContent(initialContent);
     }
   }, [editor, initialContent]);
