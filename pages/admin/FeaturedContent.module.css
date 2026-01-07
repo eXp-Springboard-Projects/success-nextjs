@@ -1,0 +1,280 @@
+.container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.header h1 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem 0;
+  color: #1f2937;
+}
+
+.header p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.zonesPanel,
+.postsPanel {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.zonesPanel h2,
+.postsPanel h2 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.25rem;
+  color: #1f2937;
+}
+
+.zone {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.zoneHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.zoneHeader h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #374151;
+}
+
+.slots {
+  background: #e5e7eb;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.placements {
+  margin-bottom: 1rem;
+}
+
+.empty {
+  color: #9ca3af;
+  font-size: 0.875rem;
+  font-style: italic;
+  margin: 0;
+}
+
+.placement {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: white;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.position {
+  font-weight: 600;
+  color: #6b7280;
+  min-width: 24px;
+}
+
+.title {
+  flex: 1;
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.removeButton {
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.removeButton:hover {
+  background: #fecaca;
+}
+
+.removeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.addButton {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.addButton:hover {
+  background: #2563eb;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.postsList {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.post {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.post:last-child {
+  border-bottom: none;
+}
+
+.postInfo h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.875rem;
+  color: #1f2937;
+}
+
+.slug {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.addPostButton {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.addPostButton:hover {
+  background: #059669;
+}
+
+.addPostButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inZone {
+  font-size: 0.75rem;
+  color: #10b981;
+  font-weight: 500;
+}
+
+.zoneFull {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.setupMessage {
+  background: white;
+  border-radius: 8px;
+  padding: 3rem;
+  text-align: center;
+  max-width: 800px;
+  margin: 2rem auto;
+}
+
+.setupMessage h2 {
+  margin: 1rem 0;
+  color: #1f2937;
+}
+
+.setupMessage ol {
+  text-align: left;
+  margin: 2rem auto;
+  max-width: 500px;
+}
+
+.setupMessage li {
+  margin: 0.5rem 0;
+  color: #374151;
+}
+
+.sqlBox {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  margin: 1rem 0;
+  background: #f9fafb;
+}
+
+.copyButton {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.copyButton:hover {
+  background: #2563eb;
+}
+
+@media (max-width: 1024px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+}

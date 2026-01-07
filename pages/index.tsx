@@ -341,9 +341,36 @@ function HomePage({ featuredPost, secondaryPosts, trendingPosts, latestPosts, ai
 export async function getServerSideProps() {
   const posts = await fetchWordPressData('posts?_embed&per_page=30');
 
-  const featuredPost = posts[0];
-  const secondaryPosts = posts.slice(1, 5); // 4 posts for 2x2 grid
-  const trendingPosts = posts.slice(5, 8);
+  // Try to fetch staff-curated featured content
+  let featuredPost = null;
+  let secondaryPosts: any[] = [];
+  let trendingPosts: any[] = [];
+
+  try {
+    const featuredResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/featured-content`);
+    if (featuredResponse.ok) {
+      const featuredContent = await featuredResponse.json();
+
+      // Use staff-selected content if available
+      if (featuredContent.hero && featuredContent.hero.length > 0) {
+        featuredPost = featuredContent.hero[0];
+      }
+      if (featuredContent.secondary && featuredContent.secondary.length > 0) {
+        secondaryPosts = featuredContent.secondary.slice(0, 4);
+      }
+      if (featuredContent.trending && featuredContent.trending.length > 0) {
+        trendingPosts = featuredContent.trending.slice(0, 3);
+      }
+    }
+  } catch (error) {
+    console.log('Featured content not available, using automatic selection');
+  }
+
+  // Fallback to automatic selection if staff hasn't set featured content
+  if (!featuredPost) featuredPost = posts[0];
+  if (secondaryPosts.length === 0) secondaryPosts = posts.slice(1, 5);
+  if (trendingPosts.length === 0) trendingPosts = posts.slice(5, 8);
+
   const latestPosts = posts.slice(8, 14); // 6 more posts
 
   // Fetch category-specific posts (10 new pillars)
