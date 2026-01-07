@@ -18,9 +18,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({
         maskedEmail: maskEmail(preferences.email),
-        optInMarketing: preferences.optInMarketing,
-        optInNewsletter: preferences.optInNewsletter,
-        optInTransactional: preferences.optInTransactional,
+        optInInsideSuccess: preferences.optInInsideSuccess,
+        optInCustomerService: preferences.optInCustomerService,
+        optInSuccessUpdates: preferences.optInSuccessUpdates,
+        optInOneToOne: preferences.optInOneToOne,
         unsubscribed: preferences.unsubscribed,
       });
     } catch (error) {
@@ -30,12 +31,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'POST') {
     try {
-      const { optInMarketing, optInNewsletter, optInTransactional, unsubscribed, unsubscribeReason } = req.body;
+      const { optInInsideSuccess, optInCustomerService, optInSuccessUpdates, optInOneToOne, unsubscribed, unsubscribeReason } = req.body;
 
       await updatePreferences(token, {
-        optInMarketing,
-        optInNewsletter,
-        optInTransactional,
+        optInInsideSuccess,
+        optInCustomerService,
+        optInSuccessUpdates,
+        optInOneToOne,
         unsubscribed,
         unsubscribeReason,
       });

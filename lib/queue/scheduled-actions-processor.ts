@@ -221,13 +221,22 @@ export class ScheduledActionsProcessor {
 
     // Update contact
     if (contactId || action.contactId) {
+      const cid = contactId || action.contactId;
+
+      // Get current SMS count
+      const { data: currentContact } = await supabase
+        .from('contacts')
+        .select('totalSentSms')
+        .eq('id', cid)
+        .single();
+
       await supabase
         .from('contacts')
         .update({
           lastSentSmsDate: new Date().toISOString(),
-          totalSentSms: supabase.raw('COALESCE("totalSentSms", 0) + 1'),
+          totalSentSms: (currentContact?.totalSentSms || 0) + 1,
         })
-        .eq('id', contactId || action.contactId);
+        .eq('id', cid);
     }
 
     console.log(`[ScheduledActions] SMS sent to ${to}`);

@@ -34,18 +34,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const supabase = supabaseAdmin();
 
     // Get contact details
-    const query = supabase
+    let query = supabase
       .from('contacts')
-      .select('*')
-      .single();
+      .select('*');
 
     if (contactId) {
-      query.eq('id', contactId);
+      query = query.eq('id', contactId);
     } else {
-      query.eq('email', contactEmail);
+      query = query.eq('email', contactEmail);
     }
 
-    const { data: contact, error: contactError } = await query;
+    const { data: contact, error: contactError } = await query.single();
 
     if (contactError || !contact) {
       return res.status(404).json({ message: 'Contact not found' });
