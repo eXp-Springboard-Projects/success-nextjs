@@ -100,6 +100,7 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
   const [accessTier, setAccessTier] = useState<'free' | 'success_plus' | 'insider'>('free');
   const [initialContent, setInitialContent] = useState<string>('');
   const [wordpressId, setWordpressId] = useState<number | null>(null);
+  const [generatingExcerpt, setGeneratingExcerpt] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const blockMenuRef = useRef<HTMLDivElement>(null);
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -265,6 +266,35 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         setAuthors(data);
       }
     } catch (error) {
+    }
+  };
+
+  const handleGenerateExcerpt = async () => {
+    if (!postId) {
+      alert('Please save the post first before generating an excerpt');
+      return;
+    }
+
+    setGeneratingExcerpt(true);
+    try {
+      const res = await fetch(`/api/admin/posts/${postId}/generate-excerpt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force: excerpt ? true : false }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setExcerpt(data.excerpt);
+        alert('Excerpt generated successfully!');
+      } else {
+        const error = await res.json();
+        alert(`Failed to generate excerpt: ${error.message || error.error}`);
+      }
+    } catch (error) {
+      alert('Error generating excerpt. Please try again.');
+    } finally {
+      setGeneratingExcerpt(false);
     }
   };
 
@@ -1434,14 +1464,37 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
               </div>
 
               <div className={styles.panelSection}>
-                <h3 className={styles.panelTitle}>Excerpt</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <h3 className={styles.panelTitle} style={{ margin: 0 }}>Excerpt / Dek</h3>
+                  <button
+                    type="button"
+                    onClick={handleGenerateExcerpt}
+                    disabled={generatingExcerpt || !postId}
+                    className={styles.button}
+                    style={{
+                      padding: '0.375rem 0.75rem',
+                      fontSize: '0.875rem',
+                      background: generatingExcerpt ? '#ccc' : '#7C3AED',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: generatingExcerpt || !postId ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    {generatingExcerpt ? '✨ Generating...' : excerpt ? '↻ Regenerate with AI' : '✨ Generate with AI'}
+                  </button>
+                </div>
                 <textarea
                   value={excerpt}
                   onChange={(e) => setExcerpt(e.target.value)}
-                  placeholder="Write a short excerpt..."
+                  placeholder="Write a compelling 1-2 sentence excerpt (20-40 words) or generate with AI..."
                   rows={4}
                   className={styles.textarea}
                 />
+                <small style={{ color: '#666', fontSize: '0.875rem', display: 'block', marginTop: '0.5rem' }}>
+                  {excerpt ? `${excerpt.split(' ').length} words` : 'Appears between headline and featured image'}
+                  {excerpt && excerpt.split(' ').length < 20 && ' (aim for 20-40 words)'}
+                </small>
               </div>
 
               <div className={styles.panelSection}>
