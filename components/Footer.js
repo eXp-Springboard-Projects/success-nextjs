@@ -104,10 +104,16 @@ export default function Footer() {
 
           <div className={styles.column}>
             <h4>Content</h4>
+            <Link href="/category/ai-technology">AI & Technology</Link>
             <Link href="/category/business-branding">Business & Branding</Link>
+            <Link href="/category/culture-workplace">Culture & Workplace</Link>
+            <Link href="/category/entrepreneurship">Entrepreneurship</Link>
+            <Link href="/category/leadership">Leadership</Link>
+            <Link href="/category/longevity-performance">Longevity & Performance</Link>
             <Link href="/category/money">Money</Link>
-            <Link href="/category/lifestyle">Lifestyle</Link>
-            <Link href="/category/health-wellness">Health & Wellness</Link>
+            <Link href="/category/philanthropy">Philanthropy</Link>
+            <Link href="/category/professional-growth">Professional Growth</Link>
+            <Link href="/category/trends-insights">Trends & Insights</Link>
             <a href="/api/rss" target="_blank" rel="noopener noreferrer">RSS Feed</a>
           </div>
 

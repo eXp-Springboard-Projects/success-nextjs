@@ -99,6 +99,7 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
   const [contentType, setContentType] = useState<'regular' | 'premium' | 'insider' | 'magazine' | 'press'>('regular');
   const [accessTier, setAccessTier] = useState<'free' | 'success_plus' | 'insider'>('free');
   const [initialContent, setInitialContent] = useState<string>('');
+  const [wordpressId, setWordpressId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const blockMenuRef = useRef<HTMLDivElement>(null);
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -229,6 +230,7 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         featureInPillar,
         featureTrending,
         mainFeaturedArticle,
+        wordpressId: wordpressId, // Include WordPress ID for auto-save
       };
 
       const res = await fetch(`/api/admin/posts/${postId}`, {
@@ -308,6 +310,9 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
       setFeatureInPillar(post.featureInPillar || false);
       setFeatureTrending(post.featureTrending || false);
       setMainFeaturedArticle(post.mainFeaturedArticle || false);
+
+      // Track if this is a WordPress post so we can save it properly
+      setWordpressId(post.wordpressId || post.id || null);
     } catch (error) {
       alert('Failed to load post');
     } finally {
@@ -748,6 +753,7 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         featureInPillar,
         featureTrending,
         mainFeaturedArticle,
+        wordpressId: wordpressId, // Include WordPress ID for proper saving
       };
 
       const method = postId ? 'PUT' : 'POST';
