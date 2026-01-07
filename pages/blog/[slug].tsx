@@ -187,8 +187,8 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
 
     // If content starts with the excerpt text, try to remove it
     if (contentText.startsWith(excerptText.substring(0, 100))) {
-      // Get first paragraph from content
-      const firstPMatch = content.match(/<p[^>]*>.*?<\/p>/s);
+      // Get first paragraph from content (using [\s\S] instead of . with /s flag for compatibility)
+      const firstPMatch = content.match(/<p[^>]*>[\s\S]*?<\/p>/);
       if (firstPMatch) {
         const firstPText = firstPMatch[0].replace(/<[^>]*>/g, '').trim();
         const excerptCompare = excerptText.substring(0, Math.min(excerptText.length, 200));
