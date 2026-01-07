@@ -1,7 +1,13 @@
 {
   "buildCommand": "next build --webpack",
-  "crons": [{
-    "path": "/api/social/cron/publish",
-    "schedule": "*/5 * * * *"
-  }]
+  "crons": [
+    {
+      "path": "/api/social/cron/publish",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/process-workflows",
+      "schedule": "* * * * *"
+    }
+  ]
 }
