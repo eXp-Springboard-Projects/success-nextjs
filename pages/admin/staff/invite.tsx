@@ -201,6 +201,7 @@ export default function StaffInvite() {
                   <option value="ADMIN">Admin</option>
                   <option value="EDITOR">Editor</option>
                   <option value="AUTHOR">Author</option>
+                  <option value="SOCIAL_TEAM">Social Team (Social Media & Email CRM only)</option>
                 </select>
               </div>
 

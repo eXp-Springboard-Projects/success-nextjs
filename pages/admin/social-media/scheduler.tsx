@@ -7,7 +7,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import AdminLayout from '../../../components/admin/AdminLayout';
 import styles from './Scheduler.module.css';
-import { requireAdminAuth } from '@/lib/adminAuth';
+import { requireSocialMediaAuth } from '@/lib/adminAuth';
 
 interface SocialAccount {
   id: string;
@@ -407,4 +407,4 @@ export default function SocialMediaScheduler() {
   );
 }
 
-export const getServerSideProps = requireAdminAuth;
+export const getServerSideProps = requireSocialMediaAuth;

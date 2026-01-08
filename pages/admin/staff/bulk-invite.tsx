@@ -154,6 +154,7 @@ export default function BulkStaffInvite() {
                 >
                   <option value="EDITOR">Editor</option>
                   <option value="AUTHOR">Author</option>
+                  <option value="SOCIAL_TEAM">Social Team (Social Media & Email CRM only)</option>
                   {session.user?.role === 'SUPER_ADMIN' && (
                     <>
                       <option value="ADMIN">Admin</option>

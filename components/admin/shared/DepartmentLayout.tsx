@@ -351,19 +351,32 @@ function getNavigationSections(role: UserRole, primaryDepartment?: Department | 
     ]
   });
 
-  // CRM & EMAIL section (Marketing only)
-  if (role === 'SUPER_ADMIN' || role === 'ADMIN' || primaryDepartment === Department.MARKETING) {
-    sections.push({
-      title: 'CRM & EMAIL',
-      items: [
+  // CRM & EMAIL section (Marketing and Social Team)
+  if (role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'SOCIAL_TEAM' || primaryDepartment === Department.MARKETING) {
+    const crmItems = [];
+
+    // SOCIAL_TEAM only sees Campaigns and Social Media
+    if (role === 'SOCIAL_TEAM') {
+      crmItems.push(
+        { label: 'Email Campaigns', href: '/admin/crm/campaigns' },
+        { label: 'Social Media', href: '/admin/social-media' }
+      );
+    } else {
+      // Full CRM access for admins and marketing
+      crmItems.push(
         { label: 'CRM Dashboard', href: '/admin/crm' },
         { label: 'Contacts', href: '/admin/crm/contacts' },
         { label: 'Campaigns', href: '/admin/crm/campaigns' },
         { label: 'Deals', href: '/admin/crm/deals' },
         { label: 'Help Desk', href: '/admin/crm/tickets' },
         { label: 'Social Media', href: '/admin/social-media' },
-        { label: 'CRM Analytics', href: '/admin/crm/analytics' },
-      ]
+        { label: 'CRM Analytics', href: '/admin/crm/analytics' }
+      );
+    }
+
+    sections.push({
+      title: role === 'SOCIAL_TEAM' ? 'SOCIAL & EMAIL' : 'CRM & EMAIL',
+      items: crmItems
     });
   }
 

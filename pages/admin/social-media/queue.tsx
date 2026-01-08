@@ -7,7 +7,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import AdminLayout from '../../../components/admin/AdminLayout';
 import styles from './Queue.module.css';
-import { requireAdminAuth } from '@/lib/adminAuth';
+import { requireSocialMediaAuth } from '@/lib/adminAuth';
 
 interface SocialPost {
   id: string;
@@ -303,4 +303,4 @@ export default function SocialMediaQueue() {
   );
 }
 
-export const getServerSideProps = requireAdminAuth;
+export const getServerSideProps = requireSocialMediaAuth;

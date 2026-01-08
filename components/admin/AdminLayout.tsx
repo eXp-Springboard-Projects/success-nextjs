@@ -36,7 +36,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       setCurrentDept(Department.SUCCESS_PLUS);
     } else if (path.includes('/admin/dev') || path.includes('/admin/devops')) {
       setCurrentDept(Department.DEV);
-    } else if (path.includes('/admin/marketing') || path.includes('/admin/crm')) {
+    } else if (path.includes('/admin/marketing') || path.includes('/admin/crm') || path.includes('/admin/social-media')) {
       setCurrentDept(Department.MARKETING);
     } else if (path.includes('/admin/coaching')) {
       setCurrentDept(Department.COACHING);

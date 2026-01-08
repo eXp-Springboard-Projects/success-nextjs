@@ -10,7 +10,7 @@ import { useSocialPosts } from '@/hooks/social/useSocialPosts';
 import { useSocialAccounts } from '@/hooks/social/useSocialAccounts';
 import { Platform, PLATFORM_NAMES, PLATFORM_LIMITS } from '@/types/social';
 import styles from './SocialMedia.module.css';
-import { requireAdminAuth } from '@/lib/adminAuth';
+import { requireSocialMediaAuth } from '@/lib/adminAuth';
 
 export default function PostComposerPage() {
   const router = useRouter();
@@ -188,4 +188,4 @@ export default function PostComposerPage() {
   );
 }
 
-export const getServerSideProps = requireAdminAuth;
+export const getServerSideProps = requireSocialMediaAuth;

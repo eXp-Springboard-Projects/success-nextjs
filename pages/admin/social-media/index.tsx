@@ -10,7 +10,7 @@ import { useSocialAccounts } from '@/hooks/social/useSocialAccounts';
 import { useSocialPosts } from '@/hooks/social/useSocialPosts';
 import { PLATFORM_COLORS } from '@/types/social';
 import styles from './SocialMedia.module.css';
-import { requireAdminAuth } from '@/lib/adminAuth';
+import { requireSocialMediaAuth } from '@/lib/adminAuth';
 
 export default function SocialMediaDashboard() {
   const { accounts } = useSocialAccounts();
@@ -181,4 +181,4 @@ export default function SocialMediaDashboard() {
   );
 }
 
-export const getServerSideProps = requireAdminAuth;
+export const getServerSideProps = requireSocialMediaAuth;

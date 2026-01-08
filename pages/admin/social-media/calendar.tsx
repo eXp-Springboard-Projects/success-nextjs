@@ -8,7 +8,7 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import { useSocialPosts } from '@/hooks/social/useSocialPosts';
 import { SocialPost, PLATFORM_COLORS, PLATFORM_NAMES } from '@/types/social';
 import styles from './SocialMedia.module.css';
-import { requireAdminAuth } from '@/lib/adminAuth';
+import { requireSocialMediaAuth } from '@/lib/adminAuth';
 
 export default function CalendarPage() {
   const { posts, loading } = useSocialPosts({ autoFetch: true });
@@ -152,4 +152,4 @@ export default function CalendarPage() {
   );
 }
 
-export const getServerSideProps = requireAdminAuth;
+export const getServerSideProps = requireSocialMediaAuth;

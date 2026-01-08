@@ -20,7 +20,7 @@ const DEPARTMENT_PERMISSIONS: Record<Department, UserRole[]> = {
   [Department.EDITORIAL]: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR, UserRole.AUTHOR],
   [Department.SUCCESS_PLUS]: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
   [Department.DEV]: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
-  [Department.MARKETING]: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+  [Department.MARKETING]: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_TEAM],
   [Department.COACHING]: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
 };
 
