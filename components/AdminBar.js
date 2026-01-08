@@ -38,8 +38,12 @@ export default function AdminBar() {
     // Detect current page type and get edit URL
     const path = router.asPath;
 
+    // Homepage: / → /admin/page-editor
+    if (path === '/' || path.startsWith('/?')) {
+      setEditUrl(`/admin/page-editor?page=home`);
+    }
     // Blog post: /blog/[slug] → /admin/posts/[id]/edit
-    if (path.startsWith('/blog/')) {
+    else if (path.startsWith('/blog/')) {
       const slug = path.replace('/blog/', '').split('?')[0].split('#')[0];
 
       // Fetch post ID from slug
@@ -79,10 +83,15 @@ export default function AdminBar() {
         })
         .catch(() => {});
     }
-    // Static page: /about → /admin/pages/about/edit
-    else if (path.startsWith('/about') || path.startsWith('/magazine') || path.startsWith('/subscribe')) {
+    // Category pages: /category/[slug] → /admin/page-editor?page=category
+    else if (path.startsWith('/category/')) {
+      setEditUrl(`/admin/page-editor?page=category`);
+    }
+    // Static page: /about → /admin/page-editor?page=about
+    else if (path.startsWith('/about') || path.startsWith('/magazine') || path.startsWith('/subscribe') ||
+             path.startsWith('/contact') || path.startsWith('/privacy') || path.startsWith('/terms')) {
       const pageName = path.split('/')[1].split('?')[0].split('#')[0];
-      setEditUrl(`/admin/pages/${pageName}/edit`);
+      setEditUrl(`/admin/page-editor?page=${pageName}`);
     }
   }, [router.asPath, session, status]);
 
