@@ -378,27 +378,36 @@ export default function NewCampaignPage() {
 
             <div className={styles.formGroup}>
               <label>Select Lists *</label>
-              <div className={styles.listGrid}>
-                {lists.map((list) => (
-                  <label key={list.id} className={styles.listCheckbox}>
-                    <input
-                      type="checkbox"
-                      checked={selectedLists.includes(list.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedLists([...selectedLists, list.id]);
-                        } else {
-                          setSelectedLists(selectedLists.filter(id => id !== list.id));
-                        }
-                      }}
-                    />
-                    <div>
-                      <div className={styles.listName}>{list.name}</div>
-                      <div className={styles.listCount}>{list.memberCount.toLocaleString()} contacts</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
+              {lists.length === 0 ? (
+                <div style={{ padding: '2rem', textAlign: 'center', background: '#f9fafb', borderRadius: '8px' }}>
+                  <p style={{ marginBottom: '1rem', color: '#6b7280' }}>No contact lists found.</p>
+                  <a href="/admin/crm/lists/new" style={{ color: '#2563eb', textDecoration: 'underline' }}>
+                    Create your first list
+                  </a>
+                </div>
+              ) : (
+                <div className={styles.listGrid}>
+                  {lists.map((list) => (
+                    <label key={list.id} className={styles.listCheckbox}>
+                      <input
+                        type="checkbox"
+                        checked={selectedLists.includes(list.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedLists([...selectedLists, list.id]);
+                          } else {
+                            setSelectedLists(selectedLists.filter(id => id !== list.id));
+                          }
+                        }}
+                      />
+                      <div>
+                        <div className={styles.listName}>{list.name}</div>
+                        <div className={styles.listCount}>{list.memberCount.toLocaleString()} contacts</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className={styles.formGroup}>
