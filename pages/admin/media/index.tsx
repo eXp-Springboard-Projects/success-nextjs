@@ -90,11 +90,13 @@ export default function AdminMedia() {
       if (res.ok) {
         const newMedia = await res.json();
         setMedia([newMedia, ...media]);
+        await fetchMedia(); // Refresh the full list
       } else {
-        throw new Error('Upload failed');
+        const errorData = await res.json();
+        throw new Error(errorData.error || errorData.message || 'Upload failed');
       }
     } catch (error) {
-      alert(`Failed to upload ${file.name}`);
+      alert(`Failed to upload ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
