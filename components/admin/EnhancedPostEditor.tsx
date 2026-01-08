@@ -112,11 +112,46 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         heading: {
           levels: [1, 2, 3, 4, 5, 6],
         },
+        paragraph: {
+          HTMLAttributes: {
+            class: null,
+          },
+        },
       }),
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
           class: 'editor-link',
+        },
+        // Allow WordPress link attributes
+        protocols: ['http', 'https', 'mailto'],
+        autolink: true,
+        linkOnPaste: true,
+      }).extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            target: {
+              default: null,
+              parseHTML: element => element.getAttribute('target'),
+              renderHTML: attributes => {
+                if (!attributes.target) {
+                  return {};
+                }
+                return { target: attributes.target };
+              },
+            },
+            rel: {
+              default: null,
+              parseHTML: element => element.getAttribute('rel'),
+              renderHTML: attributes => {
+                if (!attributes.rel) {
+                  return {};
+                }
+                return { rel: attributes.rel };
+              },
+            },
+          };
         },
       }),
       EnhancedImage,
@@ -174,10 +209,14 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         contentLength: initialContent.length,
         contentPreview: initialContent.substring(0, 200)
       });
+
+      // Set content with HTML from WordPress
       editor.commands.setContent(initialContent);
+
       console.log('[DEBUG] Editor state after set:', {
         isEmpty: editor.isEmpty,
-        textLength: editor.getText().length
+        textLength: editor.getText().length,
+        htmlLength: editor.getHTML().length
       });
     }
   }, [editor, initialContent]);
