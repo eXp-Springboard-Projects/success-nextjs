@@ -74,7 +74,7 @@ export default function NewCampaignPage() {
     try {
       const res = await fetch('/api/admin/crm/lists');
       const data = await res.json();
-      setLists(data.lists || []);
+      setLists(Array.isArray(data) ? data : data.lists || []);
     } catch (error) {
     }
   };
