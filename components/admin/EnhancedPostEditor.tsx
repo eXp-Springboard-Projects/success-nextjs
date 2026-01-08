@@ -170,7 +170,15 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
   // Set editor content when editor is ready and we have initial content
   useEffect(() => {
     if (editor && initialContent) {
+      console.log('[DEBUG] Setting editor content:', {
+        contentLength: initialContent.length,
+        contentPreview: initialContent.substring(0, 200)
+      });
       editor.commands.setContent(initialContent);
+      console.log('[DEBUG] Editor state after set:', {
+        isEmpty: editor.isEmpty,
+        textLength: editor.getText().length
+      });
     }
   }, [editor, initialContent]);
 
@@ -310,6 +318,13 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
 
       // Store content to be set when editor is ready
       const content = post.content.rendered || post.content;
+      console.log('[DEBUG] Post data:', {
+        hasContentRendered: !!post.content.rendered,
+        hasContent: !!post.content,
+        contentType: typeof post.content,
+        contentLength: content?.length,
+        contentPreview: content?.substring(0, 200)
+      });
       setInitialContent(content);
 
       setExcerpt(post.excerpt?.rendered || post.excerpt || '');
