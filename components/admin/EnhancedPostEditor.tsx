@@ -112,6 +112,12 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         heading: {
           levels: [1, 2, 3, 4, 5, 6],
         },
+        // Allow more HTML elements from WordPress
+        paragraph: {
+          HTMLAttributes: {
+            class: null,
+          },
+        },
       }),
       Link.configure({
         openOnClick: false,
@@ -157,6 +163,10 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         class: `${styles.editorContent} ${blockStyles.editorContent}`,
       },
     },
+    // Parse options for better WordPress HTML support
+    parseOptions: {
+      preserveWhitespace: 'full',
+    },
   });
 
   useEffect(() => {
@@ -171,20 +181,21 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
   useEffect(() => {
     if (editor && initialContent && !loading) {
       console.log('Setting editor content, length:', initialContent.length);
+      console.log('Content preview:', initialContent.substring(0, 500));
+
       try {
-        // Clear existing content first
-        editor.commands.clearContent();
-        // Set content with emitUpdate to trigger re-render
-        editor.commands.setContent(initialContent, { emitUpdate: true });
+        // Set content with parseOptions to handle WordPress HTML more permissively
+        editor.commands.setContent(initialContent, {
+          emitUpdate: true,
+          parseOptions: {
+            preserveWhitespace: 'full',
+          }
+        });
         console.log('Content set successfully');
+        console.log('Editor HTML:', editor.getHTML().substring(0, 500));
       } catch (error) {
         console.error('Error setting editor content:', error);
-        // Fallback: try to insert HTML as raw content
-        try {
-          editor.commands.insertContent(initialContent);
-        } catch (fallbackError) {
-          console.error('Fallback also failed:', fallbackError);
-        }
+        console.error('Error details:', error);
       }
     }
   }, [editor, initialContent, loading]);
