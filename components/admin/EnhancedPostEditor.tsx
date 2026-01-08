@@ -112,12 +112,6 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         heading: {
           levels: [1, 2, 3, 4, 5, 6],
         },
-        // Allow more HTML elements from WordPress
-        paragraph: {
-          HTMLAttributes: {
-            class: null,
-          },
-        },
       }),
       Link.configure({
         openOnClick: false,
@@ -163,10 +157,6 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         class: `${styles.editorContent} ${blockStyles.editorContent}`,
       },
     },
-    // Parse options for better WordPress HTML support
-    parseOptions: {
-      preserveWhitespace: 'full',
-    },
   });
 
   useEffect(() => {
@@ -179,46 +169,10 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
 
   // Set editor content when editor is ready and we have initial content
   useEffect(() => {
-    if (editor && initialContent && !loading) {
-      console.log('=== EDITOR CONTENT LOADING ===');
-      console.log('Editor ready:', !!editor);
-      console.log('Initial content length:', initialContent.length);
-      console.log('Content preview (first 500 chars):', initialContent.substring(0, 500));
-      console.log('Content type:', typeof initialContent);
-
-      // Force a delay to ensure editor is fully mounted
-      setTimeout(() => {
-        try {
-          console.log('Attempting to set content...');
-
-          // Try multiple strategies to set content
-          // Strategy 1: Direct setContent
-          editor.commands.setContent(initialContent);
-
-          console.log('✓ Content set successfully');
-          console.log('Editor state after setting:');
-          console.log('  - isEmpty:', editor.isEmpty);
-          console.log('  - getText() length:', editor.getText().length);
-          console.log('  - getHTML() length:', editor.getHTML().length);
-          console.log('  - getHTML() preview:', editor.getHTML().substring(0, 500));
-
-          // If editor is still empty, try alternative method
-          if (editor.isEmpty || editor.getText().length === 0) {
-            console.warn('⚠ Editor appears empty after setContent, trying insertContent...');
-            editor.commands.clearContent();
-            editor.commands.insertContent(initialContent);
-            console.log('After insertContent:');
-            console.log('  - isEmpty:', editor.isEmpty);
-            console.log('  - getText() length:', editor.getText().length);
-          }
-
-        } catch (error: any) {
-          console.error('✗ Error setting editor content:', error);
-          console.error('Error stack:', error?.stack);
-        }
-      }, 100);
+    if (editor && initialContent) {
+      editor.commands.setContent(initialContent);
     }
-  }, [editor, initialContent, loading]);
+  }, [editor, initialContent]);
 
   // Word count and character count
   useEffect(() => {
@@ -356,13 +310,6 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
 
       // Store content to be set when editor is ready
       const content = post.content.rendered || post.content;
-      console.log('Fetched post content:', {
-        hasRendered: !!post.content.rendered,
-        hasContent: !!post.content,
-        contentType: typeof content,
-        contentLength: content?.length,
-        contentPreview: content?.substring(0, 200)
-      });
       setInitialContent(content);
 
       setExcerpt(post.excerpt?.rendered || post.excerpt || '');
