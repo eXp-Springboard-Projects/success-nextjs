@@ -75,7 +75,7 @@ export default function MediaUploader({
       const data = await response.json();
 
       if (onUploadComplete) {
-        onUploadComplete(data.media);
+        onUploadComplete(data);
       }
 
       // Reset after 2 seconds
