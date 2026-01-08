@@ -180,23 +180,43 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
   // Set editor content when editor is ready and we have initial content
   useEffect(() => {
     if (editor && initialContent && !loading) {
-      console.log('Setting editor content, length:', initialContent.length);
-      console.log('Content preview:', initialContent.substring(0, 500));
+      console.log('=== EDITOR CONTENT LOADING ===');
+      console.log('Editor ready:', !!editor);
+      console.log('Initial content length:', initialContent.length);
+      console.log('Content preview (first 500 chars):', initialContent.substring(0, 500));
+      console.log('Content type:', typeof initialContent);
 
-      try {
-        // Set content with parseOptions to handle WordPress HTML more permissively
-        editor.commands.setContent(initialContent, {
-          emitUpdate: true,
-          parseOptions: {
-            preserveWhitespace: 'full',
+      // Force a delay to ensure editor is fully mounted
+      setTimeout(() => {
+        try {
+          console.log('Attempting to set content...');
+
+          // Try multiple strategies to set content
+          // Strategy 1: Direct setContent
+          editor.commands.setContent(initialContent);
+
+          console.log('✓ Content set successfully');
+          console.log('Editor state after setting:');
+          console.log('  - isEmpty:', editor.isEmpty);
+          console.log('  - getText() length:', editor.getText().length);
+          console.log('  - getHTML() length:', editor.getHTML().length);
+          console.log('  - getHTML() preview:', editor.getHTML().substring(0, 500));
+
+          // If editor is still empty, try alternative method
+          if (editor.isEmpty || editor.getText().length === 0) {
+            console.warn('⚠ Editor appears empty after setContent, trying insertContent...');
+            editor.commands.clearContent();
+            editor.commands.insertContent(initialContent);
+            console.log('After insertContent:');
+            console.log('  - isEmpty:', editor.isEmpty);
+            console.log('  - getText() length:', editor.getText().length);
           }
-        });
-        console.log('Content set successfully');
-        console.log('Editor HTML:', editor.getHTML().substring(0, 500));
-      } catch (error) {
-        console.error('Error setting editor content:', error);
-        console.error('Error details:', error);
-      }
+
+        } catch (error: any) {
+          console.error('✗ Error setting editor content:', error);
+          console.error('Error stack:', error?.stack);
+        }
+      }, 100);
     }
   }, [editor, initialContent, loading]);
 
