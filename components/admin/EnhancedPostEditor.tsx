@@ -117,6 +117,8 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
             class: null,
           },
         },
+        // Disable dropcursor that might interfere with WordPress HTML
+        dropcursor: false,
       }),
       Link.configure({
         openOnClick: false,
@@ -205,19 +207,23 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
   // Set editor content when editor is ready and we have initial content
   useEffect(() => {
     if (editor && initialContent) {
-      console.log('[DEBUG] Setting editor content:', {
-        contentLength: initialContent.length,
-        contentPreview: initialContent.substring(0, 200)
-      });
+      try {
+        // Decode HTML entities (like &#8217; for apostrophes)
+        const textarea = document.createElement('textarea');
+        textarea.innerHTML = initialContent;
+        const decodedContent = textarea.value;
 
-      // Set content with HTML from WordPress
-      editor.commands.setContent(initialContent);
+        // Set content in TipTap
+        editor.commands.setContent(decodedContent);
 
-      console.log('[DEBUG] Editor state after set:', {
-        isEmpty: editor.isEmpty,
-        textLength: editor.getText().length,
-        htmlLength: editor.getHTML().length
-      });
+        // Verify content was set
+        if (editor.isEmpty) {
+          console.error('Editor is empty after setting content. Original length:', initialContent.length);
+        }
+      } catch (error) {
+        console.error('Error setting editor content:', error);
+        alert('Error loading post content. The post may have formatting that is incompatible with the editor.');
+      }
     }
   }, [editor, initialContent]);
 
@@ -357,13 +363,6 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
 
       // Store content to be set when editor is ready
       const content = post.content.rendered || post.content;
-      console.log('[DEBUG] Post data:', {
-        hasContentRendered: !!post.content.rendered,
-        hasContent: !!post.content,
-        contentType: typeof post.content,
-        contentLength: content?.length,
-        contentPreview: content?.substring(0, 200)
-      });
       setInitialContent(content);
 
       setExcerpt(post.excerpt?.rendered || post.excerpt || '');

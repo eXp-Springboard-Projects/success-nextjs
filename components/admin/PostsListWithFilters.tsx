@@ -7,7 +7,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import QuickEdit from './QuickEdit';
 import styles from './PostsListWithFilters.module.css';
 
 interface Post {
@@ -42,7 +41,6 @@ export default function PostsListWithFilters() {
   const [selectedPosts, setSelectedPosts] = useState<Set<string | number>>(new Set());
   const [bulkAction, setBulkAction] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [quickEditPostId, setQuickEditPostId] = useState<string | number | null>(null);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -219,17 +217,6 @@ export default function PostsListWithFilters() {
     setDateFilter('all');
   };
 
-  const handleQuickEditSave = async (updatedPost: any) => {
-    alert(`Quick Edit Save:\n\nPost ID: ${updatedPost.id}\nTitle: ${updatedPost.title}\nStatus: ${updatedPost.status}\n\nNote: This is a demo. To actually save changes, you need to implement the WordPress REST API integration with authentication.`);
-
-    // Update local state
-    setPosts(posts.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p));
-    setQuickEditPostId(null);
-
-    // In real implementation:
-    // await fetch(`/api/posts/${updatedPost.id}`, { method: 'PATCH', body: JSON.stringify(updatedPost) });
-    // fetchPosts();
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -449,7 +436,6 @@ export default function PostsListWithFilters() {
               const featuredImage = post._embedded?.['wp:featuredmedia']?.[0];
 
               return (
-                <>
                 <tr key={post.id} className={selectedPosts.has(post.id) ? styles.selectedRow : ''}>
                   <td className={styles.checkboxCol}>
                     <input
@@ -494,21 +480,6 @@ export default function PostsListWithFilters() {
                     <div className={styles.rowActions}>
                       <Link href={`/admin/posts/${post.id}/edit`}>Edit</Link>
                       <span className={styles.separator}>|</span>
-                      <button
-                        onClick={() => setQuickEditPostId(post.id)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#2563eb',
-                          cursor: 'pointer',
-                          padding: 0,
-                          font: 'inherit',
-                          textDecoration: 'none'
-                        }}
-                      >
-                        Quick Edit
-                      </button>
-                      <span className={styles.separator}>|</span>
                       <a href={`/${post.slug}`} target="_blank" rel="noopener noreferrer">
                         View
                       </a>
@@ -552,17 +523,6 @@ export default function PostsListWithFilters() {
                     </span>
                   </td>
                 </tr>
-
-                {/* Quick Edit Row */}
-                {quickEditPostId === post.id && (
-                  <QuickEdit
-                    post={post}
-                    categories={categories}
-                    onSave={handleQuickEditSave}
-                    onCancel={() => setQuickEditPostId(null)}
-                  />
-                )}
-                </>
               );
             })}
           </tbody>
