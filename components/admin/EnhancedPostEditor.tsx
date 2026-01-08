@@ -169,10 +169,25 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
 
   // Set editor content when editor is ready and we have initial content
   useEffect(() => {
-    if (editor && initialContent) {
-      editor.commands.setContent(initialContent);
+    if (editor && initialContent && !loading) {
+      console.log('Setting editor content, length:', initialContent.length);
+      try {
+        // Clear existing content first
+        editor.commands.clearContent();
+        // Set content with emitUpdate to trigger re-render
+        editor.commands.setContent(initialContent, { emitUpdate: true });
+        console.log('Content set successfully');
+      } catch (error) {
+        console.error('Error setting editor content:', error);
+        // Fallback: try to insert HTML as raw content
+        try {
+          editor.commands.insertContent(initialContent);
+        } catch (fallbackError) {
+          console.error('Fallback also failed:', fallbackError);
+        }
+      }
     }
-  }, [editor, initialContent]);
+  }, [editor, initialContent, loading]);
 
   // Word count and character count
   useEffect(() => {
@@ -310,10 +325,17 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
 
       // Store content to be set when editor is ready
       const content = post.content.rendered || post.content;
+      console.log('Fetched post content:', {
+        hasRendered: !!post.content.rendered,
+        hasContent: !!post.content,
+        contentType: typeof content,
+        contentLength: content?.length,
+        contentPreview: content?.substring(0, 200)
+      });
       setInitialContent(content);
 
       setExcerpt(post.excerpt?.rendered || post.excerpt || '');
-      setAuthor(post._embedded?.author?.[0]?.name || post.author || '');
+      setAuthor(post.authorName || post._embedded?.author?.[0]?.name || '');
       setFeaturedImage(post._embedded?.['wp:featuredmedia']?.[0]?.source_url || post.featured_media_url || '');
       setFeaturedImageAlt(post._embedded?.['wp:featuredmedia']?.[0]?.alt_text || post.featuredImageAlt || '');
       setStatus(post.status);
