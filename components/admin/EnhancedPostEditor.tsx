@@ -766,7 +766,7 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         slug,
         content: editor.getHTML(),
         excerpt: excerpt,
-        author: author || null,
+        authorName: author || null,
         featuredImage: featuredImage || null,
         featuredImageAlt: featuredImageAlt || null,
         status: publishStatus,

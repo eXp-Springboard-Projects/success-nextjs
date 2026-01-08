@@ -51,11 +51,23 @@ export default async function handler(
           seoTitle: post.seoTitle || '',
           seoDescription: post.seoDescription || '',
           readTime: post.readTime || 0,
+          contentType: post.contentType || 'regular',
+          accessTier: post.accessTier || 'free',
+          scheduledDate: post.scheduledFor || '',
+          // New CMS fields from migration
+          contentPillar: post.contentPillar || '',
+          customAuthorId: post.customAuthorId || '',
+          authorName: post.authorName || '',
+          featureOnHomepage: post.featureOnHomepage || false,
+          featureInPillar: post.featureInPillarSection || false,
+          featureTrending: post.showInTrending || false,
+          mainFeaturedArticle: post.mainFeaturedArticle || false,
+          wordpressId: post.wordpressId || null,
           _embedded: {
             author: [{
-              id: post.users.id,
-              name: post.users.name,
-              email: post.users.email,
+              id: post.users?.id || post.authorId,
+              name: post.authorName || post.users?.name || '',
+              email: post.users?.email || '',
             }],
             'wp:term': [
               (post.categories || []).map((cat: any) => ({
@@ -259,10 +271,17 @@ export default async function handler(
       // New fields for content management
       if (req.body.contentPillar !== undefined) updateData.contentPillar = req.body.contentPillar;
       if (req.body.customAuthorId !== undefined) updateData.customAuthorId = req.body.customAuthorId;
+      if (req.body.authorName !== undefined) updateData.authorName = req.body.authorName;
       if (req.body.featureOnHomepage !== undefined) updateData.featureOnHomepage = req.body.featureOnHomepage;
-      if (req.body.featureInPillar !== undefined) updateData.featureInPillar = req.body.featureInPillar;
-      if (req.body.featureTrending !== undefined) updateData.featureTrending = req.body.featureTrending;
+      if (req.body.featureInPillar !== undefined) updateData.featureInPillarSection = req.body.featureInPillar;
+      if (req.body.featureTrending !== undefined) updateData.showInTrending = req.body.featureTrending;
       if (req.body.mainFeaturedArticle !== undefined) updateData.mainFeaturedArticle = req.body.mainFeaturedArticle;
+      if (req.body.contentType !== undefined) updateData.contentType = req.body.contentType;
+      if (req.body.accessTier !== undefined) updateData.accessTier = req.body.accessTier;
+      if (req.body.scheduledDate !== undefined) updateData.scheduledFor = req.body.scheduledDate;
+
+      // Track who updated the post
+      updateData.updatedBy = session.user.id;
 
       if (isBeingPublished) {
         updateData.publishedAt = publishedAt
