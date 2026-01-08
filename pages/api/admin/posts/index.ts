@@ -73,16 +73,11 @@ export default async function handler(
 
       // Format response similar to WordPress API
       const formattedPosts = (posts || []).map(post => {
-        // Handle author data - could be from join or separate query
-        const authorData = post.users || null;
-        const author = authorData ? {
-          id: authorData.id || post.authorId,
-          name: authorData.name || 'Unknown Author',
-          email: authorData.email || '',
-        } : {
+        // Handle author data - prioritize authorName for WordPress posts
+        const author = {
           id: post.authorId,
-          name: 'Unknown Author',
-          email: '',
+          name: post.authorName || post.wordpressAuthor || post.users?.name || 'Unknown Author',
+          email: post.users?.email || '',
         };
 
         return {

@@ -117,8 +117,12 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
             class: null,
           },
         },
-        // Disable dropcursor that might interfere with WordPress HTML
+        // More permissive HTML handling for WordPress content
         dropcursor: false,
+        gapcursor: false,
+        hardBreak: {
+          keepMarks: true,
+        },
       }),
       Link.configure({
         openOnClick: false,
@@ -193,6 +197,13 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
       attributes: {
         class: `${styles.editorContent} ${blockStyles.editorContent}`,
       },
+      // Don't transform WordPress HTML - preserve it as-is
+      transformPastedHTML: (html) => html,
+      transformPastedText: (text) => text,
+    },
+    // Parse HTML more permissively
+    parseOptions: {
+      preserveWhitespace: 'full',
     },
   });
 

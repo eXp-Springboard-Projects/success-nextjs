@@ -65,8 +65,8 @@ export default async function handler(
           wordpressId: post.wordpressId || null,
           _embedded: {
             author: [{
-              id: post.users?.id || post.authorId,
-              name: post.authorName || post.users?.name || '',
+              id: post.authorId,
+              name: post.authorName || post.wordpressAuthor || post.users?.name || 'Unknown Author',
               email: post.users?.email || '',
             }],
             'wp:term': [
