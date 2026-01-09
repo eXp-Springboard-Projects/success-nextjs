@@ -49,3 +49,4 @@ check-admin.mjs
 pnpm-lock.yaml
 
 # Large resource files - now committed to git for deployment
+.env.production.check

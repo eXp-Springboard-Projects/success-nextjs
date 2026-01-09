@@ -10,7 +10,7 @@ export default async function handler(
 ) {
   const session = await getServerSession(req, res, authOptions);
 
-  if (!session || !['ADMIN', 'SUPER_ADMIN', 'EDITOR'].includes(session.user.role)) {
+  if (!session || !['ADMIN', 'SUPER_ADMIN', 'EDITOR', 'AUTHOR', 'SOCIAL_TEAM'].includes(session.user.role)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
