@@ -278,13 +278,6 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
               <span className={styles.date}>{postDate}</span>
               <span className={styles.readTime}>{readTime}</span>
             </div>
-
-            {post.excerpt?.rendered && (
-              <div
-                className={styles.excerpt}
-                dangerouslySetInnerHTML={{ __html: decodeHtmlContent(post.excerpt.rendered) }}
-              />
-            )}
           </div>
         </header>
 
@@ -302,6 +295,16 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
                 dangerouslySetInnerHTML={{ __html: decodeHtmlContent(featuredImage.caption.rendered) }}
               />
             )}
+          </div>
+        )}
+
+        {/* Excerpt */}
+        {post.excerpt?.rendered && (
+          <div className={styles.header}>
+            <div
+              className={styles.excerpt}
+              dangerouslySetInnerHTML={{ __html: decodeHtmlContent(post.excerpt.rendered) }}
+            />
           </div>
         )}
 
