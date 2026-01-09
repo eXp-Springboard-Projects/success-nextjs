@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { nanoid } from 'nanoid';
 
 const supabaseUrl = 'https://aczlassjkbtwenzsohwm.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjemxhc3Nqa2J0d2VuenNvaHdtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcyOTg4MjQyMCwiZXhwIjoyMDQ1NDU4NDIwfQ.sb_secret_bx9obYWu-6qwAoNavXVGCg_m3vemyQKqQwqYQX52OM';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjemxhc3Nqa2J0d2VuenNvaHdtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjQyODk0NywiZXhwIjoyMDgyMDA0OTQ3fQ.t4ADR0oV5sJCMNp1adP2vTsxV1W3Pfizw_uyO3BFYd4';
 const WP_API_URL = 'https://successcom.wpenginepowered.com/wp-json/wp/v2';
 
 interface WPPost {
@@ -91,7 +91,6 @@ async function syncAllWordPressPosts() {
             wordpressId: wpPost.id.toString(),
             wordpressAuthor: author?.name || null,
             authorName: author?.name || null,
-            source: 'wordpress_import',
           };
 
           if (existing) {
