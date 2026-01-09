@@ -298,16 +298,6 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
           </div>
         )}
 
-        {/* Excerpt */}
-        {post.excerpt?.rendered && (
-          <div className={styles.header}>
-            <div
-              className={styles.excerpt}
-              dangerouslySetInnerHTML={{ __html: decodeHtmlContent(post.excerpt.rendered) }}
-            />
-          </div>
-        )}
-
         {/* Article Content */}
         <div className={styles.content}>
           <div

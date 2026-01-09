@@ -30,7 +30,7 @@ import MediaLibraryPicker from './MediaLibraryPicker';
 import ImageEditor from './ImageEditor';
 import TextStylePanel from './TextStylePanel';
 import BlockControls from './BlockControls';
-import styles from './EnhancedPostEditor.module.css';
+import styles from './PageEditor.module.css';
 import blockStyles from './BlockEditor.module.css';
 
 interface PageEditorProps {
