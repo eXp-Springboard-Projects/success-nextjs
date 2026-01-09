@@ -28,6 +28,16 @@ async function syncAllWordPressPosts() {
 
   console.log('🔄 Starting WordPress posts sync to Supabase...\n');
 
+  // Get a valid user ID from the database
+  const { data: users } = await supabase
+    .from('users')
+    .select('id')
+    .limit(1)
+    .single();
+
+  const defaultAuthorId = users?.id || null;
+  console.log(`📝 Using default author ID: ${defaultAuthorId}\n`);
+
   let page = 1;
   let totalImported = 0;
   let totalUpdated = 0;
@@ -78,6 +88,10 @@ async function syncAllWordPressPosts() {
           const categories = wpPost._embedded?.['wp:term']?.[0] || [];
           const tags = wpPost._embedded?.['wp:term']?.[1] || [];
 
+          // Check for guest author (Molongui plugin) - prioritize over regular author
+          const guestAuthor = (wpPost as any).guest_author_field_data?.guest_authors?.[0];
+          const authorName = guestAuthor?.title || author?.name || null;
+
           const postData = {
             title: wpPost.title.rendered.replace(/&#8217;/g, "'").replace(/&#8220;/g, '"').replace(/&#8221;/g, '"'),
             slug: wpPost.slug,
@@ -90,7 +104,7 @@ async function syncAllWordPressPosts() {
             featuredImageAlt: featuredMedia?.alt_text || null,
             wordpressId: wpPost.id.toString(),
             wordpressAuthor: author?.name || null,
-            authorName: author?.name || null,
+            authorName: authorName,
           };
 
           if (existing) {
@@ -121,7 +135,7 @@ async function syncAllWordPressPosts() {
               .insert({
                 id: `wp_${wpPost.id}`,
                 ...postData,
-                authorId: 'cm4p4s9h90000vwa04h3t8ofi', // Default system user
+                authorId: defaultAuthorId, // Use actual valid user ID
                 readTime: 0,
                 views: 0,
                 createdAt: new Date(wpPost.date).toISOString(),

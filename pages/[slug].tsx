@@ -88,8 +88,9 @@ export default function DynamicPage({ page, post, relatedPosts, hasAccess, isPos
 export async function getServerSideProps({ params, req, res }: any) {
   const slug = params?.slug as string;
   let page = null;
+  let post = null;
 
-  // Try to find a Page in the database (but don't fail if database is down)
+  // Try to find a Page in the database first
   try {
     const supabase = supabaseAdmin();
     const { data, error } = await supabase
@@ -99,21 +100,52 @@ export async function getServerSideProps({ params, req, res }: any) {
       .eq('status', 'PUBLISHED')
       .single();
 
-    if (error) {
-      console.log(`[Dynamic Page] Database error for "${slug}", will try WordPress:`, error.message);
-      page = null;
-    } else {
+    if (!error && data) {
       page = data;
     }
   } catch (dbError: any) {
-    console.log(`[Dynamic Page] Database error for "${slug}", will try WordPress:`, dbError.message);
-    // If database fails, we'll fall through to WordPress fetch below
-    page = null;
+    // Page not found, continue
+  }
+
+  // If no Page found, try to find a Post in the database
+  if (!page) {
+    try {
+      const supabase = supabaseAdmin();
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('slug', slug)
+        .eq('status', 'PUBLISHED')
+        .single();
+
+      if (!error && data) {
+        // Found post in database - format it like a WordPress post
+        post = {
+          id: data.id,
+          title: { rendered: data.title },
+          content: { rendered: data.content },
+          excerpt: { rendered: data.excerpt || '' },
+          slug: data.slug,
+          date: data.publishedAt || data.createdAt,
+          modified: data.updatedAt,
+          _embedded: {
+            author: [{ name: data.authorName || 'Unknown' }],
+            'wp:featuredmedia': data.featuredImage ? [{
+              source_url: data.featuredImage,
+              alt_text: data.featuredImageAlt || ''
+            }] : [],
+            'wp:term': [[], []] // Empty categories/tags for now
+          }
+        };
+      }
+    } catch (dbError: any) {
+      // Post not found in database, will try WordPress
+    }
   }
 
   try {
     if (page) {
-      // Dates from Supabase are already in ISO string format
+      // Return database page
       return {
         props: {
           page: page,
@@ -122,7 +154,20 @@ export async function getServerSideProps({ params, req, res }: any) {
       };
     }
 
-    // If no Page found in database, try WordPress PAGES first (like /daily-sms/)
+    if (post) {
+      // Return database post (formatted like WordPress)
+      return {
+        props: {
+          page: null,
+          post,
+          relatedPosts: [],
+          hasAccess: true,
+          isPost: true
+        }
+      };
+    }
+
+    // If no Page or Post found in database, try WordPress PAGES first (like /daily-sms/)
     const wpPages = await fetchWordPressData(`pages?slug=${slug}&_embed`);
     const wpPage = wpPages?.[0];
 
@@ -150,12 +195,15 @@ export async function getServerSideProps({ params, req, res }: any) {
     }
 
     // If no WordPress page found, try WordPress POSTS (blog posts)
-    const posts = await fetchWordPressData(`posts?slug=${slug}&_embed`);
-    const post = posts?.[0];
+    const wpPosts = await fetchWordPressData(`posts?slug=${slug}&_embed`);
+    const wpPost = wpPosts?.[0];
 
-    if (!post) {
+    if (!wpPost) {
       return { notFound: true };
     }
+
+    // Use wpPost instead of post for the rest of the logic
+    post = wpPost;
 
     // Fetch related posts from the same category
     const categoryId = post._embedded?.['wp:term']?.[0]?.[0]?.id;
