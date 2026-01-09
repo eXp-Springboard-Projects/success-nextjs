@@ -173,8 +173,8 @@ export default async function handler(
           contentPillar: contentPillar || null,
           customAuthorId: customAuthorId || null,
           featureOnHomepage: featureOnHomepage || false,
-          featureInPillar: featureInPillar || false,
-          featureTrending: featureTrending || false,
+          featureInPillarSection: featureInPillar || false,
+          showInTrending: featureTrending || false,
           mainFeaturedArticle: mainFeaturedArticle || false,
         })
         .select()

@@ -367,20 +367,35 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
     setLoading(true);
     try {
       const res = await fetch(`/api/admin/posts/${postId}`);
+
+      if (!res.ok) {
+        const error = await res.json();
+        console.error('Failed to fetch post:', error);
+        alert(`Failed to load post: ${error.error || error.message || 'Unknown error'}`);
+        setLoading(false);
+        return;
+      }
+
       const post = await res.json();
 
-      setTitle(post.title.rendered || post.title);
-      setSlug(post.slug);
+      if (!post) {
+        alert('Post not found');
+        setLoading(false);
+        return;
+      }
+
+      setTitle(post.title?.rendered || post.title || '');
+      setSlug(post.slug || '');
 
       // Store content to be set when editor is ready
-      const content = post.content.rendered || post.content;
+      const content = post.content?.rendered || post.content || '';
       setInitialContent(content);
 
       setExcerpt(post.excerpt?.rendered || post.excerpt || '');
       setAuthor(post.authorName || post._embedded?.author?.[0]?.name || '');
       setFeaturedImage(post._embedded?.['wp:featuredmedia']?.[0]?.source_url || post.featured_media_url || '');
       setFeaturedImageAlt(post._embedded?.['wp:featuredmedia']?.[0]?.alt_text || post.featuredImageAlt || '');
-      setStatus(post.status);
+      setStatus(post.status || 'draft');
 
       // Get category IDs if available
       if (post._embedded?.['wp:term']?.[0]) {

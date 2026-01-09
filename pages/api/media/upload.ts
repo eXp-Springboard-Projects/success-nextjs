@@ -128,7 +128,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (mediaError) {
-      throw mediaError;
+      console.error('Media database insert error:', mediaError);
+      return res.status(500).json({
+        error: 'Failed to save media to database',
+        message: mediaError.message,
+        details: mediaError.details,
+        hint: mediaError.hint
+      });
     }
 
     // Log activity
