@@ -66,11 +66,11 @@ async function syncAllWordPressPosts() {
 
       for (const wpPost of posts) {
         try {
-          // Check if post already exists by WordPress ID
+          // Check if post already exists by slug OR WordPress ID
           const { data: existing } = await supabase
             .from('posts')
-            .select('id, updatedAt')
-            .eq('wordpressId', wpPost.id.toString())
+            .select('id, updatedAt, wordpressId')
+            .or(`slug.eq.${wpPost.slug},wordpressId.eq.${wpPost.id}`)
             .single();
 
           const author = wpPost._embedded?.author?.[0];
@@ -94,26 +94,25 @@ async function syncAllWordPressPosts() {
           };
 
           if (existing) {
-            // Update if WordPress post is newer
-            const wpModified = new Date(wpPost.modified);
-            const dbUpdated = new Date(existing.updatedAt);
+            // Always update to ensure wordpressId is set and content is synced
+            const updateData = {
+              ...postData,
+              // Preserve existing ID if post was already in DB
+              id: existing.id
+            };
 
-            if (wpModified > dbUpdated) {
-              const { error } = await supabase
-                .from('posts')
-                .update(postData)
-                .eq('id', existing.id);
+            const { error } = await supabase
+              .from('posts')
+              .update(postData)
+              .eq('id', existing.id);
 
-              if (error) {
-                console.error(`   ❌ Error updating ${wpPost.title.rendered}:`, error.message);
-              } else {
-                totalUpdated++;
-                if (totalUpdated % 10 === 0) {
-                  console.log(`   🔄 Updated ${totalUpdated} posts...`);
-                }
-              }
+            if (error) {
+              console.error(`   ❌ Error updating ${wpPost.title.rendered}:`, error.message);
             } else {
-              totalSkipped++;
+              totalUpdated++;
+              if (totalUpdated % 10 === 0) {
+                console.log(`   🔄 Updated ${totalUpdated} posts...`);
+              }
             }
           } else {
             // Insert new post
