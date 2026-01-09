@@ -178,8 +178,11 @@ export default async function handler(
 
       // If post doesn't exist in Supabase but has wordpressId, create a new local copy
       if (!currentPost && wordpressId) {
-        const newStatus = status?.toUpperCase() || 'DRAFT';
-        const isBeingPublished = newStatus === 'PUBLISHED' || newStatus === 'PUBLISH';
+        let newStatus = status?.toUpperCase() || 'DRAFT';
+        if (newStatus === 'PUBLISH') {
+          newStatus = 'PUBLISHED';
+        }
+        const isBeingPublished = newStatus === 'PUBLISHED';
 
         const newPost: any = {
           id: id as string, // Use WordPress ID as the primary key
@@ -253,8 +256,12 @@ export default async function handler(
         return res.status(404).json({ error: 'Post not found' });
       }
 
-      const newStatus = status?.toUpperCase() || currentPost.status;
-      const isBeingPublished = newStatus === 'PUBLISHED' || newStatus === 'PUBLISH';
+      // Normalize status to uppercase and convert 'PUBLISH' to 'PUBLISHED'
+      let newStatus = status?.toUpperCase() || currentPost.status;
+      if (newStatus === 'PUBLISH') {
+        newStatus = 'PUBLISHED';
+      }
+      const isBeingPublished = newStatus === 'PUBLISHED';
 
       // For PATCH requests, only update fields that are provided
       const updateData: any = {};
@@ -282,6 +289,7 @@ export default async function handler(
 
       // Track who updated the post
       updateData.updatedBy = session.user.id;
+      updateData.updatedAt = new Date().toISOString(); // Always update timestamp
 
       if (isBeingPublished) {
         updateData.publishedAt = publishedAt
