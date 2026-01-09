@@ -29,6 +29,18 @@ export default async function handler(
             name,
             email
           ),
+          authors!posts_customAuthorId_fkey (
+            id,
+            name,
+            slug,
+            bio,
+            photo,
+            title,
+            socialLinkedin,
+            socialTwitter,
+            socialFacebook,
+            website
+          ),
           categories (*),
           tags (*)
         `)
@@ -65,9 +77,18 @@ export default async function handler(
           wordpressId: post.wordpressId || null,
           _embedded: {
             author: [{
-              id: post.authorId,
-              name: post.authorName || post.wordpressAuthor || post.users?.name || 'Unknown Author',
-              email: post.users?.email || '',
+              id: post.customAuthorId || post.authorId,
+              name: post.authors?.name || post.authorName || post.wordpressAuthor || post.users?.name || 'Unknown Author',
+              slug: post.authors?.slug || '',
+              bio: post.authors?.bio || '',
+              photo: post.authors?.photo || '',
+              title: post.authors?.title || '',
+              email: post.authors?.email || post.users?.email || '',
+              description: post.authors?.bio || '',
+              socialLinkedin: post.authors?.socialLinkedin || '',
+              socialTwitter: post.authors?.socialTwitter || '',
+              socialFacebook: post.authors?.socialFacebook || '',
+              website: post.authors?.website || '',
             }],
             'wp:term': [
               (post.categories || []).map((cat: any) => ({
