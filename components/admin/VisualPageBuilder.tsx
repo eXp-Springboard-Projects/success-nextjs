@@ -4,7 +4,7 @@ import {
   Type, Image, Columns, Square, AlignLeft, AlignCenter, AlignRight,
   Bold, Italic, Underline, Link, Code, List, ListOrdered,
   Save, Eye, Settings, Undo, Redo, Plus, Trash2, Copy, Move,
-  ChevronDown, Palette, Spacing, LayoutTemplate
+  ChevronDown, Palette, Space, LayoutTemplate
 } from 'lucide-react';
 import styles from './VisualPageBuilder.module.css';
 
@@ -226,7 +226,7 @@ export default function VisualPageBuilder({ pageId, initialContent = [], onSave 
                   className={styles.elementButton}
                   onClick={() => addBlock('spacer')}
                 >
-                  <Spacing size={20} />
+                  <Space size={20} />
                   <span>Spacer</span>
                 </button>
               </div>
@@ -255,7 +255,7 @@ export default function VisualPageBuilder({ pageId, initialContent = [], onSave 
                   style={{
                     ...block.styles,
                     cursor: previewMode ? 'default' : 'pointer'
-                  }}
+                  } as React.CSSProperties}
                 >
                   {/* Block Controls (Edit Mode Only) */}
                   {!previewMode && selectedBlockId === block.id && (

@@ -887,10 +887,13 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         }
       } else {
         const error = await res.json();
-        alert(`Failed to save post: ${error.message || 'Unknown error'}`);
+        console.error('Save post error:', error);
+        const errorMessage = error.error || error.message || error.details || 'Unknown error';
+        alert(`Failed to save post: ${errorMessage}\n\nStatus: ${res.status}`);
       }
     } catch (error) {
-      alert('Failed to save post');
+      console.error('Save post exception:', error);
+      alert(`Failed to save post: ${error instanceof Error ? error.message : 'Network error'}`);
     } finally {
       setSaving(false);
     }
