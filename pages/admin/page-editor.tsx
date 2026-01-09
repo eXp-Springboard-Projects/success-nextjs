@@ -39,11 +39,28 @@ export default function PageEditorPage() {
   const [newProperty, setNewProperty] = useState('');
   const [newValue, setNewValue] = useState('');
 
+  // Visual editor state
+  const [showVisualEditor, setShowVisualEditor] = useState(false);
+  const [selectedElement, setSelectedElement] = useState<any>(null);
+  const [previewMode, setPreviewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/admin/login');
     }
   }, [status, router]);
+
+  // Listen for messages from iframe
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'elementSelected') {
+        setSelectedElement(event.data);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   const loadPageOverrides = async (pagePath: string) => {
     if (!pagePath) return;
@@ -222,6 +239,12 @@ export default function PageEditorPage() {
                   Editing: {AVAILABLE_PAGES.find(p => p.path === selectedPage)?.name}
                 </h2>
                 <div className={styles.actions}>
+                  <button
+                    onClick={() => setShowVisualEditor(!showVisualEditor)}
+                    className={styles.visualButton}
+                  >
+                    {showVisualEditor ? '📝 Code Editor' : '🎨 Visual Editor'}
+                  </button>
                   <a
                     href={`https://www.success.com${selectedPage}`}
                     target="_blank"
@@ -246,6 +269,167 @@ export default function PageEditorPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Visual Editor Mode */}
+              {showVisualEditor && (
+                <div className={styles.visualEditorContainer}>
+                  <div className={styles.visualControls}>
+                    <div className={styles.deviceToggle}>
+                      <button
+                        onClick={() => setPreviewMode('desktop')}
+                        className={previewMode === 'desktop' ? styles.activeDevice : ''}
+                      >
+                        🖥️ Desktop
+                      </button>
+                      <button
+                        onClick={() => setPreviewMode('tablet')}
+                        className={previewMode === 'tablet' ? styles.activeDevice : ''}
+                      >
+                        📱 Tablet
+                      </button>
+                      <button
+                        onClick={() => setPreviewMode('mobile')}
+                        className={previewMode === 'mobile' ? styles.activeDevice : ''}
+                      >
+                        📱 Mobile
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className={`${styles.previewFrame} ${styles[previewMode]}`}>
+                    <iframe
+                      id="visual-editor-iframe"
+                      src={`https://www.success.com${selectedPage}?editor=1`}
+                      title="Page Preview"
+                      className={styles.iframe}
+                      onLoad={(e) => {
+                        const iframe = e.target as HTMLIFrameElement;
+                        if (iframe.contentWindow) {
+                          // Inject editor overlay script
+                          const doc = iframe.contentDocument;
+                          if (doc) {
+                            const script = doc.createElement('script');
+                            script.textContent = `
+                              (function() {
+                                let selectedEl = null;
+                                let hoverEl = null;
+
+                                document.body.style.cursor = 'pointer';
+
+                                // Hover highlight
+                                document.addEventListener('mouseover', function(e) {
+                                  if (e.target === document.body || e.target === document.documentElement) return;
+                                  hoverEl = e.target;
+                                  e.target.style.outline = '2px solid #2563eb';
+                                  e.stopPropagation();
+                                });
+
+                                document.addEventListener('mouseout', function(e) {
+                                  if (e.target === hoverEl) {
+                                    e.target.style.outline = '';
+                                  }
+                                });
+
+                                // Click to select
+                                document.addEventListener('click', function(e) {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+
+                                  if (selectedEl) {
+                                    selectedEl.style.outline = '';
+                                  }
+
+                                  selectedEl = e.target;
+                                  selectedEl.style.outline = '3px solid #10b981';
+
+                                  // Send element info to parent
+                                  const selector = getSelector(e.target);
+                                  const computedStyles = window.getComputedStyle(e.target);
+
+                                  window.parent.postMessage({
+                                    type: 'elementSelected',
+                                    selector: selector,
+                                    tag: e.target.tagName.toLowerCase(),
+                                    classes: Array.from(e.target.classList),
+                                    id: e.target.id,
+                                    text: e.target.innerText?.substring(0, 100),
+                                    styles: {
+                                      color: computedStyles.color,
+                                      backgroundColor: computedStyles.backgroundColor,
+                                      fontSize: computedStyles.fontSize,
+                                      fontFamily: computedStyles.fontFamily,
+                                      padding: computedStyles.padding,
+                                      margin: computedStyles.margin
+                                    }
+                                  }, '*');
+                                }, true);
+
+                                function getSelector(el) {
+                                  if (el.id) return '#' + el.id;
+                                  if (el.className && typeof el.className === 'string') {
+                                    const classes = el.className.trim().split(/\\s+/).filter(c => c);
+                                    if (classes.length) return '.' + classes[0];
+                                  }
+                                  return el.tagName.toLowerCase();
+                                }
+                              })();
+                            `;
+                            doc.body.appendChild(script);
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+
+                  {/* Properties Panel */}
+                  {selectedElement && (
+                    <div className={styles.propertiesPanel}>
+                      <h3>Selected Element</h3>
+                      <div className={styles.elementInfo}>
+                        <div><strong>Tag:</strong> {selectedElement.tag}</div>
+                        <div><strong>Selector:</strong> {selectedElement.selector}</div>
+                        {selectedElement.text && (
+                          <div><strong>Text:</strong> {selectedElement.text}</div>
+                        )}
+                      </div>
+
+                      <div className={styles.quickStyles}>
+                        <h4>Quick Styles</h4>
+                        <div className={styles.styleGroup}>
+                          <label>Color</label>
+                          <input
+                            type="color"
+                            defaultValue={selectedElement.styles?.color || '#000000'}
+                            onChange={(e) => {
+                              setNewSelector(selectedElement.selector);
+                              setNewProperty('color');
+                              setNewValue(e.target.value);
+                            }}
+                          />
+                        </div>
+                        <div className={styles.styleGroup}>
+                          <label>Font Size</label>
+                          <input
+                            type="number"
+                            placeholder="16"
+                            onChange={(e) => {
+                              setNewSelector(selectedElement.selector);
+                              setNewProperty('fontSize');
+                              setNewValue(e.target.value + 'px');
+                            }}
+                          />
+                        </div>
+                        <button
+                          onClick={addOverride}
+                          className={styles.applyButton}
+                        >
+                          Apply Style
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {loading ? (
                 <div className={styles.loading}>Loading overrides...</div>

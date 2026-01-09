@@ -362,3 +362,179 @@
     width: 100%;
   }
 }
+
+/* Visual Editor Styles */
+.visualButton {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.visualButton:hover {
+  transform: translateY(-2px);
+}
+
+.visualEditorContainer {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 12px;
+  min-height: 600px;
+}
+
+.visualControls {
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.deviceToggle {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.deviceToggle button {
+  padding: 0.5rem 1rem;
+  border: 2px solid #e5e7eb;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deviceToggle button:hover {
+  border-color: #2563eb;
+}
+
+.activeDevice {
+  background: #2563eb !important;
+  color: white !important;
+  border-color: #2563eb !important;
+}
+
+.previewFrame {
+  flex: 1;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s;
+}
+
+.previewFrame.desktop {
+  width: 100%;
+}
+
+.previewFrame.tablet {
+  width: 768px;
+  margin: 0 auto;
+}
+
+.previewFrame.mobile {
+  width: 375px;
+  margin: 0 auto;
+}
+
+.iframe {
+  width: 100%;
+  height: 700px;
+  border: none;
+}
+
+.propertiesPanel {
+  width: 320px;
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-height: 700px;
+  overflow-y: auto;
+}
+
+.propertiesPanel h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  color: #1a1a1a;
+}
+
+.propertiesPanel h4 {
+  margin: 1.5rem 0 1rem 0;
+  font-size: 1rem;
+  color: #374151;
+}
+
+.elementInfo {
+  background: #f3f4f6;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+}
+
+.elementInfo div {
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.elementInfo strong {
+  color: #1f2937;
+}
+
+.quickStyles {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
+}
+
+.styleGroup {
+  margin-bottom: 1rem;
+}
+
+.styleGroup label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.styleGroup input[type="color"] {
+  width: 100%;
+  height: 40px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.styleGroup input[type="number"],
+.styleGroup input[type="text"] {
+  width: 100%;
+  padding: 0.5rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.applyButton {
+  width: 100%;
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background 0.2s;
+}
+
+.applyButton:hover {
+  background: #059669;
+}
