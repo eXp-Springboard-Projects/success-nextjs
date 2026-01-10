@@ -2,12 +2,11 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
 import { supabaseAdmin } from '../../../lib/supabase';
-import { uploadAndOptimizeImage, validateImageFile } from '../../../lib/media';
-import { saveFileLocally, shouldUseLocalStorage } from '../../../lib/mediaLocal';
+import { validateImageFile } from '../../../lib/media';
+import { uploadImageToSupabase } from '../../../lib/mediaSupabase';
 import formidable from 'formidable';
 import fs from 'fs';
 import { randomUUID } from 'crypto';
-import sizeOf from 'image-size';
 
 // Disable Next.js body parser to handle multipart form data
 export const config = {
@@ -69,44 +68,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Read file buffer
     const fileBuffer = fs.readFileSync(uploadedFile.filepath);
 
-    let mediaUrl: string;
-    let width = 0;
-    let height = 0;
-    let variants: any[] = [];
-
-    // Use local storage for development, Vercel Blob for production
-    if (shouldUseLocalStorage()) {
-      const localResult = await saveFileLocally(
-        fileBuffer,
-        uploadedFile.originalFilename || 'upload.jpg',
-        uploadedFile.mimetype || 'image/jpeg'
-      );
-
-      mediaUrl = localResult.url;
-
-      // Get image dimensions
-      try {
-        const dimensions = sizeOf(fileBuffer);
-        width = dimensions.width || 0;
-        height = dimensions.height || 0;
-      } catch (e) {
+    // Upload to Supabase Storage with optimization and variants
+    const optimized = await uploadImageToSupabase(
+      fileBuffer,
+      uploadedFile.originalFilename || 'upload.jpg',
+      {
+        generateVariants: true,
+        maxWidth: 2000,
+        quality: 80,
       }
-    } else {
-      const optimized = await uploadAndOptimizeImage(
-        fileBuffer,
-        uploadedFile.originalFilename || 'upload.jpg',
-        {
-          generateVariants: true,
-          maxWidth: 2000,
-          quality: 80,
-        }
-      );
+    );
 
-      mediaUrl = optimized.original;
-      width = optimized.variants[0]?.width || 0;
-      height = optimized.variants[0]?.height || 0;
-      variants = optimized.variants;
-    }
+    const mediaUrl = optimized.original;
+    const width = optimized.width;
+    const height = optimized.height;
+    const variants = optimized.variants;
 
     // Save to database
     const mediaId = randomUUID();
