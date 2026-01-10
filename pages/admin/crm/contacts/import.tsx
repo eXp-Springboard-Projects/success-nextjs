@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import Papa from 'papaparse';
 import { Department } from '@/lib/types';
 import DepartmentLayout from '@/components/admin/shared/DepartmentLayout';
 import { requireDepartmentAuth } from '@/lib/departmentAuth';
@@ -55,49 +56,58 @@ export default function ImportContactsPage() {
     if (!uploadedFile) return;
 
     setFile(uploadedFile);
-    const reader = new FileReader();
 
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      const lines = text.split('\n').filter((line) => line.trim());
+    // Use PapaParse for proper CSV parsing
+    Papa.parse(uploadedFile, {
+      header: false,
+      skipEmptyLines: true,
+      complete: (results) => {
+        if (!results.data || results.data.length === 0) {
+          alert('CSV file is empty or invalid');
+          return;
+        }
 
-      if (lines.length === 0) return;
+        // First row is headers
+        const headers = (results.data[0] as string[]).map((h) =>
+          (h || '').toString().trim()
+        );
 
-      const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
-      const data = lines.slice(1).map((line) => {
-        const values = line.split(',').map((v) => v.trim().replace(/^"|"$/g, ''));
-        return values;
-      });
+        // Remaining rows are data
+        const data = results.data.slice(1).map((row) =>
+          (row as string[]).map((v) => (v || '').toString().trim())
+        );
 
-      setCsvHeaders(headers);
-      setCsvData(data);
+        setCsvHeaders(headers);
+        setCsvData(data);
 
-      // Auto-map common column names
-      const autoMapping: any = {
-        email: '',
-        firstName: '',
-        lastName: '',
-        phone: '',
-        company: '',
-        source: '',
-        tags: '',
-      };
+        // Auto-map common column names
+        const autoMapping: any = {
+          email: '',
+          firstName: '',
+          lastName: '',
+          phone: '',
+          company: '',
+          source: '',
+          tags: '',
+        };
 
-      headers.forEach((header) => {
-        const lower = header.toLowerCase();
-        if (lower.includes('email')) autoMapping.email = header;
-        if (lower.includes('first') && lower.includes('name')) autoMapping.firstName = header;
-        if (lower.includes('last') && lower.includes('name')) autoMapping.lastName = header;
-        if (lower.includes('phone')) autoMapping.phone = header;
-        if (lower.includes('company')) autoMapping.company = header;
-        if (lower.includes('source')) autoMapping.source = header;
-        if (lower.includes('tag')) autoMapping.tags = header;
-      });
+        headers.forEach((header) => {
+          const lower = header.toLowerCase();
+          if (lower.includes('email')) autoMapping.email = header;
+          if (lower.includes('first') && lower.includes('name')) autoMapping.firstName = header;
+          if (lower.includes('last') && lower.includes('name')) autoMapping.lastName = header;
+          if (lower.includes('phone')) autoMapping.phone = header;
+          if (lower.includes('company')) autoMapping.company = header;
+          if (lower.includes('source')) autoMapping.source = header;
+          if (lower.includes('tag')) autoMapping.tags = header;
+        });
 
-      setMapping(autoMapping);
-    };
-
-    reader.readAsText(uploadedFile);
+        setMapping(autoMapping);
+      },
+      error: (error) => {
+        alert(`Failed to parse CSV: ${error.message}`);
+      }
+    });
   };
 
   const generatePreview = () => {
