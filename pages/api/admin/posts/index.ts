@@ -175,8 +175,13 @@ export default async function handler(
       res.setHeader('X-WP-TotalPages', Math.ceil((count || 0) / perPage).toString());
 
       return res.status(200).json(formattedPosts);
-    } catch (error) {
-      return res.status(500).json({ error: 'Failed to fetch posts' });
+    } catch (error: any) {
+      console.error('Error fetching posts:', error);
+      return res.status(500).json({
+        error: 'Failed to fetch posts',
+        message: error.message || 'Unknown error',
+        details: error.details || error.hint || null
+      });
     }
   }
 

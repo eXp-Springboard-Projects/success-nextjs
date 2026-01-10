@@ -70,8 +70,14 @@ export default function PostsListWithFilters() {
       if (res.ok) {
         const data = await res.json();
         setPosts(data);
+      } else {
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Failed to fetch posts:', res.status, errorData);
+        alert(`Failed to load posts: ${errorData.message || errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
+      console.error('Error fetching posts:', error);
+      alert('Failed to load posts. Check console for details.');
     } finally {
       setLoading(false);
     }
