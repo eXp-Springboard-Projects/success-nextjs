@@ -284,7 +284,7 @@ export default async function handler(
       if (req.body.featureTrending !== undefined) updateData.showInTrending = req.body.featureTrending;
       if (req.body.mainFeaturedArticle !== undefined) updateData.mainFeaturedArticle = req.body.mainFeaturedArticle;
       if (req.body.contentType !== undefined) updateData.contentType = req.body.contentType;
-      if (req.body.accessTier !== undefined) updateData.accessTier = req.body.accessTier;
+      // accessTier column does not exist in posts table - removed
       if (req.body.scheduledDate !== undefined) updateData.scheduledFor = req.body.scheduledDate;
 
       // Track who updated the post
