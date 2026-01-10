@@ -220,10 +220,10 @@ export default function ContentViewer() {
         <div className={styles.header}>
           <div>
             <h1>Live Site Content</h1>
-            <p className={styles.subtitle}>Posts, Pages, Videos, and Podcasts from success.com</p>
+            <p className={styles.subtitle}>Articles, Pages, Videos, and Podcasts from success.com</p>
           </div>
           <a href={getAddNewUrl()} className={styles.addButton}>
-            + Add New {activeTab === 'all' ? 'Post' : activeTab.slice(0, -1).charAt(0).toUpperCase() + activeTab.slice(1, -1)}
+            + Add New {activeTab === 'all' ? 'Article' : activeTab.slice(0, -1).charAt(0).toUpperCase() + activeTab.slice(1, -1)}
           </a>
         </div>
 
@@ -238,7 +238,7 @@ export default function ContentViewer() {
             className={activeTab === 'posts' ? styles.tabActive : styles.tab}
             onClick={() => setActiveTab('posts')}
           >
-            Posts ({contentCounts.posts})
+            Articles ({contentCounts.posts})
           </button>
           <button
             className={activeTab === 'pages' ? styles.tabActive : styles.tab}
@@ -291,7 +291,7 @@ export default function ContentViewer() {
           <div className={styles.empty}>
             <p>No {activeTab === 'all' ? 'content' : activeTab} found.</p>
             <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}>
-              This viewer displays posts and pages from WordPress.
+              This viewer displays articles and pages from WordPress.
               <br />
               Check the browser console for detailed API response information.
             </p>

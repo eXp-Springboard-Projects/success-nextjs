@@ -30,24 +30,10 @@ export default async function handler(
       const perPage = parseInt(per_page as string);
       const skip = (pageNum - 1) * perPage;
 
-      // Build query
+      // Build query - WITHOUT foreign key relationships (they don't exist yet)
       let query = supabase
         .from('posts')
-        .select(`
-          *,
-          users!posts_authorId_fkey (
-            id,
-            name,
-            email
-          ),
-          updatedByUser:users!posts_updatedBy_fkey (
-            id,
-            name,
-            email
-          ),
-          categories (*),
-          tags (*)
-        `, { count: 'exact' });
+        .select('*', { count: 'exact' });
 
       // Apply filters
       if (status !== 'all') {
