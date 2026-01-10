@@ -19,31 +19,10 @@ export default async function handler(
 
   if (req.method === 'GET') {
     try {
-      // First, try to fetch from Supabase
+      // First, try to fetch from Supabase - WITHOUT foreign key relationships (they don't exist yet)
       const { data: post, error } = await supabase
         .from('posts')
-        .select(`
-          *,
-          users!posts_authorId_fkey (
-            id,
-            name,
-            email
-          ),
-          authors!posts_customAuthorId_fkey (
-            id,
-            name,
-            slug,
-            bio,
-            photo,
-            title,
-            socialLinkedin,
-            socialTwitter,
-            socialFacebook,
-            website
-          ),
-          categories (*),
-          tags (*)
-        `)
+        .select('*')
         .eq('id', id as string)
         .single();
 
@@ -78,17 +57,17 @@ export default async function handler(
           _embedded: {
             author: [{
               id: post.customAuthorId || post.authorId,
-              name: post.authors?.name || post.authorName || post.wordpressAuthor || post.users?.name || 'Unknown Author',
-              slug: post.authors?.slug || '',
-              bio: post.authors?.bio || '',
-              photo: post.authors?.photo || '',
-              title: post.authors?.title || '',
-              email: post.authors?.email || post.users?.email || '',
-              description: post.authors?.bio || '',
-              socialLinkedin: post.authors?.socialLinkedin || '',
-              socialTwitter: post.authors?.socialTwitter || '',
-              socialFacebook: post.authors?.socialFacebook || '',
-              website: post.authors?.website || '',
+              name: post.authorName || post.wordpressAuthor || 'Unknown Author',
+              slug: '',
+              bio: '',
+              photo: '',
+              title: '',
+              email: '',
+              description: '',
+              socialLinkedin: '',
+              socialTwitter: '',
+              socialFacebook: '',
+              website: '',
             }],
             'wp:term': [
               (post.categories || []).map((cat: any) => ({

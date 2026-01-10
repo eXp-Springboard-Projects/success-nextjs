@@ -37,15 +37,6 @@ export async function getPublishedPosts(options: {
     .from('posts')
     .select(`
       *,
-      users!posts_authorId_fkey (
-        id,
-        name,
-        email,
-        bio,
-        avatar,
-        authorPageSlug,
-        jobTitle
-      ),
       post_categories!inner (
         categories (*)
       ),
@@ -212,19 +203,6 @@ export async function getPostBySlug(slug: string) {
     .from('posts')
     .select(`
       *,
-      users!posts_authorId_fkey (
-        id,
-        name,
-        email,
-        bio,
-        avatar,
-        authorPageSlug,
-        jobTitle,
-        socialTwitter,
-        socialLinkedin,
-        socialFacebook,
-        website
-      ),
       post_categories (
         categories (*)
       ),
@@ -270,7 +248,6 @@ export async function getPostById(id: string) {
     .from('posts')
     .select(`
       *,
-      users!posts_authorId_fkey (*),
       post_categories (
         categories (*)
       ),
@@ -341,11 +318,6 @@ export async function getRelatedPosts(
     .from('posts')
     .select(`
       *,
-      users!posts_authorId_fkey (
-        id,
-        name,
-        authorPageSlug
-      ),
       post_categories (
         categories (*)
       )
@@ -477,15 +449,7 @@ export async function getAuthorBySlug(slug: string) {
   // Try to find by authorPageSlug first
   let { data: author, error } = await supabase
     .from('users')
-    .select(`
-      *,
-      posts!posts_authorId_fkey (
-        *,
-        post_categories (
-          categories (*)
-        )
-      )
-    `)
+    .select('*')
     .eq('authorPageSlug', slug)
     .single();
 
@@ -493,15 +457,7 @@ export async function getAuthorBySlug(slug: string) {
   if (error || !author) {
     const { data: authorByEmail } = await supabase
       .from('users')
-      .select(`
-        *,
-        posts!posts_authorId_fkey (
-          *,
-          post_categories (
-            categories (*)
-          )
-        )
-      `)
+      .select('*')
       .ilike('email', `${slug}%`)
       .single();
 
@@ -512,22 +468,30 @@ export async function getAuthorBySlug(slug: string) {
     return null;
   }
 
-  // Filter and transform posts
-  const posts = (author.posts || [])
-    .filter((post: any) =>
-      post.status === 'PUBLISHED' &&
-      new Date(post.publishedAt) <= new Date()
-    )
-    .map((post: any) => {
-      const categories = post.post_categories?.map((pc: any) => pc.categories).filter(Boolean) || [];
-      const { post_categories, ...postData } = post;
-      return {
-        ...postData,
-        categories
-      };
-    })
-    .sort((a: any, b: any) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
-    .slice(0, 50);
+  // Fetch author's published posts separately
+  const { data: authorPosts } = await supabase
+    .from('posts')
+    .select(`
+      *,
+      post_categories (
+        categories (*)
+      )
+    `)
+    .eq('authorId', author.id)
+    .eq('status', 'PUBLISHED')
+    .lte('publishedAt', new Date().toISOString())
+    .order('publishedAt', { ascending: false })
+    .limit(50);
+
+  // Transform posts
+  const posts = (authorPosts || []).map((post: any) => {
+    const categories = post.post_categories?.map((pc: any) => pc.categories).filter(Boolean) || [];
+    const { post_categories, ...postData } = post;
+    return {
+      ...postData,
+      categories
+    };
+  });
 
   return {
     ...author,
@@ -746,11 +710,6 @@ export async function getTagBySlug(slug: string, limit = 20) {
     .from('posts')
     .select(`
       *,
-      users!posts_authorId_fkey (
-        id,
-        name,
-        authorPageSlug
-      ),
       post_categories (
         categories (*)
       )
@@ -789,11 +748,6 @@ export async function searchContent(query: string, limit = 20) {
       .from('posts')
       .select(`
         *,
-        users!posts_authorId_fkey (
-          id,
-          name,
-          authorPageSlug
-        ),
         post_categories (
           categories (*)
         )
@@ -855,11 +809,6 @@ export async function getTrendingPosts(limit = 10, days = 30) {
     .from('posts')
     .select(`
       *,
-      users!posts_authorId_fkey (
-        id,
-        name,
-        authorPageSlug
-      ),
       post_categories (
         categories (*)
       )
