@@ -138,11 +138,27 @@ export default function MediaLibraryPicker({
       body: formData,
     });
 
+    // Get response text first to handle both JSON and non-JSON responses
+    const responseText = await res.text();
+
     if (!res.ok) {
-      throw new Error(`Failed to upload ${file.name}`);
+      // Try to parse error message from JSON response
+      try {
+        const errorData = JSON.parse(responseText);
+        throw new Error(`Failed to upload ${file.name}: ${errorData.error || errorData.message || 'Unknown error'}`);
+      } catch (parseError) {
+        // If response is not JSON, use the text directly
+        throw new Error(`Failed to upload ${file.name}: ${responseText || `HTTP ${res.status}`}`);
+      }
     }
 
-    return await res.json();
+    // Parse successful response
+    try {
+      return JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Failed to parse response:', responseText);
+      throw new Error(`Failed to upload ${file.name}: Invalid response from server (${parseError instanceof Error ? parseError.message : 'Unknown error'})`);
+    }
   };
 
   const handleDrop = async (e: React.DragEvent) => {
