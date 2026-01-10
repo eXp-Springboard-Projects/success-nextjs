@@ -79,11 +79,11 @@ export default function PostsListWithFilters() {
       } else {
         const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
         console.error('Failed to fetch posts:', res.status, errorData);
-        alert(`Failed to load posts: ${errorData.message || errorData.error || 'Unknown error'}`);
+        alert(`Failed to load articles: ${errorData.message || errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error fetching posts:', error);
-      alert('Failed to load posts. Check console for details.');
+      alert('Failed to load articles. Check console for details.');
     } finally {
       setLoading(false);
     }
@@ -184,16 +184,16 @@ export default function PostsListWithFilters() {
 
   const handleBulkAction = async () => {
     if (!bulkAction || selectedPosts.size === 0) {
-      alert('Please select posts and choose an action');
+      alert('Please select articles and choose an action');
       return;
     }
 
     const confirmMessages: { [key: string]: string } = {
-      'publish': `Publish ${selectedPosts.size} post(s)?`,
-      'draft': `Move ${selectedPosts.size} post(s) to draft?`,
-      'archive': `Archive ${selectedPosts.size} post(s)? Archived posts won't appear on the site.`,
-      'delete': `⚠️ DELETE ${selectedPosts.size} post(s)? This cannot be undone!`,
-      'trash': `Move ${selectedPosts.size} post(s) to trash?`,
+      'publish': `Publish ${selectedPosts.size} article(s)?`,
+      'draft': `Move ${selectedPosts.size} article(s) to draft?`,
+      'archive': `Archive ${selectedPosts.size} article(s)? Archived articles won't appear on the site.`,
+      'delete': `⚠️ DELETE ${selectedPosts.size} article(s)? This cannot be undone!`,
+      'trash': `Move ${selectedPosts.size} article(s) to trash?`,
     };
 
     if (!confirm(confirmMessages[bulkAction])) {
@@ -207,7 +207,7 @@ export default function PostsListWithFilters() {
       // For now, we'll simulate the action
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      alert(`Successfully ${bulkAction === 'delete' ? 'deleted' : 'updated'} ${selectedPosts.size} post(s)\n\nNote: This is a demo. To actually modify posts, you need to implement the WordPress REST API integration with authentication.`);
+      alert(`Successfully ${bulkAction === 'delete' ? 'deleted' : 'updated'} ${selectedPosts.size} article(s)\n\nNote: This is a demo. To actually modify articles, you need to implement the WordPress REST API integration with authentication.`);
 
       // Clear selection
       setSelectedPosts(new Set());
@@ -257,11 +257,11 @@ export default function PostsListWithFilters() {
 
   return (
     <div className={styles.container}>
-      {/* Header with New Post Button */}
+      {/* Header with New Article Button */}
       <div className={styles.header}>
-        <h1>Posts</h1>
+        <h1>Articles</h1>
         <Link href="/admin/posts/new" className={styles.newPostButton}>
-          ✏️ Add New Post
+          ✏️ Add New Article
         </Link>
       </div>
 
@@ -320,7 +320,7 @@ export default function PostsListWithFilters() {
         {/* Search */}
         <input
           type="search"
-          placeholder="Search posts..."
+          placeholder="Search articles..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className={styles.searchInput}
@@ -412,11 +412,11 @@ export default function PostsListWithFilters() {
       {loading ? (
         <div className={styles.loading}>
           <div className={styles.spinner}></div>
-          <p>Loading posts...</p>
+          <p>Loading articles...</p>
         </div>
       ) : filteredPosts.length === 0 ? (
         <div className={styles.empty}>
-          <p>No posts found</p>
+          <p>No articles found</p>
           {searchQuery && <button onClick={() => setSearchQuery('')}>Clear search</button>}
         </div>
       ) : (

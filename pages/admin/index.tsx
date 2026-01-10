@@ -48,7 +48,7 @@ export default function AdminDashboard() {
 
   const quickActions: Array<{ label: string; href: string; icon: LucideIcon; color: string }> = [
     { label: 'View Content', href: '/admin/content-viewer', icon: FileText, color: '#667eea' },
-    { label: 'New Post', href: '/admin/posts/new', icon: Pencil, color: '#764ba2' },
+    { label: 'New Article', href: '/admin/posts/new', icon: Pencil, color: '#764ba2' },
     { label: 'Featured Content', href: '/admin/featured-content', icon: Star, color: '#f59e0b' },
     { label: 'Authors', href: '/admin/authors', icon: User, color: '#ec4899' },
     { label: 'Page Editor', href: '/admin/page-editor', icon: Edit, color: '#8b5cf6' },
@@ -69,7 +69,7 @@ export default function AdminDashboard() {
           </div>
           <div className={styles.headerActions}>
             <Link href="/admin/posts/new" className={styles.primaryButton}>
-              <Pencil size={16} /> New Post
+              <Pencil size={16} /> New Article
             </Link>
           </div>
         </div>
@@ -101,7 +101,7 @@ export default function AdminDashboard() {
         <div className={styles.contentGrid}>
           <div className={styles.recentSection}>
             <div className={styles.sectionHeader}>
-              <h2>Recent Posts</h2>
+              <h2>Recent Articles</h2>
               <Link href="/admin/content-viewer" className={styles.viewAllLink}>View All</Link>
             </div>
             {recentPosts.length > 0 ? (
@@ -123,7 +123,7 @@ export default function AdminDashboard() {
                 ))}
               </div>
             ) : (
-              <p className={styles.emptyState}>No posts yet. Create your first post!</p>
+              <p className={styles.emptyState}>No articles yet. Create your first article!</p>
             )}
           </div>
 

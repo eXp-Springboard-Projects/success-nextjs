@@ -321,6 +321,7 @@ function getNavigationSections(role: UserRole, primaryDepartment?: Department | 
       title: 'SUCCESS.COM',
       items: [
         { label: 'Editorial Dashboard', href: '/admin/editorial' },
+        { label: 'Articles', href: '/admin/posts' },
         { label: 'Content Viewer', href: '/admin/content-viewer' },
         { label: 'Categories', href: '/admin/categories' },
         { label: 'Tags', href: '/admin/tags' },

@@ -66,7 +66,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
       setStatus(post.status.toUpperCase());
       setSelectedCategories(post._embedded?.['wp:term']?.[0]?.map((c: any) => c.id) || []);
     } catch (error) {
-      alert('Failed to load post');
+      alert('Failed to load article');
     } finally {
       setLoading(false);
     }
@@ -136,20 +136,20 @@ export default function PostEditor({ postId }: PostEditorProps) {
       });
 
       if (res.ok) {
-        alert(postId ? 'Post updated!' : 'Post created!');
+        alert(postId ? 'Article updated!' : 'Article created!');
         router.push('/admin/posts');
       } else {
-        throw new Error('Failed to save post');
+        throw new Error('Failed to save article');
       }
     } catch (error) {
-      alert('Failed to save post');
+      alert('Failed to save article');
     } finally {
       setSaving(false);
     }
   };
 
   if (loading) {
-    return <div className={styles.loading}>Loading post...</div>;
+    return <div className={styles.loading}>Loading article...</div>;
   }
 
   const modules = {
@@ -168,7 +168,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1>{postId ? 'Edit Post' : 'Create New Post'}</h1>
+        <h1>{postId ? 'Edit Article' : 'Create New Article'}</h1>
         <div className={styles.actions}>
           <button
             onClick={handleExportPDF}
@@ -203,7 +203,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
               type="text"
               value={title}
               onChange={(e) => handleTitleChange(e.target.value)}
-              placeholder="Enter post title..."
+              placeholder="Enter article title..."
               className={styles.titleInput}
             />
           </div>
@@ -215,7 +215,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
               type="text"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
-              placeholder="post-url-slug"
+              placeholder="article-url-slug"
               className={styles.input}
             />
           </div>
@@ -237,7 +237,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
               id="excerpt"
               value={excerpt}
               onChange={(e) => setExcerpt(e.target.value)}
-              placeholder="Brief summary of the post..."
+              placeholder="Brief summary of the article..."
               rows={3}
               className={styles.textarea}
             />
