@@ -43,13 +43,6 @@ interface Category {
   slug: string;
 }
 
-interface Author {
-  id: string;
-  name: string;
-  slug: string;
-  title?: string;
-}
-
 interface EnhancedPostEditorProps {
   postId?: string;
 }
@@ -66,8 +59,6 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
   const [status, setStatus] = useState('draft');
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [authors, setAuthors] = useState<Author[]>([]);
-  const [selectedAuthorId, setSelectedAuthorId] = useState<string>('');
   const [contentPillar, setContentPillar] = useState<ContentPillar | ''>('');
   const [featureOnHomepage, setFeatureOnHomepage] = useState(false);
   const [featureInPillar, setFeatureInPillar] = useState(false);
@@ -209,7 +200,6 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
 
   useEffect(() => {
     fetchCategories();
-    fetchAuthors();
     if (postId) {
       fetchPost();
     }
@@ -278,7 +268,7 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         slug,
         content: editor.getHTML(),
         excerpt,
-        author: author || null,
+        authorName: author || null,
         featuredImage: featuredImage || null,
         featuredImageAlt: featuredImageAlt || null,
         status: status === 'publish' ? 'publish' : 'draft', // Maintain publish status
@@ -290,7 +280,6 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         accessTier,
         scheduledDate: scheduledDate || null,
         contentPillar: contentPillar || null,
-        customAuthorId: selectedAuthorId || null,
         featureOnHomepage,
         featureInPillar,
         featureTrending,
@@ -318,17 +307,6 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
       const res = await fetch('/api/categories?per_page=100');
       const data = await res.json();
       setCategories(data);
-    } catch (error) {
-    }
-  };
-
-  const fetchAuthors = async () => {
-    try {
-      const res = await fetch('/api/admin/authors?active=true');
-      if (res.ok) {
-        const data = await res.json();
-        setAuthors(data);
-      }
     } catch (error) {
     }
   };
@@ -414,7 +392,6 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
 
       // Load new fields
       setContentPillar(post.contentPillar || '');
-      setSelectedAuthorId(post.customAuthorId || '');
       setFeatureOnHomepage(post.featureOnHomepage || false);
       setFeatureInPillar(post.featureInPillar || false);
       setFeatureTrending(post.featureTrending || false);
@@ -865,7 +842,6 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
         accessTier,
         scheduledDate: scheduledDate || null,
         contentPillar: contentPillar || null,
-        customAuthorId: selectedAuthorId || null,
         featureOnHomepage,
         featureInPillar,
         featureTrending,
@@ -1570,41 +1546,17 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
 
               <div className={styles.panelSection}>
                 <h3 className={styles.panelTitle}>Author (Writer's Name)</h3>
-                {authors.length > 0 && (
-                  <select
-                    value={selectedAuthorId}
-                    onChange={(e) => {
-                      setSelectedAuthorId(e.target.value);
-                      const selectedAuthor = authors.find(a => a.id === e.target.value);
-                      if (selectedAuthor) {
-                        setAuthor(selectedAuthor.name);
-                      } else if (e.target.value === '') {
-                        setAuthor('');
-                      }
-                    }}
-                    className={styles.input}
-                    style={{ marginBottom: '0.75rem' }}
-                  >
-                    <option value="">Select existing author or type new name below...</option>
-                    {authors.map(authorOption => (
-                      <option key={authorOption.id} value={authorOption.id}>
-                        {authorOption.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
                 <input
                   type="text"
                   value={author}
-                  onChange={(e) => {
-                    setAuthor(e.target.value);
-                    setSelectedAuthorId(''); // Clear selection when manually typing
-                  }}
-                  placeholder="Or type author name manually (e.g., John Smith)"
+                  onChange={(e) => setAuthor(e.target.value)}
+                  placeholder="e.g., John Smith, Jane Doe, SUCCESS Staff"
                   className={styles.input}
                 />
                 <small style={{ color: '#666', fontSize: '0.875rem', display: 'block', marginTop: '0.5rem' }}>
-                  ⚠️ This is the article WRITER's name (appears on frontend), NOT your admin username.
+                  This is the article writer's name that appears on the published article (not your admin username).
+                  <br />
+                  Current authors include: Tanna Bogursky, Anna Wenner, Jesus Jimenez, Brian Abuga, and others.
                 </small>
               </div>
             </div>
