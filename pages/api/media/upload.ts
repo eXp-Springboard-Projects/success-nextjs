@@ -137,21 +137,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Log activity
-    await supabase
-      .from('activity_logs')
-      .insert({
-        id: randomUUID(),
-        userId: session.user.id,
-        action: 'UPLOAD',
-        entity: 'media',
-        entityId: media.id,
-        details: JSON.stringify({
-          filename: media.filename,
-          size: media.size,
-          variants: variants.length,
-        }),
-      });
+    // Log activity (non-fatal if it fails)
+    try {
+      await supabase
+        .from('activity_logs')
+        .insert({
+          id: randomUUID(),
+          userId: session.user.id,
+          action: 'UPLOAD',
+          entity: 'media',
+          entityId: media.id,
+          details: JSON.stringify({
+            filename: media.filename,
+            size: media.size,
+            variants: variants.length,
+          }),
+        });
+    } catch (logError) {
+      console.error('Failed to log activity (non-fatal):', logError);
+    }
 
     // Clean up temp file
     fs.unlinkSync(uploadedFile.filepath);

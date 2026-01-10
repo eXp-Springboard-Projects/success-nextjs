@@ -545,6 +545,10 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
               alt: media.alt || media.filename
             }).run();
           }
+        } else {
+          const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+          console.error('Image upload failed:', errorData);
+          alert(`Failed to upload ${file.name}: ${errorData.error || errorData.message || 'Unknown error'}`);
         }
       }
     } catch (error) {
@@ -586,6 +590,10 @@ export default function EnhancedPostEditor({ postId }: EnhancedPostEditorProps) 
               alt: media.alt || media.filename
             }).run();
           }
+        } else {
+          const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+          console.error('Image upload failed:', errorData);
+          alert(`Failed to upload ${file.name}: ${errorData.error || errorData.message || 'Unknown error'}`);
         }
       }
     } catch (error) {
