@@ -40,6 +40,11 @@ export default async function handler(
             name,
             email
           ),
+          updatedByUser:users!posts_updatedBy_fkey (
+            id,
+            name,
+            email
+          ),
           categories (*),
           tags (*)
         `, { count: 'exact' });
@@ -89,6 +94,12 @@ export default async function handler(
           status: post.status === 'PUBLISHED' ? 'publish' : post.status.toLowerCase(),
           date: post.publishedAt || post.createdAt,
           modified: post.updatedAt,
+          lastEditedBy: post.updatedBy ? {
+            id: post.updatedBy,
+            name: post.updatedByUser?.name || 'Unknown',
+            email: post.updatedByUser?.email || '',
+            editedAt: post.updatedAt
+          } : null,
           featured_media_url: post.featuredImage || '',
           featuredImageAlt: post.featuredImageAlt || '',
           seoTitle: post.seoTitle || '',

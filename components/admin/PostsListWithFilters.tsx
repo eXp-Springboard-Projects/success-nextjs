@@ -15,6 +15,12 @@ interface Post {
   slug: string;
   status: string;
   date: string;
+  lastEditedBy?: {
+    id: string;
+    name: string;
+    email: string;
+    editedAt: string;
+  } | null;
   _embedded?: {
     author?: Array<{ name: string; id: number }>;
     'wp:author'?: Array<{ name: string; id: number }>;
@@ -433,6 +439,7 @@ export default function PostsListWithFilters() {
               <th>Categories</th>
               <th>Date</th>
               <th>Status</th>
+              <th>Last edit by</th>
             </tr>
           </thead>
           <tbody>
@@ -527,6 +534,9 @@ export default function PostsListWithFilters() {
                     <span className={`${styles.status} ${styles[post.status]}`}>
                       {post.status.charAt(0).toUpperCase() + post.status.slice(1)}
                     </span>
+                  </td>
+                  <td>
+                    {post.lastEditedBy ? post.lastEditedBy.name : '—'}
                   </td>
                 </tr>
               );
