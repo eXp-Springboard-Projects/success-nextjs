@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Department } from '@/lib/types';
 import DepartmentLayout from '@/components/admin/shared/DepartmentLayout';
 import { requireDepartmentAuth } from '@/lib/departmentAuth';
+import EmailComposeModal from '@/components/admin/crm/EmailComposeModal';
 import styles from './ContactDetail.module.css';
 
 type Tab = 'overview' | 'activity' | 'emails' | 'notes';
@@ -76,6 +77,7 @@ export default function ContactDetailPage() {
   const [customFields, setCustomFields] = useState<Record<string, any>>({});
   const [newFieldKey, setNewFieldKey] = useState('');
   const [newFieldValue, setNewFieldValue] = useState('');
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   useEffect(() => {
     if (id && typeof id === 'string') {
@@ -307,9 +309,14 @@ export default function ContactDetailPage() {
                 </button>
               </>
             ) : (
-              <button onClick={() => setEditing(true)} className={styles.primaryButton}>
-                Edit Profile
-              </button>
+              <>
+                <button onClick={() => setShowEmailModal(true)} className={styles.primaryButton}>
+                  Send Email
+                </button>
+                <button onClick={() => setEditing(true)} className={styles.secondaryButton}>
+                  Edit Profile
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -556,6 +563,17 @@ export default function ContactDetailPage() {
           )}
         </div>
       </div>
+
+      <EmailComposeModal
+        isOpen={showEmailModal}
+        onClose={() => {
+          setShowEmailModal(false);
+          fetchContact(); // Refresh to show new email in activity/notes
+        }}
+        recipientEmail={contact.email}
+        recipientName={fullName}
+        contactId={contact.id}
+      />
     </DepartmentLayout>
   );
 }
