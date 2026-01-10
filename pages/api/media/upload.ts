@@ -16,6 +16,8 @@ export const config = {
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  console.log('[Media Upload] Request received:', req.method);
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -23,12 +25,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const session = await getServerSession(req, res, authOptions);
 
   if (!session) {
+    console.log('[Media Upload] Unauthorized - no session');
     return res.status(401).json({ error: 'Unauthorized' });
   }
+
+  console.log('[Media Upload] User authenticated:', session.user.email);
 
   const supabase = supabaseAdmin();
 
   try {
+    console.log('[Media Upload] Parsing form data...');
     // Parse form data
     const form = formidable({
       maxFileSize: 10 * 1024 * 1024, // 10MB
@@ -47,8 +53,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const uploadedFile = Array.isArray(files.file) ? files.file[0] : files.file;
 
     if (!uploadedFile) {
+      console.log('[Media Upload] No file in request');
       return res.status(400).json({ error: 'No file uploaded' });
     }
+
+    console.log('[Media Upload] File received:', uploadedFile.originalFilename, uploadedFile.size, 'bytes');
 
     // 🔒 SECURITY: Validate file type and size
     const validation = validateImageFile({
@@ -68,21 +77,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Read file buffer
     const fileBuffer = fs.readFileSync(uploadedFile.filepath);
 
-    // Upload to Supabase Storage with optimization and variants
-    const optimized = await uploadImageToSupabase(
-      fileBuffer,
-      uploadedFile.originalFilename || 'upload.jpg',
-      {
-        generateVariants: true,
-        maxWidth: 2000,
-        quality: 80,
-      }
-    );
+    let mediaUrl: string;
+    let width: number;
+    let height: number;
+    let variants: any[] = [];
 
-    const mediaUrl = optimized.original;
-    const width = optimized.width;
-    const height = optimized.height;
-    const variants = optimized.variants;
+    try {
+      // Upload to Supabase Storage with optimization and variants
+      const optimized = await uploadImageToSupabase(
+        fileBuffer,
+        uploadedFile.originalFilename || 'upload.jpg',
+        {
+          generateVariants: true,
+          maxWidth: 2000,
+          quality: 80,
+        }
+      );
+
+      mediaUrl = optimized.original;
+      width = optimized.width;
+      height = optimized.height;
+      variants = optimized.variants;
+    } catch (uploadError) {
+      console.error('Supabase Storage upload failed:', uploadError);
+      fs.unlinkSync(uploadedFile.filepath); // Clean up temp file
+      return res.status(500).json({
+        error: 'Failed to upload to storage',
+        message: uploadError instanceof Error ? uploadError.message : 'Unknown upload error',
+        details: uploadError instanceof Error ? uploadError.stack : undefined,
+      });
+    }
 
     // Save to database
     const mediaId = randomUUID();
@@ -149,9 +173,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       variants,
     });
   } catch (error) {
+    console.error('[Media Upload] Outer error:', error);
     return res.status(500).json({
       error: 'Failed to upload media',
       message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
     });
   }
 }
