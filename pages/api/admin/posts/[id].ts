@@ -55,7 +55,7 @@ export default async function handler(
           slug: post.slug,
           content: { rendered: post.content },
           excerpt: { rendered: post.excerpt || '' },
-          status: post.status.toLowerCase(),
+          status: post.status === 'PUBLISHED' ? 'publish' : post.status.toLowerCase(),
           date: post.publishedAt || post.createdAt,
           modified: post.updatedAt,
           featured_media_url: post.featuredImage || '',
