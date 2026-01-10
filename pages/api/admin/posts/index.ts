@@ -40,6 +40,19 @@ export default async function handler(
             name,
             email
           ),
+          authors!posts_customAuthorId_fkey (
+            id,
+            name,
+            slug,
+            bio,
+            photo,
+            title
+          ),
+          updatedByUser:users!posts_updatedBy_fkey (
+            id,
+            name,
+            email
+          ),
           categories (*),
           tags (*)
         `, { count: 'exact' });
@@ -73,12 +86,23 @@ export default async function handler(
 
       // Format response similar to WordPress API
       const formattedPosts = (posts || []).map(post => {
-        // Handle author data - prioritize authorName for WordPress posts
+        // Handle author data - prioritize authors table, then custom fields, then fallback
         const author = {
-          id: post.authorId,
-          name: post.authorName || post.wordpressAuthor || post.users?.name || 'Unknown Author',
-          email: post.users?.email || '',
+          id: post.customAuthorId || post.authorId,
+          name: post.authors?.name || post.authorName || post.wordpressAuthor || post.users?.name || 'Unknown Author',
+          slug: post.authors?.slug || '',
+          bio: post.authors?.bio || '',
+          photo: post.authors?.photo || '',
+          title: post.authors?.title || '',
+          email: post.authors?.email || post.users?.email || '',
         };
+
+        // Last edited by info
+        const lastEditedBy = post.updatedBy ? {
+          id: post.updatedBy,
+          name: post.updatedByUser?.name || 'Unknown',
+          email: post.updatedByUser?.email || '',
+        } : null;
 
         return {
           id: post.id,
@@ -89,6 +113,7 @@ export default async function handler(
           status: post.status === 'PUBLISHED' ? 'publish' : post.status.toLowerCase(),
           date: post.publishedAt || post.createdAt,
           modified: post.updatedAt,
+          lastEditedBy: lastEditedBy, // Add last editor info for admin dashboard
           featured_media: post.featuredImage ? {
             source_url: post.featuredImage,
             alt_text: post.featuredImageAlt || '',
@@ -96,6 +121,7 @@ export default async function handler(
           _embedded: {
             author: [author],
             'wp:author': [author], // Add both for compatibility
+            lastEditedBy: lastEditedBy ? [lastEditedBy] : [],
             'wp:featuredmedia': post.featuredImage ? [{
               source_url: post.featuredImage,
               alt_text: post.featuredImageAlt || '',
