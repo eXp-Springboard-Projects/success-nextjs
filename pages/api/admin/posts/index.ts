@@ -114,6 +114,22 @@ export default async function handler(
           date: post.publishedAt || post.createdAt,
           modified: post.updatedAt,
           lastEditedBy: lastEditedBy, // Add last editor info for admin dashboard
+          featured_media_url: post.featuredImage || '',
+          featuredImageAlt: post.featuredImageAlt || '',
+          seoTitle: post.seoTitle || '',
+          seoDescription: post.seoDescription || '',
+          readTime: post.readTime || 0,
+          contentType: post.contentType || 'regular',
+          accessTier: post.accessTier || 'free',
+          scheduledDate: post.scheduledFor || '',
+          contentPillar: post.contentPillar || '',
+          customAuthorId: post.customAuthorId || '',
+          authorName: post.authorName || '',
+          featureOnHomepage: post.featureOnHomepage || false,
+          featureInPillar: post.featureInPillarSection || false,
+          featureTrending: post.showInTrending || false,
+          mainFeaturedArticle: post.mainFeaturedArticle || false,
+          wordpressId: post.wordpressId || null,
           featured_media: post.featuredImage ? {
             source_url: post.featuredImage,
             alt_text: post.featuredImageAlt || '',
@@ -140,7 +156,17 @@ export default async function handler(
                 taxonomy: 'post_tag'
               }))
             ]
-          }
+          },
+          categories: (post.categories || []).map((cat: any) => ({
+            id: cat.id,
+            name: cat.name,
+            slug: cat.slug
+          })),
+          tags: (post.tags || []).map((tag: any) => ({
+            id: tag.id,
+            name: tag.name,
+            slug: tag.slug
+          }))
         };
       });
 
