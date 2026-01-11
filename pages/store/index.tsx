@@ -352,61 +352,52 @@ export const getServerSideProps: GetServerSideProps = async () => {
       link: '/shop/network-marketing-business'
     },
 
-    // COURSES
+    // Additional Books
     {
-      id: 'course-1',
-      name: "Jim Rohn's Foundations for Success",
-      price: 199.99,
-      image: '/images/products/jim-rohn-foundations.jpg',
-      category: 'Courses',
-      subcategory: 'Personal Development',
-      link: '/shop/jim-rohns-foundations-for-success',
+      id: 'book-napoleon-1',
+      name: 'Think and Grow Rich by Napoleon Hill',
+      price: 24.99,
+      image: 'https://mysuccessplus.com/wp-content/uploads/nc/s-3rvn7wzn3w/product_images/n/548/nh_think-and-grow-rich_new__85964.jpg',
+      category: 'Books',
+      subcategory: 'Success Classics',
+      link: 'https://mysuccessplus.com/product/think-and-grow-rich-by-napoleon-hill',
       featured: true
     },
     {
-      id: 'course-2',
-      name: 'Leadership Masterclass',
-      price: 149.99,
-      image: '/images/products/leadership-masterclass.jpg',
-      category: 'Courses',
-      subcategory: 'Leadership',
-      link: '/shop/leadership-masterclass'
+      id: 'book-mandino-1',
+      name: 'The Greatest Salesman in the World by Og Mandino',
+      price: 19.99,
+      image: 'https://mysuccessplus.com/wp-content/uploads/nc/s-3rvn7wzn3w/product_images/a/279/Greatest_Salesman_in_the_World_Mandino__90526.jpg',
+      category: 'Books',
+      subcategory: 'Success Classics',
+      link: 'https://mysuccessplus.com/product/the-greatest-salesman-in-the-world-by-og-mandino'
     },
     {
-      id: 'course-3',
-      name: 'Personal Development Blueprint',
-      price: 179.99,
-      image: '/images/products/personal-development.jpg',
-      category: 'Courses',
-      subcategory: 'Personal Development',
-      link: '/shop/personal-development-blueprint'
+      id: 'book-schuller-1',
+      name: 'Tough Times Never Last, But Tough People Do! by Robert Schuller',
+      price: 17.99,
+      image: 'https://mysuccessplus.com/wp-content/uploads/nc/s-3rvn7wzn3w/product_images/n/172/Tough_Times_Never_Last__23131.gif',
+      category: 'Books',
+      subcategory: 'Success Classics',
+      link: 'https://mysuccessplus.com/product/tough-times-never-last-but-tough-people-do-by-robert-schuller'
     },
     {
-      id: 'course-4',
-      name: 'Time Management Mastery',
-      price: 99.99,
-      image: '/images/products/time-management.jpg',
-      category: 'Courses',
-      subcategory: 'Productivity',
-      link: '/shop/time-management-mastery'
+      id: 'book-excerpts-1',
+      name: 'Excerpts from The Treasury of Quotes by Jim Rohn',
+      price: 14.99,
+      image: 'https://mysuccessplus.com/wp-content/uploads/nc/s-3rvn7wzn3w/product_images/d/062/JR_Excerpts_Treasury-of-Quotes_3D__71061.jpg',
+      category: 'Books',
+      subcategory: 'Jim Rohn',
+      link: 'https://mysuccessplus.com/product/excerpts-from-the-treasury-of-quotes-by-jim-rohn'
     },
     {
-      id: 'course-5',
-      name: 'Goal Setting for Success',
-      price: 79.99,
-      image: '/images/products/goal-setting.jpg',
-      category: 'Courses',
-      subcategory: 'Personal Development',
-      link: '/shop/goal-setting-for-success'
-    },
-    {
-      id: 'course-6',
-      name: 'Communication Skills Bootcamp',
-      price: 129.99,
-      image: '/images/products/communication-skills.jpg',
-      category: 'Courses',
-      subcategory: 'Leadership',
-      link: '/shop/communication-skills-bootcamp'
+      id: 'book-ziglar-1',
+      name: "Zig Ziglar's Little Book of Big Quotes",
+      price: 16.99,
+      image: 'https://mysuccessplus.com/wp-content/uploads/nc/s-3rvn7wzn3w/product_images/n/303/ZZ_Little-Book-of-Big-Quotes-zz010-001_1__15635.jpg',
+      category: 'Books',
+      subcategory: 'Success Classics',
+      link: 'https://mysuccessplus.com/product/zig-ziglars-little-book-of-big-quotes'
     },
 
     // MERCHANDISE
@@ -443,82 +434,37 @@ export const getServerSideProps: GetServerSideProps = async () => {
       id: 'merch-2',
       name: 'SUCCESS EST. 1897 Stone Cap',
       price: 24.99,
-      image: '/images/products/stone-cap.jpg',
+      image: 'https://mysuccessplus.com/wp-content/uploads/nc/s-3rvn7wzn3w/product_images/e/954/classic-dad-hat-stone-right-front-61b11d77c8aff__69810.jpg',
       category: 'Merchandise',
       subcategory: 'Apparel',
-      link: '/shop/success-stone-cap'
+      link: 'https://mysuccessplus.com/product/success-est-1897-stone-cap'
     },
     {
       id: 'merch-3',
-      name: 'SUCCESS Classic Covers 15-oz Ceramic Mug',
+      name: 'SUCCESS Classic Covers 15-oz. Ceramic Mug',
       price: 16.99,
-      image: '/images/products/ceramic-mug.jpg',
+      image: 'https://mysuccessplus.com/wp-content/uploads/nc/s-3rvn7wzn3w/product_images/o/026/white-glossy-mug-15oz-handle-on-left-6192b05a894a2__67579.jpg',
       category: 'Merchandise',
       subcategory: 'Drinkware',
-      link: '/shop/success-ceramic-mug'
+      link: 'https://mysuccessplus.com/product/success-classic-covers-15-oz-ceramic-mug'
     },
     {
-      id: 'merch-4',
-      name: 'SUCCESS Logo T-Shirt (Black)',
-      price: 19.99,
-      image: '/images/products/tshirt-black.jpg',
-      category: 'Merchandise',
-      subcategory: 'Apparel',
-      link: '/shop/success-tshirt-black'
-    },
-    {
-      id: 'merch-5',
-      name: 'SUCCESS Logo T-Shirt (White)',
-      price: 19.99,
-      image: '/images/products/tshirt-white.jpg',
-      category: 'Merchandise',
-      subcategory: 'Apparel',
-      link: '/shop/success-tshirt-white'
-    },
-    {
-      id: 'merch-6',
-      name: 'SUCCESS Hoodie (Navy)',
-      price: 39.99,
-      image: '/images/products/hoodie-navy.jpg',
-      category: 'Merchandise',
-      subcategory: 'Apparel',
-      link: '/shop/success-hoodie-navy'
-    },
-    {
-      id: 'merch-7',
-      name: 'SUCCESS Notepad Set',
-      price: 14.99,
-      image: '/images/products/notepad-set.jpg',
+      id: 'merch-widener-1',
+      name: 'Treasury of Quotes Booklet by Chris Widener',
+      price: 9.99,
+      image: 'https://mysuccessplus.com/wp-content/uploads/nc/s-3rvn7wzn3w/product_images/l/207/p1862__84751.jpg',
       category: 'Merchandise',
       subcategory: 'Office Supplies',
-      link: '/shop/success-notepad-set'
+      link: 'https://mysuccessplus.com/product/treasury-of-quotes-booklet-by-chris-widener'
     },
     {
-      id: 'merch-8',
-      name: 'SUCCESS Water Bottle',
-      price: 17.99,
-      image: '/images/products/water-bottle.jpg',
-      category: 'Merchandise',
-      subcategory: 'Drinkware',
-      link: '/shop/success-water-bottle'
-    },
-    {
-      id: 'merch-9',
-      name: 'SUCCESS Tote Bag',
-      price: 16.99,
-      image: '/images/products/tote-bag.jpg',
-      category: 'Merchandise',
-      subcategory: 'Bags & Accessories',
-      link: '/shop/success-tote-bag'
-    },
-    {
-      id: 'merch-10',
-      name: 'SUCCESS Pen Set (3-pack)',
-      price: 12.99,
-      image: '/images/products/pen-set.jpg',
+      id: 'merch-goal-guide',
+      name: 'The Jim Rohn Guide to Goal Setting',
+      price: 9.37,
+      image: 'https://mysuccessplus.com/wp-content/uploads/nc/s-3rvn7wzn3w/product_images/k/575/jr_guide-to-goal-setting-3d__10764.jpg',
       category: 'Merchandise',
       subcategory: 'Office Supplies',
-      link: '/shop/success-pen-set'
+      link: 'https://mysuccessplus.com/product/the-jim-rohn-guide-to-goal-setting'
     },
 
     // MAGAZINES
