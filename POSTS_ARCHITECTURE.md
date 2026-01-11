@@ -40,37 +40,41 @@ When a user visits `https://www.success.com/[slug]`, the system checks in this o
 **Characteristics:**
 - ✅ Stored in the `posts` table in Supabase database
 - ✅ Full content, metadata, and images stored locally
-- ✅ Can be edited via admin panel (`/admin/content-viewer`)
+- ✅ **FULLY EDITABLE via admin panel** - edit title, content, images, categories, etc.
 - ✅ Faster loading (no external API calls)
 - ✅ Searchable and filterable
-- ✅ Includes WordPress metadata (`wordpressId` field)
+- ✅ May include WordPress metadata (`wordpressId` field if imported)
 
-**How to identify:**
-- Posts with a `wordpressId` field were imported from WordPress
-- Posts created directly in the admin have no `wordpressId`
+**Types of local posts:**
+1. **Imported from WordPress:** Have `wordpressId` field, fully editable after import
+2. **Created directly in admin:** No `wordpressId`, native to our system
 
 **Where they appear:**
-- Admin Content Viewer (`/admin/content-viewer`) - shows ALL local posts
+- Admin Content Viewer (`/admin/content-viewer`) - shows ALL local posts (both imported and native)
 - Individual post pages (e.g., `/post-slug`)
 - Homepage and category pages
 
-### WordPress Posts (Fetched via API)
+**IMPORTANT:** Once a WordPress post is imported to Supabase, it becomes a local post and is fully editable via the admin dashboard. You have complete control over imported posts.
+
+### WordPress Posts (NOT Imported - Linked Out)
 
 **Characteristics:**
 - ⚠️ Not stored in Supabase database
 - ⚠️ Fetched from WordPress API on each page load
-- ⚠️ Cannot be edited via admin panel
+- ⚠️ **Cannot be edited via our admin panel** (read-only)
 - ⚠️ Slower loading (requires API call)
 - ⚠️ Dependent on WordPress site availability
+- ⚠️ Fallback only - used when post slug not found in database
 
 **How they work:**
 - If a post slug isn't found in Supabase, the system queries WordPress API
 - Content is rendered dynamically from WordPress response
 - No permanent storage in our database
+- These are posts that haven't been imported yet
 
 **Where they appear:**
-- Individual post pages (e.g., `/post-slug`) - if not in database
-- NOT shown in Admin Content Viewer
+- Individual post pages (e.g., `/post-slug`) - ONLY if not in database
+- **NOT shown in Admin Content Viewer** (only local posts show there)
 - MAY appear on homepage/category pages if fetched via API
 
 ## Admin Content Viewer
