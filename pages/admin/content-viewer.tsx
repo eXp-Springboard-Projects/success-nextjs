@@ -18,7 +18,7 @@ interface ContentItem {
   _embedded?: any;
 }
 
-type ContentType = 'all' | 'posts' | 'pages' | 'videos' | 'podcasts' | 'premium' | 'archived';
+type ContentType = 'all' | 'articles' | 'pages' | 'videos' | 'podcasts' | 'premium' | 'archived';
 
 export default function ContentViewer() {
   const { data: session, status } = useSession();
@@ -112,9 +112,12 @@ export default function ContentViewer() {
               ? item.title
               : item.title?.rendered || 'Untitled';
 
+            // Map posts to articles
+            const itemType = (item.type || endpoint) === 'posts' ? 'articles' : (item.type || endpoint);
+
             return {
               ...item,
-              type: item.type || endpoint,
+              type: itemType,
               title: { rendered: titleText },
               date: item.date || item.publishedAt || item.createdAt || item.published_at || new Date().toISOString(),
               link: item.link || (endpoint === 'posts' ? `/blog/${item.slug}` : `/${endpoint.slice(0, -1)}/${item.slug}`),
@@ -144,7 +147,7 @@ export default function ContentViewer() {
 
       console.log(`✓ Total content items loaded: ${allContent.length}`);
       console.log('Content breakdown:', {
-        posts: allContent.filter(c => c.type === 'posts').length,
+        articles: allContent.filter(c => c.type === 'articles').length,
         pages: allContent.filter(c => c.type === 'pages').length,
         videos: allContent.filter(c => c.type === 'videos').length,
         podcasts: allContent.filter(c => c.type === 'podcasts').length,
@@ -237,7 +240,7 @@ export default function ContentViewer() {
 
   const contentCounts = {
     all: content.filter(c => c.status !== 'ARCHIVED').length,
-    posts: content.filter(c => c.type === 'posts' && c.status !== 'ARCHIVED').length,
+    articles: content.filter(c => c.type === 'articles' && c.status !== 'ARCHIVED').length,
     pages: content.filter(c => c.type === 'pages' && c.status !== 'ARCHIVED').length,
     videos: content.filter(c => c.type === 'videos' && c.status !== 'ARCHIVED').length,
     podcasts: content.filter(c => c.type === 'podcasts' && c.status !== 'ARCHIVED').length,
@@ -272,10 +275,10 @@ export default function ContentViewer() {
             All Content ({contentCounts.all})
           </button>
           <button
-            className={activeTab === 'posts' ? styles.tabActive : styles.tab}
-            onClick={() => setActiveTab('posts')}
+            className={activeTab === 'articles' ? styles.tabActive : styles.tab}
+            onClick={() => setActiveTab('articles')}
           >
-            Articles ({contentCounts.posts})
+            Articles ({contentCounts.articles})
           </button>
           <button
             className={activeTab === 'pages' ? styles.tabActive : styles.tab}
@@ -334,82 +337,121 @@ export default function ContentViewer() {
             </p>
           </div>
         ) : (
-          <div className={styles.grid}>
-            {filteredContent.map((item) => {
-              const imageUrl = item._embedded?.['wp:featuredmedia']?.[0]?.source_url;
-
-              return (
-                <div key={`${item.type}-${item.id}`} className={styles.card}>
-                  {imageUrl && (
-                    <div className={styles.cardImage}>
-                      <img src={imageUrl} alt={item.title.rendered} />
-                    </div>
-                  )}
-                  <div className={styles.cardContent}>
-                    <div className={styles.badges}>
-                      <span className={`${styles.badge} ${styles[`badge-${item.type}`]}`}>
-                        {item.type}
-                      </span>
-                      <span className={`${styles.badge} ${styles[`badge-source-${item.source || 'wordpress'}`]}`}>
-                        {item.source === 'local' ? '🏠 Local' : '🔗 WordPress'}
-                      </span>
-                    </div>
-                    <h3 className={styles.cardTitle}>
-                      {decodeHtmlEntities(item.title.rendered)}
-                    </h3>
-                    <p className={styles.cardDate}>
-                      {new Date(item.date).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </p>
-                    <div className={styles.cardActions}>
-                      <a
-                        href={item.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.viewButton}
-                      >
-                        View Live
-                      </a>
-                      {item.editable && (
-                        <>
+          <>
+            {/* Pages Section - show on All tab or Pages tab */}
+            {(activeTab === 'all' || activeTab === 'pages') && filteredContent.filter(item => item.type === 'pages').length > 0 && (
+              <div className={styles.pagesSection}>
+                <h2 className={styles.pagesSectionTitle}>Pages</h2>
+                <div className={styles.pagesGrid}>
+                  {filteredContent.filter(item => item.type === 'pages').map((item) => (
+                    <div key={`${item.type}-${item.id}`} className={styles.pageCard}>
+                      <h3 className={styles.pageCardTitle}>
+                        {decodeHtmlEntities(item.title.rendered)}
+                      </h3>
+                      <div className={styles.pageCardActions}>
+                        <a
+                          href={item.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.viewButton}
+                        >
+                          View
+                        </a>
+                        {item.editable && (
                           <button
                             className={styles.editButton}
                             onClick={() => window.location.href = `/admin/${item.type}/${item.id}/edit`}
                           >
                             Edit
                           </button>
-                          <button
-                            className={item.status === 'ARCHIVED' ? styles.unarchiveButton : styles.archiveButton}
-                            onClick={() => handleArchive(item.id, item.type, item.status)}
-                            disabled={archiving === String(item.id)}
-                          >
-                            {archiving === String(item.id)
-                              ? 'Processing...'
-                              : item.status === 'ARCHIVED'
-                              ? 'Unarchive'
-                              : 'Archive'}
-                          </button>
-                          <button
-                            className={styles.deleteButton}
-                            onClick={() => handleDelete(item.id, item.type)}
-                            disabled={deleting === String(item.id)}
-                          >
-                            {deleting === String(item.id) ? 'Deleting...' : 'Delete'}
-                          </button>
-                        </>
-                      )}
-                      <span className={`${styles.status} ${styles[`status-${item.status}`]}`}>
-                        {item.status}
-                      </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            )}
+
+            {/* Articles, Videos, Podcasts - show as regular cards */}
+            {filteredContent.filter(item => item.type !== 'pages').length > 0 && (
+              <div className={styles.grid}>
+                {filteredContent.filter(item => item.type !== 'pages').map((item) => {
+                  const imageUrl = item._embedded?.['wp:featuredmedia']?.[0]?.source_url;
+
+                  return (
+                    <div key={`${item.type}-${item.id}`} className={styles.card}>
+                      {imageUrl && (
+                        <div className={styles.cardImage}>
+                          <img src={imageUrl} alt={item.title.rendered} />
+                        </div>
+                      )}
+                      <div className={styles.cardContent}>
+                        <div className={styles.badges}>
+                          <span className={`${styles.badge} ${styles[`badge-${item.type}`]}`}>
+                            {item.type}
+                          </span>
+                          <span className={`${styles.badge} ${styles[`badge-source-${item.source || 'wordpress'}`]}`}>
+                            {item.source === 'local' ? '🏠 Local' : '🔗 WordPress'}
+                          </span>
+                        </div>
+                        <h3 className={styles.cardTitle}>
+                          {decodeHtmlEntities(item.title.rendered)}
+                        </h3>
+                        <p className={styles.cardDate}>
+                          {new Date(item.date).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
+                        <div className={styles.cardActions}>
+                          <a
+                            href={item.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.viewButton}
+                          >
+                            View Live
+                          </a>
+                          {item.editable && (
+                            <>
+                              <button
+                                className={styles.editButton}
+                                onClick={() => window.location.href = `/admin/${item.type}/${item.id}/edit`}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className={item.status === 'ARCHIVED' ? styles.unarchiveButton : styles.archiveButton}
+                                onClick={() => handleArchive(item.id, item.type, item.status)}
+                                disabled={archiving === String(item.id)}
+                              >
+                                {archiving === String(item.id)
+                                  ? 'Processing...'
+                                  : item.status === 'ARCHIVED'
+                                  ? 'Unarchive'
+                                  : 'Archive'}
+                              </button>
+                              <button
+                                className={styles.deleteButton}
+                                onClick={() => handleDelete(item.id, item.type)}
+                                disabled={deleting === String(item.id)}
+                              >
+                                {deleting === String(item.id) ? 'Deleting...' : 'Delete'}
+                              </button>
+                            </>
+                          )}
+                          <span className={`${styles.status} ${styles[`status-${item.status}`]}`}>
+                            {item.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
     </AdminLayout>
