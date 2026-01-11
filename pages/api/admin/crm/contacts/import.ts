@@ -43,8 +43,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const contactsToUpsert = withEmail.map(c => ({
         id: nanoid(),
         email: c.email,
-        first_name: c.first_name || null,
-        last_name: c.last_name || null,
+        firstName: c.first_name || null,
+        lastName: c.last_name || null,
         phone: c.phone || null,
         company: c.company || null,
         source: 'import'
@@ -74,8 +74,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const contactsToInsert = withoutEmail.map(c => ({
         id: nanoid(),
         email: `no-email-${nanoid()}@placeholder.local`, // Generate placeholder email
-        first_name: c.first_name || null,
-        last_name: c.last_name || null,
+        firstName: c.first_name || null,
+        lastName: c.last_name || null,
         phone: c.phone || null,
         company: c.company || null,
         source: 'import'
