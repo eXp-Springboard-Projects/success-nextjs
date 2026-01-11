@@ -3,9 +3,9 @@ import { parse } from 'csv-parse';
 import { createClient } from '@supabase/supabase-js';
 import { nanoid } from 'nanoid';
 
-// Use direct Supabase client to bypass env var issues
-const supabaseUrl = 'https://aczlassjkbtwenzsohwm.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjemxhc3Nqa2J0d2VuenNvaHdtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjQyODk0NywiZXhwIjoyMDgyMDA0OTQ3fQ.t4ADR0oV5sJCMNp1adP2vTsxV1W3Pfizw_uyO3BFYd4';
+// Supabase configuration
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://aczlassjkbtwenzsohwm.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjemxhc3Nqa2J0d2VuenNvaHdtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjQyODk0NywiZXhwIjoyMDgyMDA0OTQ3fQ.t4ADR0oV5sJCMNp1adP2vTsxV1W3Pfizw_uyO3BFYd4';
 
 interface HubSpotContact {
   'Record ID': string;
@@ -21,7 +21,15 @@ interface HubSpotContact {
 }
 
 async function importHubSpotContacts(csvPath: string) {
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+    db: {
+      schema: 'public',
+    },
+  });
   const contacts: HubSpotContact[] = [];
 
   console.log('📂 Reading CSV file...');
@@ -41,98 +49,42 @@ async function importHubSpotContacts(csvPath: string) {
 
   console.log(`📊 Found ${contacts.length} contacts in CSV`);
 
-  let imported = 0;
-  let skipped = 0;
-  let updated = 0;
-  let errors = 0;
+  // Map contacts to database format
+  const contactsToUpsert = contacts
+    .filter(c => c.Email?.trim())
+    .map(c => ({
+      id: nanoid(),
+      email: c.Email.trim(),
+      first_name: c['First Name']?.trim() || null,
+      last_name: c['Last Name']?.trim() || null,
+      phone: c['Phone Number']?.trim() || null,
+      company: null,
+      source: 'import' as const,
+    }));
 
-  // Process in batches of 100
-  const BATCH_SIZE = 100;
-  for (let i = 0; i < contacts.length; i += BATCH_SIZE) {
-    const batch = contacts.slice(i, i + BATCH_SIZE);
+  const skipped = contacts.length - contactsToUpsert.length;
+  console.log(`⏭️  Skipped ${skipped} contacts without email\n`);
 
-    console.log(`\n🔄 Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(contacts.length / BATCH_SIZE)}...`);
+  // Bulk upsert
+  console.log(`🔄 Upserting ${contactsToUpsert.length} contacts...`);
+  const { data: upserted, error } = await supabase
+    .from('contacts')
+    .upsert(contactsToUpsert, {
+      onConflict: 'email',
+      ignoreDuplicates: false
+    })
+    .select();
 
-    for (const contact of batch) {
-      try {
-        const email = contact.Email?.trim();
-
-        if (!email) {
-          skipped++;
-          continue;
-        }
-
-        // Check if contact exists
-        const { data: existing } = await supabase
-          .from('contacts')
-          .select('id, hubspot_id')
-          .eq('email', email)
-          .single();
-
-        const contactData = {
-          email,
-          first_name: contact['First Name']?.trim() || null,
-          last_name: contact['Last Name']?.trim() || null,
-          phone: contact['Phone Number']?.trim() || null,
-          street_address: contact['Street Address']?.trim() || null,
-          lead_status: contact['Lead Status']?.trim() || 'new',
-          marketing_status: contact['Marketing contact status']?.trim() || 'non-marketing',
-          source: 'hubspot_import',
-          hubspot_id: contact['Record ID']?.trim() || null,
-          created_at: contact['Create Date'] ? new Date(contact['Create Date']).toISOString() : new Date().toISOString(),
-        };
-
-        if (existing) {
-          // Update existing contact with HubSpot data
-          const { error: updateError } = await supabase
-            .from('contacts')
-            .update({
-              ...contactData,
-              hubspot_id: contactData.hubspot_id || existing.hubspot_id,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', existing.id);
-
-          if (updateError) {
-            console.error(`❌ Error updating ${email}:`, updateError.message);
-            errors++;
-          } else {
-            updated++;
-          }
-        } else {
-          // Create new contact
-          const { error: insertError } = await supabase
-            .from('contacts')
-            .insert({
-              id: nanoid(),
-              ...contactData,
-            });
-
-          if (insertError) {
-            console.error(`❌ Error inserting ${email}:`, insertError.message);
-            errors++;
-          } else {
-            imported++;
-          }
-        }
-
-        // Progress indicator
-        if ((imported + updated + skipped + errors) % 100 === 0) {
-          console.log(`   ✓ Processed ${imported + updated + skipped + errors} contacts...`);
-        }
-      } catch (error) {
-        console.error(`❌ Error processing contact:`, error instanceof Error ? error.message : error);
-        errors++;
-      }
-    }
+  if (error) {
+    throw error;
   }
 
+  const imported = upserted?.length || 0;
+
   console.log('\n✅ Import complete!');
-  console.log(`   📥 Imported: ${imported}`);
-  console.log(`   🔄 Updated: ${updated}`);
+  console.log(`   ✓ Upserted: ${imported}`);
   console.log(`   ⏭️  Skipped: ${skipped}`);
-  console.log(`   ❌ Errors: ${errors}`);
-  console.log(`   📊 Total: ${imported + updated + skipped + errors}`);
+  console.log(`   📊 Total: ${imported + skipped}`);
 }
 
 // Run import

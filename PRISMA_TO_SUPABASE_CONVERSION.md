@@ -1,3 +1,9 @@
+# ✅ MIGRATED TO SUPABASE - HISTORICAL REFERENCE ONLY
+
+This document is kept for historical reference. **The project now uses Supabase exclusively.**
+
+---
+
 # Prisma to Supabase Conversion Guide
 
 ## Overview
