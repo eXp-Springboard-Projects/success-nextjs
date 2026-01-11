@@ -74,6 +74,7 @@ async function testImport() {
 
       // Test insert with just first 2 contacts
       const supabase = createClient(supabaseUrl, supabaseKey);
+      const now = new Date().toISOString();
       const testContacts = withEmail.slice(0, 2).map(c => ({
         id: nanoid(),
         email: c.email,
@@ -81,7 +82,9 @@ async function testImport() {
         lastName: c.last_name || null,
         phone: c.phone || null,
         company: c.company || null,
-        source: 'import'
+        source: 'import',
+        createdAt: now,
+        updatedAt: now
       }));
 
       console.log('\n🧪 Testing insert with 2 contacts:', testContacts);

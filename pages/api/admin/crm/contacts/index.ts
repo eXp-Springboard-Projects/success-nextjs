@@ -37,16 +37,16 @@ async function getContacts(req: NextApiRequest, res: NextApiResponse) {
     // Build query using Supabase
     let contactsQuery = supabase.from('contacts').select('*', { count: 'exact' });
 
-    // Apply search filter
+    // Apply search filter (use camelCase field names!)
     if (search) {
       contactsQuery = contactsQuery.or(
-        `email.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%,company.ilike.%${search}%`
+        `email.ilike.%${search}%,firstName.ilike.%${search}%,lastName.ilike.%${search}%,company.ilike.%${search}%`
       );
     }
 
     // Apply email status filter
     if (emailStatus) {
-      contactsQuery = contactsQuery.eq('email_status', emailStatus);
+      contactsQuery = contactsQuery.eq('emailStatus', emailStatus);
     }
 
     // Apply source filter
@@ -54,9 +54,10 @@ async function getContacts(req: NextApiRequest, res: NextApiResponse) {
       contactsQuery = contactsQuery.eq('source', source);
     }
 
-    // Apply sorting and pagination
+    // Apply sorting and pagination (default to createdAt, not created_at)
+    const sortField = sortBy === 'created_at' ? 'createdAt' : sortBy;
     contactsQuery = contactsQuery
-      .order(sortBy, { ascending: sortOrder === 'asc' })
+      .order(sortField, { ascending: sortOrder === 'asc' })
       .range(offset, offset + limit - 1);
 
     const { data: contacts, error, count } = await contactsQuery;
@@ -115,18 +116,20 @@ async function createContact(req: NextApiRequest, res: NextApiResponse) {
 
     const contactId = nanoid();
 
-    // Insert contact
+    // Insert contact (use camelCase field names!)
+    const now = new Date().toISOString();
     const { error: contactError } = await supabase
       .from('contacts')
       .insert({
         id: contactId,
         email,
-        first_name: firstName || null,
-        last_name: lastName || null,
+        firstName: firstName || null,
+        lastName: lastName || null,
         phone: phone || null,
         company: company || null,
         source,
-        custom_fields: customFields,
+        createdAt: now,
+        updatedAt: now,
       });
 
     if (contactError) {
