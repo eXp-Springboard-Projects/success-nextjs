@@ -56,18 +56,41 @@ export default function ContentViewer() {
       const promises = endpoints.map(async endpoint => {
         try {
           const perPage = 100;
-          const url = `/api/admin/${endpoint}?per_page=${perPage}`;
-          console.log(`Fetching ${endpoint} from ${url}`);
+          let page = 1;
+          let allData: any[] = [];
+          let hasMore = true;
 
-          const res = await fetch(url);
+          // Fetch all pages until we have everything
+          while (hasMore) {
+            const url = `/api/admin/${endpoint}?per_page=${perPage}&page=${page}`;
+            console.log(`Fetching ${endpoint} page ${page} from ${url}`);
 
-          if (!res.ok) {
-            console.error(`Failed to fetch ${endpoint}: ${res.status} ${res.statusText}`);
-            return { endpoint, data: [], error: `${res.status} ${res.statusText}` };
+            const res = await fetch(url);
+
+            if (!res.ok) {
+              console.error(`Failed to fetch ${endpoint}: ${res.status} ${res.statusText}`);
+              return { endpoint, data: [], error: `${res.status} ${res.statusText}` };
+            }
+
+            const pageData = await res.json();
+            console.log(`✓ Fetched ${pageData.length} items from ${endpoint} page ${page}`);
+
+            if (pageData.length > 0) {
+              allData = [...allData, ...pageData];
+            }
+
+            // Check if there are more pages
+            const totalHeader = res.headers.get('X-WP-Total');
+            const total = totalHeader ? parseInt(totalHeader) : pageData.length;
+            hasMore = allData.length < total && pageData.length === perPage;
+            page++;
+
+            // Safety limit to prevent infinite loops
+            if (page > 100) {
+              console.warn(`Safety limit reached for ${endpoint}`);
+              break;
+            }
           }
-
-          const allData = await res.json();
-          console.log(`✓ Fetched ${allData.length} items from ${endpoint}`);
 
           const mappedData = allData.map((item: any) => {
             // Handle title field - WordPress returns { rendered: "..." }, Supabase returns string
@@ -84,7 +107,7 @@ export default function ContentViewer() {
             };
           });
 
-          console.log(`✓ Total ${endpoint} fetched: ${mappedData.length}`);
+          console.log(`✓ Total ${endpoint} fetched across all pages: ${mappedData.length}`);
           return { endpoint, data: mappedData, error: null };
         } catch (err) {
           console.error(`Exception fetching ${endpoint}:`, err);

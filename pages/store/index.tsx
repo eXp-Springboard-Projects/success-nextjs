@@ -469,12 +469,13 @@ export const getServerSideProps: GetServerSideProps = async () => {
 
     // MAGAZINES
     {
-      id: 'mag-1',
-      name: 'SUCCESS Magazine - November/December 2024',
+      id: 'mag-latest',
+      name: 'SUCCESS Magazine - January/February 2026 (Dean and Lisa Graziosi)',
       price: 9.99,
-      image: 'https://mysuccessplus.com/wp-content/uploads/2024/10/SUCCESS-NovDec-2024-Eva-Longoria-Digital-Cover.jpg',
+      image: 'https://mysuccessplus.com/wp-content/uploads/2025/11/SM26_JAN-FEB-COVER-DEAN-LISA-GRAZIOSI_NO-BARCODE_WEB.jpg',
       category: 'Magazines',
-      link: '/shop/success-magazine-nov-dec-2024'
+      link: 'https://mysuccessplus.com/product/success-magazine-january-february-2026-dean-and-lisa-graziosi',
+      featured: true
     },
     {
       id: 'mag-2',
