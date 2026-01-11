@@ -80,29 +80,84 @@ export default function ImportContactsPage() {
         setCsvHeaders(headers);
         setCsvData(data);
 
-        // Auto-map common column names
+        // Auto-map common column names with flexible matching
         const autoMapping: any = {
           email: '',
           firstName: '',
           lastName: '',
           phone: '',
           company: '',
-          source: '',
+          source: 'csv_import', // Default source
           tags: '',
         };
 
         headers.forEach((header) => {
-          const lower = header.toLowerCase();
-          if (lower.includes('email')) autoMapping.email = header;
-          if (lower.includes('first') && lower.includes('name')) autoMapping.firstName = header;
-          if (lower.includes('last') && lower.includes('name')) autoMapping.lastName = header;
-          if (lower.includes('phone')) autoMapping.phone = header;
-          if (lower.includes('company')) autoMapping.company = header;
-          if (lower.includes('source')) autoMapping.source = header;
-          if (lower.includes('tag')) autoMapping.tags = header;
+          const lower = header.toLowerCase().replace(/[_\s-]/g, ''); // Remove separators
+          const original = header.toLowerCase();
+
+          // Email: e-mail, email, emailaddress, email_address
+          if (!autoMapping.email && (lower.includes('email') || lower === 'e-mail')) {
+            autoMapping.email = header;
+          }
+
+          // First Name: firstname, first_name, first name, fname, givenname
+          if (!autoMapping.firstName && (
+            lower.includes('firstname') ||
+            lower.includes('givenname') ||
+            lower === 'fname' ||
+            (original.includes('first') && original.includes('name'))
+          )) {
+            autoMapping.firstName = header;
+          }
+
+          // Last Name: lastname, last_name, last name, lname, surname, familyname
+          if (!autoMapping.lastName && (
+            lower.includes('lastname') ||
+            lower.includes('surname') ||
+            lower.includes('familyname') ||
+            lower === 'lname' ||
+            (original.includes('last') && original.includes('name'))
+          )) {
+            autoMapping.lastName = header;
+          }
+
+          // Phone: phone, mobile, cell, telephone, tel
+          if (!autoMapping.phone && (
+            lower.includes('phone') ||
+            lower.includes('mobile') ||
+            lower.includes('cell') ||
+            lower.includes('telephone') ||
+            lower === 'tel'
+          )) {
+            autoMapping.phone = header;
+          }
+
+          // Company: company, organization, organisation, business
+          if (!autoMapping.company && (
+            lower.includes('company') ||
+            lower.includes('organization') ||
+            lower.includes('organisation') ||
+            lower.includes('business')
+          )) {
+            autoMapping.company = header;
+          }
+
+          // Source (optional)
+          if (lower.includes('source') || lower.includes('origin')) {
+            autoMapping.source = header;
+          }
+
+          // Tags
+          if (!autoMapping.tags && (lower.includes('tag') || lower.includes('label'))) {
+            autoMapping.tags = header;
+          }
         });
 
         setMapping(autoMapping);
+
+        // Log detection results for debugging
+        console.log('📋 CSV Headers detected:', headers);
+        console.log('🎯 Auto-mapped columns:', autoMapping);
       },
       error: (error) => {
         alert(`Failed to parse CSV: ${error.message}`);
@@ -267,8 +322,11 @@ export default function ImportContactsPage() {
             <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>
               Step 2: Map Columns
             </h2>
-            <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+            <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
               File: <strong>{file?.name}</strong> ({csvData.length} rows)
+            </p>
+            <p style={{ color: '#10b981', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+              ✓ Auto-detected {Object.values(mapping).filter(v => v && v !== 'csv_import').length} columns
             </p>
 
             <div style={{ display: 'grid', gap: '1rem' }}>
@@ -375,7 +433,7 @@ export default function ImportContactsPage() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '1rem', alignItems: 'center' }}>
-                <label style={{ fontWeight: 500 }}>Source</label>
+                <label style={{ fontWeight: 500 }}>Source (optional)</label>
                 <select
                   value={mapping.source}
                   onChange={(e) => setMapping({ ...mapping, source: e.target.value })}
@@ -385,7 +443,7 @@ export default function ImportContactsPage() {
                     borderRadius: '6px',
                   }}
                 >
-                  <option value="">Select column...</option>
+                  <option value="csv_import">Default: csv_import</option>
                   {csvHeaders.map((header) => (
                     <option key={header} value={header}>
                       {header}
