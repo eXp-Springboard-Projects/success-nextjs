@@ -53,10 +53,19 @@ export default async function handler(
         throw error;
       }
 
-      res.setHeader('X-Total-Count', (count || 0).toString());
-      res.setHeader('X-Total-Pages', Math.ceil((count || 0) / take).toString());
+      res.setHeader('X-WP-Total', (count || 0).toString());
+      res.setHeader('X-WP-TotalPages', Math.ceil((count || 0) / take).toString());
+      res.setHeader('Access-Control-Expose-Headers', 'X-WP-Total, X-WP-TotalPages');
 
-      return res.status(200).json(videos || []);
+      return res.status(200).json({
+        videos: videos || [],
+        pagination: {
+          total: count || 0,
+          page: parseInt(page as string),
+          perPage: take,
+          totalPages: Math.ceil((count || 0) / take)
+        }
+      });
     } catch (error: any) {
       return res.status(500).json({ error: error.message || 'Internal server error' });
     }

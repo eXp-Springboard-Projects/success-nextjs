@@ -141,11 +141,20 @@ export default async function handler(
         };
       });
 
-      // Add pagination headers
+      // Add pagination headers and expose them to browser
       res.setHeader('X-WP-Total', (count || 0).toString());
       res.setHeader('X-WP-TotalPages', Math.ceil((count || 0) / perPage).toString());
+      res.setHeader('Access-Control-Expose-Headers', 'X-WP-Total, X-WP-TotalPages');
 
-      return res.status(200).json(formattedPosts);
+      return res.status(200).json({
+        posts: formattedPosts,
+        pagination: {
+          total: count || 0,
+          page: pageNum,
+          perPage: perPage,
+          totalPages: Math.ceil((count || 0) / perPage)
+        }
+      });
     } catch (error: any) {
       console.error('Error fetching posts:', error);
       return res.status(500).json({

@@ -72,7 +72,14 @@ export default function ContentViewer() {
               return { endpoint, data: [], error: `${res.status} ${res.statusText}` };
             }
 
-            const pageData = await res.json();
+            const responseData = await res.json();
+
+            // Handle both response formats: array or { posts/pages/videos: [], pagination: {} }
+            const pageData = Array.isArray(responseData)
+              ? responseData
+              : (responseData[endpoint] || responseData.posts || responseData.pages || responseData.videos || responseData.podcasts || []);
+            const paginationInfo = responseData.pagination;
+
             console.log(`✓ Fetched ${pageData.length} items from ${endpoint} page ${page}`);
 
             if (pageData.length > 0) {
@@ -80,8 +87,15 @@ export default function ContentViewer() {
             }
 
             // Check if there are more pages
-            const totalHeader = res.headers.get('X-WP-Total');
-            const total = totalHeader ? parseInt(totalHeader) : pageData.length;
+            // Priority: pagination object in body > X-WP-Total header > array length
+            let total: number;
+            if (paginationInfo?.total !== undefined) {
+              total = paginationInfo.total;
+            } else {
+              const totalHeader = res.headers.get('X-WP-Total');
+              total = totalHeader ? parseInt(totalHeader) : pageData.length;
+            }
+
             hasMore = allData.length < total && pageData.length === perPage;
             page++;
 
