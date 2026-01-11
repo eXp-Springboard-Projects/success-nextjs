@@ -40,6 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Upsert contacts with email (deduplication)
     if (withEmail.length > 0) {
+      const now = new Date().toISOString();
       const contactsToUpsert = withEmail.map(c => ({
         id: nanoid(),
         email: c.email,
@@ -47,7 +48,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         lastName: c.last_name || null,
         phone: c.phone || null,
         company: c.company || null,
-        source: 'import'
+        source: 'import',
+        createdAt: now,
+        updatedAt: now
       }));
 
       console.log('Upserting contacts with email:', contactsToUpsert.length);
@@ -71,6 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Insert contacts without email (no deduplication possible)
     if (withoutEmail.length > 0) {
+      const now = new Date().toISOString();
       const contactsToInsert = withoutEmail.map(c => ({
         id: nanoid(),
         email: `no-email-${nanoid()}@placeholder.local`, // Generate placeholder email
@@ -78,7 +82,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         lastName: c.last_name || null,
         phone: c.phone || null,
         company: c.company || null,
-        source: 'import'
+        source: 'import',
+        createdAt: now,
+        updatedAt: now
       }));
 
       console.log('Inserting contacts without email:', contactsToInsert.length);

@@ -77,8 +77,8 @@ async function testImport() {
       const testContacts = withEmail.slice(0, 2).map(c => ({
         id: nanoid(),
         email: c.email,
-        first_name: c.first_name || null,
-        last_name: c.last_name || null,
+        firstName: c.first_name || null,
+        lastName: c.last_name || null,
         phone: c.phone || null,
         company: c.company || null,
         source: 'import'
