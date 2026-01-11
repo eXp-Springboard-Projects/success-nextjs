@@ -167,20 +167,28 @@ export default function ProductPage({ product }: ProductPageProps) {
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const supabase = supabaseAdmin();
-  const { data: products } = await supabase
-    .from('products')
-    .select('slug')
-    .eq('isPublished', true);
+  try {
+    const supabase = supabaseAdmin();
+    const { data: products } = await supabase
+      .from('products')
+      .select('slug')
+      .eq('isPublished', true);
 
-  const paths = (products || []).map((product) => ({
-    params: { slug: product.slug },
-  }));
+    const paths = (products || []).map((product) => ({
+      params: { slug: product.slug },
+    }));
 
-  return {
-    paths,
-    fallback: 'blocking',
-  };
+    return {
+      paths,
+      fallback: 'blocking',
+    };
+  } catch (error) {
+    console.error('Error fetching product paths:', error);
+    return {
+      paths: [],
+      fallback: 'blocking',
+    };
+  }
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
