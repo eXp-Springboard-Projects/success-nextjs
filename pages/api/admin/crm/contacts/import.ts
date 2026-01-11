@@ -24,39 +24,68 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const supabase = supabaseAdmin();
 
-    // Map contacts to database format
-    const contactsToUpsert = contacts
-      .filter(c => c.email) // Skip contacts without email
-      .map(c => ({
+    // Split contacts into those with email (upsert) and without (insert)
+    const withEmail = contacts.filter(c => c.email);
+    const withoutEmail = contacts.filter(c => !c.email);
+
+    let imported = 0;
+    let skipped = 0;
+
+    // Upsert contacts with email (deduplication)
+    if (withEmail.length > 0) {
+      const contactsToUpsert = withEmail.map(c => ({
         id: nanoid(),
         email: c.email,
-        first_name: c.firstName || null,
-        last_name: c.lastName || null,
+        first_name: c.first_name || null,
+        last_name: c.last_name || null,
         phone: c.phone || null,
         company: c.company || null,
         source: 'import'
       }));
 
-    // Bulk upsert contacts
-    const { data: upserted, error: upsertError } = await supabase
-      .from('contacts')
-      .upsert(contactsToUpsert, {
-        onConflict: 'email',
-        ignoreDuplicates: false
-      })
-      .select();
+      const { data: upserted, error: upsertError } = await supabase
+        .from('contacts')
+        .upsert(contactsToUpsert, {
+          onConflict: 'email',
+          ignoreDuplicates: false
+        })
+        .select();
 
-    if (upsertError) {
-      throw upsertError;
+      if (upsertError) {
+        throw upsertError;
+      }
+
+      imported += upserted?.length || 0;
     }
 
-    const imported = upserted?.length || 0;
-    const skipped = contacts.length - contactsToUpsert.length;
+    // Insert contacts without email (no deduplication possible)
+    if (withoutEmail.length > 0) {
+      const contactsToInsert = withoutEmail.map(c => ({
+        id: nanoid(),
+        email: `no-email-${nanoid()}@placeholder.local`, // Generate placeholder email
+        first_name: c.first_name || null,
+        last_name: c.last_name || null,
+        phone: c.phone || null,
+        company: c.company || null,
+        source: 'import'
+      }));
+
+      const { data: inserted, error: insertError } = await supabase
+        .from('contacts')
+        .insert(contactsToInsert)
+        .select();
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      imported += inserted?.length || 0;
+    }
 
     return res.status(200).json({
       imported,
       skipped,
-      errors: skipped > 0 ? [`Skipped ${skipped} contacts without email`] : []
+      errors: []
     });
   } catch (error) {
     console.error('Import error:', error);

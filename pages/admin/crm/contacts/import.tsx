@@ -88,7 +88,7 @@ export default function ImportContactsPage() {
     setImporting(true);
 
     try {
-      // Map CSV rows to contact objects
+      // Map CSV rows to contact objects - import whatever fields we can find
       const contacts = allData.map(row => {
         const contact: any = {};
 
@@ -99,15 +99,8 @@ export default function ImportContactsPage() {
           }
         });
 
-        // Ensure we have at least an email
         return contact;
-      }).filter(c => c.email); // Only keep contacts with email
-
-      if (contacts.length === 0) {
-        alert('No valid contacts found. Please ensure your CSV has an "email" column.');
-        setImporting(false);
-        return;
-      }
+      }).filter(c => Object.keys(c).length > 0); // Only keep non-empty contacts
 
       // Import via API
       const res = await fetch('/api/admin/crm/contacts/import', {
@@ -184,7 +177,7 @@ export default function ImportContactsPage() {
                 Choose CSV File
               </label>
               <p style={{ marginTop: '1rem', color: '#6b7280', fontSize: '0.875rem' }}>
-                CSV should include an "email" column for deduplication
+                Upload any CSV with contact information
               </p>
             </div>
           </div>
