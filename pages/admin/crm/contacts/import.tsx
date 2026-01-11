@@ -112,7 +112,10 @@ export default function ImportContactsPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Import failed');
+        const errorMsg = data.message
+          ? `${data.error}: ${data.message}${data.details ? '\n' + data.details : ''}`
+          : data.error || 'Import failed';
+        throw new Error(errorMsg);
       }
 
       setResult({
@@ -120,6 +123,7 @@ export default function ImportContactsPage() {
         skipped: data.skipped || 0,
       });
     } catch (error) {
+      console.error('Import error:', error);
       alert(error instanceof Error ? error.message : 'Import failed');
     } finally {
       setImporting(false);
