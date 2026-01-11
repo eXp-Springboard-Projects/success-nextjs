@@ -34,52 +34,66 @@ export default function ShopManager() {
 
   const fetchProducts = async () => {
     setLoading(true);
-    // TODO: Replace with actual API call
-    // Mock data for now
-    setTimeout(() => {
-      setProducts([
-        {
-          id: '1',
-          title: 'SUCCESS Magazine Annual Subscription',
-          description: '12 issues delivered to your door',
-          price: 29.99,
-          category: 'Subscriptions',
-          sku: 'SUB-MAG-001',
-          stock: 999,
-          isPublished: true,
-          salesCount: 1234,
-          createdAt: new Date().toISOString(),
-          featured: true,
-        },
-        {
-          id: '2',
-          title: 'The Ultimate Success Planner',
-          description: 'Plan your path to success with our premium planner',
-          price: 39.99,
-          category: 'Planners',
-          sku: 'PLN-001',
-          stock: 156,
-          isPublished: true,
-          salesCount: 567,
-          createdAt: new Date().toISOString(),
-          featured: false,
-        },
-      ]);
+    try {
+      const params = new URLSearchParams();
+      if (filter === 'published') params.append('published', 'true');
+      if (filter === 'draft') params.append('published', 'false');
+
+      const response = await fetch(`/api/admin/success-plus/products?${params}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        setProducts(data.products || []);
+      } else {
+        console.error('Failed to fetch products:', data.error);
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   const handleTogglePublish = async (id: string, currentStatus: boolean) => {
-    // TODO: API call to toggle publish status
-    setProducts(products.map(p =>
-      p.id === id ? { ...p, isPublished: !currentStatus } : p
-    ));
+    try {
+      const response = await fetch(`/api/admin/success-plus/products/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPublished: !currentStatus }),
+      });
+
+      if (response.ok) {
+        setProducts(products.map(p =>
+          p.id === id ? { ...p, isPublished: !currentStatus } : p
+        ));
+      } else {
+        const data = await response.json();
+        alert(`Failed to update product: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error toggling publish status:', error);
+      alert('Failed to update product');
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
-    // TODO: API call to delete
-    setProducts(products.filter(p => p.id !== id));
+
+    try {
+      const response = await fetch(`/api/admin/success-plus/products/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setProducts(products.filter(p => p.id !== id));
+      } else {
+        const data = await response.json();
+        alert(`Failed to delete product: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      alert('Failed to delete product');
+    }
   };
 
   const filteredProducts = products.filter(p => {

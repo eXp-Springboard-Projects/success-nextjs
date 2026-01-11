@@ -3,6 +3,7 @@ import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import Script from 'next/script';
 import PageOverrideProvider from '../components/PageOverrideProvider';
+import { CartProvider } from '../lib/CartContext';
 import '../styles/globals.css';
 
 export default function App({ Component, pageProps: { session, ...pageProps } }: AppProps) {
@@ -43,9 +44,11 @@ export default function App({ Component, pageProps: { session, ...pageProps } }:
       )}
 
       <SessionProvider session={session}>
-        <PageOverrideProvider>
-          <Component {...pageProps} />
-        </PageOverrideProvider>
+        <CartProvider>
+          <PageOverrideProvider>
+            <Component {...pageProps} />
+          </PageOverrideProvider>
+        </CartProvider>
       </SessionProvider>
     </>
   );

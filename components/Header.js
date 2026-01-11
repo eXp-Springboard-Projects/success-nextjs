@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useCart } from '../lib/CartContext';
 import styles from './Header.module.css';
 
 const navItems = [
@@ -18,6 +19,7 @@ const navItems = [
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { data: session } = useSession();
+  const { itemCount } = useCart();
 
   return (
     <header className={styles.header}>
@@ -32,6 +34,13 @@ export default function Header() {
               <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9 17A8 8 0 1 0 9 1a8 8 0 0 0 0 16zM19 19l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
+            </Link>
+            <Link href="/shop/cart" className={styles.cartButton} aria-label="Shopping Cart">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 2L7 6H3L7 20H17L21 6H17L15 2H9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M9 11V16M15 11V16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              {itemCount > 0 && <span className={styles.cartBadge}>{itemCount}</span>}
             </Link>
             <Link href="/login" className={styles.signInButton}>
               SIGN IN
