@@ -18,15 +18,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { contacts } = req.body;
 
+    console.log('Import request received:', { count: contacts?.length });
+
     if (!Array.isArray(contacts) || contacts.length === 0) {
       return res.status(400).json({ error: 'Invalid contacts data' });
     }
 
     const supabase = supabaseAdmin();
 
+    // Log first contact to debug
+    console.log('First contact sample:', contacts[0]);
+
     // Split contacts into those with email (upsert) and without (insert)
     const withEmail = contacts.filter(c => c.email);
     const withoutEmail = contacts.filter(c => !c.email);
+
+    console.log('Split:', { withEmail: withEmail.length, withoutEmail: withoutEmail.length });
 
     let imported = 0;
     let skipped = 0;
@@ -43,6 +50,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         source: 'import'
       }));
 
+      console.log('Upserting contacts with email:', contactsToUpsert.length);
+
       const { data: upserted, error: upsertError } = await supabase
         .from('contacts')
         .upsert(contactsToUpsert, {
@@ -52,10 +61,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .select();
 
       if (upsertError) {
+        console.error('Upsert error:', upsertError);
         throw upsertError;
       }
 
       imported += upserted?.length || 0;
+      console.log('Upserted:', imported);
     }
 
     // Insert contacts without email (no deduplication possible)
@@ -70,16 +81,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         source: 'import'
       }));
 
+      console.log('Inserting contacts without email:', contactsToInsert.length);
+
       const { data: inserted, error: insertError } = await supabase
         .from('contacts')
         .insert(contactsToInsert)
         .select();
 
       if (insertError) {
+        console.error('Insert error:', insertError);
         throw insertError;
       }
 
       imported += inserted?.length || 0;
+      console.log('Total imported:', imported);
     }
 
     return res.status(200).json({
@@ -87,11 +102,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       skipped,
       errors: []
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Import error:', error);
     return res.status(500).json({
       error: 'Failed to import contacts',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error?.message || 'Unknown error',
+      details: error?.details || error?.hint || null
     });
   }
 }
