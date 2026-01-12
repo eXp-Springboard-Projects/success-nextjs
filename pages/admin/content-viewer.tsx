@@ -55,56 +55,26 @@ export default function ContentViewer() {
 
       const promises = endpoints.map(async endpoint => {
         try {
-          const perPage = 100;
-          let page = 1;
-          let allData: any[] = [];
-          let hasMore = true;
+          // Fetch only first 500 items per endpoint for faster loading
+          const url = `/api/admin/${endpoint}?per_page=500&page=1`;
+          console.log(`Fetching ${endpoint} from ${url}`);
 
-          // Fetch all pages until we have everything
-          while (hasMore) {
-            const url = `/api/admin/${endpoint}?per_page=${perPage}&page=${page}`;
-            console.log(`Fetching ${endpoint} page ${page} from ${url}`);
+          const res = await fetch(url);
 
-            const res = await fetch(url);
-
-            if (!res.ok) {
-              console.error(`Failed to fetch ${endpoint}: ${res.status} ${res.statusText}`);
-              return { endpoint, data: [], error: `${res.status} ${res.statusText}` };
-            }
-
-            const responseData = await res.json();
-
-            // Handle both response formats: array or { posts/pages/videos: [], pagination: {} }
-            const pageData = Array.isArray(responseData)
-              ? responseData
-              : (responseData[endpoint] || responseData.posts || responseData.pages || responseData.videos || responseData.podcasts || []);
-            const paginationInfo = responseData.pagination;
-
-            console.log(`✓ Fetched ${pageData.length} items from ${endpoint} page ${page}`);
-
-            if (pageData.length > 0) {
-              allData = [...allData, ...pageData];
-            }
-
-            // Check if there are more pages
-            // Priority: pagination object in body > X-WP-Total header > array length
-            let total: number;
-            if (paginationInfo?.total !== undefined) {
-              total = paginationInfo.total;
-            } else {
-              const totalHeader = res.headers.get('X-WP-Total');
-              total = totalHeader ? parseInt(totalHeader) : pageData.length;
-            }
-
-            hasMore = allData.length < total && pageData.length === perPage;
-            page++;
-
-            // Safety limit to prevent infinite loops
-            if (page > 100) {
-              console.warn(`Safety limit reached for ${endpoint}`);
-              break;
-            }
+          if (!res.ok) {
+            console.error(`Failed to fetch ${endpoint}: ${res.status} ${res.statusText}`);
+            return { endpoint, data: [], error: `${res.status} ${res.statusText}` };
           }
+
+          const responseData = await res.json();
+
+          // Handle both response formats: array or { posts/pages/videos: [], pagination: {} }
+          const allData = Array.isArray(responseData)
+            ? responseData
+            : (responseData[endpoint] || responseData.posts || responseData.pages || responseData.videos || responseData.podcasts || []);
+
+          console.log(`✓ Fetched ${allData.length} items from ${endpoint}`);
+
 
           const mappedData = allData.map((item: any) => {
             // Handle title field - WordPress returns { rendered: "..." }, Supabase returns string
@@ -264,7 +234,7 @@ export default function ContentViewer() {
         <div className={styles.header}>
           <div>
             <h1>Live Site Content</h1>
-            <p className={styles.subtitle}>Articles, Pages, Videos, and Podcasts from success.com</p>
+            <p className={styles.subtitle}>Most recent 500 items per type from success.com</p>
           </div>
           <a href={getAddNewUrl()} className={styles.addButton}>
             + Add New {activeTab === 'all' ? 'Article' : activeTab.slice(0, -1).charAt(0).toUpperCase() + activeTab.slice(1, -1)}
