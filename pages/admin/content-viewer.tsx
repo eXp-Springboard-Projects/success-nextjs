@@ -357,14 +357,12 @@ export default function ContentViewer() {
                         >
                           View
                         </a>
-                        {item.editable && (
-                          <button
-                            className={styles.editButton}
-                            onClick={() => window.location.href = `/admin/${item.type}/${item.id}/edit`}
-                          >
-                            Edit
-                          </button>
-                        )}
+                        <button
+                          className={styles.editButton}
+                          onClick={() => window.location.href = `/admin/${item.type}/${item.id}/edit`}
+                        >
+                          Edit
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -413,34 +411,30 @@ export default function ContentViewer() {
                           >
                             View Live
                           </a>
-                          {item.editable && (
-                            <>
-                              <button
-                                className={styles.editButton}
-                                onClick={() => window.location.href = `/admin/${item.type}/${item.id}/edit`}
-                              >
-                                Edit
-                              </button>
-                              <button
-                                className={item.status === 'ARCHIVED' ? styles.unarchiveButton : styles.archiveButton}
-                                onClick={() => handleArchive(item.id, item.type, item.status)}
-                                disabled={archiving === String(item.id)}
-                              >
-                                {archiving === String(item.id)
-                                  ? 'Processing...'
-                                  : item.status === 'ARCHIVED'
-                                  ? 'Unarchive'
-                                  : 'Archive'}
-                              </button>
-                              <button
-                                className={styles.deleteButton}
-                                onClick={() => handleDelete(item.id, item.type)}
-                                disabled={deleting === String(item.id)}
-                              >
-                                {deleting === String(item.id) ? 'Deleting...' : 'Delete'}
-                              </button>
-                            </>
-                          )}
+                          <button
+                            className={styles.editButton}
+                            onClick={() => window.location.href = `/admin/${item.type}/${item.id}/edit`}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className={item.status === 'ARCHIVED' ? styles.unarchiveButton : styles.archiveButton}
+                            onClick={() => handleArchive(item.id, item.type, item.status)}
+                            disabled={archiving === String(item.id)}
+                          >
+                            {archiving === String(item.id)
+                              ? 'Processing...'
+                              : item.status === 'ARCHIVED'
+                              ? 'Unarchive'
+                              : 'Archive'}
+                          </button>
+                          <button
+                            className={styles.deleteButton}
+                            onClick={() => handleDelete(item.id, item.type)}
+                            disabled={deleting === String(item.id)}
+                          >
+                            {deleting === String(item.id) ? 'Deleting...' : 'Delete'}
+                          </button>
                           <span className={`${styles.status} ${styles[`status-${item.status}`]}`}>
                             {item.status}
                           </span>
