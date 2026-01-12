@@ -29,7 +29,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                path.includes('/admin/categories') ||
                path.includes('/admin/tags') ||
                path.includes('/admin/media') ||
-               path.includes('/admin/comments')) {
+               path.includes('/admin/comments') ||
+               path.includes('/admin/about') ||
+               path.includes('/admin/store-products') ||
+               path.includes('/admin/page-editor')) {
       setCurrentDept(Department.EDITORIAL);
     } else if (path.includes('/admin/success-plus') ||
                path.includes('/admin/resources')) {

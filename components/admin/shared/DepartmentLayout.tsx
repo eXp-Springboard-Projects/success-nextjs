@@ -333,6 +333,18 @@ function getNavigationSections(role: UserRole, primaryDepartment?: Department | 
     });
   }
 
+  // WEBSITE PAGES section - Manage static pages
+  if (role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'EDITOR') {
+    sections.push({
+      title: 'WEBSITE PAGES',
+      items: [
+        { label: 'Page Editor', href: '/admin/page-editor' },
+        { label: 'Team Members', href: '/admin/about/team-members' },
+        { label: 'Store Products', href: '/admin/store-products' },
+      ]
+    });
+  }
+
   // SUCCESS+ section
   if (role === 'SUPER_ADMIN' || role === 'ADMIN' || primaryDepartment === Department.SUCCESS_PLUS) {
     sections.push({
