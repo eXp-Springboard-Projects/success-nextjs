@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Get contacts from selected lists
     const { data: listMembers, error: listMembersError } = await supabase
-      .from('list_members')
+      .from('contact_list_members')
       .select('contact_id, contacts(*)')
       .in('list_id', listIds);
 
@@ -40,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let exclusionContactIds = new Set<string>();
     if (exclusionIds.length > 0) {
       const { data: exclusionMembers } = await supabase
-        .from('list_members')
+        .from('contact_list_members')
         .select('contact_id')
         .in('list_id', exclusionIds);
 

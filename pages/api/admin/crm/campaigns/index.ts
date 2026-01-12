@@ -54,11 +54,50 @@ async function createCampaign(req: NextApiRequest, res: NextApiResponse, session
     const {
       name,
       subject,
+      previewText,
+      fromName,
+      fromEmail,
+      content,
       scheduledAt,
+      recipientMode = 'lists',
+      selectedLists = [],
+      directEmails = [],
+      selectedContacts = [],
+      exclusionLists = [],
+      excludeRecentDays = 0,
     } = req.body;
 
     if (!name || !subject) {
       return res.status(400).json({ error: 'Name and subject are required' });
+    }
+
+    // Validate recipients
+    if (recipientMode === 'contacts' && selectedContacts.length === 0) {
+      return res.status(400).json({ error: 'At least one contact is required' });
+    }
+    if (recipientMode === 'emails' && directEmails.length === 0) {
+      return res.status(400).json({ error: 'At least one email address is required' });
+    }
+    if (recipientMode === 'lists' && selectedLists.length === 0) {
+      return res.status(400).json({ error: 'At least one list is required' });
+    }
+
+    // Create campaign metadata object
+    const metadata: any = {
+      recipientMode,
+      fromName,
+      fromEmail,
+      previewText,
+    };
+
+    if (recipientMode === 'contacts') {
+      metadata.selectedContacts = selectedContacts;
+    } else if (recipientMode === 'emails') {
+      metadata.directEmails = directEmails;
+    } else {
+      metadata.selectedLists = selectedLists;
+      metadata.exclusionLists = exclusionLists;
+      metadata.excludeRecentDays = excludeRecentDays;
     }
 
     const { data: campaign, error } = await supabase
@@ -67,8 +106,12 @@ async function createCampaign(req: NextApiRequest, res: NextApiResponse, session
         id: nanoid(),
         name,
         subject,
+        content: content || '',
+        from_name: fromName || 'SUCCESS Magazine',
+        from_email: fromEmail || 'hello@success.com',
         status: scheduledAt ? 'SCHEDULED' : 'DRAFT',
         scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+        metadata,
         sent_count: 0,
         opened_count: 0,
         clicked_count: 0,

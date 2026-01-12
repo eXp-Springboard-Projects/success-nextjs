@@ -25,6 +25,12 @@ interface Contact {
   leadScore?: number;
 }
 
+interface ContactList {
+  id: string;
+  name: string;
+  memberCount: number;
+}
+
 export default function ContactsListPage() {
   const router = useRouter();
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -35,6 +41,9 @@ export default function ContactsListPage() {
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [showAddToListModal, setShowAddToListModal] = useState(false);
+  const [lists, setLists] = useState<ContactList[]>([]);
+  const [selectedListId, setSelectedListId] = useState('');
 
   const getScoreBadge = (score: number = 0) => {
     let color = '#6c757d';
@@ -71,7 +80,18 @@ export default function ContactsListPage() {
 
   useEffect(() => {
     fetchContacts();
+    fetchLists();
   }, [searchTerm, statusFilter, page]);
+
+  const fetchLists = async () => {
+    try {
+      const res = await fetch('/api/admin/crm/lists');
+      const data = await res.json();
+      setLists(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error fetching lists:', error);
+    }
+  };
 
   const fetchContacts = async () => {
     setLoading(true);
@@ -132,6 +152,38 @@ export default function ContactsListPage() {
     setSelectedContacts(new Set());
     setShowBulkActions(false);
     fetchContacts();
+  };
+
+  const handleAddToList = async () => {
+    if (!selectedListId) {
+      alert('Please select a list');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/crm/lists/${selectedListId}/members/bulk-add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contactIds: Array.from(selectedContacts),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(data.message || `Added ${data.added} contacts to list`);
+        setShowAddToListModal(false);
+        setSelectedContacts(new Set());
+        setShowBulkActions(false);
+        setSelectedListId('');
+        fetchContacts();
+      } else {
+        alert(data.error || 'Failed to add contacts to list');
+      }
+    } catch (error) {
+      alert('Failed to add contacts to list');
+    }
   };
 
   return (
@@ -195,12 +247,75 @@ export default function ContactsListPage() {
               {selectedContacts.size} selected
             </span>
             <div className={styles.bulkActionsButtons}>
+              <button
+                onClick={() => setShowAddToListModal(true)}
+                className={styles.bulkActionButton}
+              >
+                Add to List
+              </button>
               <button onClick={handleExport} className={styles.bulkActionButton}>
                 Export
               </button>
               <button onClick={handleBulkDelete} className={styles.bulkActionButtonDanger}>
                 Delete
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Add to List Modal */}
+        {showAddToListModal && (
+          <div className={styles.modal} onClick={() => setShowAddToListModal(false)}>
+            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2>Add {selectedContacts.size} Contacts to List</h2>
+                <button
+                  onClick={() => setShowAddToListModal(false)}
+                  className={styles.modalClose}
+                >
+                  ×
+                </button>
+              </div>
+              <div className={styles.modalBody}>
+                <label htmlFor="list-select" className={styles.label}>
+                  Select List:
+                </label>
+                <select
+                  id="list-select"
+                  value={selectedListId}
+                  onChange={(e) => setSelectedListId(e.target.value)}
+                  className={styles.filterSelect}
+                  style={{ width: '100%', marginTop: '0.5rem' }}
+                >
+                  <option value="">Choose a list...</option>
+                  {lists.map((list) => (
+                    <option key={list.id} value={list.id}>
+                      {list.name} ({list.memberCount} members)
+                    </option>
+                  ))}
+                </select>
+                {lists.length === 0 && (
+                  <p style={{ marginTop: '1rem', color: '#666' }}>
+                    No lists available. <Link href="/admin/crm/lists/new">Create a list first</Link>
+                  </p>
+                )}
+              </div>
+              <div className={styles.modalFooter}>
+                <button
+                  onClick={() => setShowAddToListModal(false)}
+                  className={styles.secondaryButton}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddToList}
+                  disabled={!selectedListId}
+                  className={styles.primaryButton}
+                  style={{ opacity: selectedListId ? 1 : 0.5 }}
+                >
+                  Add to List
+                </button>
+              </div>
             </div>
           </div>
         )}

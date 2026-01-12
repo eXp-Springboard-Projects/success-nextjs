@@ -43,6 +43,11 @@ export default function NewCampaignPage() {
   const [excludeRecentDays, setExcludeRecentDays] = useState(0);
   const [estimatedRecipients, setEstimatedRecipients] = useState(0);
   const [lists, setLists] = useState<List[]>([]);
+  const [recipientMode, setRecipientMode] = useState<'lists' | 'emails' | 'contacts'>('contacts');
+  const [directEmails, setDirectEmails] = useState('');
+  const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
+  const [contacts, setContacts] = useState<any[]>([]);
+  const [contactSearchTerm, setContactSearchTerm] = useState('');
 
   // Step 4: Review
   const [scheduledDate, setScheduledDate] = useState('');
@@ -53,13 +58,14 @@ export default function NewCampaignPage() {
   useEffect(() => {
     fetchTemplates();
     fetchLists();
+    fetchContacts();
   }, []);
 
   useEffect(() => {
     if (step === 3) {
       calculateRecipients();
     }
-  }, [selectedLists, exclusionLists, excludeRecentDays, step]);
+  }, [selectedLists, exclusionLists, excludeRecentDays, step, recipientMode, directEmails, selectedContacts]);
 
   const fetchTemplates = async () => {
     try {
@@ -79,17 +85,40 @@ export default function NewCampaignPage() {
     }
   };
 
+  const fetchContacts = async () => {
+    try {
+      const res = await fetch('/api/admin/crm/contacts?limit=1000');
+      const data = await res.json();
+      setContacts(data.contacts || []);
+    } catch (error) {
+    }
+  };
+
   const calculateRecipients = async () => {
     try {
-      const params = new URLSearchParams({
-        lists: selectedLists.join(','),
-        exclusions: exclusionLists.join(','),
-        excludeRecentDays: excludeRecentDays.toString(),
-      });
-      const res = await fetch(`/api/admin/crm/campaigns/estimate-recipients?${params}`);
-      const data = await res.json();
-      setEstimatedRecipients(data.count || 0);
+      if (recipientMode === 'contacts') {
+        // Count selected contacts
+        setEstimatedRecipients(selectedContacts.length);
+      } else if (recipientMode === 'emails') {
+        // Count direct emails
+        const emails = directEmails
+          .split(/[\n,;]+/)
+          .map(e => e.trim())
+          .filter(e => e.includes('@'));
+        setEstimatedRecipients(emails.length);
+      } else {
+        // Count from lists
+        const params = new URLSearchParams({
+          lists: selectedLists.join(','),
+          exclusions: exclusionLists.join(','),
+          excludeRecentDays: excludeRecentDays.toString(),
+        });
+        const res = await fetch(`/api/admin/crm/campaigns/estimate-recipients?${params}`);
+        const data = await res.json();
+        setEstimatedRecipients(data.count || 0);
+      }
     } catch (error) {
+      setEstimatedRecipients(0);
     }
   };
 
@@ -129,6 +158,26 @@ export default function NewCampaignPage() {
   const handleCreateAndSend = async () => {
     setLoading(true);
     try {
+      // Prepare recipient data
+      let recipientData: any = {};
+
+      if (recipientMode === 'contacts') {
+        // Use selected contacts
+        recipientData.selectedContacts = selectedContacts;
+      } else if (recipientMode === 'emails') {
+        // Parse direct emails
+        const emails = directEmails
+          .split(/[\n,;]+/)
+          .map(e => e.trim())
+          .filter(e => e.includes('@'));
+        recipientData.directEmails = emails;
+      } else {
+        // Use lists
+        recipientData.selectedLists = selectedLists;
+        recipientData.exclusionLists = exclusionLists;
+        recipientData.excludeRecentDays = excludeRecentDays;
+      }
+
       // Create campaign
       const createRes = await fetch('/api/admin/crm/campaigns', {
         method: 'POST',
@@ -142,9 +191,8 @@ export default function NewCampaignPage() {
           emailType,
           templateId: selectedTemplate,
           content: emailContent,
-          selectedLists,
-          exclusionLists,
-          excludeRecentDays,
+          recipientMode,
+          ...recipientData,
           scheduledAt: scheduledDate && scheduledTime
             ? new Date(`${scheduledDate}T${scheduledTime}`).toISOString()
             : null,
@@ -186,6 +234,11 @@ export default function NewCampaignPage() {
       case 2:
         return subject && emailContent;
       case 3:
+        if (recipientMode === 'contacts') {
+          return selectedContacts.length > 0;
+        } else if (recipientMode === 'emails') {
+          return directEmails.trim().length > 0 && estimatedRecipients > 0;
+        }
         return selectedLists.length > 0;
       case 4:
         return true;
@@ -376,8 +429,178 @@ export default function NewCampaignPage() {
           <div className={styles.stepContainer}>
             <h2 className={styles.stepTitle}>Select Recipients</h2>
 
+            {/* Recipient Mode Toggle */}
             <div className={styles.formGroup}>
-              <label>Select Lists *</label>
+              <label>Send To:</label>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => setRecipientMode('contacts')}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: recipientMode === 'contacts' ? '#000' : '#f0f0f0',
+                    color: recipientMode === 'contacts' ? 'white' : '#333',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                  }}
+                >
+                  👤 Select Contacts
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRecipientMode('lists')}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: recipientMode === 'lists' ? '#000' : '#f0f0f0',
+                    color: recipientMode === 'lists' ? 'white' : '#333',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                  }}
+                >
+                  📋 Contact Lists
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRecipientMode('emails')}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: recipientMode === 'emails' ? '#000' : '#f0f0f0',
+                    color: recipientMode === 'emails' ? 'white' : '#333',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                  }}
+                >
+                  ✉️ Paste Email Addresses
+                </button>
+              </div>
+            </div>
+
+            {recipientMode === 'contacts' ? (
+              <div className={styles.formGroup}>
+                <label>Select Contacts *</label>
+                <p style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>
+                  Search and select individual contacts to email
+                </p>
+
+                {/* Search Box */}
+                <input
+                  type="text"
+                  placeholder="Search by name or email..."
+                  value={contactSearchTerm}
+                  onChange={(e) => setContactSearchTerm(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #ddd',
+                    borderRadius: '6px',
+                    marginBottom: '1rem',
+                  }}
+                />
+
+                {/* Contact List */}
+                <div style={{
+                  maxHeight: '400px',
+                  overflowY: 'auto',
+                  border: '1px solid #ddd',
+                  borderRadius: '6px',
+                  background: '#fff',
+                }}>
+                  {contacts
+                    .filter(contact => {
+                      if (!contactSearchTerm) return true;
+                      const search = contactSearchTerm.toLowerCase();
+                      const name = `${contact.first_name || ''} ${contact.last_name || ''}`.toLowerCase();
+                      const email = (contact.email || '').toLowerCase();
+                      return name.includes(search) || email.includes(search);
+                    })
+                    .map((contact) => (
+                      <label
+                        key={contact.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '0.75rem 1rem',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid #f0f0f0',
+                          background: selectedContacts.includes(contact.id) ? '#f8f9fa' : '#fff',
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedContacts.includes(contact.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedContacts([...selectedContacts, contact.id]);
+                            } else {
+                              setSelectedContacts(selectedContacts.filter(id => id !== contact.id));
+                            }
+                          }}
+                          style={{ marginRight: '0.75rem' }}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 500, marginBottom: '0.25rem' }}>
+                            {contact.first_name || contact.last_name
+                              ? `${contact.first_name || ''} ${contact.last_name || ''}`.trim()
+                              : 'No Name'}
+                          </div>
+                          <div style={{ fontSize: '0.875rem', color: '#666' }}>
+                            {contact.email}
+                            {contact.company && <span> • {contact.company}</span>}
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  {contacts.filter(contact => {
+                    if (!contactSearchTerm) return true;
+                    const search = contactSearchTerm.toLowerCase();
+                    const name = `${contact.first_name || ''} ${contact.last_name || ''}`.toLowerCase();
+                    const email = (contact.email || '').toLowerCase();
+                    return name.includes(search) || email.includes(search);
+                  }).length === 0 && (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
+                      No contacts found
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#666' }}>
+                  {selectedContacts.length} contact{selectedContacts.length !== 1 ? 's' : ''} selected
+                </div>
+              </div>
+            ) : recipientMode === 'emails' ? (
+              <div className={styles.formGroup}>
+                <label>Email Addresses *</label>
+                <p style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>
+                  Enter email addresses separated by commas, semicolons, or new lines
+                </p>
+                <textarea
+                  value={directEmails}
+                  onChange={(e) => setDirectEmails(e.target.value)}
+                  placeholder="email1@example.com, email2@example.com&#10;email3@example.com"
+                  rows={10}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #ddd',
+                    borderRadius: '6px',
+                    fontFamily: 'monospace',
+                    fontSize: '0.875rem',
+                  }}
+                />
+                <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#666' }}>
+                  {estimatedRecipients} valid email{estimatedRecipients !== 1 ? 's' : ''} detected
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className={styles.formGroup}>
+                  <label>Select Lists *</label>
               {lists.length === 0 ? (
                 <div style={{ padding: '2rem', textAlign: 'center', background: '#f9fafb', borderRadius: '8px' }}>
                   <p style={{ marginBottom: '1rem', color: '#6b7280' }}>No contact lists found.</p>
@@ -455,6 +678,8 @@ export default function NewCampaignPage() {
               <div className={styles.recipientCountLabel}>Estimated Recipients:</div>
               <div className={styles.recipientCountValue}>{estimatedRecipients.toLocaleString()}</div>
             </div>
+              </>
+            )}
           </div>
         )}
 

@@ -339,7 +339,7 @@ function getNavigationSections(role: UserRole, primaryDepartment?: Department | 
       title: 'WEBSITE PAGES',
       items: [
         { label: 'Page Editor', href: '/admin/page-editor' },
-        { label: 'Team Members', href: '/admin/about/team-members' },
+        { label: 'About Us', href: '/admin/about/editor' },
         { label: 'Store Products', href: '/admin/store-products' },
       ]
     });
@@ -372,7 +372,7 @@ function getNavigationSections(role: UserRole, primaryDepartment?: Department | 
     if (role === 'SOCIAL_TEAM') {
       crmItems.push(
         { label: 'Email Campaigns', href: '/admin/crm/campaigns' },
-        { label: 'Social Media', href: '/admin/social-media' }
+        { label: 'Social Media Requests', href: '/admin/social-media/requests' }
       );
     } else {
       // Full CRM access for admins and marketing
@@ -382,7 +382,7 @@ function getNavigationSections(role: UserRole, primaryDepartment?: Department | 
         { label: 'Campaigns', href: '/admin/crm/campaigns' },
         { label: 'Deals', href: '/admin/crm/deals' },
         { label: 'Help Desk', href: '/admin/crm/tickets' },
-        { label: 'Social Media', href: '/admin/social-media' },
+        { label: 'Social Media Requests', href: '/admin/social-media/requests' },
         { label: 'CRM Analytics', href: '/admin/crm/analytics' }
       );
     }

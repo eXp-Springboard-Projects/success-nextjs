@@ -1,7 +1,17 @@
 import { useState } from 'react';
 import styles from './AboutHistory.module.css';
 
-const historyItems = [
+interface HistoryItem {
+  year: string;
+  description: string;
+}
+
+interface AboutHistoryProps {
+  historyItems?: HistoryItem[];
+}
+
+// Default history items (fallback)
+const defaultHistoryItems: HistoryItem[] = [
   {
     year: '1897',
     description: 'Hotelier and author Orison Swett Marden sat in a small bedroom on Bowdoin Street in Boston churning out the very first issue of SUCCESS magazine.',
@@ -28,7 +38,7 @@ const historyItems = [
   },
 ];
 
-export default function AboutHistory() {
+export default function AboutHistory({ historyItems = defaultHistoryItems }: AboutHistoryProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const nextSlide = () => {

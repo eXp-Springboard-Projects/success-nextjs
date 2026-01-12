@@ -25,6 +25,7 @@ export default function StoreProductsAdmin() {
   const router = useRouter();
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [importing, setImporting] = useState(false);
   const [editingProduct, setEditingProduct] = useState<StoreProduct | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -197,6 +198,32 @@ export default function StoreProductsAdmin() {
     });
   };
 
+  const handleImportProducts = async () => {
+    if (!confirm('Import all products from the store? This will add any products that don\'t already exist in the database.')) {
+      return;
+    }
+
+    setImporting(true);
+    try {
+      const res = await fetch('/api/admin/import-store-products', {
+        method: 'POST',
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        alert(`Import complete!\n\nImported: ${data.imported}\nSkipped: ${data.skipped}\nErrors: ${data.errors}`);
+        await fetchProducts();
+      } else {
+        const error = await res.json();
+        alert(`Failed to import products: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      alert('Failed to import products');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const categories = ['Books', 'Courses', 'Merchandise', 'Magazines', 'Bundles'];
 
   if (status === 'loading' || loading) {
@@ -219,12 +246,31 @@ export default function StoreProductsAdmin() {
             <h1>Store Products</h1>
             <p className={styles.subtitle}>Manage products displayed on the /store page</p>
           </div>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className={styles.newButton}
-          >
-            {showForm ? 'Cancel' : 'Add Product'}
-          </button>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            {products.length === 0 && (
+              <button
+                onClick={handleImportProducts}
+                disabled={importing}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: importing ? '#ccc' : '#2563eb',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: importing ? 'not-allowed' : 'pointer',
+                  fontWeight: 500,
+                }}
+              >
+                {importing ? 'Importing...' : '📦 Import Products'}
+              </button>
+            )}
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className={styles.newButton}
+            >
+              {showForm ? 'Cancel' : 'Add Product'}
+            </button>
+          </div>
         </div>
 
         {showForm && (

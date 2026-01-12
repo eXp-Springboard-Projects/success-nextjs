@@ -7,6 +7,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'GET') {
     try {
+      // Fetch all lists
       const { data: lists, error } = await supabase
         .from('contact_lists')
         .select('*')
@@ -14,7 +15,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (error) throw error;
 
-      return res.status(200).json(lists);
+      // Count actual members for each list
+      const listsWithCounts = await Promise.all(
+        (lists || []).map(async (list) => {
+          const { count, error: countError } = await supabase
+            .from('contact_list_members')
+            .select('*', { count: 'exact', head: true })
+            .eq('list_id', list.id);
+
+          return {
+            ...list,
+            memberCount: countError ? 0 : (count || 0),
+          };
+        })
+      );
+
+      return res.status(200).json(listsWithCounts);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch lists' });
     }

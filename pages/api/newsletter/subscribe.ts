@@ -69,6 +69,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('email', email.toLowerCase())
       .single();
 
+    let contactId: string;
+
     if (existingContact) {
       // Update existing contact
       const updatedTags = [...new Set([...existingContact.tags, 'newsletter-subscriber'])];
@@ -80,12 +82,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           lastContactedAt: new Date().toISOString()
         })
         .eq('email', email.toLowerCase());
+      contactId = existingContact.id;
     } else {
       // Create new contact
+      const newContactId = randomUUID();
       await supabase
         .from('contacts')
         .insert({
-          id: randomUUID(),
+          id: newContactId,
           email: email.toLowerCase(),
           firstName: firstName || null,
           source,
@@ -93,6 +97,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           status: 'ACTIVE',
           updatedAt: new Date().toISOString(),
         });
+      contactId = newContactId;
+    }
+
+    // Add to "S.com newsletter subscribers" list
+    const { data: newsletterList } = await supabase
+      .from('contact_lists')
+      .select('id')
+      .eq('name', 'S.com newsletter subscribers')
+      .single();
+
+    if (newsletterList) {
+      // Check if already in list
+      const { data: existingMember } = await supabase
+        .from('contact_list_members')
+        .select('id')
+        .eq('list_id', newsletterList.id)
+        .eq('contact_id', contactId)
+        .single();
+
+      if (!existingMember) {
+        // Add to list
+        await supabase
+          .from('contact_list_members')
+          .insert({
+            id: randomUUID(),
+            list_id: newsletterList.id,
+            contact_id: contactId,
+            added_at: new Date().toISOString(),
+          });
+      }
     }
 
     // Optional: Send welcome email

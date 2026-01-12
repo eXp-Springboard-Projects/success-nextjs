@@ -14,7 +14,18 @@ interface TeamMemberData {
   linkedIn?: string;
 }
 
-export default function AboutPage({ teamMembers }: { teamMembers: TeamMemberData[] }) {
+interface HistoryItem {
+  year: string;
+  description: string;
+}
+
+interface AboutPageProps {
+  teamMembers: TeamMemberData[];
+  heroVideoUrl: string;
+  historyItems: HistoryItem[];
+}
+
+export default function AboutPage({ teamMembers, heroVideoUrl, historyItems }: AboutPageProps) {
   return (
     <Layout>
       <SEO
@@ -28,7 +39,7 @@ export default function AboutPage({ teamMembers }: { teamMembers: TeamMemberData
         <section className={styles.hero}>
           <div className={styles.videoWrapper}>
             <iframe
-              src="https://player.vimeo.com/video/1114343879?autoplay=1&loop=1&muted=1&background=1"
+              src={heroVideoUrl}
               frameBorder="0"
               allow="autoplay; fullscreen; picture-in-picture"
               className={styles.video}
@@ -38,7 +49,7 @@ export default function AboutPage({ teamMembers }: { teamMembers: TeamMemberData
         </section>
 
         {/* History Timeline */}
-        <AboutHistory />
+        <AboutHistory historyItems={historyItems} />
 
         {/* Meet the Team Section */}
         <section className={styles.teamSection}>
@@ -69,24 +80,49 @@ export default function AboutPage({ teamMembers }: { teamMembers: TeamMemberData
 export async function getServerSideProps() {
   try {
     const supabase = supabaseAdmin();
-    const { data: teamMembers, error } = await supabase
+
+    // Fetch team members
+    const { data: teamMembers, error: teamError } = await supabase
       .from('team_members')
       .select('name, title, bio, image, linkedIn')
       .eq('isActive', true)
       .order('displayOrder', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching team members:', error);
-      return { props: { teamMembers: [] } };
+    if (teamError) {
+      console.error('Error fetching team members:', teamError);
     }
+
+    // Fetch about page content (hero video and history)
+    const { data: aboutContent, error: contentError } = await supabase
+      .from('about_page_content')
+      .select('heroVideoUrl, historyItems')
+      .eq('id', 'about-us-page')
+      .single();
+
+    if (contentError) {
+      console.error('Error fetching about content:', contentError);
+    }
+
+    // Default values if content not found
+    const heroVideoUrl = aboutContent?.heroVideoUrl ||
+      'https://player.vimeo.com/video/1114343879?autoplay=1&loop=1&muted=1&background=1';
+    const historyItems = aboutContent?.historyItems || [];
 
     return {
       props: {
-        teamMembers: teamMembers || []
+        teamMembers: teamMembers || [],
+        heroVideoUrl,
+        historyItems,
       }
     };
   } catch (error) {
     console.error('Error in getServerSideProps:', error);
-    return { props: { teamMembers: [] } };
+    return {
+      props: {
+        teamMembers: [],
+        heroVideoUrl: 'https://player.vimeo.com/video/1114343879?autoplay=1&loop=1&muted=1&background=1',
+        historyItems: [],
+      }
+    };
   }
 }
