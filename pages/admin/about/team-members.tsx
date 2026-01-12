@@ -2,6 +2,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import AdminLayout from '../../../components/admin/AdminLayout';
+import { requireAdminAuth } from '@/lib/adminAuth';
 import styles from '../posts/AdminPosts.module.css';
 
 interface TeamMember {
@@ -497,3 +498,5 @@ export default function TeamMembersAdmin() {
     </AdminLayout>
   );
 }
+
+export const getServerSideProps = requireAdminAuth;
