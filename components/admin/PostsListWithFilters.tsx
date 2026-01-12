@@ -75,7 +75,7 @@ export default function PostsListWithFilters() {
       const res = await fetch('/api/admin/posts?per_page=500&status=all');
       if (res.ok) {
         const data = await res.json();
-        setPosts(data);
+        setPosts(data.posts || []);
       } else {
         const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
         console.error('Failed to fetch posts:', res.status, errorData);
