@@ -164,6 +164,7 @@ export default function ContentViewer() {
   const handleArchive = async (id: string | number, type: string, currentStatus: string) => {
     const isArchived = currentStatus === 'ARCHIVED';
     const action = isArchived ? 'unarchive' : 'archive';
+    const apiType = type === 'articles' ? 'posts' : type;
 
     if (!confirm(`Are you sure you want to ${action} this ${type.slice(0, -1)}?`)) {
       return;
@@ -172,7 +173,7 @@ export default function ContentViewer() {
     setArchiving(String(id));
     try {
       const newStatus = isArchived ? 'PUBLISHED' : 'ARCHIVED';
-      const res = await fetch(`/api/admin/${type}/${id}`, {
+      const res = await fetch(`/api/admin/${apiType}/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
@@ -199,13 +200,15 @@ export default function ContentViewer() {
   };
 
   const handleDelete = async (id: string | number, type: string) => {
+    const apiType = type === 'articles' ? 'posts' : type;
+
     if (!confirm(`Are you sure you want to PERMANENTLY DELETE this ${type.slice(0, -1)}? This cannot be undone. Consider archiving instead.`)) {
       return;
     }
 
     setDeleting(String(id));
     try {
-      const res = await fetch(`/api/admin/${type}/${id}`, {
+      const res = await fetch(`/api/admin/${apiType}/${id}`, {
         method: 'DELETE',
       });
 
@@ -251,6 +254,7 @@ export default function ContentViewer() {
   const getAddNewUrl = () => {
     if (activeTab === 'all') return '/admin/posts/new';
     if (activeTab === 'premium') return '/admin/posts/new?contentType=premium';
+    if (activeTab === 'articles') return '/admin/posts/new';
     return `/admin/${activeTab}/new`;
   };
 
@@ -359,7 +363,10 @@ export default function ContentViewer() {
                         </a>
                         <button
                           className={styles.editButton}
-                          onClick={() => window.location.href = `/admin/${item.type}/${item.id}/edit`}
+                          onClick={() => {
+                            const editType = item.type === 'articles' ? 'posts' : item.type;
+                            window.location.href = `/admin/${editType}/${item.id}/edit`;
+                          }}
                         >
                           Edit
                         </button>
@@ -413,7 +420,10 @@ export default function ContentViewer() {
                           </a>
                           <button
                             className={styles.editButton}
-                            onClick={() => window.location.href = `/admin/${item.type}/${item.id}/edit`}
+                            onClick={() => {
+                              const editType = item.type === 'articles' ? 'posts' : item.type;
+                              window.location.href = `/admin/${editType}/${item.id}/edit`;
+                            }}
                           >
                             Edit
                           </button>
