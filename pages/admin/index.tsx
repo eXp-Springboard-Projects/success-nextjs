@@ -65,7 +65,7 @@ export default function AdminDashboard() {
         {/* Header */}
         <div className={styles.header}>
           <div>
-            <h1 className={styles.welcomeTitle}>Hello {session.user.name.split(' ')[0]}, Welcome back</h1>
+            <h1 className={styles.welcomeTitle}>Hello {session.user.name?.split(' ')[0] || 'User'}, Welcome back</h1>
             <p className={styles.subtitle}>Your Dashboard is updated</p>
           </div>
         </div>
