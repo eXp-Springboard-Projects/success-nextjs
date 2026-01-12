@@ -31,14 +31,14 @@
 /* Sidebar */
 .sidebar {
   width: 280px;
-  background: var(--gradient-primary);
+  background: var(--gradient-sidebar);
   color: white;
   display: flex;
   flex-direction: column;
   transition: width var(--transition-slow);
   overflow: hidden;
   flex-shrink: 0;
-  box-shadow: var(--shadow-xl);
+  box-shadow: var(--shadow-3d);
   position: fixed;
   left: 0;
   top: 0;
@@ -178,31 +178,33 @@
   justify-content: space-between;
   padding: var(--space-md) var(--space-2xl);
   margin: 0 var(--space-md);
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.7);
   text-decoration: none;
   transition: all var(--transition-base);
   cursor: pointer;
   position: relative;
   font-size: var(--text-sm);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-medium);
 }
 
 .navItem:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.1);
   color: white;
-  transform: translateX(2px);
+  transform: translateX(4px);
 }
 
 .navItemActive {
-  background: rgba(255, 255, 255, 0.95);
-  color: var(--admin-primary);
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
   font-weight: var(--font-semibold);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-left: 3px solid rgba(255, 255, 255, 0.8);
 }
 
 .navItemActive:hover {
-  background: white;
-  transform: none;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateX(4px);
 }
 
 .navLabel {
@@ -242,8 +244,11 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem;
+  padding: 1rem;
   margin-bottom: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  margin: 0.5rem;
 }
 
 .userAvatar {
@@ -290,19 +295,22 @@
   align-items: center;
   gap: var(--space-md);
   padding: var(--space-md);
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.9);
-  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: var(--radius-md);
   text-decoration: none;
   transition: all var(--transition-base);
   justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 0.5rem;
+  font-weight: var(--font-medium);
 }
 
 .signOutButton:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.1);
   color: white;
   border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
 }
 
 .sidebarClosed .signOutButton span:last-child {

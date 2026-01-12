@@ -81,14 +81,14 @@
 
 .statCard {
   background: var(--admin-card);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   padding: var(--space-2xl);
   display: flex;
   align-items: center;
   gap: var(--space-xl);
-  box-shadow: var(--shadow-sm);
-  transition: all var(--transition-base);
-  border: 1px solid var(--admin-border);
+  box-shadow: var(--shadow-card);
+  transition: all var(--transition-slow);
+  border: none;
   position: relative;
   overflow: hidden;
 }
@@ -104,9 +104,8 @@
 }
 
 .statCard:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--admin-primary-light);
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .statIcon {

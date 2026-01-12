@@ -75,19 +75,17 @@
   gap: var(--space-lg);
   padding: var(--space-xl);
   background: var(--admin-card);
-  border: 1px solid var(--admin-border);
-  border-left: 4px solid;
-  border-radius: var(--radius-md);
+  border: none;
+  border-radius: var(--radius-lg);
   text-decoration: none;
   color: var(--admin-text);
-  transition: all var(--transition-base);
-  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-slow);
+  box-shadow: var(--shadow-card);
 }
 
 .quickAction:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-4px);
-  border-left-width: 6px;
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-6px);
 }
 
 .quickActionIcon {
@@ -111,16 +109,17 @@
 .recentSection,
 .activitySection {
   background: var(--admin-card);
-  border: 1px solid var(--admin-border);
-  border-radius: var(--radius-md);
+  border: none;
+  border-radius: var(--radius-lg);
   padding: var(--space-2xl);
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow var(--transition-base);
+  box-shadow: var(--shadow-card);
+  transition: all var(--transition-slow);
 }
 
 .recentSection:hover,
 .activitySection:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-4px);
 }
 
 .sectionHeader {

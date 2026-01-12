@@ -22,22 +22,22 @@
 
 .statCard {
   background: white;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   display: flex;
   align-items: center;
   gap: 1rem;
-  border: 1px solid #e5e7eb;
-  transition: all 0.2s;
+  border: none;
+  transition: all var(--transition-slow);
   text-decoration: none;
   color: inherit;
   cursor: pointer;
+  box-shadow: var(--shadow-card);
 }
 
 .statCard:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  transform: translateY(-2px);
-  border-color: #3b82f6;
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-6px);
 }
 
 .statCardWarning {
@@ -69,9 +69,16 @@
 /* Sections */
 .section {
   background: white;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
-  border: 1px solid #e5e7eb;
+  border: none;
+  box-shadow: var(--shadow-card);
+  transition: all var(--transition-slow);
+}
+
+.section:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-4px);
 }
 
 .sectionTitle {
