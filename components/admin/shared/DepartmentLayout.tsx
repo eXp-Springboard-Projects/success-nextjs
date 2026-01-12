@@ -364,32 +364,34 @@ function getNavigationSections(role: UserRole, primaryDepartment?: Department | 
     ]
   });
 
-  // CRM & EMAIL section (Marketing and Social Team)
-  if (role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'SOCIAL_TEAM' || primaryDepartment === Department.MARKETING) {
-    const crmItems = [];
-
-    // SOCIAL_TEAM only sees Campaigns and Social Media
-    if (role === 'SOCIAL_TEAM') {
-      crmItems.push(
-        { label: 'Email Campaigns', href: '/admin/crm/campaigns' },
-        { label: 'Social Media Requests', href: '/admin/social-media/requests' }
-      );
-    } else {
-      // Full CRM access for admins and marketing
-      crmItems.push(
+  // CRM & EMAIL section (Marketing)
+  if (role === 'SUPER_ADMIN' || role === 'ADMIN' || primaryDepartment === Department.MARKETING) {
+    sections.push({
+      title: 'CRM & EMAIL',
+      items: [
         { label: 'CRM Dashboard', href: '/admin/crm' },
         { label: 'Contacts', href: '/admin/crm/contacts' },
         { label: 'Campaigns', href: '/admin/crm/campaigns' },
         { label: 'Deals', href: '/admin/crm/deals' },
         { label: 'Help Desk', href: '/admin/crm/tickets' },
-        { label: 'Social Media Requests', href: '/admin/social-media/requests' },
         { label: 'CRM Analytics', href: '/admin/crm/analytics' }
-      );
-    }
+      ]
+    });
+  }
 
+  // SOCIAL MEDIA section (Marketing and Social Team)
+  if (role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'SOCIAL_TEAM' || primaryDepartment === Department.MARKETING) {
     sections.push({
-      title: role === 'SOCIAL_TEAM' ? 'SOCIAL & EMAIL' : 'CRM & EMAIL',
-      items: crmItems
+      title: 'SOCIAL MEDIA',
+      items: [
+        { label: 'Dashboard', href: '/admin/social-media' },
+        { label: 'Composer', href: '/admin/social-media/composer' },
+        { label: 'Scheduler', href: '/admin/social-media/scheduler' },
+        { label: 'Calendar', href: '/admin/social-media/calendar' },
+        { label: 'Queue', href: '/admin/social-media/queue' },
+        { label: 'Accounts', href: '/admin/social-media/accounts' },
+        { label: 'Requests', href: '/admin/social-media/requests' },
+      ]
     });
   }
 
