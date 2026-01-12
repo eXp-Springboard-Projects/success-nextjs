@@ -110,9 +110,7 @@ export default function HelpCenterPage() {
       <div className={styles.dashboardLayout}>
         <aside className={styles.sidebar}>
           <div className={styles.logo}>
-            <Link href="/dashboard">
-              <img src="/success-logo.png" alt="SUCCESS" />
-            </Link>
+            <div className={styles.logoText}>SUCCESS+</div>
           </div>
           <nav className={styles.nav}>
             <Link href="/dashboard">
@@ -130,9 +128,9 @@ export default function HelpCenterPage() {
             <Link href="/dashboard/resources">
               <button><span className={styles.icon}>📚</span> Resource Library</button>
             </Link>
-            <Link href="/dashboard/community">
+            <a href="https://labs.success.com/" target="_blank" rel="noopener noreferrer">
               <button><span className={styles.icon}>👥</span> Community</button>
-            </Link>
+            </a>
             <Link href="/dashboard/events">
               <button><span className={styles.icon}>📅</span> Events Calendar</button>
             </Link>
@@ -186,27 +184,6 @@ export default function HelpCenterPage() {
                 <span className={helpStyles.quickLinkIcon}>💬</span>
                 <h3>Contact Support</h3>
                 <p>Get help from our team</p>
-              </button>
-              <button
-                className={helpStyles.quickLinkCard}
-                onClick={() => window.open('https://mysuccessplus.com/support/video-tutorials', '_blank')}
-              >
-                <span className={helpStyles.quickLinkIcon}>🎥</span>
-                <h3>Video Tutorials</h3>
-                <p>Watch step-by-step guides</p>
-              </button>
-              <Link href="/dashboard/community" className={helpStyles.quickLinkCard}>
-                <span className={helpStyles.quickLinkIcon}>👥</span>
-                <h3>Community Forum</h3>
-                <p>Ask the community</p>
-              </Link>
-              <button
-                className={helpStyles.quickLinkCard}
-                onClick={() => window.open('https://mysuccessplus.com/support/live-chat', '_blank')}
-              >
-                <span className={helpStyles.quickLinkIcon}>💭</span>
-                <h3>Live Chat</h3>
-                <p>Chat with support now</p>
               </button>
             </div>
           </div>

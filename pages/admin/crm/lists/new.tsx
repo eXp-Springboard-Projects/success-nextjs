@@ -73,8 +73,8 @@ export default function NewList() {
   return (
     <DepartmentLayout
       currentDepartment={Department.SUPER_ADMIN}
-      pageTitle={`Create ${listType === 'STATIC' ? 'List' : 'Segment'}`}
-      description="Create a new contact list or dynamic segment"
+      pageTitle="Create List"
+      description="Create a new contact list"
     >
       <div className={styles.dashboard}>
         <Link href="/admin/crm/lists" className={styles.backLink}>
@@ -94,7 +94,7 @@ export default function NewList() {
               >
                 <span className={styles.typeIcon}>📋</span>
                 <div>
-                  <div className={styles.typeButtonTitle}>Static List</div>
+                  <div className={styles.typeButtonTitle}>Manual List</div>
                   <div className={styles.typeButtonDescription}>
                     Manually add and remove contacts
                   </div>
@@ -106,7 +106,7 @@ export default function NewList() {
               >
                 <span className={styles.typeIcon}>🎯</span>
                 <div>
-                  <div className={styles.typeButtonTitle}>Smart Segment</div>
+                  <div className={styles.typeButtonTitle}>Auto-Updating List</div>
                   <div className={styles.typeButtonDescription}>
                     Automatically updated based on rules
                   </div>
@@ -168,7 +168,7 @@ export default function NewList() {
             disabled={saving || !name.trim()}
             className={styles.createButtonLarge}
           >
-            {saving ? 'Creating...' : `Create ${listType === 'STATIC' ? 'List' : 'Segment'}`}
+            {saving ? 'Creating...' : 'Create List'}
           </button>
           <button onClick={() => router.back()} className={styles.cancelButtonLarge}>
             Cancel

@@ -40,6 +40,14 @@ export async function checkTrialAccess(userEmail: string): Promise<TrialAccessRe
       };
     }
 
+    // Grant automatic access to admins
+    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+      return {
+        hasAccess: true,
+        reason: 'active_subscription',
+      };
+    }
+
     const member = user.member;
 
     // Check if user has active paid subscription

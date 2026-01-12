@@ -3,7 +3,6 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Head from 'next/head';
 import TrialStatusBanner from '../../components/dashboard/TrialStatusBanner';
-import SubscriptionStatusWidget from '../../components/dashboard/SubscriptionStatusWidget';
 import styles from './dashboard.module.css';
 import premiumStyles from './dashboard-premium.module.css';
 
@@ -41,7 +40,7 @@ export default function MemberDashboard() {
         {/* Sidebar Navigation */}
         <aside className={styles.sidebar}>
           <div className={styles.logo}>
-            <img src="/success-logo.png" alt="SUCCESS" />
+            <div className={styles.logoText}>SUCCESS+</div>
           </div>
 
           <nav className={styles.nav}>
@@ -80,12 +79,12 @@ export default function MemberDashboard() {
               </button>
             </Link>
 
-            <Link href="/dashboard/community">
-              <button className={router.pathname === '/dashboard/community' ? styles.active : ''}>
+            <a href="https://labs.success.com/" target="_blank" rel="noopener noreferrer">
+              <button>
                 <span className={styles.icon}>👥</span>
                 Community
               </button>
-            </Link>
+            </a>
 
             <Link href="/dashboard/events">
               <button className={router.pathname === '/dashboard/events' ? styles.active : ''}>
@@ -166,44 +165,6 @@ export default function MemberDashboard() {
           {/* Trial Status Banner */}
           <TrialStatusBanner />
 
-          {/* Subscription Status Widget */}
-          <SubscriptionStatusWidget />
-
-          {/* Quick Stats */}
-          <div className={styles.statsGrid}>
-            <div className={styles.statCard}>
-              <div className={styles.statIcon}>🎓</div>
-              <div className={styles.statInfo}>
-                <h3>Courses in Progress</h3>
-                <p className={styles.statNumber}>3</p>
-              </div>
-            </div>
-
-            <div className={styles.statCard}>
-              <div className={styles.statIcon}>✅</div>
-              <div className={styles.statInfo}>
-                <h3>Completed Courses</h3>
-                <p className={styles.statNumber}>12</p>
-              </div>
-            </div>
-
-            <div className={styles.statCard}>
-              <div className={styles.statIcon}>⏱️</div>
-              <div className={styles.statInfo}>
-                <h3>Learning Hours</h3>
-                <p className={styles.statNumber}>47</p>
-              </div>
-            </div>
-
-            <div className={styles.statCard}>
-              <div className={styles.statIcon}>🏆</div>
-              <div className={styles.statInfo}>
-                <h3>Certificates Earned</h3>
-                <p className={styles.statNumber}>8</p>
-              </div>
-            </div>
-          </div>
-
           {/* Premium Content Highlights for members */}
           {hasPremiumAccess && (
             <section className={styles.section}>
@@ -246,116 +207,19 @@ export default function MemberDashboard() {
             </div>
           </section>
 
-          {/* Continue Learning */}
-          <section className={styles.section}>
-            <h2>Continue Learning</h2>
-            <div className={styles.coursesGrid}>
-              <div className={styles.courseCard}>
-                <div className={styles.courseImage}>
-                  <img
-                    src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400&h=300&fit=crop"
-                    alt="Jim Rohn's Foundations for Success"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%23f5f5f5"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="Arial" font-size="16"%3ECourse Image%3C/text%3E%3C/svg%3E';
-                    }}
-                  />
-                  <div className={styles.progressBadge}>45% Complete</div>
-                </div>
-                <div className={styles.courseInfo}>
-                  <h3>Jim Rohn's Foundations for Success</h3>
-                  <p>Module 5 of 10</p>
-                  <div className={styles.progressBar}>
-                    <div className={styles.progressFill} style={{ width: '45%' }}></div>
-                  </div>
-                  <button className={styles.continueBtn}>Continue Course</button>
-                </div>
-              </div>
-
-              <div className={styles.courseCard}>
-                <div className={styles.courseImage}>
-                  <img
-                    src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop"
-                    alt="Leadership Masterclass"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%23f5f5f5"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="Arial" font-size="16"%3ECourse Image%3C/text%3E%3C/svg%3E';
-                    }}
-                  />
-                  <div className={styles.progressBadge}>20% Complete</div>
-                </div>
-                <div className={styles.courseInfo}>
-                  <h3>Leadership Masterclass</h3>
-                  <p>Lesson 3 of 15</p>
-                  <div className={styles.progressBar}>
-                    <div className={styles.progressFill} style={{ width: '20%' }}></div>
-                  </div>
-                  <button className={styles.continueBtn}>Continue Course</button>
-                </div>
-              </div>
-
-              <div className={styles.courseCard}>
-                <div className={styles.courseImage}>
-                  <img
-                    src="https://images.unsplash.com/photo-1501139083538-0139583c060f?w=400&h=300&fit=crop"
-                    alt="Time Management Mastery"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%23f5f5f5"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="Arial" font-size="16"%3ECourse Image%3C/text%3E%3C/svg%3E';
-                    }}
-                  />
-                  <div className={styles.progressBadge}>80% Complete</div>
-                </div>
-                <div className={styles.courseInfo}>
-                  <h3>Time Management Mastery</h3>
-                  <p>Almost done!</p>
-                  <div className={styles.progressBar}>
-                    <div className={styles.progressFill} style={{ width: '80%' }}></div>
-                  </div>
-                  <button className={styles.continueBtn}>Finish Course</button>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Upcoming Events */}
-          <section className={styles.section}>
-            <h2>Upcoming Events</h2>
-            <div className={styles.eventsList}>
-              <div className={styles.eventCard}>
-                <div className={styles.eventDate}>
-                  <div className={styles.month}>JAN</div>
-                  <div className={styles.day}>15</div>
-                </div>
-                <div className={styles.eventInfo}>
-                  <h3>Live Q&A with SUCCESS Experts</h3>
-                  <p>2:00 PM EST • Online</p>
-                </div>
-                <button className={styles.eventBtn}>Register</button>
-              </div>
-
-              <div className={styles.eventCard}>
-                <div className={styles.eventDate}>
-                  <div className={styles.month}>JAN</div>
-                  <div className={styles.day}>22</div>
-                </div>
-                <div className={styles.eventInfo}>
-                  <h3>Goal Setting Workshop</h3>
-                  <p>6:00 PM EST • Virtual</p>
-                </div>
-                <button className={styles.eventBtn}>Register</button>
-              </div>
-            </div>
-          </section>
-
           {/* Latest Magazine */}
           <section className={styles.section}>
-            <h2>Latest Magazine Issue</h2>
+            <div className={premiumStyles.sectionHeader}>
+              <h2>Latest Magazine Issue</h2>
+              <Link href="/dashboard/magazines" className={premiumStyles.viewAllLink}>
+                View All Issues →
+              </Link>
+            </div>
             <div className={styles.magazineCard}>
               <div className={styles.magazineCover}>
                 <img
-                  src="https://successcom.wpenginepowered.com/wp-content/uploads/2025/11/SD25_06_NOV_DIGITAL-ED-_-COVER-_-RORY-VADEN_2048x1082-1.jpg"
-                  alt="SUCCESS Magazine November 2025 - Guide to Philanthropy"
+                  src="https://successcom.wpenginepowered.com/wp-content/uploads/2026/01/SD26_JAN-Digi-_-COVER-_-Amy-Porterfield_WEB-1-scaled.jpg"
+                  alt="SUCCESS Magazine January 2026 - The Guide to Reinvention"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.src = 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="400"%3E%3Crect width="300" height="400" fill="%23f5f5f5"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="Arial" font-size="18" font-weight="bold"%3ESUCCESS%3C/text%3E%3C/svg%3E';
@@ -363,72 +227,12 @@ export default function MemberDashboard() {
                 />
               </div>
               <div className={styles.magazineInfo}>
-                <h3>November 2025</h3>
-                <p className={styles.featured}>Featuring: Rory Vaden</p>
-                <p>Discover how purpose and generosity define true success in the Guide to Philanthropy. Read it free on SUCCESS Labs.</p>
-                <button className={styles.readBtn} onClick={() => window.open('https://labs.success.com/november2025', '_blank')}>Read Now</button>
-              </div>
-            </div>
-          </section>
-
-          {/* Recommended Courses */}
-          <section className={styles.section}>
-            <h2>Recommended for You</h2>
-            <div className={styles.recommendedGrid}>
-              <div className={styles.recommendCard}>
-                <img
-                  src="https://images.unsplash.com/photo-1507925921958-8a62f3d1a50d?w=400&h=300&fit=crop"
-                  alt="Personal Development Blueprint"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%23f5f5f5"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="Arial" font-size="16"%3ECourse Image%3C/text%3E%3C/svg%3E';
-                  }}
-                />
-                <h4>Personal Development Blueprint</h4>
-                <p>8 modules • Beginner</p>
-                <button className={styles.startBtn}>Start Course</button>
-              </div>
-
-              <div className={styles.recommendCard}>
-                <img
-                  src="https://images.unsplash.com/photo-1557804506-669a67965ba0?w=400&h=300&fit=crop"
-                  alt="Communication Skills Bootcamp"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%23f5f5f5"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="Arial" font-size="16"%3ECourse Image%3C/text%3E%3C/svg%3E';
-                  }}
-                />
-                <h4>Communication Skills Bootcamp</h4>
-                <p>12 lessons • Intermediate</p>
-                <button className={styles.startBtn}>Start Course</button>
-              </div>
-
-              <div className={styles.recommendCard}>
-                <img
-                  src="https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=400&h=300&fit=crop"
-                  alt="Goal Setting for Success"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%23f5f5f5"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="Arial" font-size="16"%3ECourse Image%3C/text%3E%3C/svg%3E';
-                  }}
-                />
-                <h4>Goal Setting for Success</h4>
-                <p>6 modules • All Levels</p>
-                <button className={styles.startBtn}>Start Course</button>
-              </div>
-
-              <div className={styles.recommendCard}>
-                <img
-                  src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=400&h=300&fit=crop"
-                  alt="Financial Freedom Fundamentals"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%23f5f5f5"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="Arial" font-size="16"%3ECourse Image%3C/text%3E%3C/svg%3E';
-                  }}
-                />
-                <h4>Financial Freedom Fundamentals</h4>
-                <p>10 modules • Beginner</p>
-                <button className={styles.startBtn}>Start Course</button>
+                <h3>January 2026</h3>
+                <p className={styles.featured}>Featuring: Amy Porterfield</p>
+                <p>Discover the multimillion-dollar pivot in our Guide to Reinvention. Learn how Amy Porterfield transformed her career and built an empire.</p>
+                <Link href="/dashboard/magazines">
+                  <button className={styles.readBtn}>Read Now</button>
+                </Link>
               </div>
             </div>
           </section>

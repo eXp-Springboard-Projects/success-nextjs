@@ -11,6 +11,7 @@ interface List {
   name: string;
   description: string | null;
   type: 'STATIC' | 'DYNAMIC';
+  isSystem?: boolean;
   filters: any;
   memberCount: number;
   updatedAt: string;
@@ -201,9 +202,16 @@ export default function ListDetail() {
                 <>
                   <div className={styles.listDetailTitleRow}>
                     <h2 className={styles.listDetailTitle}>{list.name}</h2>
-                    <span className={styles.typeBadge} data-type={list.type.toLowerCase()}>
-                      {list.type === 'STATIC' ? 'Static' : 'Dynamic'}
-                    </span>
+                    <div className={styles.badges}>
+                      <span className={styles.typeBadge} data-type={list.type.toLowerCase()}>
+                        {list.type === 'STATIC' ? '📋 Manual' : '🎯 Auto-Update'}
+                      </span>
+                      {list.isSystem && (
+                        <span className={styles.systemBadge} title="This list is automatically managed by the system">
+                          🔒 System
+                        </span>
+                      )}
+                    </div>
                   </div>
                   {list.description && (
                     <p className={styles.listDetailDescription}>{list.description}</p>
@@ -225,9 +233,11 @@ export default function ListDetail() {
             </div>
             {!editMode && (
               <div className={styles.listDetailActions}>
-                <button onClick={() => setEditMode(true)} className={styles.editButton}>
-                  Edit
-                </button>
+                {!list.isSystem && (
+                  <button onClick={() => setEditMode(true)} className={styles.editButton}>
+                    Edit
+                  </button>
+                )}
                 <button onClick={handleExport} className={styles.exportButton}>
                   Export CSV
                 </button>
@@ -249,8 +259,8 @@ export default function ListDetail() {
             </div>
           )}
 
-          {/* Add Contact for Static Lists */}
-          {list.type === 'STATIC' && (
+          {/* Add Contact for Static Lists (not system lists) */}
+          {list.type === 'STATIC' && !list.isSystem && (
             <div className={styles.addContactForm}>
               <input
                 type="email"

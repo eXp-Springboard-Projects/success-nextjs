@@ -130,9 +130,7 @@ export default function PremiumContentPage() {
       <div className={styles.dashboardLayout}>
         <aside className={styles.sidebar}>
           <div className={styles.logo}>
-            <Link href="/dashboard">
-              <img src="/success-logo.png" alt="SUCCESS" />
-            </Link>
+            <div className={styles.logoText}>SUCCESS+</div>
           </div>
           <nav className={styles.nav}>
             <Link href="/dashboard">
@@ -144,23 +142,32 @@ export default function PremiumContentPage() {
             <Link href="/dashboard/courses">
               <button><span className={styles.icon}>🎓</span> Courses</button>
             </Link>
+            <Link href="/dashboard/disc-profile">
+              <button><span className={styles.icon}>🎯</span> My DISC Profile</button>
+            </Link>
             <Link href="/dashboard/resources">
-              <button><span className={styles.icon}>📚</span> Resources</button>
+              <button><span className={styles.icon}>📚</span> Resource Library</button>
             </Link>
-            <Link href="/dashboard/labs">
-              <button><span className={styles.icon}>🔬</span> Success Labs</button>
-            </Link>
+            <a href="https://labs.success.com/" target="_blank" rel="noopener noreferrer">
+              <button><span className={styles.icon}>👥</span> Community</button>
+            </a>
             <Link href="/dashboard/events">
-              <button><span className={styles.icon}>📅</span> Events</button>
-            </Link>
-            <Link href="/dashboard/videos">
-              <button><span className={styles.icon}>🎥</span> Videos</button>
-            </Link>
-            <Link href="/dashboard/podcasts">
-              <button><span className={styles.icon}>🎙️</span> Podcasts</button>
+              <button><span className={styles.icon}>📅</span> Events Calendar</button>
             </Link>
             <Link href="/dashboard/magazines">
-              <button><span className={styles.icon}>📖</span> Magazines</button>
+              <button><span className={styles.icon}>📖</span> Magazine</button>
+            </Link>
+            <Link href="/dashboard/podcasts">
+              <button><span className={styles.icon}>🎙️</span> Podcast</button>
+            </Link>
+            <Link href="/dashboard/shop">
+              <button><span className={styles.icon}>🛍️</span> Shop</button>
+            </Link>
+            <Link href="/dashboard/help">
+              <button><span className={styles.icon}>❓</span> Help Center</button>
+            </Link>
+            <Link href="/dashboard/billing">
+              <button><span className={styles.icon}>💳</span> Billing & Orders</button>
             </Link>
             <Link href="/dashboard/settings">
               <button><span className={styles.icon}>⚙️</span> Settings</button>

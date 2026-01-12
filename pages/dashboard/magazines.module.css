@@ -3,6 +3,24 @@
    Immersive reading experience with realistic page flipping
    ======================================== */
 
+/* ======== SUCCESS LABS EMBED ======== */
+.labsEmbed {
+  width: 100%;
+  height: calc(100vh - 250px);
+  min-height: 800px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  background: white;
+}
+
+.labsIframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 12px;
+}
+
 /* ======== LIBRARY VIEW ======== */
 .filterBar {
   display: flex;

@@ -11,6 +11,7 @@ interface List {
   name: string;
   description: string | null;
   type: 'STATIC' | 'DYNAMIC';
+  isSystem?: boolean;
   memberCount: number;
   createdAt: string;
   updatedAt: string;
@@ -77,47 +78,49 @@ export default function ListsIndex() {
   return (
     <DepartmentLayout
       currentDepartment={Department.SUPER_ADMIN}
-      pageTitle="Lists & Segments"
-      description="Manage contact lists and dynamic segments"
+      pageTitle="Lists"
+      description="Manage contact lists"
     >
       <div className={styles.dashboard}>
         {/* Header Actions */}
         <div className={styles.headerActions}>
-          <Link href="/admin/crm/lists/new?type=static" className={styles.createButton}>
-            <span className={styles.createIcon}>📋</span>
+          <Link href="/admin/crm/lists/new" className={styles.createButton}>
+            <span className={styles.createIcon}>+</span>
             Create List
-          </Link>
-          <Link href="/admin/crm/lists/new?type=dynamic" className={styles.createButton}>
-            <span className={styles.createIcon}>🎯</span>
-            Create Segment
           </Link>
         </div>
 
-        {/* Static Lists Section */}
+        {/* All Lists Section */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>
-            <span className={styles.sectionIcon}>📋</span>
-            Static Lists
+            All Lists ({lists.length})
           </h2>
           {loading ? (
             <div className={styles.emptyState}>Loading...</div>
-          ) : staticLists.length === 0 ? (
+          ) : lists.length === 0 ? (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>📋</div>
-              <div>No static lists yet</div>
-              <Link href="/admin/crm/lists/new?type=static" className={styles.emptyAction}>
+              <div>No lists yet</div>
+              <Link href="/admin/crm/lists/new" className={styles.emptyAction}>
                 Create your first list
               </Link>
             </div>
           ) : (
             <div className={styles.listsGrid}>
-              {staticLists.map((list) => (
+              {lists.map((list) => (
                 <div key={list.id} className={styles.listCard}>
                   <div className={styles.listHeader}>
                     <h3 className={styles.listName}>{list.name}</h3>
-                    <span className={styles.typeBadge} data-type="static">
-                      Static
-                    </span>
+                    <div className={styles.badges}>
+                      <span className={styles.typeBadge} data-type={list.type === 'STATIC' ? 'static' : 'dynamic'}>
+                        {list.type === 'STATIC' ? '📋 Manual' : '🎯 Auto-Update'}
+                      </span>
+                      {list.isSystem && (
+                        <span className={styles.systemBadge} title="This list is automatically managed by the system">
+                          🔒 System
+                        </span>
+                      )}
+                    </div>
                   </div>
                   {list.description && (
                     <p className={styles.listDescription}>{list.description}</p>
@@ -143,87 +146,22 @@ export default function ListsIndex() {
                     >
                       View Members
                     </button>
-                    <button
-                      onClick={() => handleDuplicate(list)}
-                      className={styles.actionButton}
-                    >
-                      Duplicate
-                    </button>
-                    <button
-                      onClick={() => handleDelete(list.id)}
-                      className={`${styles.actionButton} ${styles.actionButtonDanger}`}
-                    >
-                      {deleteConfirm === list.id ? 'Confirm?' : 'Delete'}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Dynamic Segments Section */}
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>
-            <span className={styles.sectionIcon}>🎯</span>
-            Smart Segments
-          </h2>
-          {loading ? (
-            <div className={styles.emptyState}>Loading...</div>
-          ) : dynamicLists.length === 0 ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>🎯</div>
-              <div>No smart segments yet</div>
-              <Link href="/admin/crm/lists/new?type=dynamic" className={styles.emptyAction}>
-                Create your first segment
-              </Link>
-            </div>
-          ) : (
-            <div className={styles.listsGrid}>
-              {dynamicLists.map((list) => (
-                <div key={list.id} className={styles.listCard}>
-                  <div className={styles.listHeader}>
-                    <h3 className={styles.listName}>{list.name}</h3>
-                    <span className={styles.typeBadge} data-type="dynamic">
-                      Dynamic
-                    </span>
-                  </div>
-                  {list.description && (
-                    <p className={styles.listDescription}>{list.description}</p>
-                  )}
-                  <div className={styles.listStats}>
-                    <div className={styles.listStat}>
-                      <span className={styles.statIcon}>👥</span>
-                      <span className={styles.statValue}>{list.memberCount}</span>
-                      <span className={styles.statLabel}>members</span>
-                    </div>
-                    <div className={styles.listStat}>
-                      <span className={styles.statIcon}>📅</span>
-                      <span className={styles.statValue}>
-                        {new Date(list.updatedAt).toLocaleDateString()}
-                      </span>
-                      <span className={styles.statLabel}>updated</span>
-                    </div>
-                  </div>
-                  <div className={styles.listActions}>
-                    <button
-                      onClick={() => router.push(`/admin/crm/lists/${list.id}`)}
-                      className={styles.actionButton}
-                    >
-                      View Members
-                    </button>
-                    <button
-                      onClick={() => handleDuplicate(list)}
-                      className={styles.actionButton}
-                    >
-                      Duplicate
-                    </button>
-                    <button
-                      onClick={() => handleDelete(list.id)}
-                      className={`${styles.actionButton} ${styles.actionButtonDanger}`}
-                    >
-                      {deleteConfirm === list.id ? 'Confirm?' : 'Delete'}
-                    </button>
+                    {!list.isSystem && (
+                      <>
+                        <button
+                          onClick={() => handleDuplicate(list)}
+                          className={styles.actionButton}
+                        >
+                          Duplicate
+                        </button>
+                        <button
+                          onClick={() => handleDelete(list.id)}
+                          className={`${styles.actionButton} ${styles.actionButtonDanger}`}
+                        >
+                          {deleteConfirm === list.id ? 'Confirm?' : 'Delete'}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

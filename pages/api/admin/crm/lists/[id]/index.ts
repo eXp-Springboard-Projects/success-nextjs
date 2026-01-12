@@ -34,6 +34,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const { name, description } = req.body;
 
+      // Check if it's a system list
+      const { data: existingList } = await supabase
+        .from('contact_lists')
+        .select('isSystem')
+        .eq('id', id)
+        .single();
+
+      if (existingList?.isSystem) {
+        return res.status(403).json({ error: 'Cannot edit system-managed lists' });
+      }
+
       const { data: list, error } = await supabase
         .from('contact_lists')
         .update({
@@ -55,6 +66,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'DELETE') {
     try {
+      // Check if it's a system list
+      const { data: existingList } = await supabase
+        .from('contact_lists')
+        .select('isSystem, name')
+        .eq('id', id)
+        .single();
+
+      if (existingList?.isSystem) {
+        return res.status(403).json({ error: `Cannot delete system-managed list: ${existingList.name}` });
+      }
+
       const { error } = await supabase
         .from('contact_lists')
         .delete()

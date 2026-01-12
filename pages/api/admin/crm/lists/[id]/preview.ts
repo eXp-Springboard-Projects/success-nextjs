@@ -120,7 +120,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       if (list.type !== 'DYNAMIC' || !list.filters) {
-        return res.status(400).json({ error: 'List is not a dynamic segment' });
+        return res.status(400).json({ error: 'List is not an auto-updating list' });
       }
 
       const query = buildSupabaseQuery(supabase, list.filters);

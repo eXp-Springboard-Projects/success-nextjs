@@ -84,7 +84,7 @@ export default function AdminResourcesPage() {
     }
   };
 
-  const categories = ['TEMPLATES', 'GUIDES', 'WORKSHEETS', 'EBOOKS', 'TOOLS', 'CHECKLISTS'];
+  const categories = ['AUDIO_COURSES', 'VIDEO_COURSES', 'TEMPLATES', 'GUIDES', 'WORKSHEETS', 'EBOOKS', 'TOOLS', 'CHECKLISTS'];
 
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return 'N/A';
