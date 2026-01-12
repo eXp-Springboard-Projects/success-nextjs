@@ -2,9 +2,9 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Pencil, FileText, Calendar, Target, Star, Image, TrendingUp, Search, CheckCircle, Lock, BarChart3, Download, Edit, User, Users, Mail, DollarSign, type LucideIcon } from 'lucide-react';
+import { Pencil, FileText, Calendar, Target, Star, Image, TrendingUp, Search, CheckCircle, Lock, BarChart3, Download, Edit, User, type LucideIcon } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { StatCard, IllustrationCard, UpdateCard, ModernCard } from '../../components/admin/shared/ModernCard';
+import DashboardStats from '../../components/admin/DashboardStats';
 import styles from './Dashboard.module.css';
 import { requireAdminAuth } from '@/lib/adminAuth';
 
@@ -62,115 +62,112 @@ export default function AdminDashboard() {
   return (
     <AdminLayout>
       <div className={styles.dashboard}>
-        {/* Header */}
         <div className={styles.header}>
           <div>
-            <h1 className={styles.welcomeTitle}>Hello {session.user.name?.split(' ')[0] || 'User'}, Welcome back</h1>
-            <p className={styles.subtitle}>Your Dashboard is updated</p>
+            <h1>Welcome back, {session.user.name}!</h1>
+            <p className={styles.subtitle}>Here's what's happening with your site today</p>
+          </div>
+          <div className={styles.headerActions}>
+            <Link href="/admin/posts/new" className={styles.primaryButton}>
+              <Pencil size={16} /> New Article
+            </Link>
           </div>
         </div>
 
-        {/* Modern Dashboard Grid */}
-        <div className={styles.modernGrid}>
-          {/* Stat Cards - Top Row */}
-          <StatCard
-            icon={<FileText size={20} />}
-            label="Total Posts"
-            value="1,247"
-            change="+12% from last month"
-            changeType="positive"
-            gradient="purple"
-          />
+        <DashboardStats />
 
-          <StatCard
-            icon={<Users size={20} />}
-            label="Active Members"
-            value="5,842"
-            change="+8% from last month"
-            changeType="positive"
-            gradient="blue"
-          />
+        <div className={styles.quickActionsSection}>
+          <h2>Quick Actions</h2>
+          <div className={styles.quickActions}>
+            {quickActions.map((action) => {
+              const IconComponent = action.icon;
+              return (
+                <Link
+                  key={action.label}
+                  href={action.href}
+                  className={styles.quickAction}
+                  style={{ borderLeftColor: action.color }}
+                >
+                  <span className={styles.quickActionIcon} style={{ color: action.color }}>
+                    <IconComponent size={20} />
+                  </span>
+                  <span className={styles.quickActionLabel}>{action.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
 
-          <StatCard
-            icon={<Mail size={20} />}
-            label="Email Campaigns"
-            value="36"
-            change="+4 this week"
-            changeType="positive"
-            gradient="orange"
-          />
-
-          <StatCard
-            icon={<DollarSign size={20} />}
-            label="Revenue"
-            value="$52,847"
-            change="+15% from last month"
-            changeType="positive"
-            gradient="pink"
-          />
-
-          {/* Latest Updates Section */}
-          <div className={styles.gridUpdates}>
-            <ModernCard>
-              <h3 className={styles.sectionTitle}>Latest updates</h3>
-              <div className={styles.updatesList}>
-                <UpdateCard
-                  icon={<FileText size={20} />}
-                  title="New Articles"
-                  value="+187 new"
-                  trend="up"
-                  color="#8B5CF6"
-                />
-                <UpdateCard
-                  icon={<Users size={20} />}
-                  title="New Members"
-                  value="+856 new"
-                  trend="up"
-                  color="#EC4899"
-                />
-                <UpdateCard
-                  icon={<Mail size={20} />}
-                  title="Email Opens"
-                  value="+382 new"
-                  trend="up"
-                  color="#F97316"
-                />
+        <div className={styles.contentGrid}>
+          <div className={styles.recentSection}>
+            <div className={styles.sectionHeader}>
+              <h2>Recent Articles</h2>
+              <Link href="/admin/content-viewer" className={styles.viewAllLink}>View All</Link>
+            </div>
+            {recentPosts.length > 0 ? (
+              <div className={styles.recentList}>
+                {recentPosts.map((post: any) => (
+                  <div key={post.id} className={styles.recentItem}>
+                    <div className={styles.recentItemContent}>
+                      <h3 className={styles.recentItemTitle}>
+                        {post.title?.rendered || 'Untitled'}
+                      </h3>
+                      <p className={styles.recentItemMeta}>
+                        {new Date(post.date).toLocaleDateString()} • {post.status}
+                      </p>
+                    </div>
+                    <Link href={`/admin/posts/${post.id}/edit`} className={styles.editButton}>
+                      Edit
+                    </Link>
+                  </div>
+                ))}
               </div>
-            </ModernCard>
+            ) : (
+              <p className={styles.emptyState}>No articles yet. Create your first article!</p>
+            )}
           </div>
 
-          {/* Quick Actions Card */}
-          <div className={styles.gridActions}>
-            <ModernCard>
-              <h3 className={styles.sectionTitle}>Quick Actions</h3>
-              <div className={styles.actionButtons}>
-                <Link href="/admin/posts/new" className={styles.actionButton}>
-                  <Pencil size={16} />
-                  <span>New Article</span>
-                </Link>
-                <Link href="/admin/content-viewer" className={styles.actionButton}>
-                  <FileText size={16} />
-                  <span>View Content</span>
-                </Link>
-                <Link href="/admin/crm/campaigns/new" className={styles.actionButton}>
-                  <Mail size={16} />
-                  <span>New Campaign</span>
-                </Link>
-                <Link href="/admin/members" className={styles.actionButton}>
-                  <Users size={16} />
-                  <span>Manage Members</span>
-                </Link>
+          <div className={styles.activitySection}>
+            <h2>Site Health</h2>
+            <div className={styles.healthCards}>
+              <div className={styles.healthCard}>
+                <div className={styles.healthIcon} style={{ color: '#10b981' }}>
+                  <CheckCircle size={24} />
+                </div>
+                <div>
+                  <h3>Performance</h3>
+                  <p>Good</p>
+                </div>
               </div>
-            </ModernCard>
-          </div>
+              <div className={styles.healthCard}>
+                <div className={styles.healthIcon} style={{ color: '#3b82f6' }}>
+                  <Lock size={24} />
+                </div>
+                <div>
+                  <h3>Security</h3>
+                  <p>Protected</p>
+                </div>
+              </div>
+              <div className={styles.healthCard}>
+                <div className={styles.healthIcon} style={{ color: '#8b5cf6' }}>
+                  <BarChart3 size={24} />
+                </div>
+                <div>
+                  <h3>SEO</h3>
+                  <p>Optimized</p>
+                </div>
+              </div>
+            </div>
 
-          {/* Revenue Card with Gradient */}
-          <div className={styles.gridRevenue}>
-            <IllustrationCard
-              title="Total profit, 32K Earned"
-              description="Points Earned / 15,000"
-              gradient="pink"
-            />
+            <div className={styles.atAGlance}>
+              <h3>At a Glance</h3>
+              <ul className={styles.glanceList}>
+                <li><CheckCircle size={14} style={{ marginRight: '6px', color: '#10b981' }} /> WordPress API Connected</li>
+                <li><CheckCircle size={14} style={{ marginRight: '6px', color: '#10b981' }} /> Database Connected</li>
+                <li><CheckCircle size={14} style={{ marginRight: '6px', color: '#10b981' }} /> Admin Access Active</li>
+                <li><CheckCircle size={14} style={{ marginRight: '6px', color: '#10b981' }} /> All Systems Operational</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
