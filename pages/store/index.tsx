@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { GetServerSideProps } from 'next';
 import Layout from '../../components/Layout';
 import SEO from '../../components/SEO';
+import { supabaseAdmin } from '../../lib/supabase';
 import styles from './store.module.css';
 
 type Product = {
@@ -227,26 +228,53 @@ export default function StorePage({ products, categories }: StorePageProps) {
 }
 
 export const getServerSideProps: GetServerSideProps = async () => {
-  // Helper function to generate placeholder image data URIs for products without images (inline SVG)
-  const getPlaceholderImage = (name: string, category: string) => {
-    const colors: Record<string, string> = {
-      'Books': '#2c5282',
-      'Courses': '#2c7a7b',
-      'Merchandise': '#744210',
-      'Magazines': '#c53030',
-      'Bundles': '#5f370e',
+  try {
+    const supabase = supabaseAdmin();
+
+    // Fetch products from database
+    const { data: dbProducts, error } = await supabase
+      .from('store_products')
+      .select('*')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching store products from database:', error);
+      // Fall back to empty array if there's an error
+      return {
+        props: {
+          products: [],
+          categories: ['Books', 'Courses', 'Merchandise', 'Magazines', 'Bundles'],
+        },
+      };
+    }
+
+    // Map database products to frontend format
+    const products: Product[] = (dbProducts || []).map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      price: parseFloat(p.price),
+      salePrice: p.sale_price ? parseFloat(p.sale_price) : undefined,
+      image: p.image,
+      category: p.category,
+      subcategory: p.subcategory || undefined,
+      link: p.link,
+      featured: p.featured || false,
+    }));
+
+    const categories = ['Books', 'Courses', 'Merchandise', 'Magazines', 'Bundles'];
+
+    return {
+      props: {
+        products,
+        categories,
+      },
     };
-    const bgColor = colors[category] || '#1a1a1a';
-    const textColor = '#ffffff';
+  } catch (error) {
+    console.error('Error in getServerSideProps:', error);
 
-    // Create an inline SVG as a data URI - using encodeURIComponent for browser compatibility
-    const svg = `<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="400" fill="${bgColor}"/><text x="50%" y="50%" font-family="Arial, sans-serif" font-size="24" fill="${textColor}" text-anchor="middle" dy=".3em">${name}</text></svg>`;
-
-    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-  };
-
-  // Comprehensive product catalog organized by category - using direct image URLs from SUCCESS Store
-  const products: Product[] = [
+    // Fallback to hardcoded products if database fetch fails
+    const products: Product[] = [
     // FEATURED BUNDLES
     {
       id: 'bundle-1',
@@ -520,12 +548,13 @@ export const getServerSideProps: GetServerSideProps = async () => {
     },
   ];
 
-  const categories = ['Books', 'Courses', 'Merchandise', 'Magazines', 'Bundles'];
+    const categories = ['Books', 'Courses', 'Merchandise', 'Magazines', 'Bundles'];
 
-  return {
-    props: {
-      products,
-      categories,
-    },
-  };
+    return {
+      props: {
+        products,
+        categories,
+      },
+    };
+  }
 };
