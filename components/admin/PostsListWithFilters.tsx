@@ -42,11 +42,14 @@ interface Category {
 export default function PostsListWithFilters() {
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
-  const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPosts, setSelectedPosts] = useState<Set<string | number>>(new Set());
   const [bulkAction, setBulkAction] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [totalPosts, setTotalPosts] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const perPage = 100;
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,19 +66,34 @@ export default function PostsListWithFilters() {
     fetchPosts();
     fetchAuthors();
     fetchCategories();
-  }, []);
+  }, [currentPage, statusFilter, authorFilter, categoryFilter, searchQuery]);
 
+  // Reset to page 1 when filters change
   useEffect(() => {
-    applyFilters();
-  }, [posts, searchQuery, statusFilter, authorFilter, categoryFilter, dateFilter]);
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    }
+  }, [statusFilter, authorFilter, categoryFilter, searchQuery]);
 
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/posts?per_page=500&status=all');
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        per_page: perPage.toString(),
+        status: statusFilter,
+      });
+
+      if (searchQuery) params.append('search', searchQuery);
+      if (authorFilter !== 'all') params.append('author', authorFilter);
+      if (categoryFilter !== 'all') params.append('category', categoryFilter);
+
+      const res = await fetch(`/api/admin/posts?${params}`);
       if (res.ok) {
         const data = await res.json();
         setPosts(data.posts || []);
+        setTotalPosts(data.pagination?.total || 0);
+        setTotalPages(data.pagination?.totalPages || 1);
       } else {
         const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
         console.error('Failed to fetch posts:', res.status, errorData);
@@ -111,61 +129,10 @@ export default function PostsListWithFilters() {
     }
   };
 
-  const applyFilters = () => {
-    let filtered = [...posts];
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(post =>
-        post.title.rendered.toLowerCase().includes(query) ||
-        post.slug.toLowerCase().includes(query)
-      );
-    }
-
-    // Status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(post => post.status === statusFilter);
-    }
-
-    // Author filter
-    if (authorFilter !== 'all') {
-      filtered = filtered.filter(post => {
-        const author = post._embedded?.author?.[0] || post._embedded?.['wp:author']?.[0];
-        return author?.id === parseInt(authorFilter);
-      });
-    }
-
-    // Category filter
-    if (categoryFilter !== 'all') {
-      filtered = filtered.filter(post => {
-        const categories = post._embedded?.['wp:term']?.[0] || [];
-        return categories.some((cat: any) => cat.id === parseInt(categoryFilter));
-      });
-    }
-
-    // Date filter
-    if (dateFilter !== 'all') {
-      const now = new Date();
-      const filterDate = new Date();
-
-      if (dateFilter === '7days') {
-        filterDate.setDate(now.getDate() - 7);
-      } else if (dateFilter === '30days') {
-        filterDate.setDate(now.getDate() - 30);
-      } else if (dateFilter === 'thismonth') {
-        filterDate.setDate(1);
-      }
-
-      filtered = filtered.filter(post => new Date(post.date) >= filterDate);
-    }
-
-    setFilteredPosts(filtered);
-  };
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      const allIds = filteredPosts.map(p => p.id);
+      const allIds = posts.map(p => p.id);
       setSelectedPosts(new Set(allIds));
     } else {
       setSelectedPosts(new Set());
@@ -252,8 +219,8 @@ export default function PostsListWithFilters() {
   };
 
   const statusCounts = getStatusCounts();
-  const allSelected = filteredPosts.length > 0 && selectedPosts.size === filteredPosts.length;
-  const someSelected = selectedPosts.size > 0 && selectedPosts.size < filteredPosts.length;
+  const allSelected = posts.length > 0 && selectedPosts.size === posts.length;
+  const someSelected = selectedPosts.size > 0 && selectedPosts.size < posts.length;
 
   return (
     <div className={styles.container}>
@@ -404,7 +371,7 @@ export default function PostsListWithFilters() {
           )}
         </div>
         <div className={styles.bulkActionsRight}>
-          {filteredPosts.length} result{filteredPosts.length !== 1 ? 's' : ''}
+          Showing {((currentPage - 1) * perPage) + 1}-{Math.min(currentPage * perPage, totalPosts)} of {totalPosts.toLocaleString()} total articles
         </div>
       </div>
 
@@ -414,36 +381,37 @@ export default function PostsListWithFilters() {
           <div className={styles.spinner}></div>
           <p>Loading articles...</p>
         </div>
-      ) : filteredPosts.length === 0 ? (
+      ) : posts.length === 0 ? (
         <div className={styles.empty}>
           <p>No articles found</p>
           {searchQuery && <button onClick={() => setSearchQuery('')}>Clear search</button>}
         </div>
       ) : (
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th className={styles.checkboxCol}>
-                <input
-                  type="checkbox"
-                  checked={allSelected}
-                  ref={input => {
-                    if (input) input.indeterminate = someSelected;
-                  }}
-                  onChange={handleSelectAll}
-                />
-              </th>
-              <th style={{ width: '60px' }}></th>
-              <th>Title</th>
-              <th>Author</th>
-              <th>Categories</th>
-              <th>Date</th>
-              <th>Status</th>
-              <th>Last edit by</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredPosts.map(post => {
+        <>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th className={styles.checkboxCol}>
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={input => {
+                      if (input) input.indeterminate = someSelected;
+                    }}
+                    onChange={handleSelectAll}
+                  />
+                </th>
+                <th style={{ width: '60px' }}></th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Categories</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Last edit by</th>
+              </tr>
+            </thead>
+            <tbody>
+              {posts.map(post => {
               const author = post._embedded?.author?.[0] || post._embedded?.['wp:author']?.[0];
               const postCategories = post._embedded?.['wp:term']?.[0] || [];
               const featuredImage = post._embedded?.['wp:featuredmedia']?.[0];
@@ -543,6 +511,44 @@ export default function PostsListWithFilters() {
             })}
           </tbody>
         </table>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className={styles.pagination}>
+            <button
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+              className={styles.pageButton}
+            >
+              « First
+            </button>
+            <button
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={styles.pageButton}
+            >
+              ‹ Previous
+            </button>
+            <span className={styles.pageInfo}>
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={styles.pageButton}
+            >
+              Next ›
+            </button>
+            <button
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+              className={styles.pageButton}
+            >
+              Last »
+            </button>
+          </div>
+        )}
+      </>
       )}
     </div>
   );

@@ -399,6 +399,45 @@
   }
 }
 
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 20px;
+}
+
+.pageButton {
+  padding: 8px 16px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+  transition: all 0.2s;
+}
+
+.pageButton:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.pageButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pageInfo {
+  padding: 0 16px;
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 16px;
