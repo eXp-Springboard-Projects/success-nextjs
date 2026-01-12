@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Department } from '@/lib/types';
 import DepartmentLayout from '@/components/admin/shared/DepartmentLayout';
 import { requireDepartmentAuth } from '@/lib/departmentAuth';
-import styles from './contacts/Contacts.module.css';
 
 interface EmailMetrics {
   totalCampaigns: number;
@@ -47,7 +46,7 @@ export default function CRMAnalyticsPage() {
   });
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState('30'); // days
+  const [timeRange, setTimeRange] = useState('30');
 
   useEffect(() => {
     fetchAnalytics();
@@ -56,12 +55,13 @@ export default function CRMAnalyticsPage() {
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      // Fetch all campaigns
       const res = await fetch('/api/admin/crm/campaigns');
+      if (!res.ok) {
+        throw new Error('Failed to fetch campaigns');
+      }
       const data = await res.json();
       const allCampaigns = data.campaigns || [];
 
-      // Filter by time range
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - parseInt(timeRange));
 
@@ -72,7 +72,6 @@ export default function CRMAnalyticsPage() {
 
       setCampaigns(filteredCampaigns);
 
-      // Calculate metrics
       const totalSent = filteredCampaigns.reduce((sum: number, c: Campaign) => sum + (c.sent_count || 0), 0);
       const totalOpened = filteredCampaigns.reduce((sum: number, c: Campaign) => sum + (c.opened_count || 0), 0);
       const totalClicked = filteredCampaigns.reduce((sum: number, c: Campaign) => sum + (c.clicked_count || 0), 0);
@@ -94,13 +93,10 @@ export default function CRMAnalyticsPage() {
       });
     } catch (error) {
       console.error('Error fetching analytics:', error);
+      setCampaigns([]);
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatPercent = (num: number) => {
-    return num.toFixed(1) + '%';
   };
 
   return (
@@ -109,107 +105,84 @@ export default function CRMAnalyticsPage() {
       pageTitle="CRM Analytics"
       description="Email campaign performance metrics"
     >
-      <div className={styles.dashboard}>
+      <div style={{ padding: '2rem' }}>
         {/* Header */}
-        <div className={styles.header}>
-          <div className={styles.headerLeft}>
-            <h1 className={styles.pageTitle}>CRM Analytics</h1>
-            <p className={styles.pageDescription}>Track all email campaign performance</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+          <div>
+            <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem' }}>CRM Analytics</h1>
+            <p style={{ color: '#666' }}>Track all email campaign performance</p>
           </div>
-          <div className={styles.headerRight}>
-            <select
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
-              className={styles.filterSelect}
-            >
-              <option value="7">Last 7 days</option>
-              <option value="30">Last 30 days</option>
-              <option value="90">Last 90 days</option>
-              <option value="365">Last year</option>
-              <option value="9999">All time</option>
-            </select>
-          </div>
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value)}
+            style={{
+              padding: '0.5rem 1rem',
+              border: '1px solid #ddd',
+              borderRadius: '6px',
+              fontSize: '1rem',
+            }}
+          >
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="365">Last year</option>
+            <option value="9999">All time</option>
+          </select>
         </div>
 
         {loading ? (
-          <div className={styles.loading}>Loading analytics...</div>
+          <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>Loading analytics...</div>
         ) : (
           <>
-            {/* Metrics Cards */}
+            {/* Metrics Grid */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
               gap: '1rem',
               marginBottom: '2rem',
             }}>
-              <MetricCard
-                title="Total Campaigns"
-                value={metrics.totalCampaigns.toLocaleString()}
-                icon="📧"
-                color="#007bff"
-              />
-              <MetricCard
-                title="Emails Sent"
-                value={metrics.totalSent.toLocaleString()}
-                icon="📤"
-                color="#28a745"
-              />
-              <MetricCard
-                title="Avg Open Rate"
-                value={formatPercent(metrics.avgOpenRate)}
-                icon="👁️"
-                color="#17a2b8"
-              />
-              <MetricCard
-                title="Avg Click Rate"
-                value={formatPercent(metrics.avgClickRate)}
-                icon="🖱️"
-                color="#ffc107"
-              />
-              <MetricCard
-                title="Avg Delivery Rate"
-                value={formatPercent(metrics.avgDeliveryRate)}
-                icon="✅"
-                color="#6f42c1"
-              />
+              <MetricCard title="Total Campaigns" value={metrics.totalCampaigns.toLocaleString()} icon="📧" color="#007bff" />
+              <MetricCard title="Emails Sent" value={metrics.totalSent.toLocaleString()} icon="📤" color="#28a745" />
+              <MetricCard title="Avg Open Rate" value={(metrics.avgOpenRate.toFixed(1)) + '%'} icon="👁️" color="#17a2b8" />
+              <MetricCard title="Avg Click Rate" value={(metrics.avgClickRate.toFixed(1)) + '%'} icon="🖱️" color="#ffc107" />
+              <MetricCard title="Avg Delivery Rate" value={(metrics.avgDeliveryRate.toFixed(1)) + '%'} icon="✅" color="#6f42c1" />
             </div>
 
-            {/* Detailed Metrics */}
+            {/* Small Metrics */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
               gap: '1rem',
               marginBottom: '2rem',
             }}>
-              <SmallMetricCard title="Opened" value={metrics.totalOpened.toLocaleString()} color="#17a2b8" />
-              <SmallMetricCard title="Clicked" value={metrics.totalClicked.toLocaleString()} color="#ffc107" />
-              <SmallMetricCard title="Delivered" value={metrics.totalDelivered.toLocaleString()} color="#28a745" />
-              <SmallMetricCard title="Bounced" value={metrics.totalBounced.toLocaleString()} color="#fd7e14" />
-              <SmallMetricCard title="Failed" value={metrics.totalFailed.toLocaleString()} color="#dc3545" />
+              <SmallMetric title="Opened" value={metrics.totalOpened.toLocaleString()} color="#17a2b8" />
+              <SmallMetric title="Clicked" value={metrics.totalClicked.toLocaleString()} color="#ffc107" />
+              <SmallMetric title="Delivered" value={metrics.totalDelivered.toLocaleString()} color="#28a745" />
+              <SmallMetric title="Bounced" value={metrics.totalBounced.toLocaleString()} color="#fd7e14" />
+              <SmallMetric title="Failed" value={metrics.totalFailed.toLocaleString()} color="#dc3545" />
             </div>
 
-            {/* Campaign List */}
+            {/* Campaigns Table */}
             <div style={{ background: '#fff', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
               <h2 style={{ marginBottom: '1rem', fontSize: '1.25rem', fontWeight: 600 }}>Recent Campaigns</h2>
 
               {campaigns.length === 0 ? (
-                <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>
+                <p style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
                   No campaigns found in this time range
                 </p>
               ) : (
-                <div className={styles.tableContainer}>
-                  <table className={styles.table}>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr>
-                        <th>Campaign</th>
-                        <th>Status</th>
-                        <th>Sent</th>
-                        <th>Opened</th>
-                        <th>Clicked</th>
-                        <th>Delivered</th>
-                        <th>Open Rate</th>
-                        <th>Click Rate</th>
-                        <th>Date</th>
+                      <tr style={{ borderBottom: '2px solid #e0e0e0' }}>
+                        <th style={{ textAlign: 'left', padding: '0.75rem', fontWeight: 600 }}>Campaign</th>
+                        <th style={{ textAlign: 'left', padding: '0.75rem', fontWeight: 600 }}>Status</th>
+                        <th style={{ textAlign: 'right', padding: '0.75rem', fontWeight: 600 }}>Sent</th>
+                        <th style={{ textAlign: 'right', padding: '0.75rem', fontWeight: 600 }}>Opened</th>
+                        <th style={{ textAlign: 'right', padding: '0.75rem', fontWeight: 600 }}>Clicked</th>
+                        <th style={{ textAlign: 'right', padding: '0.75rem', fontWeight: 600 }}>Open Rate</th>
+                        <th style={{ textAlign: 'right', padding: '0.75rem', fontWeight: 600 }}>Click Rate</th>
+                        <th style={{ textAlign: 'right', padding: '0.75rem', fontWeight: 600 }}>Date</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -222,25 +195,33 @@ export default function CRMAnalyticsPage() {
                           : 0;
 
                         return (
-                          <tr key={campaign.id}>
-                            <td>
-                              <a href={`/admin/crm/campaigns/${campaign.id}`} style={{ color: '#007bff', textDecoration: 'none' }}>
+                          <tr key={campaign.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                            <td style={{ padding: '0.75rem' }}>
+                              <a href={`/admin/crm/campaigns/${campaign.id}`} style={{ color: '#007bff', textDecoration: 'none', fontWeight: 500 }}>
                                 {campaign.name}
                               </a>
-                              <div style={{ fontSize: '0.875rem', color: '#666' }}>{campaign.subject}</div>
+                              <div style={{ fontSize: '0.875rem', color: '#666', marginTop: '0.25rem' }}>{campaign.subject}</div>
                             </td>
-                            <td>
-                              <span className={`${styles.statusBadge} ${styles[`status${campaign.status}`]}`}>
+                            <td style={{ padding: '0.75rem' }}>
+                              <span style={{
+                                padding: '0.25rem 0.5rem',
+                                borderRadius: '12px',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                background: campaign.status === 'SENT' ? '#d4edda' : '#f8d7da',
+                                color: campaign.status === 'SENT' ? '#155724' : '#721c24',
+                              }}>
                                 {campaign.status}
                               </span>
                             </td>
-                            <td>{campaign.sent_count.toLocaleString()}</td>
-                            <td>{campaign.opened_count.toLocaleString()}</td>
-                            <td>{campaign.clicked_count.toLocaleString()}</td>
-                            <td>{campaign.delivered_count.toLocaleString()}</td>
-                            <td>{formatPercent(openRate)}</td>
-                            <td>{formatPercent(clickRate)}</td>
-                            <td>{campaign.sent_at ? new Date(campaign.sent_at).toLocaleDateString() : '-'}</td>
+                            <td style={{ padding: '0.75rem', textAlign: 'right' }}>{campaign.sent_count.toLocaleString()}</td>
+                            <td style={{ padding: '0.75rem', textAlign: 'right' }}>{campaign.opened_count.toLocaleString()}</td>
+                            <td style={{ padding: '0.75rem', textAlign: 'right' }}>{campaign.clicked_count.toLocaleString()}</td>
+                            <td style={{ padding: '0.75rem', textAlign: 'right' }}>{openRate.toFixed(1)}%</td>
+                            <td style={{ padding: '0.75rem', textAlign: 'right' }}>{clickRate.toFixed(1)}%</td>
+                            <td style={{ padding: '0.75rem', textAlign: 'right' }}>
+                              {campaign.sent_at ? new Date(campaign.sent_at).toLocaleDateString() : '-'}
+                            </td>
                           </tr>
                         );
                       })}
@@ -274,7 +255,7 @@ function MetricCard({ title, value, icon, color }: { title: string; value: strin
   );
 }
 
-function SmallMetricCard({ title, value, color }: { title: string; value: string; color: string }) {
+function SmallMetric({ title, value, color }: { title: string; value: string; color: string }) {
   return (
     <div style={{
       background: '#fff',
