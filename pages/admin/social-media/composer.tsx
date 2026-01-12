@@ -3,12 +3,13 @@
  * Create and edit social media posts
  */
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/router';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { useSocialPosts } from '@/hooks/social/useSocialPosts';
 import { useSocialAccounts } from '@/hooks/social/useSocialAccounts';
-import { Platform, PLATFORM_NAMES, PLATFORM_LIMITS } from '@/types/social';
+import { useMediaLibrary } from '@/hooks/social/useMediaLibrary';
+import { Platform, PLATFORM_NAMES, PLATFORM_LIMITS, MediaItem } from '@/types/social';
 import styles from './SocialMedia.module.css';
 import { requireSocialMediaAuth } from '@/lib/adminAuth';
 
@@ -16,11 +17,15 @@ export default function PostComposerPage() {
   const router = useRouter();
   const { createPost, updatePost } = useSocialPosts({ autoFetch: false });
   const { accounts } = useSocialAccounts();
+  const { media, uploadMedia, uploading } = useMediaLibrary();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [content, setContent] = useState('');
   const [selectedPlatforms, setSelectedPlatforms] = useState<Platform[]>([]);
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
+  const [linkUrl, setLinkUrl] = useState('');
+  const [selectedMediaIds, setSelectedMediaIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,6 +46,27 @@ export default function PostComposerPage() {
 
   const characterLimit = getCharacterLimit();
   const isOverLimit = characterLimit && content.length > characterLimit;
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      setError(null);
+      for (const file of Array.from(files)) {
+        const mediaItem = await uploadMedia(file);
+        setSelectedMediaIds((prev) => [...prev, mediaItem.id]);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const handleRemoveMedia = (mediaId: string) => {
+    setSelectedMediaIds((prev) => prev.filter((id) => id !== mediaId));
+  };
+
+  const selectedMediaItems = media.filter((m) => selectedMediaIds.includes(m.id));
 
   const handleSave = async (status: 'draft' | 'scheduled') => {
     try {
@@ -67,6 +93,8 @@ export default function PostComposerPage() {
         content,
         targetPlatforms: selectedPlatforms,
         scheduledAt,
+        mediaIds: selectedMediaIds.length > 0 ? selectedMediaIds : undefined,
+        linkUrl: linkUrl.trim() || undefined,
       });
 
       router.push('/admin/social-media');
@@ -151,6 +179,64 @@ export default function PostComposerPage() {
                   onChange={(e) => setScheduledTime(e.target.value)}
                 />
               </div>
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Link URL (optional)</label>
+              <input
+                type="url"
+                className={styles.input}
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                placeholder="https://example.com/article"
+              />
+              <p className={styles.helperText}>
+                Add a link to share with your post
+              </p>
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Media (Images/Videos)</label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                onChange={handleFileUpload}
+                style={{ display: 'none' }}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className={styles.secondaryButton}
+                disabled={uploading}
+              >
+                {uploading ? 'Uploading...' : '📎 Upload Media'}
+              </button>
+
+              {selectedMediaItems.length > 0 && (
+                <div className={styles.mediaPreviewGrid}>
+                  {selectedMediaItems.map((item) => (
+                    <div key={item.id} className={styles.mediaPreviewItem}>
+                      {item.fileType.startsWith('image/') ? (
+                        <img src={item.fileUrl} alt={item.altText || item.fileName} />
+                      ) : (
+                        <video src={item.fileUrl} controls />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveMedia(item.id)}
+                        className={styles.removeMediaButton}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className={styles.helperText}>
+                Upload images or videos to include with your post
+              </p>
             </div>
 
             <div className={styles.formActions}>
