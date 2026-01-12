@@ -193,17 +193,8 @@
   display: flex;
   gap: 1.5rem;
   align-items: flex-start;
-  text-decoration: none;
-  color: inherit;
-  transition: all 0.2s;
   padding: 0.5rem;
   margin: -0.5rem;
-  border-radius: 8px;
-}
-
-.authorInfo:hover {
-  background-color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .authorAvatar {
@@ -238,19 +229,6 @@
 
 .authorDescription a:hover {
   text-decoration: underline;
-}
-
-.viewProfile {
-  display: inline-block;
-  color: #d32f2f;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  margin-top: 0.5rem;
-  transition: transform 0.2s;
-}
-
-.authorInfo:hover .viewProfile {
-  transform: translateX(4px);
 }
 
 /* Share Section */

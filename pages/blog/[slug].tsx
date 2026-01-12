@@ -309,7 +309,7 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
         {/* Author Bio */}
         {author && (
           <div className={styles.authorBio}>
-            <a href={`/author/${author.slug}`} className={styles.authorInfo}>
+            <div className={styles.authorInfo}>
               {author.avatar_urls && (
                 <img
                   src={author.avatar_urls['96']}
@@ -325,9 +325,8 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
                     dangerouslySetInnerHTML={{ __html: decodeHtmlContent(author.description) }}
                   />
                 )}
-                <span className={styles.viewProfile}>View Profile →</span>
               </div>
-            </a>
+            </div>
           </div>
         )}
 
