@@ -52,10 +52,12 @@ export default function UploadResourcePage() {
         router.push('/admin/resources');
       } else {
         const error = await res.json();
-        alert(`Upload failed: ${error.message}`);
+        console.error('Upload error:', error);
+        alert(`Upload failed: ${error.message || 'Unknown error'}\n${error.details || ''}`);
       }
     } catch (error) {
-      alert('Upload failed. Please try again.');
+      console.error('Upload exception:', error);
+      alert(`Upload failed: ${error instanceof Error ? error.message : 'Please try again.'}`);
     } finally {
       setLoading(false);
     }
