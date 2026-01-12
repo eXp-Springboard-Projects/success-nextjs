@@ -1,181 +1,166 @@
 .container {
-  max-width: 1200px;
-  padding: 0;
-}
-
-.loading,
-.empty {
-  text-align: center;
-  padding: 2rem 1rem;
-  color: var(--admin-text-secondary);
-  background: white;
-  border-radius: var(--radius-lg);
-  border: none;
-  box-shadow: var(--shadow-card);
-}
-
-.emptyIcon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  opacity: 0.5;
-}
-
-.announcementsList {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 1rem;
-}
-
-.announcementCard {
-  background: white;
-  border-radius: var(--radius-lg);
-  padding: 1rem;
-  border: none;
-  box-shadow: var(--shadow-card);
-  transition: all var(--transition-slow);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.announcementCard:hover {
-  box-shadow: var(--shadow-card-hover);
-  transform: translateY(-4px);
-}
-
-.cardHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.title {
-  font-size: 1rem;
-  font-weight: var(--font-bold);
-  color: var(--admin-text);
-  margin: 0;
-  line-height: 1.3;
-  flex: 1;
-}
-
-.badge {
-  padding: 0.25rem 0.625rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.65rem;
-  font-weight: var(--font-bold);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  flex-shrink: 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.badgeActive {
-  background: var(--gradient-success);
-  color: white;
-}
-
-.badgeInactive {
-  background: #9ca3af;
-  color: white;
-}
-
-.badgeExpired {
-  background: var(--gradient-danger);
-  color: white;
-}
-
-.content {
-  font-size: 0.8rem;
-  line-height: 1.5;
-  color: var(--admin-text-secondary);
-  margin-bottom: 0.75rem;
-  flex: 1;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-}
-
-.content p {
-  margin: 0 0 0.5rem 0;
-}
-
-.content p:last-child {
-  margin-bottom: 0;
-}
-
-.meta {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: 0.7rem;
-  color: var(--admin-text-secondary);
-  opacity: 0.8;
-  margin-top: auto;
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  background: #FAFAFA;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1.5rem;
-  padding: 0 0 1rem 0;
+  margin-bottom: 2rem;
 }
 
 .header h1 {
-  font-size: 1.5rem;
-  font-weight: var(--font-bold);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
   margin: 0 0 0.25rem 0;
-  color: var(--admin-text);
 }
 
 .header p {
-  margin: 0;
-  color: var(--admin-text-secondary);
   font-size: 0.875rem;
+  color: #9CA3AF;
+  margin: 0;
 }
 
 .createButton {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  background: var(--gradient-primary);
+  padding: 0.5rem 1rem;
+  background: #1e3a8a;
   color: white;
-  border-radius: var(--radius-md);
-  font-weight: var(--font-semibold);
-  text-decoration: none;
-  transition: all var(--transition-base);
-  box-shadow: var(--shadow-primary);
+  border-radius: 0.5rem;
   font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
 }
 
 .createButton:hover {
-  background: var(--gradient-primary-hover);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  background: #1e40af;
+  box-shadow: 0 8px 16px rgba(30, 58, 138, 0.3);
+}
+
+.loading,
+.empty {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.emptyIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}
+
+.empty div {
+  font-size: 0.875rem;
+  color: #6B7280;
+  margin-bottom: 1.5rem;
+}
+
+.announcementsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.announcementCard {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+  background: transparent;
+}
+
+.announcementCard:hover {
+  background: #F9FAFB;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #111827;
+  margin: 0;
+  flex: 1;
+}
+
+.badge {
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.badgeActive {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10B981;
+}
+
+.badgeInactive {
+  background: rgba(107, 114, 128, 0.1);
+  color: #6B7280;
+}
+
+.badgeExpired {
+  background: rgba(239, 68, 68, 0.1);
+  color: #EF4444;
+}
+
+.content {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #6B7280;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.content p {
+  margin: 0;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  color: #9CA3AF;
+  margin-bottom: 0.75rem;
 }
 
 .actions {
   display: flex;
   gap: 0.5rem;
-  margin-top: 0.75rem;
   padding-top: 0.75rem;
-  border-top: 1px solid var(--admin-border-light);
+  border-top: 1px solid #F3F4F6;
 }
 
 .actionButton {
   padding: 0.375rem 0.75rem;
-  background: var(--admin-bg);
-  border: 1px solid var(--admin-border);
-  color: var(--admin-text);
-  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid #E5E7EB;
+  color: #6B7280;
+  border-radius: 0.375rem;
   font-size: 0.75rem;
-  font-weight: var(--font-medium);
+  font-weight: 500;
   cursor: pointer;
-  transition: all var(--transition-base);
+  transition: all 0.2s;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
@@ -183,31 +168,25 @@
 }
 
 .actionButton:hover {
-  background: white;
-  border-color: var(--admin-primary);
-  color: var(--admin-primary);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  background: #F9FAFB;
+  border-color: #9CA3AF;
+  color: #111827;
 }
 
 .deleteButton {
-  color: var(--admin-danger);
-  border-color: #fecaca;
+  color: #EF4444;
+  border-color: #FEE2E2;
 }
 
 .deleteButton:hover {
-  background: #fef2f2;
-  border-color: var(--admin-danger);
-  color: var(--admin-danger);
-}
-
-.empty .createButton {
-  margin-top: 1.5rem;
+  background: #FEF2F2;
+  border-color: #EF4444;
+  color: #DC2626;
 }
 
 @media (max-width: 768px) {
-  .announcementsList {
-    grid-template-columns: 1fr;
+  .container {
+    padding: 1rem;
   }
 
   .header {

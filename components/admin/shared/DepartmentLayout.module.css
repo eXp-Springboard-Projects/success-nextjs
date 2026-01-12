@@ -31,14 +31,14 @@
 /* Sidebar */
 .sidebar {
   width: 260px;
-  background: var(--gradient-sidebar);
+  background: #1e3a8a;
   color: white;
   display: flex;
   flex-direction: column;
   transition: width var(--transition-slow);
   overflow: hidden;
   flex-shrink: 0;
-  box-shadow: var(--shadow-3d-lg);
+  box-shadow: 0 20px 60px rgba(30, 58, 138, 0.3);
   position: fixed;
   left: 20px;
   top: 20px;

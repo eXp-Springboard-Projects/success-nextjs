@@ -23,7 +23,7 @@ export default function AdminDashboard() {
     // Fetch recent posts
     async function fetchRecentData() {
       try {
-        const res = await fetch('/api/posts?per_page=5');
+        const res = await fetch('/api/posts?per_page=5&_embed=1');
         if (res.ok) {
           const data = await res.json();
           setRecentPosts(data);
@@ -46,17 +46,15 @@ export default function AdminDashboard() {
     return null;
   }
 
-  const quickActions: Array<{ label: string; href: string; icon: LucideIcon; color: string }> = [
-    { label: 'View Content', href: '/admin/content-viewer', icon: FileText, color: '#667eea' },
-    { label: 'New Article', href: '/admin/posts/new', icon: Pencil, color: '#764ba2' },
-    { label: 'Featured Content', href: '/admin/featured-content', icon: Star, color: '#f59e0b' },
-    { label: 'Authors', href: '/admin/authors', icon: User, color: '#ec4899' },
-    { label: 'Page Editor', href: '/admin/page-editor', icon: Edit, color: '#8b5cf6' },
-    { label: 'Editorial Calendar', href: '/admin/editorial-calendar', icon: Calendar, color: '#06b6d4' },
-    { label: 'SUCCESS+ Resources', href: '/admin/resources', icon: Download, color: '#e65c00' },
-    { label: 'SEO Manager', href: '/admin/seo', icon: Target, color: '#10b981' },
-    { label: 'Site Analytics', href: '/admin/analytics', icon: TrendingUp, color: '#4facfe' },
-    { label: 'Site Monitor', href: '/admin/site-monitor', icon: Search, color: '#ff6b6b' },
+  const quickActions: Array<{ label: string; description: string; href: string; icon: LucideIcon; color: string }> = [
+    { label: 'New Article', description: 'Create and publish content', href: '/admin/posts/new', icon: Pencil, color: '#8B5CF6' },
+    { label: 'View Content', description: 'Browse all published articles', href: '/admin/content-viewer', icon: FileText, color: '#3B82F6' },
+    { label: 'Editorial Calendar', description: 'Schedule and plan content', href: '/admin/editorial-calendar', icon: Calendar, color: '#10B981' },
+    { label: 'Featured Content', description: 'Manage homepage features', href: '/admin/featured-content', icon: Star, color: '#F59E0B' },
+    { label: 'Authors', description: 'Manage author profiles', href: '/admin/authors', icon: User, color: '#EC4899' },
+    { label: 'Page Editor', description: 'Edit static pages', href: '/admin/page-editor', icon: Edit, color: '#8B5CF6' },
+    { label: 'Site Analytics', description: 'View traffic and engagement', href: '/admin/analytics', icon: TrendingUp, color: '#3B82F6' },
+    { label: 'SEO Manager', description: 'Optimize for search engines', href: '/admin/seo', icon: Target, color: '#10B981' },
   ];
 
   return (
@@ -64,109 +62,112 @@ export default function AdminDashboard() {
       <div className={styles.dashboard}>
         <div className={styles.header}>
           <div>
-            <h1>Welcome back, {session.user.name}!</h1>
-            <p className={styles.subtitle}>Here's what's happening with your site today</p>
+            <h1 className={styles.title}>Content Dashboard</h1>
+            <p className={styles.subtitle}>Manage articles, media, and site content</p>
           </div>
-          <div className={styles.headerActions}>
-            <Link href="/admin/posts/new" className={styles.primaryButton}>
-              <Pencil size={16} /> New Article
-            </Link>
-          </div>
+          <Link href="/admin/posts/new" className={styles.primaryButton}>
+            <Pencil size={16} />
+            New Article
+          </Link>
         </div>
 
         <DashboardStats />
 
-        <div className={styles.quickActionsSection}>
-          <h2>Quick Actions</h2>
-          <div className={styles.quickActions}>
-            {quickActions.map((action) => {
-              const IconComponent = action.icon;
-              return (
-                <Link
-                  key={action.label}
-                  href={action.href}
-                  className={styles.quickAction}
-                  style={{ borderLeftColor: action.color }}
-                >
-                  <span className={styles.quickActionIcon} style={{ color: action.color }}>
-                    <IconComponent size={20} />
-                  </span>
-                  <span className={styles.quickActionLabel}>{action.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className={styles.contentGrid}>
-          <div className={styles.recentSection}>
+        <div className={styles.mainContent}>
+          <div className={styles.leftColumn}>
             <div className={styles.sectionHeader}>
-              <h2>Recent Articles</h2>
-              <Link href="/admin/content-viewer" className={styles.viewAllLink}>View All</Link>
+              <h2 className={styles.sectionTitle}>Quick Actions</h2>
+            </div>
+            <div className={styles.actionsList}>
+              {quickActions.map((action) => {
+                const IconComponent = action.icon;
+                return (
+                  <Link
+                    key={action.label}
+                    href={action.href}
+                    className={styles.actionItem}
+                  >
+                    <div className={styles.actionIconWrapper} style={{ backgroundColor: `${action.color}10` }}>
+                      <IconComponent className={styles.actionIcon} size={20} style={{ color: action.color }} />
+                    </div>
+                    <div className={styles.actionContent}>
+                      <p className={styles.actionLabel}>{action.label}</p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+
+            <div className={styles.sectionHeader} style={{ marginTop: '2.5rem' }}>
+              <h2 className={styles.sectionTitle}>Recent Articles</h2>
+              <Link href="/admin/content-viewer" className={styles.viewAllLink}>View all</Link>
             </div>
             {recentPosts.length > 0 ? (
               <div className={styles.recentList}>
-                {recentPosts.map((post: any) => (
-                  <div key={post.id} className={styles.recentItem}>
-                    <div className={styles.recentItemContent}>
-                      <h3 className={styles.recentItemTitle}>
-                        {post.title?.rendered || 'Untitled'}
-                      </h3>
-                      <p className={styles.recentItemMeta}>
-                        {new Date(post.date).toLocaleDateString()} • {post.status}
-                      </p>
-                    </div>
-                    <Link href={`/admin/posts/${post.id}/edit`} className={styles.editButton}>
-                      Edit
+                {recentPosts.map((post: any) => {
+                  const featuredImage = post._embedded?.['wp:featuredmedia']?.[0]?.source_url;
+                  return (
+                    <Link key={post.id} href={`/admin/posts/${post.id}/edit`} className={styles.recentItem}>
+                      {featuredImage && (
+                        <img src={featuredImage} alt="" className={styles.recentThumbnail} />
+                      )}
+                      <div className={styles.recentContent}>
+                        <p className={styles.recentTitle}>
+                          {post.title?.rendered || 'Untitled'}
+                        </p>
+                        <p className={styles.recentMeta}>
+                          {new Date(post.date).toLocaleDateString()} • {post.status}
+                        </p>
+                      </div>
+                      <svg className={styles.actionChevron} width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
                     </Link>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
-              <p className={styles.emptyState}>No articles yet. Create your first article!</p>
+              <div className={styles.emptyState}>
+                <div className={styles.emptyIcon}>
+                  <FileText size={20} />
+                </div>
+                <p className={styles.emptyText}>No articles yet. Create your first article to get started.</p>
+                <Link href="/admin/posts/new" className={styles.emptyButton}>
+                  <Pencil size={14} />
+                  Create Article
+                </Link>
+              </div>
             )}
           </div>
 
-          <div className={styles.activitySection}>
-            <h2>Site Health</h2>
-            <div className={styles.healthCards}>
-              <div className={styles.healthCard}>
-                <div className={styles.healthIcon} style={{ color: '#10b981' }}>
-                  <CheckCircle size={24} />
-                </div>
-                <div>
-                  <h3>Performance</h3>
-                  <p>Good</p>
-                </div>
-              </div>
-              <div className={styles.healthCard}>
-                <div className={styles.healthIcon} style={{ color: '#3b82f6' }}>
-                  <Lock size={24} />
-                </div>
-                <div>
-                  <h3>Security</h3>
-                  <p>Protected</p>
-                </div>
-              </div>
-              <div className={styles.healthCard}>
-                <div className={styles.healthIcon} style={{ color: '#8b5cf6' }}>
-                  <BarChart3 size={24} />
-                </div>
-                <div>
-                  <h3>SEO</h3>
-                  <p>Optimized</p>
-                </div>
-              </div>
+          <div className={styles.rightColumn}>
+            <div className={styles.sectionHeader}>
+              <h2 className={styles.sectionTitle}>System Status</h2>
             </div>
-
-            <div className={styles.atAGlance}>
-              <h3>At a Glance</h3>
-              <ul className={styles.glanceList}>
-                <li><CheckCircle size={14} style={{ marginRight: '6px', color: '#10b981' }} /> WordPress API Connected</li>
-                <li><CheckCircle size={14} style={{ marginRight: '6px', color: '#10b981' }} /> Database Connected</li>
-                <li><CheckCircle size={14} style={{ marginRight: '6px', color: '#10b981' }} /> Admin Access Active</li>
-                <li><CheckCircle size={14} style={{ marginRight: '6px', color: '#10b981' }} /> All Systems Operational</li>
-              </ul>
+            <div className={styles.statusList}>
+              <div className={styles.statusItem}>
+                <div className={styles.statusDot} style={{ backgroundColor: '#10B981' }}></div>
+                <span className={styles.statusLabel}>WordPress API</span>
+                <span className={styles.statusValue}>Connected</span>
+              </div>
+              <div className={styles.statusDivider}></div>
+              <div className={styles.statusItem}>
+                <div className={styles.statusDot} style={{ backgroundColor: '#3B82F6' }}></div>
+                <span className={styles.statusLabel}>Database</span>
+                <span className={styles.statusValue}>Active</span>
+              </div>
+              <div className={styles.statusDivider}></div>
+              <div className={styles.statusItem}>
+                <div className={styles.statusDot} style={{ backgroundColor: '#8B5CF6' }}></div>
+                <span className={styles.statusLabel}>SEO Status</span>
+                <span className={styles.statusValue}>Optimized</span>
+              </div>
+              <div className={styles.statusDivider}></div>
+              <div className={styles.statusItem}>
+                <div className={styles.statusDot} style={{ backgroundColor: '#10B981' }}></div>
+                <span className={styles.statusLabel}>Performance</span>
+                <span className={styles.statusValue}>Good</span>
+              </div>
             </div>
           </div>
         </div>
