@@ -37,13 +37,13 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: auto;
-  gap: 1.5rem;
+  gap: 1rem;
   padding: 0 2rem 2rem 2rem;
 }
 
 .gridFeatured {
-  grid-column: span 2;
-  grid-row: span 2;
+  grid-column: span 1;
+  grid-row: span 1;
 }
 
 .gridStat {
@@ -52,7 +52,7 @@
 
 .gridUpdates {
   grid-column: span 2;
-  grid-row: span 2;
+  grid-row: span 1;
 }
 
 .gridActions {

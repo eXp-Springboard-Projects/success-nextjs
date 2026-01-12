@@ -1,8 +1,8 @@
 /* Base Card */
 .card {
   background: white;
-  border-radius: var(--radius-xl);
-  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
   box-shadow: var(--shadow-card);
   transition: all var(--transition-slow);
   position: relative;
@@ -16,19 +16,19 @@
 
 /* Card Sizes */
 .sizeSmall {
-  padding: 1rem;
+  padding: 0.75rem;
 }
 
 .sizeMedium {
-  padding: 1.5rem;
+  padding: 1.25rem;
 }
 
 .sizeLarge {
-  padding: 2rem;
+  padding: 1.5rem;
 }
 
 .sizeWide {
-  padding: 2rem;
+  padding: 1.5rem;
   grid-column: span 2;
 }
 
@@ -49,7 +49,7 @@
 
 .cardIllustration {
   color: white;
-  min-height: 200px;
+  min-height: 150px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -93,7 +93,7 @@
 .statCard {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .statHeader {
@@ -103,13 +103,13 @@
 }
 
 .statIcon {
-  width: 56px;
-  height: 56px;
-  border-radius: var(--radius-lg);
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   background: var(--gradient-blue);
   color: white;
   box-shadow: var(--shadow-card);
@@ -142,16 +142,36 @@
 }
 
 .statValue {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: var(--font-bold);
   color: var(--admin-text);
   line-height: 1.2;
+}
+
+/* Override for gradient cards - white text */
+.cardGradient .statValue,
+.gradientPurple .statValue,
+.gradientBlue .statValue,
+.gradientPink .statValue,
+.gradientOrange .statValue,
+.gradientNavy .statValue {
+  color: white;
 }
 
 .statLabel {
   font-size: var(--text-sm);
   color: var(--admin-text-secondary);
   font-weight: var(--font-medium);
+}
+
+/* Override for gradient cards - white text with opacity */
+.cardGradient .statLabel,
+.gradientPurple .statLabel,
+.gradientBlue .statLabel,
+.gradientPink .statLabel,
+.gradientOrange .statLabel,
+.gradientNavy .statLabel {
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .statChange {
@@ -179,6 +199,17 @@
 .changeNeutral {
   background: rgba(107, 114, 128, 0.1);
   color: var(--admin-text-secondary);
+}
+
+/* Override for gradient cards - white text with background */
+.cardGradient .statChange,
+.gradientPurple .statChange,
+.gradientBlue .statChange,
+.gradientPink .statChange,
+.gradientOrange .statChange,
+.gradientNavy .statChange {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
 }
 
 /* Illustration Card */
@@ -211,15 +242,15 @@
 }
 
 .illustrationTitle {
-  font-size: var(--text-2xl);
+  font-size: var(--text-lg);
   font-weight: var(--font-bold);
   margin: 0;
   color: white;
 }
 
 .illustrationDescription {
-  font-size: var(--text-sm);
-  opacity: 0.9;
+  font-size: var(--text-xs);
+  opacity: 0.85;
   margin: 0;
   color: white;
 }

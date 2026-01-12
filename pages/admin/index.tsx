@@ -72,60 +72,42 @@ export default function AdminDashboard() {
 
         {/* Modern Dashboard Grid */}
         <div className={styles.modernGrid}>
-          {/* Featured Illustration Card */}
-          <div className={styles.gridFeatured}>
-            <IllustrationCard
-              title="What's your plan?"
-              description="Easily start a new day"
-              gradient="blue"
-              size="wide"
-            />
-          </div>
+          {/* Stat Cards - Top Row */}
+          <StatCard
+            icon={<FileText size={20} />}
+            label="Total Posts"
+            value="1,247"
+            change="+12% from last month"
+            changeType="positive"
+            gradient="purple"
+          />
 
-          {/* Stat Cards */}
-          <div className={styles.gridStat}>
-            <StatCard
-              icon={<FileText size={24} />}
-              label="Total Posts"
-              value="1,247"
-              change="+12% from last month"
-              changeType="positive"
-              gradient="purple"
-            />
-          </div>
+          <StatCard
+            icon={<Users size={20} />}
+            label="Active Members"
+            value="5,842"
+            change="+8% from last month"
+            changeType="positive"
+            gradient="blue"
+          />
 
-          <div className={styles.gridStat}>
-            <StatCard
-              icon={<Users size={24} />}
-              label="Active Members"
-              value="5,842"
-              change="+8% from last month"
-              changeType="positive"
-              gradient="blue"
-            />
-          </div>
+          <StatCard
+            icon={<Mail size={20} />}
+            label="Email Campaigns"
+            value="36"
+            change="+4 this week"
+            changeType="positive"
+            gradient="orange"
+          />
 
-          <div className={styles.gridStat}>
-            <StatCard
-              icon={<Mail size={24} />}
-              label="Email Campaigns"
-              value="36"
-              change="+4 this week"
-              changeType="positive"
-              gradient="orange"
-            />
-          </div>
-
-          <div className={styles.gridStat}>
-            <StatCard
-              icon={<DollarSign size={24} />}
-              label="Revenue"
-              value="$52,847"
-              change="+15% from last month"
-              changeType="positive"
-              gradient="pink"
-            />
-          </div>
+          <StatCard
+            icon={<DollarSign size={20} />}
+            label="Revenue"
+            value="$52,847"
+            change="+15% from last month"
+            changeType="positive"
+            gradient="pink"
+          />
 
           {/* Latest Updates Section */}
           <div className={styles.gridUpdates}>
