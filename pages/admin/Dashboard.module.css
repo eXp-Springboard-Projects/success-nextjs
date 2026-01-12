@@ -1,21 +1,24 @@
 .dashboard {
-  padding: var(--space-2xl);
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 0;
+  max-width: 100%;
+  margin: 0;
+  min-height: 100vh;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: var(--space-3xl);
+  margin-bottom: 2rem;
+  padding: 2rem 2rem 0 2rem;
 }
 
-.header h1 {
-  font-size: var(--text-4xl);
-  margin: 0 0 var(--space-sm) 0;
+.welcomeTitle {
+  font-size: 1.75rem;
+  margin: 0 0 0.25rem 0;
   color: var(--admin-text);
-  font-weight: var(--font-extrabold);
+  font-weight: var(--font-bold);
+  font-family: var(--font-sans);
 }
 
 .subtitle {
@@ -27,6 +30,113 @@
 .headerActions {
   display: flex;
   gap: 1rem;
+}
+
+/* Modern Grid Layout */
+.modernGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: auto;
+  gap: 1.5rem;
+  padding: 0 2rem 2rem 2rem;
+}
+
+.gridFeatured {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+.gridStat {
+  grid-column: span 1;
+}
+
+.gridUpdates {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+.gridActions {
+  grid-column: span 2;
+}
+
+.gridRevenue {
+  grid-column: span 2;
+}
+
+/* Section Titles */
+.sectionTitle {
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  margin: 0 0 1.5rem 0;
+  color: var(--admin-text);
+}
+
+/* Updates List */
+.updatesList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Action Buttons */
+.actionButtons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--admin-bg);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--admin-text);
+  font-weight: var(--font-medium);
+  font-size: var(--text-sm);
+  transition: all var(--transition-base);
+  border: 1px solid var(--admin-border);
+}
+
+.actionButton:hover {
+  background: white;
+  box-shadow: var(--shadow-card);
+  transform: translateY(-2px);
+  border-color: var(--admin-primary);
+  color: var(--admin-primary);
+}
+
+@media (max-width: 1200px) {
+  .modernGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .gridFeatured,
+  .gridUpdates,
+  .gridActions,
+  .gridRevenue {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .modernGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .gridFeatured,
+  .gridStat,
+  .gridUpdates,
+  .gridActions,
+  .gridRevenue {
+    grid-column: span 1;
+  }
+
+  .actionButtons {
+    grid-template-columns: 1fr;
+  }
 }
 
 .primaryButton {

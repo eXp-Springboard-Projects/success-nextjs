@@ -3,6 +3,8 @@ import { Department } from '@/lib/types';
 import DepartmentLayout from '@/components/admin/shared/DepartmentLayout';
 import { requireDepartmentAuth } from '@/lib/departmentAuth';
 import Link from 'next/link';
+import { StatCard, IllustrationCard, ModernCard } from '@/components/admin/shared/ModernCard';
+import { Users, UserPlus, TrendingDown, DollarSign, Gift } from 'lucide-react';
 import styles from './SuccessPlus.module.css';
 
 interface DashboardStats {
@@ -52,57 +54,63 @@ export default function SuccessPlusDashboard() {
       description="Member management and subscription analytics"
     >
       <div className={styles.dashboard}>
-        {/* Quick Stats */}
-        <div className={styles.statsGrid}>
-          <Link href="/admin/members?status=ACTIVE" className={styles.statCard}>
-            <div className={styles.statIcon}>👥</div>
-            <div className={styles.statContent}>
-              <div className={styles.statLabel}>Active Members</div>
-              <div className={styles.statValue}>
-                {loading ? '...' : stats.activeMembers.toLocaleString()}
-              </div>
-            </div>
-          </Link>
-
-          <div className={styles.statCard}>
-            <div className={styles.statIcon}>🆕</div>
-            <div className={styles.statContent}>
-              <div className={styles.statLabel}>New This Month</div>
-              <div className={styles.statValue}>
-                {loading ? '...' : stats.newMembersThisMonth}
-              </div>
-            </div>
+        {/* Modern Stats Grid */}
+        <div className={styles.modernGrid}>
+          {/* Featured Card */}
+          <div className={styles.gridFeatured}>
+            <IllustrationCard
+              title="SUCCESS+ Premium"
+              description="Manage your subscription members"
+              gradient="purple"
+              size="wide"
+            />
           </div>
 
-          <div className={`${styles.statCard} ${stats.churnRate > 5 ? styles.statCardWarning : ''}`}>
-            <div className={styles.statIcon}>📉</div>
-            <div className={styles.statContent}>
-              <div className={styles.statLabel}>Churn Rate</div>
-              <div className={styles.statValue}>
-                {loading ? '...' : `${stats.churnRate.toFixed(1)}%`}
-              </div>
-            </div>
-          </div>
+          {/* Stat Cards */}
+          <StatCard
+            icon={<Users size={24} />}
+            label="Active Members"
+            value={loading ? '...' : stats.activeMembers.toLocaleString()}
+            change="+8% this month"
+            changeType="positive"
+            gradient="blue"
+          />
 
-          <div className={styles.statCard}>
-            <div className={styles.statIcon}>💰</div>
-            <div className={styles.statContent}>
-              <div className={styles.statLabel}>Monthly Recurring Revenue</div>
-              <div className={styles.statValue}>
-                {loading ? '...' : `$${stats.monthlyRecurringRevenue.toLocaleString()}`}
-              </div>
-            </div>
-          </div>
+          <StatCard
+            icon={<UserPlus size={24} />}
+            label="New This Month"
+            value={loading ? '...' : stats.newMembersThisMonth}
+            change="Growing"
+            changeType="positive"
+            gradient="purple"
+          />
 
-          <div className={styles.statCard}>
-            <div className={styles.statIcon}>🎁</div>
-            <div className={styles.statContent}>
-              <div className={styles.statLabel}>Active Trials</div>
-              <div className={styles.statValue}>
-                {loading ? '...' : stats.activeTrials}
-              </div>
-            </div>
-          </div>
+          <StatCard
+            icon={<TrendingDown size={24} />}
+            label="Churn Rate"
+            value={loading ? '...' : `${stats.churnRate.toFixed(1)}%`}
+            change={stats.churnRate > 5 ? 'Needs attention' : 'Good'}
+            changeType={stats.churnRate > 5 ? 'negative' : 'positive'}
+            gradient="orange"
+          />
+
+          <StatCard
+            icon={<DollarSign size={24} />}
+            label="Monthly Recurring Revenue"
+            value={loading ? '...' : `$${stats.monthlyRecurringRevenue.toLocaleString()}`}
+            change="+12% growth"
+            changeType="positive"
+            gradient="pink"
+          />
+
+          <StatCard
+            icon={<Gift size={24} />}
+            label="Active Trials"
+            value={loading ? '...' : stats.activeTrials}
+            change={`${stats.totalTrials} total trials`}
+            changeType="neutral"
+            gradient="blue"
+          />
         </div>
 
         {/* Quick Actions */}

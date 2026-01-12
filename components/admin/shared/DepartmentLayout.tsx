@@ -83,12 +83,21 @@ export default function DepartmentLayout({
     <div className={styles.container}>
       {/* Sidebar */}
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : styles.sidebarClosed}`}>
+        {/* User Profile at Top */}
         <div className={styles.sidebarHeader}>
-          <Link href="/admin">
-            <div className={styles.logo}>
-              <span className={styles.logoText} style={{ color: "white" }}>SUCCESS</span>
+          <div className={styles.userProfile}>
+            {user.avatar ? (
+              <img src={user.avatar} alt={user.name} className={styles.userAvatar} />
+            ) : (
+              <div className={styles.userAvatarPlaceholder}>
+                {user.name.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className={styles.userInfo}>
+              <div className={styles.userName}>{user.name}</div>
+              <div className={styles.userRole}>{user.role}</div>
             </div>
-          </Link>
+          </div>
         </div>
 
         {/* Navigation Sections */}
@@ -104,21 +113,8 @@ export default function DepartmentLayout({
           ))}
         </div>
 
-        {/* User Profile */}
+        {/* Sign Out at Bottom */}
         <div className={styles.sidebarFooter}>
-          <div className={styles.userProfile}>
-            {user.avatar ? (
-              <img src={user.avatar} alt={user.name} className={styles.userAvatar} />
-            ) : (
-              <div className={styles.userAvatarPlaceholder}>
-                {user.name.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <div className={styles.userInfo}>
-              <div className={styles.userName}>{user.name}</div>
-              <div className={styles.userRole}>{user.role}</div>
-            </div>
-          </div>
           <Link href="/api/auth/signout" className={styles.signOutButton}>
             <span>Sign Out</span>
           </Link>
