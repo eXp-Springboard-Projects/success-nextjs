@@ -29,6 +29,7 @@ export default function ContentViewer() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [archiving, setArchiving] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -203,13 +204,26 @@ export default function ContentViewer() {
     ? content
     : content.filter(item => item.status !== 'ARCHIVED');
 
-  const filteredContent = activeTab === 'all'
+  const tabFilteredContent = activeTab === 'all'
     ? baseContent
     : activeTab === 'premium'
     ? baseContent.filter(item => (item as any).accessTier === 'success_plus' || (item as any).accessTier === 'insider')
     : activeTab === 'archived'
     ? content.filter(item => item.status === 'ARCHIVED')
     : baseContent.filter(item => item.type === activeTab);
+
+  // Apply search filter
+  const filteredContent = searchTerm.trim()
+    ? tabFilteredContent.filter(item => {
+        const titleText = typeof item.title === 'string'
+          ? item.title
+          : item.title?.rendered || '';
+        const search = searchTerm.toLowerCase();
+        return titleText.toLowerCase().includes(search) ||
+               String(item.id).includes(search) ||
+               item.type?.toLowerCase().includes(search);
+      })
+    : tabFilteredContent;
 
   const contentCounts = {
     all: content.filter(c => c.status !== 'ARCHIVED').length,
@@ -284,6 +298,30 @@ export default function ContentViewer() {
           >
             📁 Archived ({contentCounts.archived})
           </button>
+        </div>
+
+        <div className={styles.searchContainer}>
+          <input
+            type="text"
+            placeholder="🔍 Search by title, ID, or type..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className={styles.searchInput}
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className={styles.clearSearch}
+              aria-label="Clear search"
+            >
+              ✕
+            </button>
+          )}
+          {searchTerm && (
+            <span className={styles.searchResults}>
+              {filteredContent.length} result{filteredContent.length !== 1 ? 's' : ''}
+            </span>
+          )}
         </div>
 
         {activeTab !== 'archived' && (
