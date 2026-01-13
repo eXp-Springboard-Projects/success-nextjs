@@ -45,7 +45,7 @@ export default function RevenueAnalyticsPage() {
   const dashboardRef = useRef<HTMLDivElement>(null);
 
   // Date range state
-  const [dateRange, setDateRange] = useState<'today' | '7days' | '30days' | '90days' | 'year' | 'custom'>('30days');
+  const [dateRange, setDateRange] = useState<'today' | '7days' | '30days' | '90days' | 'year' | 'alltime' | 'custom'>('alltime');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [compareWithPrevious, setCompareWithPrevious] = useState(true);
@@ -86,6 +86,9 @@ export default function RevenueAnalyticsPage() {
         break;
       case 'year':
         start = new Date(now.getFullYear(), 0, 1);
+        break;
+      case 'alltime':
+        start = new Date('2020-01-01'); // All time from 2020
         break;
       case 'custom':
         return; // Don't auto-fetch for custom range
@@ -306,7 +309,7 @@ export default function RevenueAnalyticsPage() {
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ fontWeight: 600, marginRight: '8px' }}>Date Range:</span>
 
-            {(['today', '7days', '30days', '90days', 'year'] as const).map(range => (
+            {(['alltime', 'year', '90days', '30days', '7days', 'today'] as const).map(range => (
               <button
                 key={range}
                 onClick={() => setDateRange(range)}
@@ -320,6 +323,7 @@ export default function RevenueAnalyticsPage() {
                   fontSize: '14px',
                 }}
               >
+                {range === 'alltime' && 'All Time'}
                 {range === 'today' && 'Today'}
                 {range === '7days' && 'Last 7 Days'}
                 {range === '30days' && 'Last 30 Days'}
