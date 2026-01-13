@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
 import { supabaseAdmin } from '../../../../lib/supabase';
+import { stripe } from '../../../../lib/stripe';
 
 // Type definitions for results
 type TransactionSimple = { id: string; memberId: string; amount: number; createdAt: string; type?: string; status?: string; provider?: string };
@@ -10,7 +11,7 @@ type HistoricalItem = { memberId: string; createdAt: string };
 
 /**
  * Comprehensive Revenue Analytics API
- * Aggregates data from: subscriptions, transactions, orders
+ * Aggregates data from: Stripe, subscriptions, transactions, orders
  * Supports: date ranges, payment providers, product types, refunds, CLV
  */
 export default async function handler(
@@ -46,12 +47,48 @@ export default async function handler(
 
     const startDate = new Date(startDateParam as string);
     const endDate = new Date(endDateParam as string);
+    const startDateUnix = Math.floor(startDate.getTime() / 1000);
+    const endDateUnix = Math.floor(endDate.getTime() / 1000);
 
     // Calculate previous period for comparison
     const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     const prevStartDate = new Date(startDate);
     prevStartDate.setDate(prevStartDate.getDate() - daysDiff);
     const prevEndDate = new Date(startDate);
+    const prevStartDateUnix = Math.floor(prevStartDate.getTime() / 1000);
+    const prevEndDateUnix = Math.floor(prevEndDate.getTime() / 1000);
+
+    // ==========================================
+    // FETCH STRIPE DATA
+    // ==========================================
+    let stripeCharges: any[] = [];
+    let stripeRefunds: any[] = [];
+    let stripeSubscriptions: any[] = [];
+    let stripeBalance: any = null;
+
+    if (stripe) {
+      try {
+        const [charges, subs, balance] = await Promise.all([
+          stripe.charges.list({
+            limit: 100,
+            created: { gte: startDateUnix, lte: endDateUnix },
+          }),
+          stripe.subscriptions.list({
+            limit: 100,
+            status: 'all',
+          }),
+          stripe.balance.retrieve(),
+        ]);
+
+        stripeCharges = charges.data.filter(c => c.status === 'succeeded');
+        stripeRefunds = charges.data.filter(c => c.refunded);
+        stripeSubscriptions = subs.data;
+        stripeBalance = balance;
+      } catch (err) {
+        console.error('Stripe API error:', err);
+        // Continue without Stripe data
+      }
+    }
 
     // ==========================================
     // 1. TRANSACTIONS DATA (All Payments)
@@ -154,10 +191,11 @@ export default async function handler(
     // CALCULATE METRICS
     // ==========================================
 
-    // Total Revenue
+    // Total Revenue (include Stripe)
     const transactionRevenue = (transactions || []).reduce((sum: number, t: any) => sum + parseFloat(t.amount.toString()), 0);
     const orderRevenue = (orders || []).reduce((sum: number, o: any) => sum + parseFloat(o.total.toString()), 0);
-    const totalRevenue = transactionRevenue + orderRevenue;
+    const stripeRevenue = stripeCharges.reduce((sum, c) => sum + (c.amount / 100), 0);
+    const totalRevenue = transactionRevenue + orderRevenue + stripeRevenue;
 
     const prevTransactionRevenue = (prevTransactions || []).reduce((sum: number, t: any) => sum + parseFloat(t.amount.toString()), 0);
     const prevOrderRevenue = (prevOrders || []).reduce((sum: number, o: any) => sum + parseFloat(o.total.toString()), 0);
@@ -167,8 +205,8 @@ export default async function handler(
       ? ((totalRevenue - prevTotalRevenue) / prevTotalRevenue) * 100
       : 0;
 
-    // Total Transactions
-    const totalTransactions = (transactions?.length || 0) + (orders?.length || 0);
+    // Total Transactions (include Stripe)
+    const totalTransactions = (transactions?.length || 0) + (orders?.length || 0) + stripeCharges.length;
     const prevTotalTransactions = (prevTransactions?.length || 0) + (prevOrders?.length || 0);
     const transactionsGrowth = prevTotalTransactions > 0
       ? ((totalTransactions - prevTotalTransactions) / prevTotalTransactions) * 100
@@ -181,12 +219,23 @@ export default async function handler(
       ? ((averageOrderValue - prevAverageOrderValue) / prevAverageOrderValue) * 100
       : 0;
 
-    // Monthly Recurring Revenue (from active subscriptions)
+    // Monthly Recurring Revenue (from active subscriptions + Stripe)
     const subscriptionPrice = 9.99; // TODO: Get from products table
-    const mrr = (activeSubscriptions || 0) * subscriptionPrice;
+    const stripeMRR = stripeSubscriptions
+      .filter(s => s.status === 'active')
+      .reduce((sum, s) => {
+        const price = s.items.data[0]?.price;
+        if (!price) return sum;
+        const amount = price.unit_amount || 0;
+        // Convert to monthly (if yearly, divide by 12)
+        const monthlyAmount = price.recurring?.interval === 'year' ? amount / 12 : amount;
+        return sum + (monthlyAmount / 100);
+      }, 0);
+    const mrr = ((activeSubscriptions || 0) * subscriptionPrice) + stripeMRR;
 
-    // Refund amounts
-    const refundAmount = (refunds || []).reduce((sum: number, r: any) => sum + Math.abs(parseFloat(r.amount.toString())), 0);
+    // Refund amounts (include Stripe)
+    const stripeRefundAmount = stripeRefunds.reduce((sum, c) => sum + ((c.amount_refunded || 0) / 100), 0);
+    const refundAmount = (refunds || []).reduce((sum: number, r: any) => sum + Math.abs(parseFloat(r.amount.toString())), 0) + stripeRefundAmount;
     const prevRefundAmount = (prevRefunds || []).reduce((sum: number, r: any) => sum + Math.abs(parseFloat(r.amount.toString())), 0);
 
     // Refund Rate
@@ -221,6 +270,11 @@ export default async function handler(
                 : source === 'Stripe' ? 'Stripe'
                 : 'Other';
       revenueByProvider[key] += parseFloat(o.total.toString());
+    });
+
+    // Add Stripe charges
+    stripeCharges.forEach(c => {
+      revenueByProvider['Stripe'] += c.amount / 100;
     });
 
     // ==========================================
@@ -423,7 +477,7 @@ export default async function handler(
       dailyRevenue,
 
       // Counts
-      refundCount: refunds?.length || 0,
+      refundCount: (refunds?.length || 0) + stripeRefunds.length,
       refundAmount,
     });
   } catch (error: unknown) {

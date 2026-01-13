@@ -307,7 +307,6 @@ function getNavigationSections(role: UserRole, primaryDepartment?: Department | 
         { label: 'Members', href: '/admin/members' },
         { label: 'Sales', href: '/admin/sales' },
         { label: 'Revenue Analytics', href: '/admin/revenue-analytics' },
-        { label: 'Stripe Dashboard', href: '/admin/stripe-dashboard' },
       ]
     });
   }

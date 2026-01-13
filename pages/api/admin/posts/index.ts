@@ -189,36 +189,54 @@ export default async function handler(
         mainFeaturedArticle,
       } = req.body;
 
+      console.log('[POST CREATE] Received request body:', {
+        title,
+        slug,
+        contentLength: content?.length,
+        status,
+        contentPillar,
+        authorId: authorId || session.user.id
+      });
+
       // Create new post (only include fields that exist in the database)
+      const postData = {
+        id: `post_${Date.now()}`,
+        title,
+        slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+        content,
+        excerpt: excerpt || '',
+        status: status?.toUpperCase() || 'DRAFT',
+        featuredImage: featuredImage || null,
+        featuredImageAlt: featuredImageAlt || null,
+        seoTitle: seoTitle || null,
+        seoDescription: seoDescription || null,
+        authorId: authorId || session.user.id,
+        publishedAt: status === 'PUBLISHED' || status === 'published'
+          ? (publishedAt ? new Date(publishedAt).toISOString() : new Date().toISOString())
+          : null,
+        contentPillar: contentPillar || null,
+        customAuthorId: customAuthorId || null,
+        featureOnHomepage: featureOnHomepage || false,
+        featureInPillarSection: featureInPillar || false,
+        showInTrending: featureTrending || false,
+        mainFeaturedArticle: mainFeaturedArticle || false,
+      };
+
+      console.log('[POST CREATE] Inserting post data:', postData);
+
       const { data: newPost, error: postError } = await supabase
         .from('posts')
-        .insert({
-          id: `post_${Date.now()}`,
-          title,
-          slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-          content,
-          excerpt: excerpt || '',
-          status: status?.toUpperCase() || 'DRAFT',
-          featuredImage: featuredImage || null,
-          featuredImageAlt: featuredImageAlt || null,
-          seoTitle: seoTitle || null,
-          seoDescription: seoDescription || null,
-          authorId: authorId || session.user.id,
-          publishedAt: status === 'PUBLISHED' || status === 'published'
-            ? (publishedAt ? new Date(publishedAt).toISOString() : new Date().toISOString())
-            : null,
-          contentPillar: contentPillar || null,
-          customAuthorId: customAuthorId || null,
-          featureOnHomepage: featureOnHomepage || false,
-          featureInPillarSection: featureInPillar || false,
-          showInTrending: featureTrending || false,
-          mainFeaturedArticle: mainFeaturedArticle || false,
-        })
+        .insert(postData)
         .select()
         .single();
 
       if (postError) {
-        console.error('Post creation error:', postError);
+        console.error('[POST CREATE] ❌ Database error:', {
+          code: postError.code,
+          message: postError.message,
+          details: postError.details,
+          hint: postError.hint
+        });
         return res.status(500).json({
           error: 'Failed to create post',
           message: postError.message,
@@ -226,6 +244,8 @@ export default async function handler(
           hint: postError.hint
         });
       }
+
+      console.log('[POST CREATE] ✅ Post created successfully:', newPost.id);
 
       // Create initial revision (don't fail if this doesn't work)
       try {

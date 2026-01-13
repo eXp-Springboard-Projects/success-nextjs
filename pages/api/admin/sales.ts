@@ -1,11 +1,13 @@
 /**
  * API Endpoint: /api/admin/sales
  * Unified sales and subscriptions data for all revenue streams
+ * Integrates: Stripe, Database Subscriptions, Database Orders
  */
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
 import { supabaseAdmin } from '../../../lib/supabase';
+import { stripe } from '../../../lib/stripe';
 
 export default async function handler(
   req: NextApiRequest,
@@ -33,6 +35,31 @@ export default async function handler(
     const daysInt = parseInt(days as string);
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - daysInt);
+    const startDateUnix = Math.floor(startDate.getTime() / 1000);
+
+    // Fetch Stripe data if configured
+    let stripeCharges: any[] = [];
+    let stripeSubscriptions: any[] = [];
+
+    if (stripe) {
+      try {
+        const [charges, subs] = await Promise.all([
+          stripe.charges.list({
+            limit: 100,
+            created: { gte: startDateUnix },
+          }),
+          stripe.subscriptions.list({
+            limit: 100,
+            status: 'all',
+          }),
+        ]);
+        stripeCharges = charges.data.filter(c => c.status === 'succeeded');
+        stripeSubscriptions = subs.data;
+      } catch (err) {
+        console.error('Stripe API error:', err);
+        // Continue without Stripe data if it fails
+      }
+    }
 
     // Get subscriptions (SUCCESS+ and Magazine)
     const { data: subscriptions, error: subsError } = await supabase
@@ -80,16 +107,50 @@ export default async function handler(
       amount: parseFloat(order.total.toString()),
       status: order.status.toLowerCase(),
       createdAt: order.createdAt,
+      provider: 'database',
     }));
 
+    // Transform Stripe charges into transactions
+    const stripeChargeTransactions = stripeCharges.map((charge: any) => ({
+      id: charge.id,
+      type: 'order' as const,
+      productName: charge.description || 'Stripe Payment',
+      customerName: charge.billing_details?.name || 'Stripe Customer',
+      customerEmail: charge.receipt_email || charge.billing_details?.email || 'N/A',
+      amount: charge.amount / 100, // Convert from cents
+      status: charge.refunded ? 'refunded' : 'completed',
+      createdAt: new Date(charge.created * 1000).toISOString(),
+      provider: 'stripe',
+    }));
+
+    // Transform Stripe subscriptions into transactions
+    const stripeSubTransactions = stripeSubscriptions
+      .filter((sub: any) => new Date((sub as any).created * 1000) >= startDate)
+      .map((sub: any) => ({
+        id: sub.id,
+        type: 'subscription' as const,
+        productName: sub.items.data[0]?.price?.nickname || 'Stripe Subscription',
+        customerName: 'Stripe Customer',
+        customerEmail: 'See Stripe Dashboard',
+        amount: (sub.items.data[0]?.price?.unit_amount || 0) / 100,
+        status: sub.status,
+        createdAt: new Date((sub as any).created * 1000).toISOString(),
+        provider: 'stripe',
+      }));
+
     // Combine all transactions
-    let allTransactions = [...subscriptionTransactions, ...orderTransactions];
+    let allTransactions = [
+      ...subscriptionTransactions,
+      ...orderTransactions,
+      ...stripeChargeTransactions,
+      ...stripeSubTransactions,
+    ];
 
     // Apply filter
     if (filter === 'subscriptions') {
-      allTransactions = subscriptionTransactions;
+      allTransactions = [...subscriptionTransactions, ...stripeSubTransactions];
     } else if (filter === 'orders') {
-      allTransactions = orderTransactions;
+      allTransactions = [...orderTransactions, ...stripeChargeTransactions];
     } else if (filter === 'coaching') {
       // TODO: Add coaching transactions when coaching system is implemented
       allTransactions = [];
@@ -111,9 +172,9 @@ export default async function handler(
 
     const activeSubscriptions = (subscriptions || []).filter(
       (sub: any) => sub.status === 'active'
-    ).length;
+    ).length + stripeSubscriptions.filter(s => s.status === 'active').length;
 
-    const totalOrders = orders?.length || 0;
+    const totalOrders = (orders?.length || 0) + stripeCharges.length;
 
     const averageOrderValue = totalOrders > 0
       ? orderTransactions.reduce((sum: number, t: { amount: number }) => sum + t.amount, 0) / totalOrders
@@ -122,7 +183,10 @@ export default async function handler(
     // Calculate revenue by type
     const successPlusRevenue = (subscriptions || [])
       .filter((sub: any) => !sub.magazine_subscriptions && sub.status === 'active')
-      .reduce((sum: number) => sum + 9.99, 0); // TODO: Get actual price from tier
+      .reduce((sum: number) => sum + 9.99, 0) + // TODO: Get actual price from tier
+      stripeSubscriptions
+        .filter(s => s.status === 'active')
+        .reduce((sum, s) => sum + ((s.items.data[0]?.price?.unit_amount || 0) / 100), 0);
 
     const magazineRevenue = (subscriptions || [])
       .filter((sub: any) => sub.magazine_subscriptions && sub.status === 'active')
@@ -130,7 +194,8 @@ export default async function handler(
 
     const storeRevenue = (orders || [])
       .filter((order: any) => order.status === 'COMPLETED')
-      .reduce((sum: number, order: any) => sum + parseFloat(order.total.toString()), 0);
+      .reduce((sum: number, order: any) => sum + parseFloat(order.total.toString()), 0) +
+      stripeCharges.reduce((sum, c) => sum + (c.amount / 100), 0);
 
     const coachingRevenue = 0; // TODO: Implement coaching revenue tracking
 
