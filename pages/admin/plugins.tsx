@@ -30,7 +30,7 @@ export default function PluginsManager() {
   }, [status, session, router]);
 
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.role === 'ADMIN') {
+    if (status === 'authenticated' && (session?.user?.role === 'ADMIN' || session?.user?.role === 'SUPER_ADMIN')) {
       loadPlugins();
     }
   }, [status, session]);
