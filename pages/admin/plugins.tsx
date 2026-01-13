@@ -1,5 +1,4 @@
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import styles from './Plugins.module.css';
@@ -17,8 +16,7 @@ interface Plugin {
 }
 
 export default function PluginsManager() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
+  const { data: session } = useSession();
   const [plugins, setPlugins] = useState<Plugin[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -26,14 +24,9 @@ export default function PluginsManager() {
 
   useEffect(() => {
     // Auth is handled by requireAdminAuth in getServerSideProps
-    // No client-side redirects needed
-  }, [status, session, router]);
-
-  useEffect(() => {
-    if (status === 'authenticated' && (session?.user?.role === 'ADMIN' || session?.user?.role === 'SUPER_ADMIN')) {
-      loadPlugins();
-    }
-  }, [status, session]);
+    // Load plugins immediately since server-side auth already verified access
+    loadPlugins();
+  }, []);
 
   const loadPlugins = () => {
     // Plugin data from SUCCESS WordPress site
@@ -143,12 +136,8 @@ export default function PluginsManager() {
   const activeCount = plugins.filter(p => p.active).length;
   const updateCount = plugins.filter(p => p.hasUpdate).length;
 
-  if (status === 'loading' || loading) {
+  if (loading) {
     return <AdminLayout><div className={styles.loading}>Loading...</div></AdminLayout>;
-  }
-
-  if (!session) {
-    return null;
   }
 
   return (
