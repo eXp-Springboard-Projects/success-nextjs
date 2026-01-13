@@ -324,7 +324,6 @@ function getNavigationSections(role: UserRole, primaryDepartment?: Department | 
         { label: 'Media Library', href: '/admin/media' },
         { label: 'Editorial Calendar', href: '/admin/editorial-calendar' },
         { label: 'SEO', href: '/admin/seo' },
-        { label: 'Comments', href: '/admin/comments' },
       ]
     });
   }
