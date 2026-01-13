@@ -146,10 +146,10 @@ export default async function handler(
     // Subscription details
     const subscriptionDetails = activeSubscriptions.slice(0, 20).map(sub => ({
       id: sub.id,
-      customer: sub.customer,
+      customer: sub.customer as string,
       status: sub.status,
-      current_period_start: sub.current_period_start,
-      current_period_end: sub.current_period_end,
+      current_period_start: (sub as any).current_period_start,
+      current_period_end: (sub as any).current_period_end,
       plan: sub.items.data[0]?.price?.nickname || sub.items.data[0]?.price?.id,
       amount: (sub.items.data[0]?.price?.unit_amount || 0) / 100,
       interval: sub.items.data[0]?.price?.recurring?.interval,
