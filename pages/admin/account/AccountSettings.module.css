@@ -1,0 +1,258 @@
+.container {
+  padding: 1.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+  background: #FAFAFA;
+}
+
+.header {
+  margin-bottom: 2.5rem;
+}
+
+.header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: #9CA3AF;
+  margin: 0;
+}
+
+.section {
+  background: white;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #E5E7EB;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.sectionHeader h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.sectionHeader svg {
+  color: #6B7280;
+}
+
+.error {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: #FEE2E2;
+  color: #DC2626;
+  border-radius: 0.5rem;
+  border: 1px solid #DC2626;
+  font-size: 0.875rem;
+}
+
+.success {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: #D1FAE5;
+  color: #059669;
+  border-radius: 0.5rem;
+  border: 1px solid #059669;
+  font-size: 0.875rem;
+}
+
+.profilePictureCard {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.avatarSection {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #E5E7EB;
+}
+
+.avatarPlaceholder {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+  border: 3px solid #E5E7EB;
+}
+
+.avatarInfo h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
+}
+
+.avatarInfo p {
+  font-size: 0.875rem;
+  color: #6B7280;
+  margin: 0.125rem 0;
+}
+
+.role {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: #F3F4F6;
+  color: #6B7280;
+  border-radius: 9999px;
+  font-size: 0.75rem !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.5rem !important;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.uploadButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #1e3a8a;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.uploadButton:hover:not(:disabled) {
+  background: #1e40af;
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+}
+
+.uploadButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.removeButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  color: #DC2626;
+  border: 1px solid #FEE2E2;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.removeButton:hover:not(:disabled) {
+  background: #FEF2F2;
+  border-color: #DC2626;
+}
+
+.removeButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  margin: 0;
+}
+
+.securityLink {
+  display: block;
+  padding: 1.25rem;
+  background: #F9FAFB;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.securityLink:hover {
+  background: white;
+  border-color: #1e3a8a;
+  box-shadow: 0 2px 8px rgba(30, 58, 138, 0.1);
+}
+
+.linkContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.linkContent h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
+}
+
+.linkContent p {
+  font-size: 0.75rem;
+  color: #6B7280;
+  margin: 0;
+}
+
+.linkContent svg {
+  color: #9CA3AF;
+  transition: all 0.2s;
+}
+
+.securityLink:hover .linkContent svg {
+  color: #1e3a8a;
+  transform: translateX(4px);
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .avatarSection {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .buttonGroup {
+    flex-direction: column;
+  }
+
+  .uploadButton,
+  .removeButton {
+    width: 100%;
+    justify-content: center;
+  }
+}
