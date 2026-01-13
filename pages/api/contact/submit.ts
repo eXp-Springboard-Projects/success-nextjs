@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { supabaseAdmin } from '@/lib/supabase';
 import { randomUUID } from 'crypto';
+import { nanoid } from 'nanoid';
 
 /**
  * Contact form submission endpoint
@@ -86,6 +87,67 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       contact = newContact;
     }
 
+    // Create support ticket from contact form submission
+    let ticketId: string | null = null;
+
+    try {
+      // Determine ticket category based on subject
+      let category = 'general';
+      const subjectLower = subject?.toLowerCase() || '';
+      if (subjectLower.includes('subscription') || subjectLower.includes('subscribe')) {
+        category = 'subscription';
+      } else if (subjectLower.includes('billing') || subjectLower.includes('payment') || subjectLower.includes('refund')) {
+        category = 'billing';
+      } else if (subjectLower.includes('access') || subjectLower.includes('login') || subjectLower.includes('password')) {
+        category = 'access';
+      } else if (subjectLower.includes('technical') || subjectLower.includes('bug') || subjectLower.includes('error')) {
+        category = 'technical';
+      }
+
+      ticketId = nanoid();
+      const { data: ticket, error: ticketError } = await supabase
+        .from('tickets')
+        .insert({
+          id: ticketId,
+          contact_id: contact.id,
+          subject: subject || 'Contact Form Inquiry',
+          description: message,
+          priority: 'medium',
+          category,
+          status: 'open',
+          source: source,
+        })
+        .select()
+        .single();
+
+      if (!ticketError && ticket) {
+        // Create initial ticket message
+        await supabase
+          .from('ticket_messages')
+          .insert({
+            id: nanoid(),
+            ticket_id: ticketId,
+            sender_id: contact.id,
+            sender_type: 'customer',
+            message,
+          });
+
+        // Create contact activity for ticket creation
+        await supabase
+          .from('crm_contact_activities')
+          .insert({
+            id: nanoid(),
+            contact_id: contact.id,
+            type: 'ticket_created',
+            description: `Support ticket created from ${source}: ${subject || 'Contact Form'}`,
+            metadata: { ticketId, source },
+          });
+      }
+    } catch (ticketErr) {
+      console.error('Failed to create support ticket:', ticketErr);
+      // Continue even if ticket creation fails - don't block the contact form
+    }
+
     // Send notification email to admin
     await sendAdminNotification({
       firstName,
@@ -94,7 +156,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       phone,
       company,
       subject,
-      message
+      message,
+      ticketId
     });
 
     // Send confirmation email to user
@@ -103,7 +166,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({
       message: 'Thanks for reaching out! We\'ll get back to you within 24 hours.',
       success: true,
-      contactId: contact.id
+      contactId: contact.id,
+      ticketId
     });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to submit form. Please try again.' });
