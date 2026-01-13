@@ -128,7 +128,14 @@ export default function PostPage({ post, relatedPosts, hasAccess }: PostPageProp
   }
 
   const category = post._embedded?.['wp:term']?.[0]?.[0];
-  const author = post._embedded?.author?.[0];
+  // Prioritize guest author over main author (WordPress Molongui Guest Authors plugin)
+  const guestAuthor = post.guest_author_field_data?.guest_authors?.[0];
+  const mainAuthor = post._embedded?.author?.[0];
+  const author = guestAuthor ? {
+    name: guestAuthor.title,
+    avatar_urls: guestAuthor.thumbnail_url ? { '96': guestAuthor.thumbnail_url } : mainAuthor?.avatar_urls,
+    description: guestAuthor.meta_data?._molongui_guest_author_short_bio?.[0] || mainAuthor?.description
+  } : mainAuthor;
   const featuredImage = post._embedded?.['wp:featuredmedia']?.[0];
 
   // Fallback for featured image if embed data is missing
