@@ -53,6 +53,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Upload to Supabase Storage
     const supabase = supabaseAdmin();
 
+    // Check if resources bucket exists, create if it doesn't
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const resourcesBucket = buckets?.find(b => b.name === 'resources');
+
+    if (!resourcesBucket) {
+      console.log('Resources bucket not found, creating...');
+      const { data: newBucket, error: bucketError } = await supabase.storage.createBucket('resources', {
+        public: true,
+        fileSizeLimit: 52428800, // 50MB
+      });
+
+      if (bucketError) {
+        console.error('Failed to create resources bucket:', bucketError);
+        return res.status(500).json({
+          message: 'Storage bucket does not exist and could not be created',
+          error: bucketError.message,
+          details: 'Please create the "resources" bucket manually in Supabase Storage Dashboard'
+        });
+      }
+    }
+
     // Try to upload to resources bucket
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('resources')
@@ -73,7 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({
         message: 'Failed to upload file to storage',
         error: uploadError.message,
-        details: 'Check if the "resources" bucket exists in Supabase Storage and has proper permissions'
+        details: `Upload failed: ${uploadError.message}`
       });
     }
 
