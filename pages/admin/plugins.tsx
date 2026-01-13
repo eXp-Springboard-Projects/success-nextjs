@@ -28,6 +28,28 @@ export default function PluginsManager() {
     loadPlugins();
   }, []);
 
+  const handleTogglePlugin = (pluginId: string) => {
+    setPlugins(plugins.map(p =>
+      p.id === pluginId ? { ...p, active: !p.active } : p
+    ));
+  };
+
+  const handleUpdatePlugin = (pluginId: string) => {
+    setPlugins(plugins.map(p =>
+      p.id === pluginId ? { ...p, hasUpdate: false, version: p.version + ' (updated)' } : p
+    ));
+  };
+
+  const handleUpdateAll = () => {
+    setPlugins(plugins.map(p =>
+      p.hasUpdate ? { ...p, hasUpdate: false, version: p.version + ' (updated)' } : p
+    ));
+  };
+
+  const handleSettings = (pluginName: string) => {
+    alert(`Settings for ${pluginName}\n\nPlugin settings are managed in the WordPress admin panel.`);
+  };
+
   const loadPlugins = () => {
     // Plugin data from SUCCESS WordPress site
     const pluginData: Plugin[] = [
@@ -151,7 +173,11 @@ export default function PluginsManager() {
             </p>
           </div>
           <div className={styles.headerActions}>
-            <button className={styles.updateAllButton}>
+            <button
+              className={styles.updateAllButton}
+              onClick={handleUpdateAll}
+              disabled={updateCount === 0}
+            >
               Update All ({updateCount})
             </button>
             <button className={styles.addNewButton}>
@@ -208,14 +234,34 @@ export default function PluginsManager() {
                 <span className={styles.category}>{plugin.category}</span>
                 <div className={styles.pluginActions}>
                   {plugin.active ? (
-                    <button className={styles.deactivateButton}>Deactivate</button>
+                    <button
+                      className={styles.deactivateButton}
+                      onClick={() => handleTogglePlugin(plugin.id)}
+                    >
+                      Deactivate
+                    </button>
                   ) : (
-                    <button className={styles.activateButton}>Activate</button>
+                    <button
+                      className={styles.activateButton}
+                      onClick={() => handleTogglePlugin(plugin.id)}
+                    >
+                      Activate
+                    </button>
                   )}
                   {plugin.hasUpdate && (
-                    <button className={styles.updateButton}>Update</button>
+                    <button
+                      className={styles.updateButton}
+                      onClick={() => handleUpdatePlugin(plugin.id)}
+                    >
+                      Update
+                    </button>
                   )}
-                  <button className={styles.settingsButton}>Settings</button>
+                  <button
+                    className={styles.settingsButton}
+                    onClick={() => handleSettings(plugin.name)}
+                  >
+                    Settings
+                  </button>
                 </div>
               </div>
             </div>
