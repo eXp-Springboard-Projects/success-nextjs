@@ -27,9 +27,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const productIds = items.map((item: any) => item.productId);
 
     const { data: products, error } = await supabase
-      .from('products')
+      .from('store_products')
       .select('*')
-      .in('id', productIds);
+      .in('id', productIds)
+      .eq('is_active', true);
 
     if (error || !products || products.length === 0) {
       return res.status(404).json({ error: 'Products not found' });
@@ -40,17 +41,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const product = products.find((p) => p.id === item.productId);
       if (!product) throw new Error(`Product ${item.productId} not found`);
 
-      const price = product.salePrice || product.price;
+      const price = product.sale_price || product.price;
 
       return {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: product.title,
+            name: product.name,
             description: product.description || undefined,
-            images: product.thumbnail ? [product.thumbnail] : undefined,
+            images: product.image ? [product.image] : undefined,
+            metadata: {
+              product_id: product.id,
+              category: product.category,
+              product_type: product.product_type || 'product',
+            },
           },
-          unit_amount: Math.round(price * 100), // Convert to cents
+          unit_amount: Math.round(parseFloat(price) * 100), // Convert to cents
         },
         quantity: item.quantity,
       };
@@ -62,11 +68,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       payment_method_types: ['card'],
       line_items: lineItems,
       customer_email: session?.user?.email || undefined,
-      success_url: `${process.env.NEXTAUTH_URL}/shop/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXTAUTH_URL}/shop/cart`,
+      success_url: `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/store/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/store/checkout/cancel`,
       metadata: {
         userId: session?.user?.id || 'guest',
-        orderType: 'product_purchase',
+        orderType: 'store_purchase',
+      },
+      allow_promotion_codes: true,
+      billing_address_collection: 'required',
+      shipping_address_collection: {
+        allowed_countries: ['US', 'CA'],
       },
     });
 
@@ -74,38 +85,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const orderId = nanoid();
     const subtotal = products.reduce((sum, p) => {
       const item = items.find((i: any) => i.productId === p.id);
-      const price = p.salePrice || p.price;
+      const price = parseFloat(p.sale_price || p.price);
       return sum + price * (item?.quantity || 0);
     }, 0);
 
-    await supabase.from('orders').insert({
+    const orderData = {
       id: orderId,
-      userId: session?.user?.id || null,
+      user_id: session?.user?.id || null,
       email: session?.user?.email || 'guest',
-      status: 'pending',
+      status: 'PENDING',
       subtotal,
       tax: 0,
       shipping: 0,
       total: subtotal,
-      stripePaymentIntentId: checkoutSession.payment_intent as string,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+      stripe_session_id: checkoutSession.id,
+      stripe_payment_intent: checkoutSession.payment_intent as string,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    await supabase.from('orders').insert(orderData);
 
     // Create order items
     const orderItems = items.map((item: any) => {
       const product = products.find((p) => p.id === item.productId);
-      const price = product.salePrice || product.price;
+      const price = parseFloat(product.sale_price || product.price);
 
       return {
         id: nanoid(),
-        orderId,
-        productId: item.productId,
-        productSnapshot: product,
+        order_id: orderId,
+        product_id: item.productId,
+        product_name: product.name,
+        product_category: product.category,
+        product_type: product.product_type || 'product',
         quantity: item.quantity,
         price,
         total: price * item.quantity,
-        createdAt: new Date().toISOString(),
+        created_at: new Date().toISOString(),
       };
     });
 

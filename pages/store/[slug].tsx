@@ -54,11 +54,42 @@ type ProductPageProps = {
 export default function ProductPage({ product, reviews, relatedProducts }: ProductPageProps) {
   const [selectedImage, setSelectedImage] = useState(product.image);
   const [showAllReviews, setShowAllReviews] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const savings = product.salePrice ? product.price - product.salePrice : 0;
   const savingsPercent = product.salePrice ? Math.round((savings / product.price) * 100) : 0;
 
   const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 5);
+
+  const handleBuyNow = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/stripe/create-product-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: [{ productId: product.id, quantity: 1 }],
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create checkout');
+      }
+
+      // Redirect to Stripe checkout
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong');
+      setLoading(false);
+    }
+  };
 
   return (
     <Layout>
@@ -178,14 +209,14 @@ export default function ProductPage({ product, reviews, relatedProducts }: Produ
 
             {/* CTA */}
             <div className={styles.ctaSection}>
-              <a
-                href={product.link}
+              <button
+                onClick={handleBuyNow}
                 className={styles.buyButton}
-                target="_blank"
-                rel="noopener noreferrer"
+                disabled={loading}
               >
-                {product.productType === 'course' ? 'Enroll Now' : 'Buy Now'}
-              </a>
+                {loading ? 'Processing...' : product.productType === 'course' ? 'Enroll Now' : 'Buy Now'}
+              </button>
+              {error && <p className={styles.error}>{error}</p>}
               {product.digital && (
                 <p className={styles.digitalNote}>✓ Instant digital access</p>
               )}

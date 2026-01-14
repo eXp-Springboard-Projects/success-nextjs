@@ -177,10 +177,23 @@
   text-align: center;
   text-decoration: none;
   transition: background 0.2s;
+  border: none;
+  cursor: pointer;
 }
 
 .buyButton:hover {
   background: #0052a3;
+}
+
+.buyButton:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #dc2626;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
 }
 
 .digitalNote {
