@@ -10,11 +10,16 @@ type Product = {
   name: string;
   price: number;
   salePrice?: number | null;
+  description?: string | null;
   image: string;
   category: string;
   subcategory?: string | null;
   link: string;
   featured?: boolean;
+  rating?: number | null;
+  reviewCount?: number | null;
+  badge?: string | null;
+  productType?: string | null;
 };
 
 type StorePageProps = {
@@ -64,7 +69,9 @@ export default function StorePage({ products, categories }: StorePageProps) {
             <div className={styles.featuredGrid}>
               {featuredProducts.slice(0, 4).map((product) => (
                 <div key={product.id} className={styles.featuredCard}>
-                  {product.salePrice && (
+                  {product.badge ? (
+                    <div className={styles.badge}>{product.badge}</div>
+                  ) : product.salePrice && (
                     <div className={styles.saleBadge}>Sale</div>
                   )}
                   <div className={styles.productImage}>
@@ -94,6 +101,19 @@ export default function StorePage({ products, categories }: StorePageProps) {
                   </div>
                   <div className={styles.productInfo}>
                     <h3>{product.name}</h3>
+                    {product.description && (
+                      <p className={styles.productDescription}>{product.description.substring(0, 100)}...</p>
+                    )}
+                    {product.rating && product.rating > 0 && (
+                      <div className={styles.rating}>
+                        <span className={styles.stars}>
+                          {'★'.repeat(Math.round(product.rating))}{'☆'.repeat(5 - Math.round(product.rating))}
+                        </span>
+                        <span className={styles.ratingText}>
+                          {product.rating.toFixed(1)} ({product.reviewCount})
+                        </span>
+                      </div>
+                    )}
                     <div className={styles.priceRow}>
                       {product.salePrice ? (
                         <>
@@ -104,8 +124,8 @@ export default function StorePage({ products, categories }: StorePageProps) {
                         <span className={styles.price}>${product.price.toFixed(2)}</span>
                       )}
                     </div>
-                    <a href={product.link} className={styles.buyButton} target="_blank" rel="noopener noreferrer">
-                      View Product
+                    <a href={`/store/${product.id}`} className={styles.buyButton}>
+                      View Details
                     </a>
                   </div>
                 </div>
@@ -155,7 +175,9 @@ export default function StorePage({ products, categories }: StorePageProps) {
           <div className={styles.productsGrid}>
             {sortedProducts.map((product) => (
               <div key={product.id} className={styles.productCard}>
-                {product.salePrice && (
+                {product.badge ? (
+                  <div className={styles.badge}>{product.badge}</div>
+                ) : product.salePrice && (
                   <div className={styles.saleBadge}>Sale</div>
                 )}
                 <div className={styles.productImage}>
@@ -186,6 +208,19 @@ export default function StorePage({ products, categories }: StorePageProps) {
                 <div className={styles.productInfo}>
                   <p className={styles.productCategory}>{product.subcategory || product.category}</p>
                   <h3>{product.name}</h3>
+                  {product.description && (
+                    <p className={styles.productDescription}>{product.description.substring(0, 80)}...</p>
+                  )}
+                  {product.rating && product.rating > 0 && (
+                    <div className={styles.rating}>
+                      <span className={styles.stars}>
+                        {'★'.repeat(Math.round(product.rating))}{'☆'.repeat(5 - Math.round(product.rating))}
+                      </span>
+                      <span className={styles.ratingText}>
+                        {product.rating.toFixed(1)} ({product.reviewCount})
+                      </span>
+                    </div>
+                  )}
                   <div className={styles.priceRow}>
                     {product.salePrice ? (
                       <>
@@ -199,8 +234,8 @@ export default function StorePage({ products, categories }: StorePageProps) {
                       <span className={styles.price}>${product.price.toFixed(2)}</span>
                     )}
                   </div>
-                  <a href={product.link} className={styles.buyButton} target="_blank" rel="noopener noreferrer">
-                    View Product
+                  <a href={`/store/${product.id}`} className={styles.buyButton}>
+                    View Details
                   </a>
                 </div>
               </div>
@@ -255,11 +290,16 @@ export const getServerSideProps: GetServerSideProps = async () => {
       name: p.name,
       price: parseFloat(p.price),
       salePrice: p.sale_price ? parseFloat(p.sale_price) : null,
+      description: p.description || null,
       image: p.image,
       category: p.category,
       subcategory: p.subcategory || null,
       link: p.link,
       featured: p.featured || false,
+      rating: p.rating || null,
+      reviewCount: p.review_count || null,
+      badge: p.badge || null,
+      productType: p.product_type || null,
     }));
 
     const categories = ['Books', 'Courses', 'Merchandise', 'Magazines', 'Bundles'];
