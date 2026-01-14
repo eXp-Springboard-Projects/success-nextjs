@@ -9,11 +9,30 @@ interface StoreProduct {
   name: string;
   price: number;
   sale_price?: number;
+  description?: string;
+  long_description?: string;
+  features?: string[];
+  includes?: string[];
+  author?: string;
+  isbn?: string;
+  format?: string;
+  duration?: string;
+  skill_level?: string;
+  instructor?: string;
+  certification?: boolean;
   image: string;
+  gallery_images?: string[];
+  video_url?: string;
   category: string;
   subcategory?: string;
   link: string;
   featured: boolean;
+  badge?: string;
+  product_type?: string;
+  digital?: boolean;
+  rating?: number;
+  review_count?: number;
+  inventory_count?: number;
   display_order: number;
   is_active: boolean;
   created_at: string;
@@ -32,11 +51,28 @@ export default function StoreProductsAdmin() {
     name: '',
     price: '',
     salePrice: '',
+    description: '',
+    longDescription: '',
+    features: '',
+    includes: '',
+    author: '',
+    isbn: '',
+    format: '',
+    duration: '',
+    skillLevel: '',
+    instructor: '',
+    certification: false,
     image: '',
+    galleryImages: '',
+    videoUrl: '',
     category: 'Books',
     subcategory: '',
     link: '',
     featured: false,
+    badge: '',
+    productType: 'physical',
+    digital: false,
+    inventoryCount: '',
     displayOrder: 0,
     isActive: true,
   });
@@ -72,11 +108,40 @@ export default function StoreProductsAdmin() {
     e.preventDefault();
 
     try {
+      // Convert form data to database format
+      const payload = {
+        name: formData.name,
+        price: parseFloat(formData.price),
+        sale_price: formData.salePrice ? parseFloat(formData.salePrice) : null,
+        description: formData.description || null,
+        long_description: formData.longDescription || null,
+        features: formData.features ? formData.features.split('\n').filter(f => f.trim()) : null,
+        includes: formData.includes ? formData.includes.split('\n').filter(i => i.trim()) : null,
+        author: formData.author || null,
+        isbn: formData.isbn || null,
+        format: formData.format || null,
+        duration: formData.duration || null,
+        skill_level: formData.skillLevel || null,
+        instructor: formData.instructor || null,
+        certification: formData.certification,
+        image: formData.image,
+        gallery_images: formData.galleryImages ? formData.galleryImages.split('\n').filter(g => g.trim()) : null,
+        video_url: formData.videoUrl || null,
+        category: formData.category,
+        subcategory: formData.subcategory || null,
+        link: formData.link,
+        featured: formData.featured,
+        badge: formData.badge || null,
+        product_type: formData.productType,
+        digital: formData.digital,
+        inventory_count: formData.inventoryCount ? parseInt(formData.inventoryCount) : null,
+        display_order: formData.displayOrder,
+        is_active: formData.isActive,
+      };
+
       const url = '/api/admin/store-products';
       const method = editingProduct ? 'PUT' : 'POST';
-      const body = editingProduct
-        ? { ...formData, id: editingProduct.id }
-        : formData;
+      const body = editingProduct ? { ...payload, id: editingProduct.id } : payload;
 
       const res = await fetch(url, {
         method,
@@ -102,11 +167,28 @@ export default function StoreProductsAdmin() {
       name: product.name,
       price: product.price.toString(),
       salePrice: product.sale_price?.toString() || '',
+      description: product.description || '',
+      longDescription: product.long_description || '',
+      features: product.features?.join('\n') || '',
+      includes: product.includes?.join('\n') || '',
+      author: product.author || '',
+      isbn: product.isbn || '',
+      format: product.format || '',
+      duration: product.duration || '',
+      skillLevel: product.skill_level || '',
+      instructor: product.instructor || '',
+      certification: product.certification || false,
       image: product.image,
+      galleryImages: product.gallery_images?.join('\n') || '',
+      videoUrl: product.video_url || '',
       category: product.category,
       subcategory: product.subcategory || '',
       link: product.link,
       featured: product.featured,
+      badge: product.badge || '',
+      productType: product.product_type || 'physical',
+      digital: product.digital || false,
+      inventoryCount: product.inventory_count?.toString() || '',
       displayOrder: product.display_order,
       isActive: product.is_active,
     });
@@ -139,11 +221,28 @@ export default function StoreProductsAdmin() {
       name: '',
       price: '',
       salePrice: '',
+      description: '',
+      longDescription: '',
+      features: '',
+      includes: '',
+      author: '',
+      isbn: '',
+      format: '',
+      duration: '',
+      skillLevel: '',
+      instructor: '',
+      certification: false,
       image: '',
+      galleryImages: '',
+      videoUrl: '',
       category: 'Books',
       subcategory: '',
       link: '',
       featured: false,
+      badge: '',
+      productType: 'physical',
+      digital: false,
+      inventoryCount: '',
       displayOrder: 0,
       isActive: true,
     });
@@ -156,8 +255,6 @@ export default function StoreProductsAdmin() {
     if (currentIndex === 0) return;
 
     const prevProduct = products[currentIndex - 1];
-
-    // Swap display orders
     await updateDisplayOrder(product.id, prevProduct.display_order);
     await updateDisplayOrder(prevProduct.id, product.display_order);
     await fetchProducts();
@@ -168,8 +265,6 @@ export default function StoreProductsAdmin() {
     if (currentIndex === products.length - 1) return;
 
     const nextProduct = products[currentIndex + 1];
-
-    // Swap display orders
     await updateDisplayOrder(product.id, nextProduct.display_order);
     await updateDisplayOrder(nextProduct.id, product.display_order);
     await fetchProducts();
@@ -198,33 +293,9 @@ export default function StoreProductsAdmin() {
     });
   };
 
-  const handleImportProducts = async () => {
-    if (!confirm('Import all products from the store? This will add any products that don\'t already exist in the database.')) {
-      return;
-    }
-
-    setImporting(true);
-    try {
-      const res = await fetch('/api/admin/import-store-products', {
-        method: 'POST',
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        alert(`Import complete!\n\nImported: ${data.imported}\nSkipped: ${data.skipped}\nErrors: ${data.errors}`);
-        await fetchProducts();
-      } else {
-        const error = await res.json();
-        alert(`Failed to import products: ${error.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      alert('Failed to import products');
-    } finally {
-      setImporting(false);
-    }
-  };
-
   const categories = ['Books', 'Courses', 'Merchandise', 'Magazines', 'Bundles'];
+  const productTypes = ['physical', 'course', 'digital', 'book', 'membership'];
+  const skillLevels = ['Beginner', 'Intermediate', 'Advanced', 'All Levels'];
 
   if (status === 'loading' || loading) {
     return (
@@ -244,33 +315,14 @@ export default function StoreProductsAdmin() {
         <div className={styles.header}>
           <div>
             <h1>Store Products</h1>
-            <p className={styles.subtitle}>Manage products displayed on the /store page</p>
+            <p className={styles.subtitle}>Manage all store products with Stripe checkout integration</p>
           </div>
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            {products.length === 0 && (
-              <button
-                onClick={handleImportProducts}
-                disabled={importing}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  background: importing ? '#ccc' : '#2563eb',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: importing ? 'not-allowed' : 'pointer',
-                  fontWeight: 500,
-                }}
-              >
-                {importing ? 'Importing...' : '📦 Import Products'}
-              </button>
-            )}
-            <button
-              onClick={() => setShowForm(!showForm)}
-              className={styles.newButton}
-            >
-              {showForm ? 'Cancel' : 'Add Product'}
-            </button>
-          </div>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className={styles.newButton}
+          >
+            {showForm ? 'Cancel' : '+ Add Product'}
+          </button>
         </div>
 
         {showForm && (
@@ -281,10 +333,14 @@ export default function StoreProductsAdmin() {
             marginBottom: '2rem',
             boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
           }}>
-            <h2 style={{ marginTop: 0 }}>
+            <h2 style={{ marginTop: 0, marginBottom: '1.5rem' }}>
               {editingProduct ? 'Edit Product' : 'Add New Product'}
             </h2>
             <form onSubmit={handleSubmit}>
+              {/* Basic Information */}
+              <h3 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#333', borderBottom: '2px solid #eee', paddingBottom: '0.5rem' }}>
+                Basic Information
+              </h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div style={{ marginBottom: '1rem' }}>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
@@ -346,7 +402,7 @@ export default function StoreProductsAdmin() {
 
                 <div style={{ marginBottom: '1rem' }}>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-                    Sale Price (optional)
+                    Sale Price
                   </label>
                   <input
                     type="number"
@@ -364,13 +420,13 @@ export default function StoreProductsAdmin() {
 
                 <div style={{ marginBottom: '1rem' }}>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-                    Subcategory (optional)
+                    Subcategory
                   </label>
                   <input
                     type="text"
                     value={formData.subcategory}
                     onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
-                    placeholder="e.g., Jim Rohn, Success Classics"
+                    placeholder="e.g., Jim Rohn, Leadership"
                     style={{
                       width: '100%',
                       padding: '0.5rem',
@@ -382,12 +438,51 @@ export default function StoreProductsAdmin() {
 
                 <div style={{ marginBottom: '1rem' }}>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-                    Display Order
+                    Product Type *
+                  </label>
+                  <select
+                    value={formData.productType}
+                    onChange={(e) => setFormData({ ...formData, productType: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    {productTypes.map(type => (
+                      <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
+                    Badge
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.badge}
+                    onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
+                    placeholder="e.g., Bestseller, New, Featured"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px'
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
+                    Inventory Count
                   </label>
                   <input
                     type="number"
-                    value={formData.displayOrder}
-                    onChange={(e) => setFormData({ ...formData, displayOrder: parseInt(e.target.value) })}
+                    value={formData.inventoryCount}
+                    onChange={(e) => setFormData({ ...formData, inventoryCount: e.target.value })}
+                    placeholder="Leave empty for unlimited"
                     style={{
                       width: '100%',
                       padding: '0.5rem',
@@ -398,9 +493,216 @@ export default function StoreProductsAdmin() {
                 </div>
               </div>
 
+              {/* Description */}
+              <h3 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#333', borderBottom: '2px solid #eee', paddingBottom: '0.5rem' }}>
+                Description & Details
+              </h3>
               <div style={{ marginBottom: '1rem' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-                  Product Image URL *
+                  Short Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={2}
+                  placeholder="Brief product description shown in cards"
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    fontFamily: 'inherit'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
+                  Long Description
+                </label>
+                <textarea
+                  value={formData.longDescription}
+                  onChange={(e) => setFormData({ ...formData, longDescription: e.target.value })}
+                  rows={4}
+                  placeholder="Detailed product description shown on product page"
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    fontFamily: 'inherit'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
+                    Features (one per line)
+                  </label>
+                  <textarea
+                    value={formData.features}
+                    onChange={(e) => setFormData({ ...formData, features: e.target.value })}
+                    rows={5}
+                    placeholder="8 weeks of content&#10;Live Q&A sessions&#10;Certificate included"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      fontFamily: 'monospace',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
+                    Includes (one per line)
+                  </label>
+                  <textarea
+                    value={formData.includes}
+                    onChange={(e) => setFormData({ ...formData, includes: e.target.value })}
+                    rows={5}
+                    placeholder="Video lessons&#10;Workbooks&#10;Lifetime access"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      fontFamily: 'monospace',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Product-Specific Fields */}
+              <h3 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#333', borderBottom: '2px solid #eee', paddingBottom: '0.5rem' }}>
+                Product-Specific Details
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                {/* For Books */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
+                    Author (for books)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.author}
+                    onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                    placeholder="Jim Rohn"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px'
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
+                    ISBN (for books)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.isbn}
+                    onChange={(e) => setFormData({ ...formData, isbn: e.target.value })}
+                    placeholder="978-0-123456-78-9"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px'
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
+                    Format (for books)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.format}
+                    onChange={(e) => setFormData({ ...formData, format: e.target.value })}
+                    placeholder="Hardcover, Paperback, Ebook"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px'
+                    }}
+                  />
+                </div>
+
+                {/* For Courses */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
+                    Instructor (for courses)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.instructor}
+                    onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
+                    placeholder="SUCCESS Magazine Experts"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px'
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
+                    Duration (for courses)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.duration}
+                    onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                    placeholder="8 weeks, Self-paced"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px'
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
+                    Skill Level (for courses)
+                  </label>
+                  <select
+                    value={formData.skillLevel}
+                    onChange={(e) => setFormData({ ...formData, skillLevel: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    <option value="">Select skill level</option>
+                    {skillLevels.map(level => (
+                      <option key={level} value={level}>{level}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Media */}
+              <h3 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#333', borderBottom: '2px solid #eee', paddingBottom: '0.5rem' }}>
+                Media & Images
+              </h3>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
+                  Main Product Image URL *
                 </label>
                 <input
                   type="url"
@@ -430,14 +732,33 @@ export default function StoreProductsAdmin() {
 
               <div style={{ marginBottom: '1rem' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-                  Product Link URL *
+                  Gallery Images (one URL per line)
+                </label>
+                <textarea
+                  value={formData.galleryImages}
+                  onChange={(e) => setFormData({ ...formData, galleryImages: e.target.value })}
+                  rows={3}
+                  placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    fontFamily: 'monospace',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
+                  Video URL (YouTube, Vimeo, etc.)
                 </label>
                 <input
                   type="url"
-                  value={formData.link}
-                  onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-                  required
-                  placeholder="https://mysuccessplus.com/product/..."
+                  value={formData.videoUrl}
+                  onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                  placeholder="https://www.youtube.com/watch?v=..."
                   style={{
                     width: '100%',
                     padding: '0.5rem',
@@ -447,14 +768,77 @@ export default function StoreProductsAdmin() {
                 />
               </div>
 
-              <div style={{ marginBottom: '1rem', display: 'flex', gap: '2rem' }}>
+              {/* Settings */}
+              <h3 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#333', borderBottom: '2px solid #eee', paddingBottom: '0.5rem' }}>
+                Product Settings
+              </h3>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
+                  Product Link (Internal Route) *
+                </label>
+                <input
+                  type="text"
+                  value={formData.link}
+                  onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                  required
+                  placeholder="/store/product-id"
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px'
+                  }}
+                />
+                <small style={{ color: '#666', fontSize: '12px' }}>
+                  Internal route only - use format: /store/product-id
+                </small>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
+                    Display Order
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.displayOrder}
+                    onChange={(e) => setFormData({ ...formData, displayOrder: parseInt(e.target.value) })}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <input
                     type="checkbox"
                     checked={formData.featured}
                     onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
                   />
-                  Featured (show in top 4)
+                  <span style={{ fontWeight: 500 }}>Featured (show in top section)</span>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={formData.digital}
+                    onChange={(e) => setFormData({ ...formData, digital: e.target.checked })}
+                  />
+                  <span style={{ fontWeight: 500 }}>Digital Product</span>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={formData.certification}
+                    onChange={(e) => setFormData({ ...formData, certification: e.target.checked })}
+                  />
+                  <span style={{ fontWeight: 500 }}>Includes Certification</span>
                 </label>
 
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -463,24 +847,25 @@ export default function StoreProductsAdmin() {
                     checked={formData.isActive}
                     onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                   />
-                  Active (show on store page)
+                  <span style={{ fontWeight: 500 }}>Active (visible on store)</span>
                 </label>
               </div>
 
-              <div style={{ display: 'flex', gap: '1rem' }}>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid #eee' }}>
                 <button
                   type="submit"
                   style={{
                     background: '#000',
                     color: 'white',
-                    padding: '0.75rem 1.5rem',
+                    padding: '0.75rem 2rem',
                     border: 'none',
-                    borderRadius: '4px',
+                    borderRadius: '6px',
                     cursor: 'pointer',
-                    fontWeight: 500
+                    fontWeight: 600,
+                    fontSize: '16px'
                   }}
                 >
-                  {editingProduct ? 'Update' : 'Add'} Product
+                  {editingProduct ? 'Update Product' : 'Add Product'}
                 </button>
                 <button
                   type="button"
@@ -488,11 +873,12 @@ export default function StoreProductsAdmin() {
                   style={{
                     background: '#f0f0f0',
                     color: '#333',
-                    padding: '0.75rem 1.5rem',
+                    padding: '0.75rem 2rem',
                     border: 'none',
-                    borderRadius: '4px',
+                    borderRadius: '6px',
                     cursor: 'pointer',
-                    fontWeight: 500
+                    fontWeight: 500,
+                    fontSize: '16px'
                   }}
                 >
                   Cancel
@@ -502,6 +888,7 @@ export default function StoreProductsAdmin() {
           </div>
         )}
 
+        {/* Products Table */}
         <div className={styles.tableWrapper}>
           <table className={styles.table}>
             <thead>
@@ -510,9 +897,10 @@ export default function StoreProductsAdmin() {
                 <th style={{ width: '80px' }}>Image</th>
                 <th>Name</th>
                 <th>Category</th>
+                <th>Type</th>
                 <th>Price</th>
                 <th style={{ width: '100px' }}>Status</th>
-                <th style={{ width: '250px' }}>Actions</th>
+                <th style={{ width: '220px' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -562,11 +950,23 @@ export default function StoreProductsAdmin() {
                     <div>
                       <strong>{product.name}</strong>
                       {product.featured && <span style={{ marginLeft: '0.5rem', background: '#fef3c7', color: '#92400e', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>⭐ FEATURED</span>}
+                      {product.badge && <span style={{ marginLeft: '0.5rem', background: '#dbeafe', color: '#1e40af', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>{product.badge}</span>}
                     </div>
                   </td>
                   <td>
                     {product.category}
                     {product.subcategory && <div style={{ fontSize: '12px', color: '#666' }}>{product.subcategory}</div>}
+                  </td>
+                  <td>
+                    <span style={{
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '4px',
+                      fontSize: '11px',
+                      background: product.digital ? '#e0f2fe' : '#fef3c7',
+                      color: product.digital ? '#075985' : '#854d0e'
+                    }}>
+                      {product.product_type || 'physical'}
+                    </span>
                   </td>
                   <td>
                     {product.sale_price ? (
@@ -597,12 +997,12 @@ export default function StoreProductsAdmin() {
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
-                          padding: '0.5rem 1rem',
+                          padding: '0.5rem 0.75rem',
                           background: '#e3f2fd',
                           color: '#1565c0',
                           textDecoration: 'none',
                           borderRadius: '4px',
-                          fontSize: '14px'
+                          fontSize: '13px'
                         }}
                       >
                         View
@@ -610,12 +1010,12 @@ export default function StoreProductsAdmin() {
                       <button
                         onClick={() => handleEdit(product)}
                         style={{
-                          padding: '0.5rem 1rem',
+                          padding: '0.5rem 0.75rem',
                           background: '#f0f0f0',
                           border: 'none',
                           borderRadius: '4px',
                           cursor: 'pointer',
-                          fontSize: '14px'
+                          fontSize: '13px'
                         }}
                       >
                         Edit
@@ -623,13 +1023,13 @@ export default function StoreProductsAdmin() {
                       <button
                         onClick={() => handleDelete(product.id, product.name)}
                         style={{
-                          padding: '0.5rem 1rem',
+                          padding: '0.5rem 0.75rem',
                           background: '#ffebee',
                           color: '#c62828',
                           border: 'none',
                           borderRadius: '4px',
                           cursor: 'pointer',
-                          fontSize: '14px'
+                          fontSize: '13px'
                         }}
                       >
                         Delete
@@ -645,10 +1045,16 @@ export default function StoreProductsAdmin() {
         {products.length === 0 && (
           <div style={{
             textAlign: 'center',
-            padding: '3rem',
-            color: '#666'
+            padding: '4rem 2rem',
+            color: '#666',
+            background: '#f9fafb',
+            borderRadius: '8px'
           }}>
-            No products yet. Click "Add Product" to get started.
+            <h3>No products yet</h3>
+            <p>Click "Add Product" to create your first store product.</p>
+            <p style={{ fontSize: '14px', marginTop: '1rem' }}>
+              All products will be managed in Supabase and use Stripe for checkout.
+            </p>
           </div>
         )}
       </div>
