@@ -24,6 +24,7 @@ export default function StaffManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showBulkOps, setShowBulkOps] = useState(false);
+  const [resendingInvite, setResendingInvite] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -84,6 +85,34 @@ export default function StaffManagement() {
       month: 'short',
       day: 'numeric',
     });
+  };
+
+  const handleResendInvite = async (memberId: string, memberName: string, memberEmail: string) => {
+    if (!confirm(`Send invitation email to ${memberName} (${memberEmail})?`)) {
+      return;
+    }
+
+    setResendingInvite(memberId);
+    setError('');
+
+    try {
+      const response = await fetch(`/api/admin/staff/${memberId}/resend-invite`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send invitation');
+      }
+
+      alert(`✅ Invitation email sent to ${memberName}!`);
+    } catch (err: any) {
+      setError(err.message);
+      alert(`❌ Failed to send invitation: ${err.message}`);
+    } finally {
+      setResendingInvite(null);
+    }
   };
 
   if (status === 'loading' || loading) {
@@ -265,6 +294,14 @@ export default function StaffManagement() {
                         title="Edit"
                       >
                         ✏️
+                      </button>
+                      <button
+                        onClick={() => handleResendInvite(member.id, member.name, member.email)}
+                        className={styles.actionButton}
+                        title="Resend Invitation Email"
+                        disabled={resendingInvite === member.id}
+                      >
+                        {resendingInvite === member.id ? '⏳' : '📧'}
                       </button>
                     </div>
                   </td>
