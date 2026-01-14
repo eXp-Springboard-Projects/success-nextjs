@@ -5,6 +5,7 @@ import Bestsellers from '../components/Bestsellers';
 import PostCard from '../components/PostCard';
 import Trending from '../components/Trending';
 import UpsellAd from '../components/UpsellAd';
+import Image from 'next/image';
 import styles from './Home.module.css';
 import { fetchWordPressData } from '../lib/wordpress';
 
@@ -192,27 +193,27 @@ function HomePage({ featuredPost, secondaryPosts, trendingPosts, latestPosts, ai
           </p>
           <div className={styles.speakersGrid}>
             <div className={styles.speakerCard}>
-              <img src="https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1.jpg" alt="Grant Cardone" className={styles.speakerImage} />
+              <Image src="https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1.jpg" alt="Grant Cardone" className={styles.speakerImage} width={400} height={400} />
               <h3 className={styles.speakerName}>GRANT<br />CARDONE</h3>
             </div>
             <div className={styles.speakerCard}>
-              <img src="https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1s.jpg" alt="Daymond John" className={styles.speakerImage} />
+              <Image src="https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1s.jpg" alt="Daymond John" className={styles.speakerImage} width={400} height={400} />
               <h3 className={styles.speakerName}>DAYMOND<br />JOHN</h3>
             </div>
             <div className={styles.speakerCard}>
-              <img src="https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1d.jpg" alt="Jenn Lim" className={styles.speakerImage} />
+              <Image src="https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1d.jpg" alt="Jenn Lim" className={styles.speakerImage} width={400} height={400} />
               <h3 className={styles.speakerName}>JENN<br />LIM</h3>
             </div>
             <div className={styles.speakerCard}>
-              <img src="https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1a.jpg" alt="Andrea Navedo" className={styles.speakerImage} />
+              <Image src="https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1a.jpg" alt="Andrea Navedo" className={styles.speakerImage} width={400} height={400} />
               <h3 className={styles.speakerName}>ANDREA<br />NAVEDO</h3>
             </div>
             <div className={styles.speakerCard}>
-              <img src="https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1e.jpg" alt="Mel Robbins" className={styles.speakerImage} />
+              <Image src="https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1e.jpg" alt="Mel Robbins" className={styles.speakerImage} width={400} height={400} />
               <h3 className={styles.speakerName}>MEL<br />ROBBINS</h3>
             </div>
             <div className={styles.speakerCard}>
-              <img src="https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1w.jpg" alt="Nick Santonastasso" className={styles.speakerImage} />
+              <Image src="https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/90a1045e58f8b8b4c70dafa7986ed4f1w.jpg" alt="Nick Santonastasso" className={styles.speakerImage} width={400} height={400} />
               <h3 className={styles.speakerName}>NICK<br />SANTONASTASSO</h3>
             </div>
           </div>
@@ -338,7 +339,7 @@ function HomePage({ featuredPost, secondaryPosts, trendingPosts, latestPosts, ai
   );
 }
 
-export async function getServerSideProps() {
+export async function getStaticProps() {
   const posts = await fetchWordPressData('posts?_embed&per_page=30');
 
   // Try to fetch staff-curated featured content
@@ -410,7 +411,9 @@ export async function getServerSideProps() {
       trendsInsightsPosts: trendsInsightsPosts || [],
       latestMagazine,
       bestsellers: bestsellers || [],
-    }
+    },
+    // Enable ISR - Revalidate every 10 minutes (600 seconds)
+    revalidate: 600,
   };
 }
 

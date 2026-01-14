@@ -11,6 +11,7 @@ type SEOProps = {
   modifiedTime?: string;
   author?: string;
   keywords?: string;
+  structuredData?: object;
 };
 
 export default function SEO({
@@ -23,6 +24,7 @@ export default function SEO({
   modifiedTime,
   author,
   keywords,
+  structuredData,
 }: SEOProps) {
   // Decode HTML entities from title, description, author, and keywords
   const decodedTitle = decodeHtmlEntities(title);
@@ -31,6 +33,24 @@ export default function SEO({
   const decodedKeywords = keywords ? decodeHtmlEntities(keywords) : undefined;
 
   const fullTitle = decodedTitle.includes('SUCCESS') ? decodedTitle : `${decodedTitle} | SUCCESS`;
+
+  // Default structured data for organization
+  const defaultStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "SUCCESS Magazine",
+    "url": "https://www.success.com",
+    "logo": "https://successcom.wpenginepowered.com/wp-content/uploads/2024/03/success-logo.png",
+    "description": "SUCCESS is the leading source of inspiration, motivation, and practical advice for entrepreneurs, business leaders, and professionals seeking personal and professional growth.",
+    "sameAs": [
+      "https://www.facebook.com/SUCCESSmagazine/",
+      "https://x.com/successmagazine",
+      "https://www.instagram.com/successmagazine",
+      "https://www.linkedin.com/company/success-magazine/",
+      "https://www.youtube.com/successmagazine",
+      "https://www.pinterest.com/successmagazine"
+    ]
+  };
 
   return (
     <Head>
@@ -66,6 +86,14 @@ export default function SEO({
       <meta name="language" content="English" />
       <meta name="revisit-after" content="7 days" />
       <link rel="canonical" href={url} />
+
+      {/* Structured Data / JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData || defaultStructuredData)
+        }}
+      />
     </Head>
   );
 }
