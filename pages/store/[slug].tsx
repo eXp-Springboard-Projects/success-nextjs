@@ -4,6 +4,7 @@ import Layout from '../../components/Layout';
 import SEO from '../../components/SEO';
 import Image from 'next/image';
 import { supabaseAdmin } from '../../lib/supabase';
+import { getProxiedImageUrl } from '../../lib/image-proxy';
 import styles from './productDetail.module.css';
 
 type Review = {
@@ -52,7 +53,7 @@ type ProductPageProps = {
 };
 
 export default function ProductPage({ product, reviews, relatedProducts }: ProductPageProps) {
-  const [selectedImage, setSelectedImage] = useState(product.image);
+  const [selectedImage, setSelectedImage] = useState(getProxiedImageUrl(product.image));
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -96,7 +97,7 @@ export default function ProductPage({ product, reviews, relatedProducts }: Produ
       <SEO
         title={`${product.name} | SUCCESS Store`}
         description={product.description || `Shop ${product.name} at the SUCCESS Store`}
-        image={product.image}
+        image={getProxiedImageUrl(product.image)}
         url={`https://www.success.com/store/${product.id}`}
       />
 
@@ -128,12 +129,12 @@ export default function ProductPage({ product, reviews, relatedProducts }: Produ
             </div>
             {product.galleryImages && product.galleryImages.length > 0 && (
               <div className={styles.thumbnails}>
-                <button onClick={() => setSelectedImage(product.image)}>
-                  <Image src={product.image} alt="" width={80} height={80} />
+                <button onClick={() => setSelectedImage(getProxiedImageUrl(product.image))}>
+                  <Image src={getProxiedImageUrl(product.image)} alt="" width={80} height={80} />
                 </button>
                 {product.galleryImages.map((img, idx) => (
-                  <button key={idx} onClick={() => setSelectedImage(img)}>
-                    <Image src={img} alt="" width={80} height={80} />
+                  <button key={idx} onClick={() => setSelectedImage(getProxiedImageUrl(img))}>
+                    <Image src={getProxiedImageUrl(img)} alt="" width={80} height={80} />
                   </button>
                 ))}
               </div>
@@ -331,7 +332,7 @@ export default function ProductPage({ product, reviews, relatedProducts }: Produ
             <div className={styles.relatedGrid}>
               {relatedProducts.map((related) => (
                 <a key={related.id} href={`/store/${related.id}`} className={styles.relatedCard}>
-                  <Image src={related.image} alt={related.name} width={200} height={200} />
+                  <Image src={getProxiedImageUrl(related.image)} alt={related.name} width={200} height={200} />
                   <h4>{related.name}</h4>
                   <div className={styles.relatedPrice}>
                     {related.salePrice ? (

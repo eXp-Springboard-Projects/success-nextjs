@@ -3,6 +3,7 @@ import { GetServerSideProps } from 'next';
 import Layout from '../../components/Layout';
 import SEO from '../../components/SEO';
 import { supabaseAdmin } from '../../lib/supabase';
+import { getProxiedImageUrl } from '../../lib/image-proxy';
 import styles from './store.module.css';
 
 type Product = {
@@ -76,7 +77,7 @@ export default function StorePage({ products, categories }: StorePageProps) {
                   )}
                   <div className={styles.productImage}>
                     <img
-                      src={product.image}
+                      src={getProxiedImageUrl(product.image)}
                       alt={product.name}
                       width={400}
                       height={400}
@@ -182,7 +183,7 @@ export default function StorePage({ products, categories }: StorePageProps) {
                 )}
                 <div className={styles.productImage}>
                   <img
-                    src={product.image}
+                    src={getProxiedImageUrl(product.image)}
                     alt={product.name}
                     width={400}
                     height={400}
