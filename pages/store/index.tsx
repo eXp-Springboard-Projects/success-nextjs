@@ -31,6 +31,7 @@ type StorePageProps = {
 export default function StorePage({ products, categories }: StorePageProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [sortBy, setSortBy] = useState<string>('featured');
+  const [imageRetries, setImageRetries] = useState<Record<string, number>>({});
 
   const filteredProducts = products.filter(p =>
     selectedCategory === 'All' || p.category === selectedCategory
@@ -47,6 +48,35 @@ export default function StorePage({ products, categories }: StorePageProps) {
   });
 
   const featuredProducts = products.filter(p => p.featured);
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, productId: string, productName: string, category: string) => {
+    const target = e.target as HTMLImageElement;
+    const retryCount = imageRetries[productId] || 0;
+
+    // Don't retry if already showing placeholder
+    if (target.src.startsWith('data:')) return;
+
+    // Retry up to 2 times with exponential backoff
+    if (retryCount < 2) {
+      setImageRetries(prev => ({ ...prev, [productId]: retryCount + 1 }));
+      setTimeout(() => {
+        target.src = getProxiedImageUrl(products.find(p => p.id === productId)?.image || '');
+      }, Math.pow(2, retryCount) * 1000); // 1s, 2s
+      return;
+    }
+
+    // After retries exhausted, show placeholder
+    const categoryColors: Record<string, string> = {
+      'Books': '#2c5282',
+      'Courses': '#2c7a7b',
+      'Merchandise': '#744210',
+      'Magazines': '#c53030',
+      'Bundles': '#5f370e',
+    };
+    const bgColor = categoryColors[category] || '#1a1a1a';
+    const svg = `<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="400" fill="${bgColor}"/><text x="50%" y="50%" font-family="Arial, sans-serif" font-size="20" fill="#ffffff" text-anchor="middle" dy=".3em">${productName.substring(0, 30)}</text></svg>`;
+    target.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  };
 
   return (
     <Layout>
@@ -83,22 +113,7 @@ export default function StorePage({ products, categories }: StorePageProps) {
                       height={400}
                       loading="lazy"
                       style={{ objectFit: 'cover' }}
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        if (!target.src.startsWith('data:')) {
-                          // Fallback to placeholder if real image fails to load
-                          const categoryColors: Record<string, string> = {
-                            'Books': '#2c5282',
-                            'Courses': '#2c7a7b',
-                            'Merchandise': '#744210',
-                            'Magazines': '#c53030',
-                            'Bundles': '#5f370e',
-                          };
-                          const bgColor = categoryColors[product.category] || '#1a1a1a';
-                          const svg = `<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="400" fill="${bgColor}"/><text x="50%" y="50%" font-family="Arial, sans-serif" font-size="20" fill="#ffffff" text-anchor="middle" dy=".3em">${product.name.substring(0, 30)}</text></svg>`;
-                          target.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-                        }
-                      }}
+                      onError={(e) => handleImageError(e, product.id, product.name, product.category)}
                     />
                   </div>
                   <div className={styles.productInfo}>
@@ -190,22 +205,7 @@ export default function StorePage({ products, categories }: StorePageProps) {
                     height={400}
                     loading="lazy"
                     style={{ objectFit: 'cover' }}
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      if (!target.src.startsWith('data:')) {
-                        // Fallback to placeholder if real image fails to load
-                        const categoryColors: Record<string, string> = {
-                          'Books': '#2c5282',
-                          'Courses': '#2c7a7b',
-                          'Merchandise': '#744210',
-                          'Magazines': '#c53030',
-                          'Bundles': '#5f370e',
-                        };
-                        const bgColor = categoryColors[product.category] || '#1a1a1a';
-                        const svg = `<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="400" fill="${bgColor}"/><text x="50%" y="50%" font-family="Arial, sans-serif" font-size="20" fill="#ffffff" text-anchor="middle" dy=".3em">${product.name.substring(0, 30)}</text></svg>`;
-                        target.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-                      }
-                    }}
+                    onError={(e) => handleImageError(e, product.id, product.name, product.category)}
                   />
                 </div>
                 <div className={styles.productInfo}>

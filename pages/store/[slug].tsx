@@ -57,11 +57,32 @@ export default function ProductPage({ product, reviews, relatedProducts }: Produ
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [imageRetries, setImageRetries] = useState<Record<string, number>>({});
 
   const savings = product.salePrice ? product.price - product.salePrice : 0;
   const savingsPercent = product.salePrice ? Math.round((savings / product.price) * 100) : 0;
 
   const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 5);
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, imageId: string, originalUrl: string) => {
+    const target = e.target as HTMLImageElement;
+    const retryCount = imageRetries[imageId] || 0;
+
+    // Don't retry if already showing placeholder
+    if (target.src.startsWith('data:') || target.src.includes('/images/placeholder.png')) return;
+
+    // Retry up to 2 times with exponential backoff
+    if (retryCount < 2) {
+      setImageRetries(prev => ({ ...prev, [imageId]: retryCount + 1 }));
+      setTimeout(() => {
+        target.src = getProxiedImageUrl(originalUrl);
+      }, Math.pow(2, retryCount) * 1000); // 1s, 2s
+      return;
+    }
+
+    // After retries exhausted, show placeholder
+    target.src = '/images/placeholder.png';
+  };
 
   const handleBuyNow = async () => {
     setLoading(true);
@@ -125,16 +146,29 @@ export default function ProductPage({ product, reviews, relatedProducts }: Produ
                 width={600}
                 height={600}
                 style={{ objectFit: 'contain' }}
+                onError={(e) => handleImageError(e, `main-${product.id}`, product.image)}
               />
             </div>
             {product.galleryImages && product.galleryImages.length > 0 && (
               <div className={styles.thumbnails}>
                 <button onClick={() => setSelectedImage(getProxiedImageUrl(product.image))}>
-                  <Image src={getProxiedImageUrl(product.image)} alt="" width={80} height={80} />
+                  <Image
+                    src={getProxiedImageUrl(product.image)}
+                    alt=""
+                    width={80}
+                    height={80}
+                    onError={(e) => handleImageError(e, `thumb-0-${product.id}`, product.image)}
+                  />
                 </button>
                 {product.galleryImages.map((img, idx) => (
                   <button key={idx} onClick={() => setSelectedImage(getProxiedImageUrl(img))}>
-                    <Image src={getProxiedImageUrl(img)} alt="" width={80} height={80} />
+                    <Image
+                      src={getProxiedImageUrl(img)}
+                      alt=""
+                      width={80}
+                      height={80}
+                      onError={(e) => handleImageError(e, `thumb-${idx + 1}-${product.id}`, img)}
+                    />
                   </button>
                 ))}
               </div>
@@ -332,7 +366,13 @@ export default function ProductPage({ product, reviews, relatedProducts }: Produ
             <div className={styles.relatedGrid}>
               {relatedProducts.map((related) => (
                 <a key={related.id} href={`/store/${related.id}`} className={styles.relatedCard}>
-                  <Image src={getProxiedImageUrl(related.image)} alt={related.name} width={200} height={200} />
+                  <Image
+                    src={getProxiedImageUrl(related.image)}
+                    alt={related.name}
+                    width={200}
+                    height={200}
+                    onError={(e) => handleImageError(e, `related-${related.id}`, related.image)}
+                  />
                   <h4>{related.name}</h4>
                   <div className={styles.relatedPrice}>
                     {related.salePrice ? (
