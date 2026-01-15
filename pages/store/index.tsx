@@ -81,6 +81,7 @@ export default function StorePage({ products, categories }: StorePageProps) {
                       alt={product.name}
                       width={400}
                       height={400}
+                      loading="lazy"
                       style={{ objectFit: 'cover' }}
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
@@ -187,6 +188,7 @@ export default function StorePage({ products, categories }: StorePageProps) {
                     alt={product.name}
                     width={400}
                     height={400}
+                    loading="lazy"
                     style={{ objectFit: 'cover' }}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
