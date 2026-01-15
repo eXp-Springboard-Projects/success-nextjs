@@ -42,6 +42,10 @@ export default async function handler(req, res) {
   // Handle the event
   try {
     switch (event.type) {
+      case 'checkout.session.completed':
+        await handleCheckoutCompleted(event.data.object);
+        break;
+
       case 'customer.subscription.created':
         await handleSubscriptionCreated(event.data.object);
         break;
@@ -380,4 +384,114 @@ async function handlePaymentFailed(invoice) {
   });
 
   log.info('Payment failed', { memberId: member.id });
+}
+
+// Handle checkout session completed (for product purchases)
+async function handleCheckoutCompleted(session) {
+  const supabase = supabaseAdmin();
+
+  // Check if this is a product purchase (not subscription)
+  if (session.mode === 'payment' && session.metadata?.orderType === 'store_purchase') {
+    try {
+      // Update order status in database
+      const { data: order, error } = await supabase
+        .from('orders')
+        .update({
+          status: 'PAID',
+          stripe_payment_intent: session.payment_intent,
+          payment_status: session.payment_status,
+          customer_email: session.customer_details?.email || session.customer_email,
+          customer_name: session.customer_details?.name,
+          shipping_address: session.shipping_details?.address || session.shipping || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('stripe_session_id', session.id)
+        .select()
+        .single();
+
+      if (error) {
+        log.error('Error updating order', { error, sessionId: session.id });
+        return;
+      }
+
+      if (!order) {
+        log.error('Order not found for session', { sessionId: session.id });
+        return;
+      }
+
+      // Get order items
+      const { data: orderItems } = await supabase
+        .from('order_items')
+        .select('*')
+        .eq('order_id', order.id);
+
+      // Create transaction record
+      const amount = session.amount_total / 100;
+      await supabase.from('transactions').insert({
+        member_id: order.user_id,
+        amount: amount,
+        currency: session.currency.toUpperCase(),
+        status: 'succeeded',
+        type: 'product_purchase',
+        description: `Store purchase - Order #${order.id}`,
+        payment_method: session.payment_method_types?.[0] || 'card',
+        provider: 'stripe',
+        provider_txn_id: session.payment_intent,
+        metadata: {
+          orderId: order.id,
+          sessionId: session.id,
+          itemCount: orderItems?.length || 0,
+        },
+      });
+
+      // Update user's total spent if they have an account
+      if (order.user_id) {
+        const { data: user } = await supabase
+          .from('users')
+          .select('id')
+          .eq('id', order.user_id)
+          .single();
+
+        if (user) {
+          await supabase.rpc('increment_user_spent', {
+            user_id: order.user_id,
+            amount: amount,
+          }).catch(() => {
+            // If RPC doesn't exist, update directly
+            supabase
+              .from('users')
+              .select('total_spent')
+              .eq('id', order.user_id)
+              .single()
+              .then(({ data }) => {
+                const currentSpent = data?.total_spent || 0;
+                return supabase
+                  .from('users')
+                  .update({ total_spent: currentSpent + amount })
+                  .eq('id', order.user_id);
+              });
+          });
+        }
+      }
+
+      // Send confirmation email
+      const { sendEmail, getOrderConfirmationHTML } = require('../../../lib/email');
+      const customerName = session.customer_details?.name || order.customer_name || 'Valued Customer';
+      const customerEmail = session.customer_details?.email || order.customer_email;
+
+      if (customerEmail) {
+        await sendEmail({
+          to: customerEmail,
+          subject: `Order Confirmation - SUCCESS Store #${order.id}`,
+          html: getOrderConfirmationHTML(customerName, order, orderItems),
+        }).catch((err) => {
+          log.error('Failed to send order confirmation email', { error: err, orderId: order.id });
+        });
+      }
+
+      log.info('Product purchase completed', { orderId: order.id, amount });
+    } catch (error) {
+      log.error('Error handling checkout completion', { error, sessionId: session.id });
+    }
+  }
 }

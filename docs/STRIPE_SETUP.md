@@ -104,7 +104,7 @@ NEXT_PUBLIC_BASE_URL=http://localhost:3000
 2. Click "+ Add endpoint"
 3. **Endpoint URL**: `https://yourdomain.com/api/stripe/webhook`
 4. **Events to listen to**:
-   - `checkout.session.completed`
+   - `checkout.session.completed` (for both subscriptions and product purchases)
    - `customer.subscription.created`
    - `customer.subscription.updated`
    - `customer.subscription.deleted`
@@ -338,6 +338,50 @@ For application issues:
 
 ---
 
+## Store Product Checkout
+
+The store now supports complete Stripe checkout for all products.
+
+### How It Works
+
+1. **Product Page**: Customer clicks "Buy Now" on a product detail page
+2. **Checkout API**: Creates a Stripe checkout session with product details
+3. **Stripe Checkout**: Customer completes payment on Stripe's hosted page
+4. **Webhook**: `checkout.session.completed` event updates order status
+5. **Success Page**: Customer redirected to order confirmation page
+6. **Email**: Order confirmation email sent automatically
+
+### Setup for Store Products
+
+1. **No Product Creation Needed**: Products are dynamically created from your Supabase `store_products` table
+2. **Webhook Configured**: The webhook already handles `checkout.session.completed` for product purchases
+3. **Shipping**: Supports 20+ countries (US, CA, GB, AU, NZ, IE, DE, FR, ES, IT, NL, BE, SE, NO, DK, FI, AT, CH, SG, HK, JP)
+4. **Promotion Codes**: Enabled by default
+
+### Testing Store Checkout
+
+```bash
+# 1. Start your dev server
+npm run dev
+
+# 2. Start Stripe webhook listener
+stripe listen --forward-to localhost:3000/api/webhooks/stripe
+
+# 3. Visit a product page
+http://localhost:3000/store/[product-id]
+
+# 4. Click "Buy Now" and complete checkout with test card: 4242 4242 4242 4242
+
+# 5. Check webhook logs for checkout.session.completed event
+
+# 6. Verify order in database:
+# - orders table should have status = 'PAID'
+# - order_items table should have product details
+# - transactions table should have payment record
+```
+
+---
+
 ## API Endpoints Reference
 
 ### POST `/api/stripe/create-checkout-session`
@@ -368,14 +412,53 @@ Create a Stripe Customer Portal session
 }
 ```
 
-### POST `/api/stripe/webhook`
+### POST `/api/stripe/create-product-checkout`
+Create a Stripe Checkout session for store products
+
+**Body**:
+```json
+{
+  "items": [
+    {
+      "productId": "product-slug",
+      "quantity": 1
+    }
+  ]
+}
+```
+
+**Response**:
+```json
+{
+  "sessionId": "cs_test_xxx",
+  "url": "https://checkout.stripe.com/xxx"
+}
+```
+
+### GET `/api/stripe/verify-session?session_id=cs_xxx`
+Verify a checkout session and get order details
+
+**Response (Product Purchase)**:
+```json
+{
+  "success": true,
+  "orderType": "product_purchase",
+  "id": "order_id",
+  "email": "customer@example.com",
+  "total": 29.99,
+  "status": "PAID",
+  "items": [...]
+}
+```
+
+### POST `/api/webhooks/stripe`
 Handle Stripe webhook events
 
 **Headers**:
 - `stripe-signature`: Webhook signature for verification
 
 **Events Handled**:
-- `checkout.session.completed`
+- `checkout.session.completed` (subscriptions AND product purchases)
 - `customer.subscription.created`
 - `customer.subscription.updated`
 - `customer.subscription.deleted`

@@ -208,6 +208,84 @@ export function getSubscriptionConfirmationHTML(name: string, plan: string, amou
   `;
 }
 
+export function getOrderConfirmationHTML(name: string, order: any, items: any[]): string {
+  const itemsList = items.map(item => `
+    <tr>
+      <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">
+        <strong>${item.product_name}</strong><br>
+        <small style="color: #6b7280;">${item.product_category}</small>
+      </td>
+      <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center;">${item.quantity}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right;">$${item.price.toFixed(2)}</td>
+    </tr>
+  `).join('');
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #10b981; color: white; padding: 30px; text-align: center; }
+          .content { padding: 30px; background: #f9fafb; }
+          .details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+          .order-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          .total-row { font-weight: bold; font-size: 1.1em; }
+          .button { display: inline-block; padding: 12px 24px; background: #d32f2f; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .footer { padding: 20px; text-align: center; font-size: 12px; color: #6b7280; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🎉 Order Confirmed!</h1>
+          </div>
+          <div class="content">
+            <h2>Thank you for your order, ${name}!</h2>
+            <p>We've received your order and will begin processing it right away.</p>
+            <div class="details">
+              <strong>Order Details:</strong>
+              <p>Order #: <strong>${order.id}</strong></p>
+              <p>Status: <strong>${order.status}</strong></p>
+              <table class="order-table">
+                <thead>
+                  <tr style="background: #f3f4f6;">
+                    <th style="padding: 10px; text-align: left;">Item</th>
+                    <th style="padding: 10px; text-align: center;">Qty</th>
+                    <th style="padding: 10px; text-align: right;">Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${itemsList}
+                  <tr class="total-row">
+                    <td colspan="2" style="padding: 15px; text-align: right;">Total:</td>
+                    <td style="padding: 15px; text-align: right;">$${order.total.toFixed(2)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="details">
+              <h3>What's Next?</h3>
+              <ul>
+                <li>📧 You'll receive shipping confirmation once your order ships</li>
+                <li>📦 Physical items typically ship within 1-2 business days</li>
+                <li>💻 Digital products are available immediately in your account</li>
+                <li>📚 Courses can be accessed from your dashboard</li>
+              </ul>
+            </div>
+            <a href="${process.env.NEXT_PUBLIC_SITE_URL}/account" class="button">View Order Status</a>
+            <p>If you have any questions about your order, feel free to contact our support team.</p>
+          </div>
+          <div class="footer">
+            <p>&copy; ${new Date().getFullYear()} SUCCESS Magazine. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
 export function getPaymentFailedHTML(name: string): string {
   return `
     <!DOCTYPE html>

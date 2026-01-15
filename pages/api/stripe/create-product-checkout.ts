@@ -77,7 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       allow_promotion_codes: true,
       billing_address_collection: 'required',
       shipping_address_collection: {
-        allowed_countries: ['US', 'CA'],
+        allowed_countries: ['US', 'CA', 'GB', 'AU', 'NZ', 'IE', 'DE', 'FR', 'ES', 'IT', 'NL', 'BE', 'SE', 'NO', 'DK', 'FI', 'AT', 'CH', 'SG', 'HK', 'JP'],
       },
     });
 
