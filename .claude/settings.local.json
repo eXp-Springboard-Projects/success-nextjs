@@ -48,7 +48,8 @@
       "Bash(npx dotenv -e .env.production.local -- npx tsx scripts/import-hubspot-contacts.ts:*)",
       "Bash(rm:*)",
       "WebFetch(domain:mysuccessplus.com)",
-      "Read(//c/Users/RachelNead/Desktop/**)"
+      "Read(//c/Users/RachelNead/Desktop/**)",
+      "Bash(npx dotenv -e .env.supabase -- npx tsx scripts/import-woocommerce-products.ts:*)"
     ],
     "deny": [],
     "ask": []

@@ -124,7 +124,7 @@ export default function StorePage({ products, categories }: StorePageProps) {
                         <span className={styles.price}>${product.price.toFixed(2)}</span>
                       )}
                     </div>
-                    <a href={`/store/${product.id}`} className={styles.buyButton}>
+                    <a href={product.link} className={styles.buyButton}>
                       View Details
                     </a>
                   </div>
@@ -234,7 +234,7 @@ export default function StorePage({ products, categories }: StorePageProps) {
                       <span className={styles.price}>${product.price.toFixed(2)}</span>
                     )}
                   </div>
-                  <a href={`/store/${product.id}`} className={styles.buyButton}>
+                  <a href={product.link} className={styles.buyButton}>
                     View Details
                   </a>
                 </div>

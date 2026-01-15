@@ -21,7 +21,7 @@ type Product = {
   id: string;
   name: string;
   price: number;
-  salePrice?: number;
+  salePrice: number | null;
   description?: string;
   longDescription?: string;
   features?: string[];
@@ -393,7 +393,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
       id: product.id,
       name: product.name,
       price: parseFloat(product.price),
-      salePrice: product.sale_price ? parseFloat(product.sale_price) : undefined,
+      salePrice: product.sale_price ? parseFloat(product.sale_price) : null,
       description: product.description,
       longDescription: product.long_description,
       features: product.features,
@@ -425,7 +425,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
           id: p.id,
           name: p.name,
           price: parseFloat(p.price),
-          salePrice: p.sale_price ? parseFloat(p.sale_price) : undefined,
+          salePrice: p.sale_price ? parseFloat(p.sale_price) : null,
           image: p.image,
           category: p.category,
         })),

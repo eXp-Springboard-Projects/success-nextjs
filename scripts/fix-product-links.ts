@@ -24,20 +24,14 @@ async function fixProductLinks() {
   let skipped = 0;
 
   for (const product of products || []) {
-    // Skip if already has internal link
-    if (product.link?.startsWith('/store/')) {
+    // Use product ID for the route (UUID only, no slug)
+    const newLink = `/store/${product.id}`;
+
+    // Skip if already correct
+    if (product.link === newLink) {
       skipped++;
       continue;
     }
-
-    // Generate slug from name
-    const slug = product.name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-
-    // Use product ID for the route
-    const newLink = `/store/${product.id}`;
 
     // Update the product
     const { error: updateError } = await supabase
@@ -48,7 +42,7 @@ async function fixProductLinks() {
     if (updateError) {
       console.error(`❌ Error updating ${product.name}:`, updateError.message);
     } else {
-      console.log(`✅ ${product.name}: ${newLink}`);
+      console.log(`✅ ${product.name}: ${product.link} → ${newLink}`);
       updated++;
     }
   }
